@@ -7,5 +7,8 @@ import { Component } from '@angular/core';
   styleUrl: './navbar.component.scss'
 })
 export class NavbarComponent {
+  isLogin = false;
+
+  haveNotification = false;
 
 }
