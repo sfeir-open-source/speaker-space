@@ -10,3 +10,6 @@ server:
 
 cors:
   allowedOrigins: ${CLIENT_URL_DEV}
+
+runtime: java21
+instance_class: ${INSTANCE_CLASS}
