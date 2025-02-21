@@ -10,7 +10,7 @@ module.exports = {
         primaryBlack: 'var(--color-primary-black)',
         action: 'var(--color-action)',
         primaryColor: 'var(--color-primary-color)',
-        scondary: 'var(--color-scondary)',
+        secondary: 'var(--color-scondary)',
         tertiary: 'var(--color-tertiary)',
         background: 'var(--color-background)',
       }
