@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: [
     './src/**/*.{html,ts,scss}',
     './node_modules/tailwindcss-primeui/**/*.js',
@@ -10,7 +11,7 @@ module.exports = {
         primaryBlack: 'var(--color-primary-black)',
         action: 'var(--color-action)',
         primaryColor: 'var(--color-primary-color)',
-        secondary: 'var(--color-scondary)',
+        secondary: 'var(--color-secondary)',
         tertiary: 'var(--color-tertiary)',
         background: 'var(--color-background)',
       }
