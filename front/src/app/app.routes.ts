@@ -6,7 +6,7 @@ import {LogoutHomePageComponent} from './features/logout-home-page/logout-home-p
 
 export const routes: Routes = [
   { path:'', component: LogoutHomePageComponent},
-  { path: 'testco', component: TestConnectionBackFrontComponent },
+  { path: 'system-info', component: TestConnectionBackFrontComponent },
   { path: 'login', component: LoginComponent },
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }

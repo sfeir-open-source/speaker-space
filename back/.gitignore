@@ -13,3 +13,6 @@ target/
 
 ### Environment ###
 .env
+
+### Firestore key ###
+firestore-key.json

@@ -1,0 +1,18 @@
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:development}
+  cloud:
+    gcp:
+      project-id: ${GOOGLE_CLOUD_PROJECT}
+      credentials:
+        location: ${FIRESTORE_CREDENTIALS_PATH:file:src/main/resources/firestore-key.json}
+      firestore:
+        project-id: ${FIRESTORE_PROJECT_ID}
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /api
+
+cors:
+  allowedOrigins: ${CLIENT_URL_DEV:http://localhost:4200}
