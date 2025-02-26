@@ -18,12 +18,12 @@ public class FirestoreTestService {
         try {
             DocumentSnapshot document = firestore.collection("test").document("ping").get().get();
             if (document.exists()) {
-                return "Connexion à Firestore réussie ! Contenu: " + document.getString("message");
+                return "Connection to Firestore successful ! Content : " + document.getString("message");
             } else {
-                return "Le document test n'existe pas.";
+                return "The test document does not exist.";
             }
         } catch (InterruptedException | ExecutionException e) {
-            return "Erreur connexion à Firestore : " + e.getMessage();
+            return "Firestore connection error : " + e.getMessage();
         }
     }
 }

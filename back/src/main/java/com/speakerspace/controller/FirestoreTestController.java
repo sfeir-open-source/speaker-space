@@ -17,7 +17,7 @@ public class FirestoreTestController {
         this.firestoreTestService = firestoreTestService;
     }
 
-    @GetMapping("/info-connexion")
+    @GetMapping("/connection-info")
     public Map<String, String> testFirestoreConnection() {
         String result = firestoreTestService.testConnection();
         Map<String, String> response = new HashMap<>();

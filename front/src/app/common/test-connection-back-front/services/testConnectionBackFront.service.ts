@@ -11,6 +11,6 @@ export class TestConnectionBackFrontService {
   constructor(private http: HttpClient) { }
 
   testFirestore() {
-    return this.http.get<{message: string}>(`${this.apiUrl}/firestore/info-connexion`);
+    return this.http.get<{message: string}>(`${this.apiUrl}/firestore/connection-info`);
   }
 }

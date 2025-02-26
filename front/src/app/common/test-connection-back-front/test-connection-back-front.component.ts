@@ -20,8 +20,8 @@ export class TestConnectionBackFrontComponent implements OnInit {
         this.firestoreMessage = response.message;
       },
       error: (error) => {
-        console.error('Erreur connexion à Firestore:', error);
-        this.firestoreMessage = 'Erreur connexion à Firestore';
+        console.error('Firestore connection error :', error);
+        this.firestoreMessage = 'Firestore connection error';
       }
     });
   }
