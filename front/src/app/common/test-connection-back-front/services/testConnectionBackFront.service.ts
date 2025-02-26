@@ -10,7 +10,7 @@ export class TestConnectionBackFrontService {
 
   constructor(private http: HttpClient) { }
 
-  testConnection() {
-    return this.http.get(`${this.apiUrl}/v1/test`, { responseType: 'text' });
+  testFirestore() {
+    return this.http.get<{message: string}>(`${this.apiUrl}/firestore/connection-info`);
   }
 }

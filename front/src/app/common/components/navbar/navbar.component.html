@@ -1,0 +1,39 @@
+<div class="relative bg-primaryBlack h-[100px] md:h-[300px] w-full px-4 lg:px-8 flex flex-col lg:flex-row items-center justify-center">
+
+  <div class="flex items-center gap-4 w-full md:w-auto md:absolute md:top-8 md:left-10 justify-start">
+    <img src="img/logo-speaker-space.svg" class="h-15 brightness-0 invert" alt="Speaker Space Logo">
+    @if(isLogin){
+      <p class="text-white text-base md:text-2xl hidden md:block">Speaker Space</p>
+    }@else{
+      <p class="text-white text-base md:text-2xl">Speaker Space</p>
+    }
+  </div>
+
+  @if(isLogin){
+    <div class="flex items-center gap-4 absolute top-4 right-5 md:top-8 md:right-8 justify-end flex">
+      <a class="flex items-center gap-2 mr-2 rounded-md text-md font-medium focus-visible:outline focus-visible:outline-2 text-gray-300 hover:bg-gray-900 hover:text-white focus-visible:outline-white cursor-pointer" href="/profil">
+        My profile
+      </a>
+    <div class="relative">
+      <img src="img/profil-picture.svg" class="h-15 w-15 rounded-full" alt="profile picture">
+      @if(haveNotification){
+        <span class="absolute bottom-0 right-0 w-3 h-3 bg-primaryColor border-none rounded-full"></span>
+      }
+    </div>
+  </div>
+
+  }@else{
+    <div class="absolute top-10 right-15 hidden md:block">
+      <a class="flex items-center gap-2 rounded-md text-md font-medium whitespace-nowrap focus-visible:outline focus-visible:outline-2 text-gray-300 hover:bg-gray-900 font-semibold hover:text-white focus-visible:outline-white cursor-pointer" href="/login">Login</a>
+    </div>
+  }
+
+  @if(isLogin){
+    <p class="text-white text-3xl text-center mt-auto pb-12 md:pb-20 hidden md:block">
+    Find the conference where you were selected  </p>
+  }@else{
+    <p class="text-white text-3xl text-center mt-auto pb-12 md:pb-20 hidden md:block">
+      Unified Space for Speaker informations
+    </p>
+  }
+</div>

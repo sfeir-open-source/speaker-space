@@ -1,1 +1,11 @@
-<router-outlet></router-outlet>
+<div class="bg-backGround min-h-screen flex flex-col">
+  @if(showNavbar){
+    <app-navbar></app-navbar>
+  }
+  <div class="flex-grow">
+    <router-outlet></router-outlet>
+  </div>
+  <footer class="m-4">
+    <app-footer></app-footer>
+  </footer>
+</div>

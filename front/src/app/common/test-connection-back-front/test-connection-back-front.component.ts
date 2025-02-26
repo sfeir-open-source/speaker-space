@@ -1,31 +1,27 @@
-import { Component } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {TestConnectionBackFrontService} from './services/testConnectionBackFront.service';
+import {CommonModule} from '@angular/common';
 
 @Component({
   selector: 'app-test-connection-back-front',
-  imports: [],
-  templateUrl: './test-connection-back-front.component.html',
   standalone: true,
+  imports: [CommonModule],
+  templateUrl: './test-connection-back-front.component.html',
   styleUrl: './test-connection-back-front.component.scss'
 })
-export class TestConnectionBackFrontComponent {
+export class TestConnectionBackFrontComponent implements OnInit {
+  firestoreMessage: string = '';
 
-  message: string = '';
-
-  constructor(private apiService: TestConnectionBackFrontService) {}
+  constructor(private systemInfoService: TestConnectionBackFrontService) {}
 
   ngOnInit() {
-    this.testConnection();
-  }
-
-  testConnection() {
-    this.apiService.testConnection().subscribe({
-      next: (response) => {
-        this.message = response;
-        console.log('Connection successful:', response);
+    this.systemInfoService.testFirestore().subscribe({
+      next: (response: { message: string }) => {
+        this.firestoreMessage = response.message;
       },
       error: (error) => {
-        console.error('Connection failed:', error);
+        console.error('Firestore connection error :', error);
+        this.firestoreMessage = 'Firestore connection error';
       }
     });
   }

@@ -1,4 +1,4 @@
-package com.speakerspace.config;
+package com.speakerspace.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
