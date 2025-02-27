@@ -2,13 +2,13 @@ import { Component } from '@angular/core';
 import {CommonModule} from '@angular/common';
 
 @Component({
-  selector: 'app-login-home-page',
+  selector: 'app-is-login-home-page',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './login-home-page.component.html',
-  styleUrl: './login-home-page.component.scss'
+  templateUrl: './is-login-home-page.component.html',
+  styleUrl: './is-login-home-page.component.scss'
 })
-export class LoginHomePageComponent {
+export class IsLoginHomePageComponent {
   activeTab: string = 'currents';
 
   setActiveTab(tab: string) {

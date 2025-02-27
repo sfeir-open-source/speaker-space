@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
-import {LogoutHomePageComponent} from '../../common/components/home-page/logout-home-page/logout-home-page-component';
-import {LoginHomePageComponent} from '../../common/components/home-page/login-home-page/login-home-page.component';
+import {IsLogoutHomePageComponent} from '../../common/components/home-page/is-logout-home-page/is-logout-home-page-component';
+import {IsLoginHomePageComponent} from '../../common/components/home-page/is-login-home-page/is-login-home-page.component';
 
 @Component({
   selector: 'app-home-page',
   standalone: true,
-  imports: [LogoutHomePageComponent, LoginHomePageComponent],
+  imports: [IsLoginHomePageComponent, IsLogoutHomePageComponent],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss'
 })
 export class HomePageComponent {
-  isLogin = true;
+  isLogin = false;
 
 }
