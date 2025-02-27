@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import {environment} from '../../../environments/environment.development';
 import {ButtonComponent} from '../../common/components/button/button.component';
+import {AuthService} from '../../common/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -9,13 +9,18 @@ import {ButtonComponent} from '../../common/components/button/button.component';
   styleUrl: './login-page.component.scss'
 })
 export class LoginPageComponent {
-  CLIENT_ID = environment.GOOGLE_CLIENT_ID;
+  constructor(protected authService: AuthService) {}
+  isLogin: boolean = false;
 
-  onSignIn(googleUser: { getBasicProfile: () => any; }) {
-    var profile = googleUser.getBasicProfile();
-    console.log('ID: ' + profile.getId());
-    console.log('Name: ' + profile.getName());
-    console.log('Image URL: ' + profile.getImageUrl());
-    console.log('Email: ' + profile.getEmail());
+  ngOnInit() {
+    this.isLogin = !!this.authService.user;
+  }
+
+  googleLogin() {
+    this.authService.loginWithGoogle();
+  }
+
+  logout() {
+    this.authService.logout();
   }
 }

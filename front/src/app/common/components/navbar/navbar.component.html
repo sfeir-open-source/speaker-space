@@ -1,5 +1,9 @@
 <div class="relative bg-primaryBlack h-[100px] md:h-[300px] w-full px-4 lg:px-8 flex flex-col lg:flex-row items-center justify-center">
-
+  @if(isLogin){
+    <p class="text-white text-base md:text-2xl hidden md:block"> Bienvenue {{ displayName }}</p>
+  }@else{
+    <p class="text-white text-base md:text-2xl hidden md:block"> Déco ='(</p>
+  }
   <div class="flex items-center gap-4 w-full md:w-auto md:absolute md:top-8 md:left-10 justify-start">
     <img src="img/logo-speaker-space.svg" class="h-15 brightness-0 invert" alt="Speaker Space Logo">
     @if(isLogin){
