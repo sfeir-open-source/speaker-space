@@ -9,20 +9,25 @@
   --color-primary-black: #001021;
   --color-action: #034748;
   --color-primary-color: #1481BA;
-  --color-scondary: #11B5E4;
+  --color-secondary: #11B5E4;
   --color-tertiary: #0CAADC;
   --color-background: #FBF8F9;
+  --color-button-black: #24292F;
+  --color-button-red: #EA2533;
   --shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
 }
 
-.bg-primaryBlack { background-color: var(--color-primary-black); }
-.bg-action { background-color: var(--color-action); }
-.bg-primaryColor { background-color: var(--color-primary-color); }
-.bg-scondary { background-color: var(--color-scondary); }
-.bg-tertiary { background-color: var(--color-tertiary); }
-.bg-background { background-color: var(--color-background); }
-.shadow { box-shadow: var(--shadow); }
-
+.bg-primaryBlack { background-color: var(--color-primary-black)}
+.bg-action { background-color: var(--color-action)}
+.bg-primaryColor { background-color: var(--color-primary-color)}
+.bg-secondary { background-color: var(--color-secondary)}
+.bg-tertiary { background-color: var(--color-tertiary)}
+.bg-background { background-color: var(--color-background)}
+.bg-black {background-color: var(--color-button-black)}
+.bg-red {background-color: var(--color-button-red); color: white}
+.shadow { box-shadow: var(--shadow)}
+.text-secondary { color: var(--color-secondary)}
+.text-primaryColor { color: var(--color-primary-color)}
 
 
 .button-action {
