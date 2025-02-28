@@ -1,26 +1,54 @@
 import { Component } from '@angular/core';
 import {ButtonComponent} from '../../common/components/button/button.component';
 import {AuthService} from '../../common/services/auth.service';
+import {Router} from '@angular/router';
+import { take } from 'rxjs';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-login',
-  imports: [ButtonComponent],
+  imports: [ButtonComponent, FormsModule, ],
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss'
 })
 export class LoginPageComponent {
-  constructor(protected authService: AuthService) {}
-  isLogin: boolean = false;
+  email: string = '';
+  constructor(protected authService: AuthService, private router: Router) {}
 
   ngOnInit() {
-    this.isLogin = !!this.authService.user;
+    const email = localStorage.getItem('emailForSignIn');
+    if (email && this.authService.isSignInWithEmailLink(window.location.href)) {
+      this.authService.confirmSignIn(email, window.location.href)
+        .then((user) => {
+          if (user) {
+            this.router.navigate(['/']);
+          }
+        });
+    }
   }
 
   googleLogin() {
-    this.authService.loginWithGoogle();
+    this.authService.loginWithGoogle().then(() => {
+      this.authService.user$.pipe(take(1)).subscribe((user) => {
+        if (user) {
+          this.router.navigate(['/']);
+        }
+      });
+    });
   }
 
-  logout() {
-    this.authService.logout();
+  gitHubLogin() {
+    this.authService.loginWithGitHub().then(() => {
+      this.authService.user$.pipe(take(1)).subscribe((user) => {
+        if (user) {
+          this.router.navigate(['/']);
+        }
+      });
+    });
   }
+
+  mailLinkLogin(email: string) {
+    this.authService.sendLink(email);
+  }
+
 }
