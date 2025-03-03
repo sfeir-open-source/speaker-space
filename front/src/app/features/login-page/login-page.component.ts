@@ -17,14 +17,7 @@ export class LoginPageComponent {
 
   ngOnInit() {
     const email = localStorage.getItem('emailForSignIn');
-    if (email && this.authService.isSignInWithEmailLink(window.location.href)) {
-      this.authService.confirmSignIn(email, window.location.href)
-        .then((user) => {
-          if (user) {
-            this.router.navigate(['/']);
-          }
-        });
-    }
+
   }
 
   googleLogin() {
@@ -49,6 +42,13 @@ export class LoginPageComponent {
 
   mailLinkLogin(email: string) {
     this.authService.sendLink(email);
+    if (email && this.authService.isSignInWithEmailLink(window.location.href)) {
+      this.authService.confirmSignIn(email, window.location.href)
+        .then((user) => {
+          if (user) {
+            this.router.navigate(['/']);
+          }
+        });
+    }
   }
-
 }
