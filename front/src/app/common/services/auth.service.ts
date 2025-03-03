@@ -61,7 +61,7 @@ export class AuthService {
     };
     try {
       await sendSignInLinkToEmail(this.auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email.toLowerCase());
+      sessionStorage.setItem('emailForSignIn', email.toLowerCase());
       console.log('Link sent :', email);
       alert('Link sent ! Check your emails');
     } catch (error) {
