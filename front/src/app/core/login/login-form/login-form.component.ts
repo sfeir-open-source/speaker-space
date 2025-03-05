@@ -1,17 +1,20 @@
 import { Component } from '@angular/core';
-import {ButtonComponent} from '../../common/components/button/button.component';
-import {AuthService} from '../../common/services/auth.service';
+import {ButtonComponent} from "../../../shared/button/button.component";
+import {FormsModule} from "@angular/forms";
+import {AuthService} from '../services/auth.service';
 import {Router} from '@angular/router';
-import { take } from 'rxjs';
-import {FormsModule} from '@angular/forms';
+import {take} from 'rxjs';
 
 @Component({
-  selector: 'app-login',
-  imports: [ButtonComponent, FormsModule, ],
-  templateUrl: './login-page.component.html',
-  styleUrl: './login-page.component.scss'
+  selector: 'app-login-form',
+    imports: [
+        ButtonComponent,
+        FormsModule
+    ],
+  templateUrl: './login-form.component.html',
+  styleUrl: './login-form.component.scss'
 })
-export class LoginPageComponent {
+export class LoginFormComponent {
   email: string = '';
   constructor(protected authService: AuthService, private router: Router) {}
 

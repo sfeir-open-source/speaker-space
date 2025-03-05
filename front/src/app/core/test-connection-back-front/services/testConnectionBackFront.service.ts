@@ -13,4 +13,16 @@ export class TestConnectionBackFrontService {
   testFirestore() {
     return this.http.get<{message: string}>(`${this.apiUrl}/firestore/connection-info`);
   }
+
+  testUserAccess() {
+    return this.http.get<any>(`${this.apiUrl}/firestore/user-access`);
+  }
+
+  testAdminAccess() {
+    return this.http.get<any>(`${this.apiUrl}/firestore/admin-access`);
+  }
+
+  getAuthInfo() {
+    return this.http.get<any>(`${this.apiUrl}/firestore/auth-info`);
+  }
 }

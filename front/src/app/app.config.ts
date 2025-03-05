@@ -2,12 +2,13 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
-import { provideHttpClient } from '@angular/common/http';
+import {provideHttpClient, withInterceptors} from '@angular/common/http';
 import { provideFirebaseApp } from '@angular/fire/app';
 import { initializeApp } from 'firebase/app';
 import { environment } from '../environments/environment.development';
 import { provideAuth, getAuth } from '@angular/fire/auth';
-import {AuthService} from './common/services/auth.service';
+import {AuthService} from './core/login/services/auth.service';
+import { authInterceptor  } from './core/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -16,6 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(),
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
+    provideHttpClient(withInterceptors([authInterceptor])),
     provideAuth(() => getAuth()),
   ],
 };

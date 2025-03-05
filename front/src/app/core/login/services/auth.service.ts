@@ -103,7 +103,6 @@ export class AuthService {
       if (email) {
         signInWithEmailLink(this.auth, email, window.location.href)
           .then((result) => {
-            console.log('✅ Connexion réussie');
             localStorage.removeItem('emailForSignIn');
             this.user$.next(result.user);
             this.router.navigate(['/']);

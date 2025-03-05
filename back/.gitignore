@@ -16,3 +16,6 @@ target/
 
 ### Firestore key ###
 firestore-key.json
+
+### Firebase key ###
+firebase-service.json

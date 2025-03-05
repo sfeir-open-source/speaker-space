@@ -16,3 +16,6 @@ server:
 
 cors:
   allowedOrigins: ${CLIENT_URL_DEV:http://localhost:4200}
+
+admin:
+  email: ${ADMIN_EMAIL}

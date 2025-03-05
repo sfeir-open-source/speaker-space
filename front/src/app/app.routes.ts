@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
-import {TestConnectionBackFrontComponent} from './common/test-connection-back-front/test-connection-back-front.component';
-import {NotFoundPageComponent} from './features/not-found-page/not-found-page.component';
-import {HomePageComponent} from './features/home-page/home-page.component';
-import {LoginPageComponent} from './features/login-page/login-page.component';
+import {TestConnectionBackFrontComponent} from './core/test-connection-back-front/test-connection-back-front.component';
+import {NotFoundPageComponent} from './core/not-found-page/not-found-page.component';
+import {HomePageComponent} from './core/home-page/home-page.component';
+import {LoginPageComponent} from './core/login/login-page/login-page.component';
 import {AuthGuard} from '@angular/fire/auth-guard';
 
 export const routes: Routes = [
