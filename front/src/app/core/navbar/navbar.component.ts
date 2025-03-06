@@ -10,6 +10,7 @@ import {AuthService} from '../login/services/auth.service';
 export class NavbarComponent {
   isLogin: boolean = false;
   userName: string | null = null;
+  userPhotoURL: string | null = null;
   haveNotification: boolean = false;
 
   constructor(private authService: AuthService) {}
@@ -18,6 +19,7 @@ export class NavbarComponent {
     this.authService.user$.subscribe((user) => {
       this.isLogin = !!user;
       this.userName = user?.displayName || null;
+      this.userPhotoURL = user?.photoURL || null;
     });
   }
 
@@ -27,6 +29,10 @@ export class NavbarComponent {
 
   get isUserLoggedIn(): boolean {
     return this.isLogin;
+  }
+
+  handlePictureError(event: any) {
+    event.target.src = 'img/profil-picture.svg';
   }
 
   logout() {

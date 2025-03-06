@@ -9,15 +9,17 @@ import { environment } from '../environments/environment.development';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import {AuthService} from './core/login/services/auth.service';
 import { authInterceptor  } from './core/interceptors/auth.interceptor';
+import {getFirestore, provideFirestore} from '@angular/fire/firestore';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     AuthService,
-    provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
+    provideZoneChangeDetection({ eventCoalescing: true }),
     provideHttpClient(),
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAuth(() => getAuth()),
+    provideFirestore(() => getFirestore()),
   ],
 };

@@ -36,12 +36,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
 
         String authorizationHeader = request.getHeader("Authorization");
 
-        logger.info("Processing request to: {}" + request.getRequestURI());
-        logger.info("Authorization header: {}" + authorizationHeader != null ?
-                (authorizationHeader.substring(0, Math.min(20, authorizationHeader.length())) + "...") : "null");
-
         if (StringUtils.isEmpty(authorizationHeader) || !authorizationHeader.startsWith("Bearer ")) {
-            logger.info("No Bearer token found in request");
             filterChain.doFilter(request, response);
             return;
         }
@@ -51,19 +46,16 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         try {
             FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
             String email = decodedToken.getEmail();
-
-            logger.info("Successfully authenticated user: {}" + email);
+            logger.info("Successfully authenticated user: {}"+ email);
 
             List<GrantedAuthority> authorities = new ArrayList<>();
 
             authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 
             if (adminEmail.equals(email)) {
-                logger.info("Admin privileges granted to: {}" + email);
+                logger.info("Admin privileges granted to: {}"+ email);
                 authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
             }
-
-            logger.info("User authorities: {}"+ authorities);
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     email, null, authorities);
@@ -73,7 +65,6 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
 
         } catch (FirebaseAuthException e) {
             logger.error("Firebase Authentication failed", e);
-            logger.error("Token: {}" + token.substring(0, Math.min(20, token.length())) + "...");
             SecurityContextHolder.clearContext();
         }
 

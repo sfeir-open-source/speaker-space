@@ -20,7 +20,12 @@ export class LoginFormComponent {
 
   ngOnInit() {
     const email = localStorage.getItem('emailForSignIn');
-
+    if (email) {
+      this.email = email;
+    }
+    if (this.authService.isSignInWithEmailLink(window.location.href)) {
+      this.handleEmailSignIn();
+    }
   }
 
   googleLogin() {
@@ -50,6 +55,30 @@ export class LoginFormComponent {
         .then((user) => {
           if (user) {
             this.router.navigate(['/']);
+          }
+        });
+    }
+  }
+
+  private handleEmailSignIn() {
+    let email = localStorage.getItem('emailForSignIn');
+
+    if (!email) {
+      const params = new URLSearchParams(window.location.search);
+      email = params.get('email');
+
+      if (!email) {
+        email = window.prompt('Please enter your email for confirmation');
+        if (!email) return;
+      }
+    }
+
+    if (email) {
+      this.authService.confirmSignIn(email, window.location.href)
+        .then((user) => {
+          if (user) {
+            this.router.navigate(['/']);
+            window.history.replaceState({}, document.title, '/');
           }
         });
     }

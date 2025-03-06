@@ -9,7 +9,10 @@ import {
   User,
   sendSignInLinkToEmail, browserLocalPersistence, isSignInWithEmailLink, signInWithEmailLink, setPersistence
 } from '@angular/fire/auth';
-import { BehaviorSubject } from 'rxjs';
+import {BehaviorSubject, firstValueFrom} from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {environment} from '../../../../environments/environment.development';
+import {Router} from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -17,8 +20,9 @@ import { BehaviorSubject } from 'rxjs';
 export class AuthService {
   auth = inject(Auth);
   user: User | null = null;
+  private http = inject(HttpClient);
   user$: BehaviorSubject<User | null> = new BehaviorSubject<User | null>(null);
-  private router: any;
+  private router = inject(Router);
 
   constructor() {
     onAuthStateChanged(this.auth, (user) => {
@@ -32,8 +36,10 @@ export class AuthService {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(this.auth, provider);
-      console.log("User logged in:", result.user);
       this.user$.next(result.user);
+      if (result.user) {
+        await this.saveUserToBackend(result.user);
+      }
       return result.user;
     } catch (error) {
       console.error("Login failed", error);
@@ -45,8 +51,10 @@ export class AuthService {
     const provider = new GithubAuthProvider();
     try {
       const result = await signInWithPopup(this.auth, provider);
-      console.log("User logged in:", result.user);
       this.user$.next(result.user);
+      if (result.user) {
+        await this.saveUserToBackend(result.user);
+      }
       return result.user;
     } catch (error) {
       console.error("Login failed", error);
@@ -78,7 +86,9 @@ export class AuthService {
         const result = await signInWithEmailLink(this.auth, email, url);
         this.user$.next(result.user);
         window.localStorage.removeItem('emailForSignIn');
-        console.log("Successful connection");
+        if (result.user) {
+          await this.saveUserToBackend(result.user);
+        }
         return result.user;
       } catch (error) {
         console.error("Connection failed", error);
@@ -106,6 +116,11 @@ export class AuthService {
             localStorage.removeItem('emailForSignIn');
             this.user$.next(result.user);
             this.router.navigate(['/']);
+            if (result.user) {
+              this.saveUserToBackend(result.user);
+            }
+
+            window.history.replaceState({}, document.title, '/');
           })
           .catch((error) => {
             console.error('Connection error : ', error);
@@ -113,6 +128,24 @@ export class AuthService {
       } else {
         console.error("No email found in localStorage or URL");
       }
+    }
+  }
+
+  private async saveUserToBackend(user: any) {
+    if (!user) return;
+    const userData = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL
+    };
+    try {
+      const response = await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/users`, userData)
+      );
+      console.log('User saved to backend:', response);
+    } catch (error) {
+      console.error('Error saving user to backend:', error);
     }
   }
 
