@@ -29,23 +29,11 @@ export class LoginFormComponent {
   }
 
   googleLogin() {
-    this.authService.loginWithGoogle().then(() => {
-      this.authService.user$.pipe(take(1)).subscribe((user) => {
-        if (user) {
-          this.router.navigate(['/']);
-        }
-      });
-    });
+    this.authService.loginWithGoogle();
   }
 
   gitHubLogin() {
-    this.authService.loginWithGitHub().then(() => {
-      this.authService.user$.pipe(take(1)).subscribe((user) => {
-        if (user) {
-          this.router.navigate(['/']);
-        }
-      });
-    });
+    this.authService.loginWithGitHub();
   }
 
   mailLinkLogin(email: string) {
@@ -75,12 +63,6 @@ export class LoginFormComponent {
 
     if (email) {
       this.authService.confirmSignIn(email, window.location.href)
-        .then((user) => {
-          if (user) {
-            this.router.navigate(['/']);
-            window.history.replaceState({}, document.title, '/');
-          }
-        });
     }
   }
 }

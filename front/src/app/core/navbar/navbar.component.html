@@ -17,12 +17,12 @@
           [src]="userPhotoURL || 'img/profil-picture.svg'"
           class="h-15 w-15 rounded-full"
           alt="profile picture"
+          (click)="openSidebar()"
           (error)="handlePictureError($event)">
         @if(haveNotification){
           <span class="absolute bottom-0 right-0 w-3 h-3 bg-primaryColor border-none rounded-full"></span>
         }
       </div>
-      <button (click)="logout()" class="text-red-500">Logout</button>
     </div>
 
   }@else{

@@ -40,6 +40,7 @@ export class AuthService {
       if (result.user) {
         await this.saveUserToBackend(result.user);
       }
+      this.router.navigate(['/']);
       return result.user;
     } catch (error) {
       console.error("Login failed", error);
@@ -55,6 +56,7 @@ export class AuthService {
       if (result.user) {
         await this.saveUserToBackend(result.user);
       }
+      this.router.navigate(['/']);
       return result.user;
     } catch (error) {
       console.error("Login failed", error);
@@ -121,6 +123,7 @@ export class AuthService {
             }
 
             window.history.replaceState({}, document.title, '/');
+            this.router.navigate(['/']);
           })
           .catch((error) => {
             console.error('Connection error : ', error);
@@ -154,5 +157,6 @@ export class AuthService {
     console.log('Disconnected');
     window.history.replaceState({}, document.title, '/');
     this.user$.next(null);
+    this.router.navigate(['/']);
   }
 }
