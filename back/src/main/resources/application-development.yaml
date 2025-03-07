@@ -1,0 +1,7 @@
+springdoc:
+  swagger-ui:
+    enabled: true
+
+logging:
+  level:
+    com.speakerspace: DEBUG
