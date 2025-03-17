@@ -25,7 +25,6 @@ export class TestConnectionBackFrontComponent implements OnInit {
         this.firestoreMessage = response.message;
       },
       error: (error) => {
-        console.error('Firestore connection error:', error);
         this.firestoreMessage = 'Firestore connection error';
       }
     });
@@ -39,7 +38,6 @@ export class TestConnectionBackFrontComponent implements OnInit {
         this.userRoleResult = result;
       },
       error: (error) => {
-        console.error('User role test failed:', error);
         this.roleError = `User role test failed: ${error.status} ${error.statusText}`;
         if (error.error) {
           this.roleError += `\n${JSON.stringify(error.error)}`;
@@ -55,7 +53,6 @@ export class TestConnectionBackFrontComponent implements OnInit {
         this.adminRoleResult = result;
       },
       error: (error) => {
-        console.error('Admin role test failed:', error);
         this.roleError = `Admin role test failed: ${error.status} ${error.statusText}`;
         if (error.error) {
           this.roleError += `\n${JSON.stringify(error.error)}`;

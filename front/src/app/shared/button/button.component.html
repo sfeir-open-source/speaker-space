@@ -5,10 +5,8 @@
     'bg-white text-black border-1 border-black': buttonType === 'button-white'
   }"
   type="button"
-  class="text-sm font-semibold leading-6 flex w-full items-center justify-center gap-3 rounded-md px-3 py-1.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
+  class="text-sm leading-6 flex w-full items-center justify-center gap-3 rounded-md px-3 py-1.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
 >
   <span [innerHTML]="sanitizedIconPath"></span>
-  <span class="text-sm font-semibold leading-6"><ng-content></ng-content></span>
+  <span class="text-sm leading-6"><ng-content></ng-content></span>
 </button>
-
-

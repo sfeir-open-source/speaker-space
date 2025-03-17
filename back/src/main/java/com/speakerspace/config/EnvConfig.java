@@ -7,5 +7,3 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource(value = "file:.env", ignoreResourceNotFound = true)
 public class EnvConfig {
 }
-
-

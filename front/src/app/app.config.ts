@@ -10,6 +10,7 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
 import {AuthService} from './core/login/services/auth.service';
 import { authInterceptor  } from './core/interceptors/auth.interceptor';
 import {getFirestore, provideFirestore} from '@angular/fire/firestore';
+import {provideAnimations} from '@angular/platform-browser/animations';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -21,5 +22,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()),
+    provideAnimations(),
   ],
 };

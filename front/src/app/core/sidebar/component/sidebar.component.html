@@ -17,7 +17,7 @@
            alt="profile"
            class="w-12 h-12 rounded-full border-none">
       <div>
-        <p class="text-sm font-semibold">{{ sidebarService.userName || sidebarService.userEmail }}</p>
+        <p class="text-sm font-medium">{{ sidebarService.userName || sidebarService.userEmail }}</p>
         <p class="text-xs text-gray-500">{{ sidebarService.userEmail || 'No email' }}</p>
       </div>
     </div>
@@ -39,7 +39,7 @@
     </div>
 
     <div class="p-4">
-      <p class="font-semibold text-lg mb-2">Speaker</p>
+      <p class="font-medium text-lg mb-2">Speaker</p>
       <a (click)="navigateTo('/speaker/talks')" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="28" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg>
         My Talks
@@ -55,7 +55,7 @@
     </div>
 
     <div class="p-4">
-      <p class="font-semibold text-lg mb-2">Organizer</p>
+      <p class="font-medium text-lg mb-2">Organizer</p>
       <a class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="bevel"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
         Team 1

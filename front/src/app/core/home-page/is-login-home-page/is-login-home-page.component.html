@@ -1,23 +1,26 @@
-<div class="relative mb-8 flex flex-col md:flex-row gap-4 md:items-center mt-5 md:justify-between text-center md:text-left">
-  <h1 class="text-gray-900 text-2xl md:ml-10 text-primaryColor font-semibold md:pt-0 pt-10">
-    Events where you speak
-  </h1>
+<section class="mt-5 mb-8">
+  <header class="relative flex flex-col md:flex-row gap-4 md:items-center md:justify-between text-center md:text-left">
+    <h1 class="text-gray-900 text-2xl md:ml-10 text-primaryColor font-medium md:pt-0 pt-10">
+      Events where you speak
+    </h1>
 
-  <div class="flex gap-1 rounded-md bg-action px-1 py-1
-              md:static absolute top-0 left-1/2 transform -translate-x-1/2
-              md:ml-auto md:-mr-25">
-    <a
-      class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
-      [ngClass]="activeTab === 'currents' ? 'bg-white text-primaryColor shadow-sm' : 'text-secondary'"
-      (click)="setActiveTab('currents')">
-      Currents
-    </a>
+    <nav class="flex gap-1 rounded-md bg-action px-1 py-1 md:static absolute top-0 left-1/2 transform -translate-x-1/2 md:ml-auto md:-mr-25"
+         aria-label="Event filters">
+      <button
+        class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
+        [ngClass]="activeTab === 'currents' ? 'bg-white text-primaryColor shadow-sm' : 'text-secondary'"
+        (click)="setActiveTab('currents')"
+        [attr.aria-selected]="activeTab === 'currents'">
+        Currents
+      </button>
 
-    <a
-      class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
-      [ngClass]="activeTab === 'passed' ? 'bg-white text-primaryColor shadow-sm' : 'text-secondary'"
-      (click)="setActiveTab('passed')">
-      Passed
-    </a>
-  </div>
-</div>
+      <button
+        class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
+        [ngClass]="activeTab === 'passed' ? 'bg-white text-primaryColor shadow-sm' : 'text-secondary'"
+        (click)="setActiveTab('passed')"
+        [attr.aria-selected]="activeTab === 'passed'">
+        Passed
+      </button>
+    </nav>
+  </header>
+</section>

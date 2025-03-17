@@ -3,16 +3,20 @@ package com.speakerspace.security;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.speakerspace.config.CookieService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,8 +28,13 @@ import java.util.List;
 @Component
 public class FirebaseTokenFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(FirebaseTokenFilter.class);
+
     @Autowired
     private FirebaseAuth firebaseAuth;
+
+    @Autowired
+    private CookieService cookieService;
 
     @Value("${admin.email}")
     private String adminEmail;
@@ -34,37 +43,50 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authorizationHeader = request.getHeader("Authorization");
+        String path = request.getRequestURI();
 
-        if (StringUtils.isEmpty(authorizationHeader) || !authorizationHeader.startsWith("Bearer ")) {
+        if (path.contains("/auth/login") || path.contains("/auth/logout") || path.contains("/public/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authorizationHeader.substring(7);
+        String authorizationHeader = request.getHeader("Authorization");
+        String token = null;
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            token = authorizationHeader.substring(7);
+        }
+        else {
+            token = cookieService.getAuthTokenFromCookies(request);
+            if (token != null) {
+            }
+        }
+
+        if (token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         try {
             FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
             String email = decodedToken.getEmail();
-            logger.info("Successfully authenticated user: {}"+ email);
+            String uid = decodedToken.getUid();
 
             List<GrantedAuthority> authorities = new ArrayList<>();
-
             authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 
-            if (adminEmail.equals(email)) {
-                logger.info("Admin privileges granted to: {}"+ email);
+            if (adminEmail != null && adminEmail.equals(email)) {
                 authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
             }
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     email, null, authorities);
 
-            authentication.setDetails(decodedToken);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (FirebaseAuthException e) {
-            logger.error("Firebase Authentication failed", e);
+            logger.error("Firebase Authentication failed: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         }
 

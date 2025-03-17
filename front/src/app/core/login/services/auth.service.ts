@@ -7,12 +7,19 @@ import {
   GithubAuthProvider,
   signOut,
   User,
-  sendSignInLinkToEmail, browserLocalPersistence, isSignInWithEmailLink, signInWithEmailLink, setPersistence
+  sendSignInLinkToEmail,
+  browserLocalPersistence,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+  setPersistence,
+  fetchSignInMethodsForEmail
 } from '@angular/fire/auth';
 import {BehaviorSubject, firstValueFrom} from 'rxjs';
 import {HttpClient} from '@angular/common/http';
 import {environment} from '../../../../environments/environment.development';
 import {Router} from '@angular/router';
+import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
+import {MatDialog} from '@angular/material/dialog';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +30,7 @@ export class AuthService {
   private http = inject(HttpClient);
   user$: BehaviorSubject<User | null> = new BehaviorSubject<User | null>(null);
   private router = inject(Router);
+  dialog = inject(MatDialog);
 
   constructor() {
     onAuthStateChanged(this.auth, (user) => {
@@ -32,54 +40,113 @@ export class AuthService {
     this.checkEmailLink();
   }
 
-  async loginWithGoogle() {
-    const provider = new GoogleAuthProvider();
+  async loginWithProvider(providerType: 'google' | 'github' | 'email', email?: string) {
+    if (providerType === 'email' && email) {
+      return this.sendEmailLink(email);
+    }
+
+    const provider = providerType === 'google'
+      ? new GoogleAuthProvider()
+      : new GithubAuthProvider();
+
     try {
+      if (email) {
+        try {
+          const methods = await fetchSignInMethodsForEmail(this.auth, email);
+          if (methods.length > 0 &&
+            ((providerType === 'google' && !methods.includes('google.com')) ||
+              (providerType === 'github' && !methods.includes('github.com')))) {
+
+            this.showAuthErrorDialog(email);
+            return null;
+          }
+        } catch (error) {
+          console.error("Error checking sign-in methods:", error);
+        }
+      }
+
       const result = await signInWithPopup(this.auth, provider);
       this.user$.next(result.user);
       if (result.user) {
+        const token = await result.user.getIdToken();
+        await this.sendTokenToBackend(token);
         await this.saveUserToBackend(result.user);
       }
       this.router.navigate(['/']);
       return result.user;
-    } catch (error) {
-      console.error("Login failed", error);
-      return null;
-    }
-  }
-
-  async loginWithGitHub(){
-    const provider = new GithubAuthProvider();
-    try {
-      const result = await signInWithPopup(this.auth, provider);
-      this.user$.next(result.user);
-      if (result.user) {
-        await this.saveUserToBackend(result.user);
+    } catch (error: any) {
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        const email = error.customData.email;
+        this.showAuthErrorDialog(email);
+        return null;
+      } else {
+        console.error("Login failed", error);
+        return null;
       }
-      this.router.navigate(['/']);
-      return result.user;
-    } catch (error) {
-      console.error("Login failed", error);
-      return null;
     }
   }
 
-  async sendLink(email: string) {
+  private showAuthErrorDialog(email: string) {
+    this.dialog.open(AuthErrorDialogComponent, {
+      width: '400px',
+      data: {
+        email: email,
+        message: `The email address "${email}" is already associated with another sign-in method. Please use the method you initially signed up with.`
+      }
+    });
+  }
+
+  async sendEmailLink(email: string) {
     const actionCodeSettings = {
-      url: `http://localhost:4200/?email=${encodeURIComponent(email.toLowerCase())}`,
+      url: `${window.location.origin}/?email=${encodeURIComponent(email.toLowerCase())}`,
       handleCodeInApp: true,
     };
+
     try {
+      const methods = await fetchSignInMethodsForEmail(this.auth, email);
+      if (methods.length > 0 && !methods.includes('emailLink')) {
+        this.showAuthErrorDialog(email);
+        return null;
+      }
+
       await sendSignInLinkToEmail(this.auth, email, actionCodeSettings);
       sessionStorage.setItem('emailForSignIn', email.toLowerCase());
-      console.log('Link sent :', email);
-      alert('Link sent ! Check your emails');
-    } catch (error) {
-      console.error('Sending failed : ', error);
-      alert('Sending failed, check your email address');
+
+      this.dialog.open(AuthErrorDialogComponent, {
+        width: '400px',
+        data: {
+          title: 'Email Sent',
+          message: 'A sign-in link has been sent to your email address. Please check your inbox.'
+        }
+      });
+
+      return true;
+    } catch (error: any) {
+      console.error("Error sending email link:", error);
+
+      this.dialog.open(AuthErrorDialogComponent, {
+        width: '400px',
+        data: {
+          title: 'Error',
+          message: 'Failed to send sign-in link. Please check your email address and try again.'
+        }
+      });
+
+      return null;
     }
   }
 
+  async loginWithGoogle() {
+    return this.loginWithProvider('google');
+  }
+
+  async loginWithGitHub() {
+    return this.loginWithProvider('github');
+  }
+
+  async loginWithEmail(email: string) {
+    return this.loginWithProvider('email', email);
+  }
 
   async confirmSignIn(email: string, url: string) {
     if (isSignInWithEmailLink(this.auth, url)) {
@@ -87,13 +154,21 @@ export class AuthService {
         await setPersistence(this.auth, browserLocalPersistence);
         const result = await signInWithEmailLink(this.auth, email, url);
         this.user$.next(result.user);
-        window.localStorage.removeItem('emailForSignIn');
+        sessionStorage.removeItem('emailForSignIn');
+
         if (result.user) {
-          await this.saveUserToBackend(result.user);
+          const token = await result.user.getIdToken();
+
+          try {
+            await this.sendTokenToBackend(token);
+            await this.saveUserToBackend(result.user);
+            this.router.navigate(['/']);
+          } catch (error) {
+            console.error('Error during backend operations after email sign-in:', error);
+          }
         }
         return result.user;
       } catch (error) {
-        console.error("Connection failed", error);
         alert("Invalid email or expired Link");
         return null;
       }
@@ -107,19 +182,25 @@ export class AuthService {
 
   checkEmailLink() {
     if (isSignInWithEmailLink(this.auth, window.location.href)) {
-      let email = localStorage.getItem('emailForSignIn');
+      let email = sessionStorage.getItem('emailForSignIn');
       if (!email) {
         const params = new URLSearchParams(window.location.search);
         email = params.get('email');
       }
       if (email) {
         signInWithEmailLink(this.auth, email, window.location.href)
-          .then((result) => {
-            localStorage.removeItem('emailForSignIn');
+          .then(async (result) => {
+            sessionStorage.removeItem('emailForSignIn');
             this.user$.next(result.user);
-            this.router.navigate(['/']);
+
             if (result.user) {
-              this.saveUserToBackend(result.user);
+              const token = await result.user.getIdToken();
+
+              try {
+                await this.sendTokenToBackend(token);
+                await this.saveUserToBackend(result.user);
+              } catch (error) {
+              }
             }
 
             window.history.replaceState({}, document.title, '/');
@@ -129,10 +210,22 @@ export class AuthService {
             console.error('Connection error : ', error);
           });
       } else {
-        console.error("No email found in localStorage or URL");
+        console.error("No email found in sessionStorage or URL");
       }
     }
   }
+
+  private async sendTokenToBackend(token: string) {
+    try {
+      const response = await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/auth/login`, { idToken: token }, { withCredentials: true })
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
 
   private async saveUserToBackend(user: any) {
     if (!user) return;
@@ -144,17 +237,23 @@ export class AuthService {
     };
     try {
       const response = await firstValueFrom(
-        this.http.post(`${environment.apiUrl}/users`, userData)
+        this.http.post(`${environment.apiUrl}/auth`, userData, { withCredentials: true })
       );
-      console.log('User saved to backend:', response);
+      return response;
     } catch (error) {
-      console.error('Error saving user to backend:', error);
+      throw error;
     }
   }
 
   async logout() {
     await signOut(this.auth);
-    console.log('Disconnected');
+    try {
+      await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/auth/logout`, {}, { withCredentials: true })
+      );
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
     window.history.replaceState({}, document.title, '/');
     this.user$.next(null);
     this.router.navigate(['/']);

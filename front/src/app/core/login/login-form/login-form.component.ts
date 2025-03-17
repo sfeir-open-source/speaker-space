@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 import {ButtonComponent} from "../../../shared/button/button.component";
 import {FormsModule} from "@angular/forms";
 import {AuthService} from '../services/auth.service';
 import {Router} from '@angular/router';
-import {take} from 'rxjs';
+import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
 
 @Component({
   selector: 'app-login-form',
@@ -19,12 +19,23 @@ export class LoginFormComponent {
   constructor(protected authService: AuthService, private router: Router) {}
 
   ngOnInit() {
-    const email = localStorage.getItem('emailForSignIn');
+    const email = sessionStorage.getItem('emailForSignIn');
     if (email) {
       this.email = email;
     }
     if (this.authService.isSignInWithEmailLink(window.location.href)) {
       this.handleEmailSignIn();
+    }
+    const params = new URLSearchParams(window.location.search);
+    const showEmailModal = params.get('showEmailModal');
+    const emailParam = params.get('email');
+
+    if (showEmailModal === 'true' && emailParam) {
+      this.email = emailParam;
+      const modal = document.getElementById('crud-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
     }
   }
 
@@ -37,19 +48,22 @@ export class LoginFormComponent {
   }
 
   mailLinkLogin(email: string) {
-    this.authService.sendLink(email);
-    if (email && this.authService.isSignInWithEmailLink(window.location.href)) {
-      this.authService.confirmSignIn(email, window.location.href)
-        .then((user) => {
-          if (user) {
-            this.router.navigate(['/']);
-          }
-        });
+    if (!email) {
+      this.authService.dialog.open(AuthErrorDialogComponent, {
+        width: '400px',
+        data: {
+          title: 'Error',
+          message: 'Please enter a valid email address.'
+        }
+      });
+      return;
     }
+
+    this.authService.loginWithEmail(email);
   }
 
   private handleEmailSignIn() {
-    let email = localStorage.getItem('emailForSignIn');
+    let email = sessionStorage.getItem('emailForSignIn');
 
     if (!email) {
       const params = new URLSearchParams(window.location.search);

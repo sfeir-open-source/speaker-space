@@ -28,9 +28,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .anyRequest().hasRole("USER")
+                        .requestMatchers("/auth/login").permitAll()
+                        .requestMatchers("/auth/logout").permitAll()
+                        .requestMatchers("/auth").permitAll()
+                        .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/firestore/admin-access").hasRole("ADMIN")
+                        .requestMatchers("/firestore/user-access").hasRole("USER")
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(firebaseTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
