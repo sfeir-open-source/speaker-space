@@ -1,84 +1,99 @@
-<div
+<section
   class="fixed inset-0 bg-slate-800/50 z-40 transition-opacity duration-300"
   [class.opacity-0]="!sidebarService.isSidebarOpen"
   [class.opacity-100]="sidebarService.isSidebarOpen"
   [class.pointer-events-none]="!sidebarService.isSidebarOpen"
   (click)="closeSidebar()">
-</div>
+</section>
 
-<div
+<main
   class="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out rounded-l-xl"
   [ngClass]="sidebarService.isSidebarOpen ? 'translate-x-0' : 'translate-x-full'"
   (click)="$event.stopPropagation()">
 
-  <div class="p-4 flex justify-between items-center">
-    <div class="flex items-center gap-3">
+  <header class="p-4 flex justify-between items-center">
+    <article class="flex items-center gap-3">
       <img [src]="sidebarService.userPhotoURL || 'img/profil-picture.svg'"
            alt="profile"
            class="w-12 h-12 rounded-full border-none">
-      <div>
+      <section>
         <p class="text-sm font-medium">{{ sidebarService.userName || sidebarService.userEmail }}</p>
         <p class="text-xs text-gray-500">{{ sidebarService.userEmail || 'No email' }}</p>
-      </div>
-    </div>
-    <button (click)="closeSidebar()" class="text-gray-500 hover:text-gray-800">
+      </section>
+    </article>
+    <button (click)="closeSidebar()" class="text-gray-500 hover:text-gray-800" aria-label="Close sidebar">
       ✖
     </button>
-  </div>
+  </header>
 
   <nav>
-    <div class="p-4">
-      <a (click)="navigateTo('/notifications')" class="flex items-center gap-2 p-2 hover:bg-gray-100 text-xl rounded cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="bevel"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"></path></svg>
+    <article class="p-4">
+      <app-sidebar-nav-item
+        materialIcon="notifications"
+        route="/notifications"
+        [hasNotification]="hasUnreadNotifications"
+        [notificationCount]="notificationCount"
+        (itemClick)="navigateTo($event)">
         Notifications
-      </a>
-    </div>
+      </app-sidebar-nav-item>
+    </article>
 
-    <div class="px-4">
-      <hr class="my-2 rounded-lg w-[90%] mx-auto border-secondary">
-    </div>
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
 
-    <div class="p-4">
+    <article class="p-4">
       <p class="font-medium text-lg mb-2">Speaker</p>
-      <a (click)="navigateTo('/speaker/talks')" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="28" viewBox="0 0 24 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/></svg>
+
+      <app-sidebar-nav-item
+        materialIcon="event"
+        route="/"
+        (itemClick)="navigateTo($event)">
         My Talks
-      </a>
-      <a (click)="navigateTo('/travel')" class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
-        <svg width="24px" height="24px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-briefcase"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+      </app-sidebar-nav-item>
+
+      <app-sidebar-nav-item
+        materialIcon="luggage"
+        route="/travel"
+        (itemClick)="navigateTo($event)">
         Travel Information
-      </a>
-    </div>
+      </app-sidebar-nav-item>
+    </article>
 
-    <div class="px-4">
-      <hr class="my-2 rounded-lg w-[90%] mx-auto border-secondary">
-    </div>
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
 
-    <div class="p-4">
+    <article class="p-4">
       <p class="font-medium text-lg mb-2">Organizer</p>
-      <a class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="bevel"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+
+      <app-sidebar-nav-item
+        materialIcon="group"
+        route="/team/1"
+        (itemClick)="navigateTo($event)">
         Team 1
-      </a>
-      <a class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="bevel"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      </app-sidebar-nav-item>
+
+      <app-sidebar-nav-item
+        materialIcon="group"
+        route="/team/2"
+        (itemClick)="navigateTo($event)">
         Team 2
-      </a>
-      <button class="group flex items-center gap-x-3 w-full text-left rounded-md p-2 leading-6 font-medium hover:bg-gray-100 cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="bevel"><path d="M3 3h18v18H3zM12 8v8m-4-4h8"/></svg>
+      </app-sidebar-nav-item>
+
+      <app-sidebar-nav-item
+        class="font-medium"
+        materialIcon="add_box"
+        [buttonHandler]="createNewTeam.bind(this)">
         New team
-      </button>
-    </div>
+      </app-sidebar-nav-item>
+    </article>
 
-    <div class="px-4">
-      <hr class="my-2 rounded-lg w-[90%] mx-auto border-secondary">
-    </div>
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
 
-    <div class="p-4">
-      <button (click)="logout()" class="group flex items-center gap-x-3 w-full text-left rounded-md p-2 leading-6 font-medium hover:bg-gray-100 cursor-pointer">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="bevel"><path d="M10 3H6a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h4M16 17l5-5-5-5M19.8 12H9"/></svg>
+    <article class="p-4">
+      <app-sidebar-nav-item
+        class="font-medium"
+        materialIcon="logout"
+        [buttonHandler]="logout.bind(this)">
         Log out
-      </button>
-    </div>
+      </app-sidebar-nav-item>
+    </article>
   </nav>
-</div>
+</main>

@@ -29,21 +29,3 @@
 .text-secondary { color: var(--color-secondary)}
 .text-primaryColor { color: var(--color-primary-color)}
 .border-secondary { border-color: var(--color-secondary)}
-
-
-.button-action {
-  border-radius: 12px;
-  background-color: #034748;
-  font-size: 1.5rem;
-  color: white;
-  cursor: pointer;
-  box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
-}
-
-.button-action:hover {
-  background-color: #087f81;
-}
-
-
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
