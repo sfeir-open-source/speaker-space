@@ -75,8 +75,11 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             List<GrantedAuthority> authorities = new ArrayList<>();
             authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 
-            if (adminEmail != null && adminEmail.equals(email)) {
+            if (email != null && email.equals(adminEmail)) {
+                logger.info("Admin role granted to: {}", email);
                 authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            } else {
+                logger.info("User email: {}, Admin email from config: {}", email, adminEmail);
             }
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
