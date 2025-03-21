@@ -88,8 +88,9 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        } catch (FirebaseAuthException e) {
-            logger.error("Firebase Authentication failed: {}", e.getMessage());
+        } catch (Exception e) {
+            // Toutes les exceptions (y compris RuntimeException) devraient être capturées ici
+            // Nettoyage du contexte de sécurité si nécessaire
             SecurityContextHolder.clearContext();
         }
 
