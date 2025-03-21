@@ -90,6 +90,7 @@ export class AuthService {
     this.dialog.open(AuthErrorDialogComponent, {
       width: '400px',
       data: {
+        title: 'Authentication Error',
         email: email,
         message: `The email address "${email}" is already associated with another sign-in method. Please use the method you initially signed up with.`
       }

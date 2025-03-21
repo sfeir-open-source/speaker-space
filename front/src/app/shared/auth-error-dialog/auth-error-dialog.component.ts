@@ -16,7 +16,7 @@ export class AuthErrorDialogComponent {
     @Inject(MAT_DIALOG_DATA) public data: {
       email?: string,
       message: string,
-      title?: string
+      title: string
     }
   ) {}
 }
