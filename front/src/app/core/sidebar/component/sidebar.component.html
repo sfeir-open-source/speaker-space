@@ -1,0 +1,99 @@
+<section
+  class="fixed inset-0 bg-slate-800/50 z-40 transition-opacity duration-300"
+  [class.opacity-0]="!sidebarService.isSidebarOpen"
+  [class.opacity-100]="sidebarService.isSidebarOpen"
+  [class.pointer-events-none]="!sidebarService.isSidebarOpen"
+  (click)="closeSidebar()">
+</section>
+
+<main
+  class="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out rounded-l-xl"
+  [ngClass]="sidebarService.isSidebarOpen ? 'translate-x-0' : 'translate-x-full'"
+  (click)="$event.stopPropagation()">
+
+  <header class="p-4 flex justify-between items-center">
+    <article class="flex items-center gap-3">
+      <img [src]="sidebarService.userPhotoURL || 'img/profil-picture.svg'"
+           alt="profile"
+           class="w-12 h-12 rounded-full border-none">
+      <section>
+        <p class="text-sm font-medium">{{ sidebarService.userName || sidebarService.userEmail }}</p>
+        <p class="text-xs text-gray-500">{{ sidebarService.userEmail || 'No email' }}</p>
+      </section>
+    </article>
+    <button (click)="closeSidebar()" class="text-gray-500 hover:text-gray-800" aria-label="Close sidebar">
+      ✖
+    </button>
+  </header>
+
+  <nav>
+    <article class="p-4">
+      <app-sidebar-nav-item
+        materialIcon="notifications"
+        route="/notifications"
+        [hasNotification]="hasUnreadNotifications"
+        [notificationCount]="notificationCount"
+        (itemClick)="navigateTo($event)">
+        Notifications
+      </app-sidebar-nav-item>
+    </article>
+
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+
+    <article class="p-4">
+      <p class="font-medium text-lg mb-2">Speaker</p>
+
+      <app-sidebar-nav-item
+        materialIcon="event"
+        route="/"
+        (itemClick)="navigateTo($event)">
+        My Talks
+      </app-sidebar-nav-item>
+
+      <app-sidebar-nav-item
+        materialIcon="luggage"
+        route="/travel"
+        (itemClick)="navigateTo($event)">
+        Travel Information
+      </app-sidebar-nav-item>
+    </article>
+
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+
+    <article class="p-4">
+      <p class="font-medium text-lg mb-2">Organizer</p>
+
+      <app-sidebar-nav-item
+        materialIcon="group"
+        route="/team/1"
+        (itemClick)="navigateTo($event)">
+        Team 1
+      </app-sidebar-nav-item>
+
+      <app-sidebar-nav-item
+        materialIcon="group"
+        route="/team/2"
+        (itemClick)="navigateTo($event)">
+        Team 2
+      </app-sidebar-nav-item>
+
+      <app-sidebar-nav-item
+        class="font-medium"
+        materialIcon="add_box"
+        [buttonHandler]="createNewTeam.bind(this)">
+        New team
+      </app-sidebar-nav-item>
+    </article>
+
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+
+    <article class="p-4">
+      <app-sidebar-nav-item
+        class="font-medium"
+        materialIcon="logout"
+        [buttonHandler]="logout.bind(this)">
+        Log out
+      </app-sidebar-nav-item>
+    </article>
+  </nav>
+</main>
