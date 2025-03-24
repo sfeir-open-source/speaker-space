@@ -1,0 +1,36 @@
+<main class="flex flex-col p-2 items-center justify-center">
+  <section class="mt-5 w-full max-w-5xl flex-grow bg-white shadow-xs border border-gray-200 rounded-lg p-5">
+    <h1 class="mt-2 text-start text-xl font-medium">{{title}} </h1>
+    <p class="mt-2 text-start text-xs">{{description}} </p>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      @for(field of fields; track field.name) {
+        <div class="mt-5">
+          @if(field.required){
+            <label [for]="field.name" class="block text-start text-md required">{{ field.label }}</label>
+          } @else {
+            <label [for]="field.name" class="block text-start text-md">{{ field.label }}</label>
+          }
+          <input
+            [type]="field.type"
+            [id]="field.name"
+            [name]="field.name"
+            [placeholder]="field.placeholder"
+            [formControlName]="field.name"
+            class="block w-full required rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6"
+          >
+          @if(form.get(field.name)?.invalid && form.get(field.name)?.touched) {
+            <p class="mt-1 text-sm text-red-600">This field is required</p>
+          }
+        </div>
+      }
+
+      @if(button){
+        <div class="mt-6 flex justify-end">
+          <app-action-button [type]="'submit'"> {{ buttonName }} </app-action-button>
+        </div>
+      }
+    </form>
+
+  </section>
+</main>

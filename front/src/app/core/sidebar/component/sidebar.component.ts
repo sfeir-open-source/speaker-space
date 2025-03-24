@@ -51,6 +51,7 @@ export class SidebarComponent {
 
   createNewTeam() {
     console.log('Creating new team...');
+    this.navigateTo('/create-team');
     this.closeSidebar();
   }
 }

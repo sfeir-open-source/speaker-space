@@ -8,6 +8,7 @@
   background-color: #FBF8F9;
   --color-primary-black: #001021;
   --color-action: #034748;
+  --color-action-hover: #045d5e;
   --color-primary-color: #1481BA;
   --color-secondary: #11B5E4;
   --color-tertiary: #0CAADC;
@@ -15,10 +16,12 @@
   --color-button-black: #24292F;
   --color-button-red: #EA2533;
   --shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
+  --color-text-invalidated-form: #dc0024;
 }
 
 .bg-primaryBlack { background-color: var(--color-primary-black)}
 .bg-action { background-color: var(--color-action)}
+.hover\:bg-action-hover:hover { background-color: var(--color-action-hover); }
 .bg-primaryColor { background-color: var(--color-primary-color)}
 .bg-secondary { background-color: var(--color-secondary)}
 .bg-tertiary { background-color: var(--color-tertiary)}

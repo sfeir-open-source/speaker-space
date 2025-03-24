@@ -4,11 +4,13 @@ import {NotFoundPageComponent} from './core/not-found-page/not-found-page.compon
 import {HomePageComponent} from './core/home-page/home-page.component';
 import {LoginPageComponent} from './core/login/login-page/login-page.component';
 import {AuthGuard} from '@angular/fire/auth-guard';
+import {CreateTeamPageComponent} from './feature/admin-management/create-team-page/create-team-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
   { path: 'system-info', component: TestConnectionBackFrontComponent, canActivate: [AuthGuard] },
   { path: 'login', component: LoginPageComponent },
+  { path: 'create-team', component: CreateTeamPageComponent},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }
 ];
