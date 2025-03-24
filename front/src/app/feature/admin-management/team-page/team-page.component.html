@@ -1,0 +1,42 @@
+<app-navbar-team-page></app-navbar-team-page>
+
+<main class="flex flex-col mt-5 items-center">
+  <section class="w-full sm:w-4/5 max-w-5xl">
+    <div class="w-full p-2 sm:w-4/5 max-w-5xl flex justify-between items-center">
+      <div class="flex-grow">
+        <h1 class="text-2xl font-medium">Team events</h1>
+        <p class="mt-2 text-sm text-gray-600">
+          Manage your team events call for papers
+        </p>
+      </div>
+
+      <!-- Conteneur flex pour aligner les boutons -->
+      <div class="flex items-center gap-2">
+        <nav class="flex gap-1 rounded-md bg-grey shadow-sm py-1 px-1 md:static absolute top-0 right-0 transform md:ml-auto md:-mr-25"
+             aria-label="Event filters">
+          <button
+            class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
+            [ngClass]="activeTab === 'Achived' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-800'"
+            (click)="setActiveTab('Achived')"
+            [attr.aria-selected]="activeTab === 'Achived'">
+            Achived
+          </button>
+
+          <button
+            class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
+            [ngClass]="activeTab === 'Active' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-800'"
+            (click)="setActiveTab('Active')"
+            [attr.aria-selected]="activeTab === 'Active'">
+            Active
+          </button>
+        </nav>
+        <button
+          type="submit"
+          class="rounded-md py-1 px-2 text-sm inline-flex items-center gap-2 bg-grey hover:bg-grey-hover cursor-pointer text-gray-700 shadow-sm"
+          materialIcon="settings">
+          Create
+        </button>
+      </div>
+    </div>
+  </section>
+</main>

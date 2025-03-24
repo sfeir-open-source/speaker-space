@@ -1,0 +1,14 @@
+<button
+  [type]="type"
+  [ngClass]="isActivePage ?
+    'bg-grey hover:bg-grey-hover cursor-pointer text-gray-700 shadow-sm' :
+    'text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-indigo-600 whitespace-nowrap'"
+  class="rounded-md py-1 px-2 text-sm inline-flex items-center gap-2"
+  (click)="handleButtonClick()">
+  @if(materialIcon){
+    <span class="material-symbols-outlined text-base">
+      {{ materialIcon }}
+    </span>
+  }
+  <span><ng-content></ng-content></span>
+</button>

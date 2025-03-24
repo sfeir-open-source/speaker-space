@@ -17,6 +17,9 @@
   --color-button-red: #EA2533;
   --shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px;
   --color-text-invalidated-form: #dc0024;
+  --color-button-grey: #F3F4F6;
+  --color-button-blue: #EDF6FE;
+  --color-button-blue-hover: rgba(212, 236, 246, 0.84);
 }
 
 .bg-primaryBlack { background-color: var(--color-primary-black)}
@@ -32,3 +35,6 @@
 .text-secondary { color: var(--color-secondary)}
 .text-primaryColor { color: var(--color-primary-color)}
 .border-secondary { border-color: var(--color-secondary)}
+.bg-grey { background-color: var(--color-button-grey)}
+.bg-blue { background-color: var(--color-button-blue)}
+.hover\:bg-blue-hover:hover { background-color: var(--color-button-blue-hover); }

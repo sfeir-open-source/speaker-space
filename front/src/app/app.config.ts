@@ -8,9 +8,9 @@ import { initializeApp } from 'firebase/app';
 import { environment } from '../environments/environment.development';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import {AuthService} from './core/login/services/auth.service';
-import { authInterceptor  } from './core/interceptors/auth.interceptor';
 import {getFirestore, provideFirestore} from '@angular/fire/firestore';
 import {provideAnimations} from '@angular/platform-browser/animations';
+import {authInterceptor} from './core/login/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
