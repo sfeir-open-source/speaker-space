@@ -39,3 +39,6 @@ Thumbs.db
 
 # Angular environments
 src/environments/environment.development.ts
+
+#App Engine environment
+src/main/appengine/app.yaml
