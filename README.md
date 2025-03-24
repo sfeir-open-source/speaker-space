@@ -46,6 +46,7 @@ cd speaker-space
 ## Backend Configuration
 
 Create a **.env** file at the root of the project based on the **.env.sample file**.
+Create a **app.yaml** file in the **main/appengine** package based on the **app.example.yaml** file.
 
 Download Firestore JSON Key :
 
@@ -75,7 +76,7 @@ npm install
 
 Firebase Configuration
 
-Create the following file : **src/environments/environment.development.ts**
+Create the following file : **src/environments/environment.development.ts** based on the **environment.example.development.ts** file.
 
 Add the following content:
 
@@ -126,8 +127,6 @@ Run the Spring Boot application :
 `````
 ./mvnw spring-boot:run
 `````
-
-The API will be available at : **http://localhost:8080/api**
 
 ### Start the Frontend
 
