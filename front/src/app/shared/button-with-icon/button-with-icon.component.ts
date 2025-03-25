@@ -2,13 +2,13 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {CommonModule} from '@angular/common';
 
 @Component({
-  selector: 'app-sidebar-nav-item',
+  selector: 'app-button-with-icon',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './sidebar-nav-item.component.html',
-  styleUrl: './sidebar-nav-item.component.scss'
+  templateUrl: './button-with-icon.component.html',
+  styleUrl: './button-with-icon.component.scss'
 })
-export class SidebarNavItemComponent {
+export class ButtonWithIconComponent {
   @Input() route: string = '';
   @Input() materialIcon: string = '';
   @Input() hasNotification: boolean = false;

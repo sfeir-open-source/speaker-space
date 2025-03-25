@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ButtonComponent } from './button.component';
+import { ButtonLoginComponent } from './button-login.component';
 import { By } from '@angular/platform-browser';
 import { DomSanitizer } from '@angular/platform-browser';
 
 describe('ButtonComponent', () => {
-  let component: ButtonComponent;
-  let fixture: ComponentFixture<ButtonComponent>;
+  let component: ButtonLoginComponent;
+  let fixture: ComponentFixture<ButtonLoginComponent>;
   let sanitizer: DomSanitizer;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ButtonComponent]
+      imports: [ButtonLoginComponent]
     })
       .compileComponents();
 
-    fixture = TestBed.createComponent(ButtonComponent);
+    fixture = TestBed.createComponent(ButtonLoginComponent);
     component = fixture.componentInstance;
     sanitizer = TestBed.inject(DomSanitizer);
     fixture.detectChanges();

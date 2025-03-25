@@ -1,0 +1,26 @@
+<main class="relative bg-white h-[60px] w-full px-4 lg:px-8 flex items-center justify-center shadow-sm">
+  <div class="absolute left-[10%] bottom-0 ">
+    <img [src]="userPhotoURL || 'img/profil-picture.svg'" alt="Profile Picture"
+         class="w-30 h-30 rounded-full border-4 border-white shadow-xl object-cover">
+  </div>
+
+  <section class="flex items-center gap-20">
+    <app-button-with-icon
+      materialIcon="book_2"
+      route="/"
+      (itemClick)="navigateTo('/')">
+      My Talks
+    </app-button-with-icon>
+    <app-button-with-icon
+      materialIcon="luggage"
+      route="/"
+      (itemClick)="navigateTo('/')">
+      Travel informations
+    </app-button-with-icon>
+    <app-button-green-actions
+      [type]="'submit'"
+      materialIcon="person">
+      Speaker informations
+    </app-button-green-actions>
+  </section>
+</main>

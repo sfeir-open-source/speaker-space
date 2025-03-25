@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { FormComponent } from './form.component';
-import { ActionButtonComponent } from '../action-button/action-button.component';
+import { ButtonGreenActionsComponent } from '../button-green-actions/button-green-actions.component';
 import { FormField } from './interface/form-field';
 
 describe('FormComponent', () => {
@@ -31,7 +31,7 @@ describe('FormComponent', () => {
       imports: [
         FormComponent,
         ReactiveFormsModule,
-        ActionButtonComponent
+        ButtonGreenActionsComponent
       ]
     })
       .compileComponents();

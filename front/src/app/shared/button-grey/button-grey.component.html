@@ -6,9 +6,11 @@
   class="rounded-md py-1 px-2 text-sm inline-flex items-center gap-2"
   (click)="handleButtonClick()">
   @if(materialIcon){
-    <span class="material-symbols-outlined text-base">
-      {{ materialIcon }}
-    </span>
+    <div class="relative inline-flex items-center justify-center">
+      <span class="material-symbols-outlined">
+        {{ materialIcon }}
+      </span>
+    </div>
   }
-  <span><ng-content></ng-content></span>
+  <ng-content></ng-content>
 </button>

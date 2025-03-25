@@ -1,21 +1,20 @@
 <app-navbar-team-page></app-navbar-team-page>
 
-<main class="flex flex-col mt-5 items-center">
-  <section class="w-full sm:w-4/5 max-w-5xl">
-    <div class="w-full p-2 sm:w-4/5 max-w-5xl flex justify-between items-center">
-      <div class="flex-grow">
+<main class="flex flex-col mt-5 w-full items-center relative">
+  <section class="w-full sm:w-4/5 max-w-5xl mb-6">
+    <div class="w-full p-2 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+      <article>
         <h1 class="text-2xl font-medium">Team events</h1>
         <p class="mt-2 text-sm text-gray-600">
           Manage your team events call for papers
         </p>
-      </div>
+      </article>
 
-      <!-- Conteneur flex pour aligner les boutons -->
-      <div class="flex items-center gap-2">
-        <nav class="flex gap-1 rounded-md bg-grey shadow-sm py-1 px-1 md:static absolute top-0 right-0 transform md:ml-auto md:-mr-25"
+      <article class="flex flex-wrap items-center gap-4 mt-4 md:mt-0">
+        <nav class="flex gap-1 rounded-md bg-grey shadow-sm py-1 px-1"
              aria-label="Event filters">
           <button
-            class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
+            class="flex items-center rounded-md py-0.5 px-6 sm:px-12 text-sm cursor-pointer transition-all"
             [ngClass]="activeTab === 'Achived' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-800'"
             (click)="setActiveTab('Achived')"
             [attr.aria-selected]="activeTab === 'Achived'">
@@ -23,7 +22,7 @@
           </button>
 
           <button
-            class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
+            class="flex items-center rounded-md py-0.5 px-6 sm:px-12 text-sm cursor-pointer transition-all"
             [ngClass]="activeTab === 'Active' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-800'"
             (click)="setActiveTab('Active')"
             [attr.aria-selected]="activeTab === 'Active'">
@@ -32,11 +31,18 @@
         </nav>
         <button
           type="submit"
-          class="rounded-md py-1 px-2 text-sm inline-flex items-center gap-2 bg-grey hover:bg-grey-hover cursor-pointer text-gray-700 shadow-sm"
-          materialIcon="settings">
-          Create
+          class="rounded-md py-1 px-2 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer text-gray-600 shadow-sm">
+          <span class="material-symbols-outlined text-sm">add</span>
+          New Event
         </button>
-      </div>
+      </article>
+    </div>
+  </section>
+  <section class="w-full px-4 md:px-0 sm:w-4/5 max-w-5xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      @for(field of formFields; track field.title){
+        <app-event-team-card [field]="field"></app-event-team-card>
+      }
     </div>
   </section>
 </main>

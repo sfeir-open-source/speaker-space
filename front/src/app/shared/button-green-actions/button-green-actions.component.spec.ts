@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ActionButtonComponent } from './action-button.component';
+import { ButtonGreenActionsComponent } from './button-green-actions.component';
 
 describe('ActionButtonComponent', () => {
-  let component: ActionButtonComponent;
-  let fixture: ComponentFixture<ActionButtonComponent>;
+  let component: ButtonGreenActionsComponent;
+  let fixture: ComponentFixture<ButtonGreenActionsComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ActionButtonComponent]
+      imports: [ButtonGreenActionsComponent]
     })
       .compileComponents();
 
-    fixture = TestBed.createComponent(ActionButtonComponent);
+    fixture = TestBed.createComponent(ButtonGreenActionsComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

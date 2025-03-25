@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { SidebarNavItemComponent } from './sidebar-nav-item.component';
+import { ButtonWithIconComponent } from './button-with-icon.component';
 import { By } from '@angular/platform-browser';
 
 describe('SidebarNavItemComponent', () => {
-  let component: SidebarNavItemComponent;
-  let fixture: ComponentFixture<SidebarNavItemComponent>;
+  let component: ButtonWithIconComponent;
+  let fixture: ComponentFixture<ButtonWithIconComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SidebarNavItemComponent]
+      imports: [ButtonWithIconComponent]
     })
       .compileComponents();
 
-    fixture = TestBed.createComponent(SidebarNavItemComponent);
+    fixture = TestBed.createComponent(ButtonWithIconComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

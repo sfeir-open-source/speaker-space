@@ -28,14 +28,14 @@
 
   <nav>
     <article class="p-4">
-      <app-sidebar-nav-item
+      <app-button-with-icon
         materialIcon="notifications"
         route="/notifications"
         [hasNotification]="hasUnreadNotifications"
         [notificationCount]="notificationCount"
         (itemClick)="navigateTo($event)">
         Notifications
-      </app-sidebar-nav-item>
+      </app-button-with-icon>
     </article>
 
     <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
@@ -43,19 +43,19 @@
     <article class="p-4">
       <p class="font-medium text-lg mb-2">Speaker</p>
 
-      <app-sidebar-nav-item
-        materialIcon="event"
+      <app-button-with-icon
+        materialIcon="book_2"
         route="/"
         (itemClick)="navigateTo($event)">
         My Talks
-      </app-sidebar-nav-item>
+      </app-button-with-icon>
 
-      <app-sidebar-nav-item
+      <app-button-with-icon
         materialIcon="luggage"
         route="/travel"
         (itemClick)="navigateTo($event)">
         Travel Information
-      </app-sidebar-nav-item>
+      </app-button-with-icon>
     </article>
 
     <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
@@ -63,30 +63,30 @@
     <article class="p-4">
       <p class="font-medium text-lg mb-2">Organizer</p>
 
-      <app-sidebar-nav-item
+      <app-button-with-icon
         materialIcon="group"
         route="/team/1"
         (itemClick)="navigateTo($event)">
         Team 1
-      </app-sidebar-nav-item>
+      </app-button-with-icon>
 
-      <app-sidebar-nav-item
+      <app-button-with-icon
         class="font-medium"
         materialIcon="add_box"
         [buttonHandler]="createNewTeam.bind(this)">
         New team
-      </app-sidebar-nav-item>
+      </app-button-with-icon>
     </article>
 
     <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
 
     <article class="p-4">
-      <app-sidebar-nav-item
+      <app-button-with-icon
         class="font-medium"
         materialIcon="logout"
         [buttonHandler]="logout.bind(this)">
         Log out
-      </app-sidebar-nav-item>
+      </app-button-with-icon>
     </article>
   </nav>
 </main>

@@ -4,7 +4,7 @@ import { SidebarService } from '../service/sidebar.service';
 import { AuthService } from '../../login/services/auth.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { SidebarNavItemComponent } from '../../../shared/sidebar-nav-item/sidebar-nav-item.component';
+import { ButtonWithIconComponent } from '../../../shared/button-with-icon/button-with-icon.component';
 import { By } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';

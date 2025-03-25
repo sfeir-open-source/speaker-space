@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import {ButtonGreyComponent} from '../button-grey/button-grey.component';
-import {SidebarNavItemComponent} from '../sidebar-nav-item/sidebar-nav-item.component';
+import {ButtonWithIconComponent} from '../button-with-icon/button-with-icon.component';
 import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
 
 @Component({

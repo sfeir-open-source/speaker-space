@@ -3,7 +3,7 @@ import { LoginFormComponent } from './login-form.component';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ButtonComponent } from "../../../shared/button/button.component";
+import { ButtonWithIconComponent } from "../../../shared/button-with-icon/button-with-icon.component";
 import { MatDialog } from '@angular/material/dialog';
 import { AuthErrorDialogComponent } from '../../../shared/auth-error-dialog/auth-error-dialog.component';
 import { of } from 'rxjs';
@@ -52,7 +52,7 @@ describe('LoginFormComponent', () => {
       imports: [
         FormsModule,
         LoginFormComponent,
-        ButtonComponent
+        ButtonWithIconComponent
       ],
       providers: [
         { provide: AuthService, useValue: authServiceMock },

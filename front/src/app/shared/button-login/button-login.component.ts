@@ -3,12 +3,12 @@ import {CommonModule} from '@angular/common';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 
 @Component({
-  selector: 'app-button',
+  selector: 'app-button-login',
   imports: [CommonModule],
-  templateUrl: './button.component.html',
-  styleUrl: './button.component.scss'
+  templateUrl: './button-login.component.html',
+  styleUrl: './button-login.component.scss'
 })
-export class ButtonComponent {
+export class ButtonLoginComponent {
   @Input() buttonType: string = 'action';
   @Input() disabled: boolean = false;
   @Input() iconPath: string = '';

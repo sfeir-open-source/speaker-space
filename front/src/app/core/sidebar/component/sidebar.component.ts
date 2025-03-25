@@ -4,12 +4,12 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../login/services/auth.service';
 import {NavigationEnd, Router} from '@angular/router';
 import {filter} from 'rxjs';
-import {SidebarNavItemComponent} from '../../../shared/sidebar-nav-item/sidebar-nav-item.component';
+import {ButtonWithIconComponent} from '../../../shared/button-with-icon/button-with-icon.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, SidebarNavItemComponent],
+  imports: [CommonModule, ButtonWithIconComponent],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })

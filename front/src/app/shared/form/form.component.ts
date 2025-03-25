@@ -1,14 +1,14 @@
 import {Component, Input} from '@angular/core';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {FormField} from './interface/form-field';
-import {ActionButtonComponent} from '../action-button/action-button.component';
+import {ButtonGreenActionsComponent} from '../button-green-actions/button-green-actions.component';
 
 @Component({
   selector: 'app-form',
   imports: [
     FormsModule,
     ReactiveFormsModule,
-    ActionButtonComponent
+    ButtonGreenActionsComponent
   ],
   templateUrl: './form.component.html',
   styleUrl: './form.component.scss'

@@ -7,6 +7,7 @@ import {AuthGuard} from '@angular/fire/auth-guard';
 import {CreateTeamPageComponent} from './feature/admin-management/create-team-page/create-team-page.component';
 import {TeamPageComponent} from './feature/admin-management/team-page/team-page.component';
 import {SettingTeamPageComponent} from './feature/admin-management/setting-team-page/setting-team-page.component';
+import {ProfileComponent} from './feature/profile/profile.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'create-team', component: CreateTeamPageComponent},
   { path: 'team-page', component: TeamPageComponent},
   { path: 'team-settings', component: SettingTeamPageComponent},
+  { path: 'profile', component: ProfileComponent},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }
 ];

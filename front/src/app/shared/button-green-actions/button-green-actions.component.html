@@ -1,0 +1,10 @@
+<button [type]="type" class="flex items-center gap-2 bg-action hover:bg-action-hover cursor-pointer text-white text-sm py-1.5 px-3 rounded-md">
+@if(materialIcon){
+    <div class="relative inline-flex items-center justify-center">
+      <span class="material-symbols-outlined">
+        {{ materialIcon }}
+      </span>
+    </div>
+  }
+  <ng-content></ng-content>
+</button>
