@@ -1,26 +1,34 @@
 <main class="relative bg-white h-[60px] w-full px-4 lg:px-8 flex items-center justify-center shadow-sm">
-  <div class="absolute left-[10%] bottom-0 ">
+  <div class="absolute left-[10%] bottom-0 hidden lg:block">
     <img [src]="userPhotoURL || 'img/profil-picture.svg'" alt="Profile Picture"
-         class="w-30 h-30 rounded-full border-4 border-white shadow-xl object-cover">
+         class="w-24 h-24 xl:w-30 xl:h-30 rounded-full border-4 border-white shadow-xl object-cover">
   </div>
 
-  <section class="flex items-center gap-20">
+  <section class="flex items-center gap-4 sm:gap-12 lg:gap-20 lg:ml-[12%]">
     <app-button-with-icon
       materialIcon="book_2"
       route="/"
+      class="text-xs sm:text-sm lg:text-base"
       (itemClick)="navigateTo('/')">
-      My Talks
+      <span class="hidden lg:inline">My Talks</span>
+      <span class="lg:hidden">Talks</span>
     </app-button-with-icon>
+
     <app-button-with-icon
       materialIcon="luggage"
       route="/"
+      class="text-xs sm:text-sm lg:text-base"
       (itemClick)="navigateTo('/')">
-      Travel informations
+      <span class="hidden lg:inline">Travel informations</span>
+      <span class="lg:hidden">Travel</span>
     </app-button-with-icon>
+
     <app-button-green-actions
       [type]="'submit'"
-      materialIcon="person">
-      Speaker informations
+      materialIcon="person"
+      class="text-xs sm:text-sm lg:text-base">
+      <span class="hidden lg:inline">Speaker informations</span>
+      <span class="lg:hidden">Speaker</span>
     </app-button-green-actions>
   </section>
 </main>

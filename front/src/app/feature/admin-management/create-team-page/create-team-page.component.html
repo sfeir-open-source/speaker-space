@@ -1,14 +1,31 @@
 <main class="flex flex-col mt-10 items-center">
   <section class="w-full sm:w-4/5 max-w-5xl">
-    <div class="w-full p-2 sm:w-4/5 max-w-5xl">
+    <article class="w-full p-2 sm:w-4/5 max-w-5xl">
       <h1 class="text-2xl font-medium">Create a new team.</h1>
       <p class="mt-2 text-sm text-gray-600">
         Give a cool name to your team. You will be able to invite members and create your first event.
       </p>
-    </div>
-    <app-form
-      [fields]="formFields"
-      [buttonName]="'Create Team'">
-    </app-form>
+    </article>
+
+    <article class="mt-5 w-full max-w-5xl flex-grow bg-white shadow-xs border border-gray-200 rounded-lg p-5">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        @for(field of formFields; track field.name) {
+          <app-input
+            [label]="field.label"
+            [placeholder]="field.placeholder"
+            [type]="field.type"
+            [control]="getFormControl(field.name)"
+            [required]="field.required || false"
+            [name]="field.name">
+          </app-input>
+        }
+
+        <div class="flex justify-end p-4">
+          <app-button-green-actions [type]="'submit'">
+            Create Team
+          </app-button-green-actions>
+        </div>
+      </form>
+    </article>
   </section>
 </main>

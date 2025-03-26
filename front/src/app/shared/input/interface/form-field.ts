@@ -5,4 +5,9 @@ export interface FormField {
   type: string;
   required?: boolean;
   value?: string;
+  helpText?: string;
+  errorMessage?: string;
+  disabled?: boolean;
+  rows?: number;
+  icon?: string;
 }
