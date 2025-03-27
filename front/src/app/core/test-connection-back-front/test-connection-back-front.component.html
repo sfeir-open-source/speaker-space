@@ -1,0 +1,18 @@
+<div class="card">
+  <h2>Test des rôles</h2>
+  <button (click)="testUserRole()">Tester rôle USER</button>
+  <button (click)="testAdminRole()">Tester rôle ADMIN</button>
+
+  @if(userRoleResult){
+    <h3>Résultat USER</h3>
+    <pre>{{ userRoleResult | json }}</pre>
+  }
+  @if(adminRoleResult){
+    <h3>Résultat ADMIN</h3>
+    <pre>{{ adminRoleResult | json }}</pre>
+  }
+  @if(roleError){
+    <h3>Erreur</h3>
+    <pre>{{ roleError }}</pre>
+  }
+</div>

@@ -1,0 +1,24 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### VS Code ###
+.vscode/
+
+### Environment ###
+.env
+
+### Firestore key ###
+firestore-key.json
+
+### Firebase key ###
+firebase-service.json
+
+### Appengine config ###
+src/main/appengine/app.yaml
