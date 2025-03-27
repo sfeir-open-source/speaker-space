@@ -21,7 +21,7 @@
       <textarea
         [id]="name"
         [name]="name"
-        [placeholder]="placeholder"
+        [placeholder]="effectivePlaceholder"
         [formControl]="control"
         [disabled]="disabled"
         [attr.rows]="rows"
@@ -38,7 +38,7 @@
         [type]="type"
         [id]="name"
         [name]="name"
-        [placeholder]="placeholder"
+        [placeholder]="effectivePlaceholder"
         [formControl]="control"
         [disabled]="disabled"
         [attr.aria-required]="required"
@@ -51,7 +51,6 @@
       />
     }
   </div>
-
 
   @if(hasError){
     <div class="mt-1">

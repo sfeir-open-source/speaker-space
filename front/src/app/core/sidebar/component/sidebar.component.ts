@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component} from '@angular/core';
 import { SidebarService } from '../service/sidebar.service';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../login/services/auth.service';

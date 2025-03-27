@@ -17,8 +17,8 @@ import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 export class InputComponent implements OnInit {
   sanitizedIconPath: SafeHtml = '';
   @Input() iconViewBox: string = '0 0 16 16';
-  @Input() label: string = '';
-  @Input() placeholder: string = '';
+  @Input() label?: string = '';
+  @Input() placeholder?: string = '';
   @Input() type: string = 'text';
   @Input() control!: FormControl;
   @Input({transform: booleanAttribute}) required: boolean = false;
@@ -28,6 +28,8 @@ export class InputComponent implements OnInit {
   @Input() rows: number = 6;
   @Input() icon?: string;
   @Input() iconPath?: string = '';
+  @Input() customClass: string = '';
+  @Input() staticPlaceholder?: string;
 
   constructor(private sanitizer: DomSanitizer) {}
 
@@ -37,6 +39,16 @@ export class InputComponent implements OnInit {
       this.control.setValidators(currentValidators);
       this.control.updateValueAndValidity();
     }
+  }
+
+  get effectivePlaceholder(): string {
+    if (this.staticPlaceholder) {
+      return this.staticPlaceholder;
+    }
+    if (this.placeholder && this.placeholder !== 'undefined') {
+      return this.placeholder;
+    }
+    return '';
   }
 
   get isTextarea(): boolean {

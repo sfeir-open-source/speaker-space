@@ -1,7 +1,7 @@
 export interface FormField {
   name: string;
-  label: string;
-  placeholder: string;
+  label?: string;
+  placeholder?: string;
   type: string;
   required?: boolean;
   value?: string;
@@ -11,4 +11,5 @@ export interface FormField {
   rows?: number;
   icon?: string;
   iconPath?: string;
+  staticPlaceholder?: string;
 }

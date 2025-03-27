@@ -25,6 +25,8 @@
 
     <app-button-green-actions
       [type]="'submit'"
+      route="/profile"
+      (itemClick)="navigateTo('/profile')"
       materialIcon="person"
       class="text-xs sm:text-sm lg:text-base">
       <span class="hidden lg:inline">Speaker informations</span>

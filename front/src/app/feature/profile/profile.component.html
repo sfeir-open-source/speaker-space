@@ -1,3 +1,4 @@
+<app-navbar-profile></app-navbar-profile>
 <main class="flex min-h-screen">
 <aside class="hidden lg:block w-1/4 bg-white p-4 ml-3 mt-4 shadow-md rounded-md sticky top-4 self-start max-h-screen overflow-y-auto">
     <app-button-with-icon
@@ -40,7 +41,7 @@
         @for(field of formFields; track field.name) {
           <app-input
             [label]="field.label"
-            [placeholder]="field.placeholder"
+            [staticPlaceholder]="field.staticPlaceholder"
             [type]="field.type"
             [control]="getFormControl(field.name)"
             [required]="field.required || false"
@@ -57,8 +58,10 @@
               [name]="additionalFields[0].name">
             </app-input>
           </div>
-          <div class="ml-4">
-            <img [src]="userPhotoURL || 'img/profil-picture.svg'" alt="Profile Picture" class="w-20 h-20 rounded-md border border-gray-200 shadow-md">
+          <div class="ml-4 flex flex-col items-center">
+            <img [src]="userPhotoURL || 'img/profil-picture.svg'"
+                 alt="Profile Picture"
+                 class="w-20 h-20 rounded-md border border-gray-200 shadow-md object-cover">
           </div>
         </div>
         <hr class="my-2 rounded-lg w-[100%] mx-auto border-gray-200 px-4">
@@ -85,8 +88,9 @@
             [type]="additionalFields[2].type"
             [control]="getFormControl(additionalFields[2].name)"
             [name]="additionalFields[2].name"
-            [rows]="7">
-            <span labelSuffix class="font-normal text-gray-500 text-xs"> (not coming from Conference Hall)</span>
+            [rows]="7"
+            [customClass]="'!resize-none'">
+              <span labelSuffix class="font-normal text-gray-500 text-xs"> (not coming from Conference Hall)</span>
           </app-input>
         </div>
       </article>
