@@ -1,0 +1,19 @@
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  cloud:
+    gcp:
+      project-id: ${GOOGLE_CLOUD_PROJECT}
+      firestore:
+        project-id: ${FIRESTORE_PROJECT_ID}
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /api
+
+cors:
+  allowedOrigins: ${CLIENT_URL_DEV}
+
+admin:
+  email: ${ADMIN_EMAIL}
