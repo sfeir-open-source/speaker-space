@@ -14,6 +14,7 @@ export class ButtonWithIconComponent {
   @Input() hasNotification: boolean = false;
   @Input() buttonHandler: (() => void) | null = null;
   @Input() notificationCount: number = 1;
+  @Input() customClass: string = '';
 
   @Output() itemClick = new EventEmitter<string>();
 

@@ -1,6 +1,7 @@
-import { booleanAttribute, Component, Input, OnInit } from '@angular/core';
+import {booleanAttribute, Component, Input, OnInit, SimpleChanges} from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 
 @Component({
   selector: 'app-input',
@@ -14,6 +15,8 @@ import { CommonModule } from '@angular/common';
   styleUrl: './input.component.scss'
 })
 export class InputComponent implements OnInit {
+  sanitizedIconPath: SafeHtml = '';
+  @Input() iconViewBox: string = '0 0 16 16';
   @Input() label: string = '';
   @Input() placeholder: string = '';
   @Input() type: string = 'text';
@@ -24,6 +27,9 @@ export class InputComponent implements OnInit {
   @Input({transform: booleanAttribute}) disabled: boolean = false;
   @Input() rows: number = 6;
   @Input() icon?: string;
+  @Input() iconPath?: string = '';
+
+  constructor(private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
     if (this.required && !this.control.hasValidator(Validators.required)) {
@@ -58,5 +64,20 @@ export class InputComponent implements OnInit {
     if (errors['pattern']) messages.push('The value does not match the required pattern');
 
     return messages;
+  }
+
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['iconPath'] && this.iconPath) {
+      let cleanPath = this.iconPath;
+
+      if (cleanPath.trim().startsWith('<svg')) {
+        this.sanitizedIconPath = this.sanitizer.bypassSecurityTrustHtml(cleanPath);
+      } else {
+        this.sanitizedIconPath = this.sanitizer.bypassSecurityTrustHtml(
+          `<svg role="presentation" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="h-5 w-5" viewBox="${this.iconViewBox}">${cleanPath}</svg>`
+        );
+      }
+    }
   }
 }

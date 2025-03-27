@@ -1,27 +1,30 @@
-<main class="flex">
-  <aside class="hidden lg:block w-1/4 bg-white p-4 h-full ml-3 mt-4 shadow-md rounded-md">
+<main class="flex min-h-screen">
+<aside class="hidden lg:block w-1/4 bg-white p-4 ml-3 mt-4 shadow-md rounded-md sticky top-4 self-start max-h-screen overflow-y-auto">
     <app-button-with-icon
       materialIcon="person"
-      route="/"
+      route="#personal-info"
+      [customClass]="isActive('#personal-info') ? 'bg-gray-100' : ''"
       (itemClick)="navigateTo($event)">
       Personnal informations
     </app-button-with-icon>
     <app-button-with-icon
       materialIcon="description"
-      route="/"
+      route="#biography"
+      [customClass]="isActive('#biography') ? 'bg-gray-100' : ''"
       (itemClick)="navigateTo($event)">
       Biography
     </app-button-with-icon>
     <app-button-with-icon
       materialIcon="link"
-      route="/"
+      route="#social-networks"
+      [customClass]="isActive('#social-networks') ? 'bg-gray-100' : ''"
       (itemClick)="navigateTo($event)">
       Social networks & more
     </app-button-with-icon>
   </aside>
 
   <section class="flex-1 p-4">
-    <article class="flex justify-start items-center bg-white shadow-md p-4 rounded-md">
+    <article id="personal-info" class="flex justify-start items-center bg-white shadow-md p-4 rounded-md">
       <button class="bg-action hover:bg-action-hover text-white mr-3 px-2 py-2 rounded-md flex items-center gap-2 cursor-pointer">
         <span class="material-icons">cached</span>
       </button>
@@ -29,7 +32,7 @@
     </article>
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <article class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4">
+      <article class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4 pb-16 mb-8">
         <h1 class="text-2xl font-medium">Personnal informations</h1>
         <p class="mt-2 text-sm text-gray-600">
           Informations used to contact you and complete your profile (all those informations where import from Conference Hall)
@@ -71,8 +74,7 @@
           </div>
      </article>
 
-<!--      ///////////////////////////-->
-      <article class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4">
+      <article id="biography" class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4 pb-16 mb-8">
         <h1 class="text-2xl font-medium">Biography</h1>
         <p class="mt-2 text-sm text-gray-600">
           Biography that will be used in the final program (all those informations where import from Conference Hall)
@@ -83,15 +85,13 @@
             [type]="additionalFields[2].type"
             [control]="getFormControl(additionalFields[2].name)"
             [name]="additionalFields[2].name"
-            [rows]="6">
+            [rows]="7">
             <span labelSuffix class="font-normal text-gray-500 text-xs"> (not coming from Conference Hall)</span>
           </app-input>
         </div>
       </article>
 
-
-<!--      ////////////////////////////////-->
-      <article class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4">
+      <article id="social-networks" class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4 pb-16 mb-8">
         <h1 class="text-2xl font-medium">Social networks & more</h1>
         <p class="mt-2 text-sm text-gray-600">
           All the social networks and external link you want to share
@@ -104,23 +104,38 @@
             [type]="field.type"
             [control]="getFormControl(field.name)"
             [required]="field.required || false"
-            [icon]="field.icon || ''"
+            [iconPath]="field.iconPath || ''"
             [name]="field.name">
           </app-input>
         }
-
-        <hr class="my-2 rounded-lg w-[100%] mx-auto border-gray-200 px-4">
+        <div class="flex justify-start my-4">
+          <app-button-with-icon
+            customClass="!rounded-full border py-1.5 pr-4 border-gray-200 shadow-md"
+            materialIcon="add"
+            route="/"
+            (itemClick)="navigateTo($event)">
+            <span class="font-medium">Add new link</span>
+          </app-button-with-icon>
+        </div>
         <h2 class="mt-2 text-xl font-medium">Other Links</h2>
         <div class="mt-3">
           <app-input
             [type]="additionalFields[3].type"
-            [control]="getFormControl(additionalFields[1].name)"
+            [control]="getFormControl(additionalFields[3].name)"
+            [icon]="additionalFields[3].icon || ''"
             [name]="additionalFields[3].name">
           </app-input>
         </div>
+        <div class="flex justify-start my-4">
+          <app-button-with-icon
+            customClass="!rounded-full border py-1.5 pr-4 border-gray-200 shadow-md"
+            materialIcon="add"
+            route="/"
+            (itemClick)="navigateTo($event)">
+            <span class="font-medium">Add new link</span>
+          </app-button-with-icon>
+        </div>
       </article>
-
-
     </form>
   </section>
 </main>

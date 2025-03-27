@@ -10,4 +10,5 @@ export interface FormField {
   disabled?: boolean;
   rows?: number;
   icon?: string;
+  iconPath?: string;
 }
