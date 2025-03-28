@@ -1,0 +1,49 @@
+<article id="social-networks" class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4 pb-16 mb-8">
+  <h1 class="text-2xl font-medium">Social networks & more</h1>
+  <p class="mt-2 text-sm text-gray-600">
+    All the social networks and external links you want to share
+  </p>
+
+  <h2 class="mt-2 text-xl font-medium">Social links</h2>
+  @for(field of socialLinkFields; track field.name) {
+    <app-input
+      [label]="field.label"
+      [placeholder]="field.placeholder"
+      [type]="field.type"
+      [control]="getFormControl(field.name)"
+      [required]="field.required || false"
+      [iconPath]="field.iconPath || ''"
+      [name]="field.name">
+    </app-input>
+  }
+
+  <div class="flex justify-start my-4">
+    <app-button-with-icon
+      customClass="!rounded-full border py-1.5 pr-4 border-gray-200 shadow-md"
+      materialIcon="add"
+      route="/"
+      (itemClick)="navigateTo($event)">
+      <span class="font-medium">Add new link</span>
+    </app-button-with-icon>
+  </div>
+
+  <h2 class="mt-2 text-xl font-medium">Other Links</h2>
+  <div class="mt-3">
+    <app-input
+      [type]="otherLinkField.type"
+      [control]="getFormControl(otherLinkField.name)"
+      [icon]="otherLinkField.icon || ''"
+      [name]="otherLinkField.name">
+    </app-input>
+  </div>
+
+  <div class="flex justify-start my-4">
+    <app-button-with-icon
+      customClass="!rounded-full border py-1.5 pr-4 border-gray-200 shadow-md"
+      materialIcon="add"
+      route="/"
+      (itemClick)="navigateTo($event)">
+      <span class="font-medium">Add new link</span>
+    </app-button-with-icon>
+  </div>
+</article>

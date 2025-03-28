@@ -3,7 +3,7 @@ import {FormsModule} from "@angular/forms";
 import {AuthService} from '../services/auth.service';
 import {Router} from '@angular/router';
 import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
-import {ButtonLoginComponent} from '../../../shared/button-login/button-login.component';
+import {ButtonLoginComponent} from '../components/button-login/button-login.component';
 
 @Component({
   selector: 'app-login-form',

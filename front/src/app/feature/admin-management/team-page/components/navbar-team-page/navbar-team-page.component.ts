@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
-import {ButtonGreyComponent} from '../button-grey/button-grey.component';
-import {ButtonWithIconComponent} from '../button-with-icon/button-with-icon.component';
 import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
+import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 
 @Component({
   selector: 'app-navbar-team-page',
@@ -20,10 +19,8 @@ export class NavbarTeamPageComponent {
   ) {}
 
   ngOnInit(): void {
-    // Obtenir la route actuelle au moment du chargement du composant
     this.setActivePage();
 
-    // Surveiller les changements de route pour définir l'état actif
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.setActivePage();
@@ -31,7 +28,6 @@ export class NavbarTeamPageComponent {
     });
   }
 
-  // Cette fonction définit la page active en fonction de la route actuelle
   setActivePage() {
     const currentRoute = this.router.url;
     if (currentRoute.includes('team-page')) {

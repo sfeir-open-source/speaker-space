@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import {NavbarTeamPageComponent} from '../../../shared/navbar-team-page/navbar-team-page.component';
+import {NavbarTeamPageComponent} from '../team-page/components/navbar-team-page/navbar-team-page.component';
 
 @Component({
   selector: 'app-setting-team-page',
