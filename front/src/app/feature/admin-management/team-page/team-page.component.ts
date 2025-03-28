@@ -1,8 +1,8 @@
-import {Component} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {EventTeamCardComponent} from '../../../shared/event-team-card/event-team-card.component';
 import {EventTeamField} from '../../../shared/event-team-card/interface/event-team-field';
-import {NavbarTeamPageComponent} from './components/navbar-team-page/navbar-team-page.component';
+import {NavbarTeamPageComponent} from '../components/navbar-team-page/navbar-team-page.component';
 
 @Component({
   selector: 'app-team-page',

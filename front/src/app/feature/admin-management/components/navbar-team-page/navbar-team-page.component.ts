@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
+import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
 
 @Component({
   selector: 'app-navbar-team-page',
