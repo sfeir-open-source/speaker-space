@@ -38,8 +38,8 @@ export class CreateTeamPageComponent {
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
-      teamName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      teamUrl: ['', [Validators.required]]
+      teamName: ['', [Validators.minLength(2), Validators.maxLength(50)]],
+      teamUrl: ['']
     });
   }
 

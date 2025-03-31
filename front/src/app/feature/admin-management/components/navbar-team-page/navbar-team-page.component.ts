@@ -32,7 +32,7 @@ export class NavbarTeamPageComponent {
     const currentRoute = this.router.url;
     if (currentRoute.includes('team-page')) {
       this.activePage = 'team-page';
-    } else if (currentRoute.includes('settings')) {
+    } else if (currentRoute.includes('settings-')) {
       this.activePage = 'settings';
     }
   }
@@ -44,6 +44,6 @@ export class NavbarTeamPageComponent {
 
   settings() {
     console.log('Navigating to settings...');
-    this.router.navigate(['/team-settings']);
+    this.router.navigate(['/settings-general']);
   }
 }

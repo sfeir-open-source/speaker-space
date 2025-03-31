@@ -1,23 +1,23 @@
 <aside class="hidden lg:block bg-white p-4 ml-3 mt-4 shadow-md rounded-md sticky top-4 self-start max-h-screen overflow-y-auto">
   <app-button-with-icon
     materialIcon="settings"
-    route="#general"
-    [customClass]="isActive('#general') ? 'bg-gray-100' : ''"
-    (itemClick)="navigateTo($event)">
+    route="settings-general"
+    [customClass]="isActive('settings-general') ? 'bg-gray-100' : ''"
+    (itemClick)="navigateTo('settings-general')">
     General
   </app-button-with-icon>
   <app-button-with-icon
     materialIcon="groups"
-    route="#members"
-    [customClass]="isActive('#members') ? 'bg-gray-100' : ''"
-    (itemClick)="navigateTo($event)">
-    Members
+    route="settings-members"
+    [customClass]="isActive('settings-members') ? 'bg-gray-100' : ''"
+    (itemClick)="navigateTo('settings-members')">
+  Members
   </app-button-with-icon>
   <app-button-with-icon
     materialIcon="favorite"
-    route="#support-speaker-space"
-    [customClass]="isActive('#support-speaker-space') ? 'bg-gray-100' : ''"
-    (itemClick)="navigateTo($event)">
+    route="support-speaker-space"
+    [customClass]="isActive('support-speaker-space') ? 'bg-gray-100' : ''"
+    (itemClick)="navigateTo('support-speaker-space')">
     Support Speaker Space
   </app-button-with-icon>
 </aside>

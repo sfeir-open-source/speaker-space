@@ -6,8 +6,11 @@ import {LoginPageComponent} from './core/login/login-page/login-page.component';
 import {AuthGuard} from '@angular/fire/auth-guard';
 import {CreateTeamPageComponent} from './feature/admin-management/create-team-page/create-team-page.component';
 import {TeamPageComponent} from './feature/admin-management/team-page/team-page.component';
-import {SettingTeamPageComponent} from './feature/admin-management/setting-team-page/setting-team-page.component';
+import {SettingTeamGeneralPageComponent} from './feature/admin-management/setting-team-general-page/setting-team-general-page.component';
 import {ProfileComponent} from './feature/profile/profile.component';
+import {
+  SettingTeamMembersPageComponent
+} from './feature/admin-management/setting-team-members-page/setting-team-members-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -15,7 +18,8 @@ export const routes: Routes = [
   { path: 'login', component: LoginPageComponent },
   { path: 'create-team', component: CreateTeamPageComponent},
   { path: 'team-page', component: TeamPageComponent},
-  { path: 'team-settings', component: SettingTeamPageComponent},
+  { path: 'settings-general', component: SettingTeamGeneralPageComponent},
+  { path: 'settings-members', component: SettingTeamMembersPageComponent },
   { path: 'profile', component: ProfileComponent},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }

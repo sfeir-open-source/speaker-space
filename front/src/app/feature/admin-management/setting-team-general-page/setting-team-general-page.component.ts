@@ -6,7 +6,7 @@ import {InputComponent} from '../../../shared/input/input.component';
 import {FormField} from '../../../shared/input/interface/form-field';
 
 @Component({
-  selector: 'app-setting-team-page',
+  selector: 'app-setting-team-general-page',
   imports: [
     NavbarTeamPageComponent,
     FormsModule,
@@ -14,11 +14,11 @@ import {FormField} from '../../../shared/input/interface/form-field';
     InputComponent,
     ReactiveFormsModule
   ],
-  templateUrl: './setting-team-page.component.html',
-  styleUrl: './setting-team-page.component.scss'
+  templateUrl: './setting-team-general-page.component.html',
+  styleUrl: './setting-team-general-page.component.scss'
 })
-export class SettingTeamPageComponent {
-  activeSection: string = 'general';
+export class SettingTeamGeneralPageComponent {
+  activeSection: string = 'settings-general';
 
   formValues: Record<string, any> = {
     teamName: '',
@@ -39,5 +39,9 @@ export class SettingTeamPageComponent {
   ];
 
   onSubmit() {
+  }
+
+  ngOnInit() {
+    this.activeSection = 'setting-sgeneral';
   }
 }
