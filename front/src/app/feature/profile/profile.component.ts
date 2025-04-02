@@ -1,21 +1,23 @@
-import {AfterViewInit, Component, ElementRef, OnInit, Renderer2} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnInit} from '@angular/core';
 import {FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {ProfileService} from './service/profile.service';
 import {ProfileSidebarComponent} from './components/profile-sidebar/profile-sidebar.component';
 import {PersonalInfoComponent} from './components/personal-info/personal-info.component';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {ProfileService} from '../../core/services/profile.service';
 import {BiographyComponent} from './components/biography/biography.component';
 import {SocialNetworksComponent} from './components/social-networks/social-networks.component';
 import {NavbarProfileComponent} from './components/navbar-profile/navbar-profile.component';
 
 @Component({
   selector: 'app-profile',
+  standalone:true,
   imports: [
     ReactiveFormsModule,
-    NavbarProfileComponent,
     ProfileSidebarComponent,
     PersonalInfoComponent,
     BiographyComponent,
     SocialNetworksComponent,
+    NavbarProfileComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
@@ -23,11 +25,12 @@ import {NavbarProfileComponent} from './components/navbar-profile/navbar-profile
 export class ProfileComponent implements OnInit, AfterViewInit {
   activeSection: string = 'personal-info';
   profileForm: FormGroup;
+  isSubmitting = false;
 
   constructor(
     private profileService: ProfileService,
-    private renderer: Renderer2,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private snackBar: MatSnackBar
   ) {
     this.profileForm = this.profileService.getForm();
   }
@@ -61,20 +64,42 @@ export class ProfileComponent implements OnInit, AfterViewInit {
     });
   }
 
-  onSubmit() {
-    if (this.profileService.saveProfile()) {
-      this.showSuccessMessage('Profile updated successfully!');
-    } else {
-      this.profileForm.markAllAsTouched();
-      this.showErrorMessage('Please correct the errors in the form.');
+  async onSubmit() {
+    if (this.isSubmitting) return;
+    console.log('Form submitted, values:', this.profileForm.value);
+
+    this.isSubmitting = true;
+    try {
+      console.log('Calling saveProfile()');
+
+      const success = await this.profileService.saveProfile();
+      console.log('saveProfile() result:', success);
+
+      if (success) {
+        this.showSuccessMessage('Profile updated successfully!');
+      } else {
+        this.profileForm.markAllAsTouched();
+        this.showErrorMessage('Please correct the errors in the form.');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      this.showErrorMessage('An error occurred while saving your profile.');
+    } finally {
+      this.isSubmitting = false;
     }
   }
 
   showSuccessMessage(message: string) {
-    alert(message);
+    this.snackBar.open(message, 'Close', {
+      duration: 3000,
+      panelClass: ['success-snackbar']
+    });
   }
 
   showErrorMessage(message: string) {
-    alert(message);
+    this.snackBar.open(message, 'Close', {
+      duration: 5000,
+      panelClass: ['error-snackbar']
+    });
   }
 }

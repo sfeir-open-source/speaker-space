@@ -3,11 +3,12 @@ import {Router} from '@angular/router';
 import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
 import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
 import {Observable} from 'rxjs';
-import {ProfileService} from '../../service/profile.service';
 import {AsyncPipe} from '@angular/common';
+import {ProfileService} from '../../../../core/services/profile.service';
 
 @Component({
   selector: 'app-navbar-profile',
+  standalone:true,
   imports: [
     ButtonWithIconComponent,
     ButtonGreenActionsComponent,

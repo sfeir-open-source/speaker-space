@@ -4,6 +4,7 @@ import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/butto
 
 @Component({
   selector: 'app-profile-sidebar',
+  standalone:true,
   imports: [
     ButtonWithIconComponent
   ],

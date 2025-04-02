@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { AuthService } from '../login/services/auth.service';
-import { SidebarService } from '../sidebar/service/sidebar.service';
 import { CommonModule } from '@angular/common';
 import {NavigationEnd, Router, RouterModule} from '@angular/router';
 import {filter, Subscription} from 'rxjs';
+import {AuthService} from '../services/auth.service';
+import {UserDataService} from '../services/user-data.service';
 
 @Component({
   selector: 'app-navbar',
@@ -25,7 +25,7 @@ export class NavbarComponent {
 
   constructor(
     private authService: AuthService,
-    private sidebarService: SidebarService,
+    private userDataService: UserDataService,
     private router: Router
   ) {}
 
@@ -69,7 +69,7 @@ export class NavbarComponent {
   }
 
   openSidebar() {
-    this.sidebarService.toggleSidebar(true, {
+    this.userDataService.toggleSidebar(true, {
       displayName: this.userName,
       photoURL: this.userPhotoURL,
       email: this.userEmail

@@ -7,10 +7,10 @@ import { provideFirebaseApp } from '@angular/fire/app';
 import { initializeApp } from 'firebase/app';
 import { environment } from '../environments/environment.development';
 import { provideAuth, getAuth } from '@angular/fire/auth';
-import {AuthService} from './core/login/services/auth.service';
 import {getFirestore, provideFirestore} from '@angular/fire/firestore';
 import {provideAnimations} from '@angular/platform-browser/animations';
 import {authInterceptor} from './core/login/interceptors/auth.interceptor';
+import {AuthService} from './core/services/auth.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [

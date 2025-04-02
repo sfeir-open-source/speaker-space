@@ -5,14 +5,29 @@ public class User {
     private String email;
     private String displayName;
     private String photoURL;
+    private String company;
+    private String city;
+    private String phoneNumber;
+    private String githubLink;
+    private String twitterLink;
+    private String blueSkyLink;
+    private String linkedInLink;
+//    private Text biography;
 
     public User() {}
 
-    public User(String uid, String email, String displayName, String photoURL) {
+    public User(String uid, String email, String displayName, String photoURL, String company, String city, String phoneNumber, String githubLink, String twitterLink, String blueSkyLink, String linkedInLink) {
         this.uid = uid;
         this.email = email;
         this.displayName = displayName;
         this.photoURL = photoURL;
+        this.company = company;
+        this.city = city;
+        this.phoneNumber = phoneNumber;
+        this.githubLink = githubLink;
+        this.twitterLink = twitterLink;
+        this.blueSkyLink = blueSkyLink;
+        this.linkedInLink = linkedInLink;
     }
 
     public String getUid() {
@@ -45,5 +60,61 @@ public class User {
 
     public void setPhotoURL(String photoURL) {
         this. photoURL= photoURL;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getGithubLink() {
+        return githubLink;
+    }
+
+    public void setGithubLink(String githubLink) {
+        this.githubLink = githubLink;
+    }
+
+    public String getTwitterLink() {
+        return twitterLink;
+    }
+
+    public void setTwitterLink(String twitterLink) {
+        this.twitterLink = twitterLink;
+    }
+
+    public String getBlueSkyLink() {
+        return blueSkyLink;
+    }
+
+    public void setBlueSkyLink(String blueSkyLink) {
+        this.blueSkyLink = blueSkyLink;
+    }
+
+    public String getLinkedInLink() {
+        return linkedInLink;
+    }
+
+    public void setLinkedInLink(String linkedInLink) {
+        this.linkedInLink = linkedInLink;
     }
 }

@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import {IsLogoutHomePageComponent} from './is-logout-home-page/is-logout-home-page-component';
 import {IsLoginHomePageComponent} from './is-login-home-page/is-login-home-page.component';
-import {AuthService} from '../login/services/auth.service';
+import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-home-page',

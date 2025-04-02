@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { SidebarService } from './sidebar.service';
+import { UserDataService } from './user-data.service';
 
-describe('SidebarService', () => {
-  let service: SidebarService;
+describe('UserDataService', () => {
+  let service: UserDataService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(SidebarService);
+    service = TestBed.inject(UserDataService);
   });
 
   it('should be created', () => {

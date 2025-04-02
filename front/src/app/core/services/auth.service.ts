@@ -1,25 +1,26 @@
-import {inject, Injectable} from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { User } from '../models/user.model';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 import {
   Auth,
   GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithPopup,
   GithubAuthProvider,
-  signOut,
-  User,
-  sendSignInLinkToEmail,
-  browserLocalPersistence,
-  isSignInWithEmailLink,
+  signInWithPopup,
   signInWithEmailLink,
+  isSignInWithEmailLink,
+  sendSignInLinkToEmail,
+  fetchSignInMethodsForEmail,
+  onAuthStateChanged,
+  signOut,
   setPersistence,
-  fetchSignInMethodsForEmail
+  browserLocalPersistence
 } from '@angular/fire/auth';
-import {BehaviorSubject, firstValueFrom} from 'rxjs';
+import {AuthErrorDialogComponent} from '../../shared/auth-error-dialog/auth-error-dialog.component';
 import {HttpClient} from '@angular/common/http';
-import {environment} from '../../../../environments/environment.development';
-import {Router} from '@angular/router';
-import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
-import {MatDialog} from '@angular/material/dialog';
+import {environment} from '../../../environments/environment.development';
+import {UserDataService} from './user-data.service';
 
 @Injectable({
   providedIn: 'root'
@@ -32,11 +33,20 @@ export class AuthService {
   private router = inject(Router);
   dialog = inject(MatDialog);
 
-  constructor() {
+  constructor(private userDataService: UserDataService) {
     onAuthStateChanged(this.auth, (user) => {
       this.user = user;
       this.user$.next(user);
+
+      if (user) {
+        this.fetchAndStoreUserData(user.uid);
+      } else {
+        this.clearUserData();
+      }
     });
+
+    this.restoreUserDataFromStorage();
+
     this.checkEmailLink();
   }
 
@@ -70,7 +80,25 @@ export class AuthService {
       if (result.user) {
         const token = await result.user.getIdToken();
         await this.sendTokenToBackend(token);
+        const userData = await this.fetchUserData(result.user.uid);
+        const mergedUserData = {
+          ...userData,
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL
+        };
         await this.saveUserToBackend(result.user);
+
+        if (result.user.displayName) {
+          this.userDataService.userName = result.user.displayName;
+          localStorage.setItem('userDisplayName', result.user.displayName);
+        }
+
+        if (result.user.photoURL) {
+          this.userDataService.userPhotoURL = result.user.photoURL;
+          localStorage.setItem('userPhotoURL', result.user.photoURL);
+        }
       }
       this.router.navigate(['/']);
       return result.user;
@@ -83,6 +111,47 @@ export class AuthService {
         console.error("Login failed", error);
         return null;
       }
+    }
+  }
+  private async fetchAndStoreUserData(uid: string): Promise<void> {
+    try {
+      console.log('Fetching user data for UID:', uid);
+      const userData = await firstValueFrom(
+        this.http.get<any>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
+      );
+
+      console.log('User data received:', userData);
+
+      if (userData) {
+        if (userData.displayName) {
+          this.userDataService.userName = userData.displayName;
+          console.log('Updated userName in UserDataService:', userData.displayName);
+        }
+
+        if (userData.email) {
+          this.userDataService.userEmail = userData.email;
+          console.log('Updated userEmail in UserDataService:', userData.email);
+        }
+
+        if (userData.photoURL) {
+          this.userDataService.userPhotoURL = userData.photoURL;
+          console.log('Updated userPhotoURL in UserDataService:', userData.photoURL);
+        }
+
+        localStorage.setItem('userCity', userData.city || '');
+        localStorage.setItem('userPhoneNumber', userData.phoneNumber || '');
+        localStorage.setItem('userGithubLink', userData.githubLink || '');
+        localStorage.setItem('userTwitterLink', userData.twitterLink || '');
+        localStorage.setItem('userBlueSkyLink', userData.blueSkyLink || '');
+        localStorage.setItem('userLinkedInLink', userData.linkedInLink || '');
+        localStorage.setItem('userCompany', userData.company || '');
+        localStorage.setItem('userDisplayName', userData.displayName || '');
+        localStorage.setItem('userPhotoURL', userData.photoURL || '');
+
+        console.log('User data stored in localStorage');
+      }
+    } catch (error) {
+      console.error('Error fetching user data from Firestore:', error);
     }
   }
 
@@ -223,25 +292,53 @@ export class AuthService {
       );
       return response;
     } catch (error) {
+      console.error('Error sending token to backend:', error);
       throw error;
     }
   }
 
-
   private async saveUserToBackend(user: any) {
     if (!user) return;
-    const userData = {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL
-    };
+
     try {
+      const existingUserData = await firstValueFrom(
+        this.http.get<any>(`${environment.apiUrl}/auth/user/${user.uid}`, { withCredentials: true })
+      ).catch(() => null);
+
+      interface UserData {
+        uid: string;
+        email: string | null;
+        displayName: string | null;
+        photoURL: string | null;
+        company?: string | null;
+        city?: string | null;
+        phoneNumber?: string | null;
+        githubLink?: string | null;
+        twitterLink?: string | null;
+        blueSkyLink?: string | null;
+        linkedInLink?: string | null;
+      };
+      const userData: UserData = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        company: user.company,
+        city: user.city,
+        phoneNumber: user.phoneNumber,
+        githubLink: user.githubLink,
+        twitterLink: user.twitterLink,
+        blueSkyLink: user.blueSkyLink,
+        linkedInLink: user.linkedInLink,
+      };
+
       const response = await firstValueFrom(
         this.http.post(`${environment.apiUrl}/auth`, userData, { withCredentials: true })
       );
+
       return response;
     } catch (error) {
+      console.error('Error saving user to backend:', error);
       throw error;
     }
   }
@@ -255,8 +352,76 @@ export class AuthService {
     } catch (error) {
       console.error('Error during logout:', error);
     }
+
+    this.clearUserData();
+
     window.history.replaceState({}, document.title, '/');
     this.user$.next(null);
     this.router.navigate(['/']);
+  }
+
+
+  async getIdToken(forceRefresh = true): Promise<string | null> {
+    try {
+      if (!this.auth.currentUser) {
+        console.error('No current user found');
+        return null;
+      }
+
+      const token = await this.auth.currentUser.getIdToken(forceRefresh);
+
+      await this.sendTokenToBackend(token);
+
+      return token;
+    } catch (error) {
+      console.error('Error getting fresh token:', error);
+      return null;
+    }
+  }
+
+  private restoreUserDataFromStorage(): void {
+    const company = localStorage.getItem('userCompany');
+    const city = localStorage.getItem('userCity');
+    const phoneNumber = localStorage.getItem('userPhoneNumber');
+    const githubLink = localStorage.getItem('userGithubLink');
+    const twitterLink = localStorage.getItem('userTwitterLink');
+    const blueSkyLink = localStorage.getItem('userBlueSkyLink');
+    const linkedInLink = localStorage.getItem('userLinkedInLink');
+    const displayName = localStorage.getItem('userDisplayName');
+    const photoURL = localStorage.getItem('userPhotoURL');
+    const email = localStorage.getItem('userEmail');
+
+    if (displayName) this.userDataService.userName = displayName;
+    if (photoURL) this.userDataService.userPhotoURL = photoURL;
+    if (displayName) this.userDataService.userName = displayName;
+    if (photoURL) this.userDataService.userPhotoURL = photoURL;
+    if (email) this.userDataService.userEmail = email;
+    if (company) this.userDataService.userCompany = company;
+    if (city) this.userDataService.userCity = city;
+    if (phoneNumber) this.userDataService.userPhoneNumber = phoneNumber;
+    if (githubLink) this.userDataService.userGithubLink = githubLink;
+    if (twitterLink) this.userDataService.userTwitterLink = twitterLink;
+    if (blueSkyLink) this.userDataService.userBlueSkyLink = blueSkyLink;
+    if (linkedInLink) this.userDataService.userLinkedInLink = linkedInLink;
+  }
+
+  private clearUserData(): void {
+    this.userDataService.userName = '';
+    this.userDataService.userEmail = '';
+    this.userDataService.userPhotoURL = '';
+
+    localStorage.removeItem('userDisplayName');
+    localStorage.removeItem('userPhotoURL');
+  }
+
+  private async fetchUserData(uid: string): Promise<any> {
+    try {
+      return await firstValueFrom(
+        this.http.get<any>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
+      );
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return null;
+    }
   }
 }
