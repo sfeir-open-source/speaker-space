@@ -49,6 +49,7 @@ public class AuthController {
             String uid = decodedToken.getUid();
 
             cookieService.setAuthCookie(response, request.getIdToken());
+            logger.info("Setting auth cookie for user");
 
             UserDTO userDTO = userService.getUserByUid(uid);
 
@@ -60,6 +61,11 @@ public class AuthController {
                 userDTO.setPhotoURL(decodedToken.getPicture());
 
                 userDTO = userService.saveUser(userDTO);
+
+                if (userDTO == null) {
+                    logger.error("Failed to create new user");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create user");
+                }
             }
 
             return ResponseEntity.ok(userDTO);

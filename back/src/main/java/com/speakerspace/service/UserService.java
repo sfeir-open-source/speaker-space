@@ -1,6 +1,7 @@
 package com.speakerspace.service;
 
 import com.google.cloud.firestore.CollectionReference;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.cloud.FirestoreClient;
 import com.speakerspace.dto.UserDTO;
@@ -62,23 +63,33 @@ public class UserService {
         if (newUser.getTwitterLink() == null) newUser.setTwitterLink(existingUser.getTwitterLink());
         if (newUser.getBlueSkyLink() == null) newUser.setBlueSkyLink(existingUser.getBlueSkyLink());
         if (newUser.getLinkedInLink() == null) newUser.setLinkedInLink(existingUser.getLinkedInLink());
+        if (newUser.getBiography() == null) newUser.setBiography(existingUser.getBiography());
+        if (newUser.getOtherLink() == null) newUser.setOtherLink(existingUser.getOtherLink());
 
         return newUser;
     }
 
     public UserDTO getUserByUid(String uid) {
         User user = getUserEntityByUid(uid);
+        if (user == null) {
+            return null;
+        }
         return userMapper.convertToDTO(user);
     }
 
     private User getUserEntityByUid(String uid) {
         try {
             Firestore firestore = FirestoreClient.getFirestore();
-            return firestore.collection(COLLECTION_NAME)
+            DocumentSnapshot document = firestore.collection(COLLECTION_NAME)
                     .document(uid)
                     .get()
-                    .get()
-                    .toObject(User.class);
+                    .get();
+
+            if (!document.exists()) {
+                return null;
+            }
+
+            return document.toObject(User.class);
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error fetching user from Firestore", e);
             return null;

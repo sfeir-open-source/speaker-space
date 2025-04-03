@@ -14,11 +14,12 @@ public class User {
     private String twitterLink;
     private String blueSkyLink;
     private String linkedInLink;
-//    private Text biography;
+    private String biography;
+    private String otherLink;
 
     public User() {}
 
-    public User(String uid, String email, String displayName, String photoURL, String company, String city, String phoneNumber, String githubLink, String twitterLink, String blueSkyLink, String linkedInLink) {
+    public User(String uid, String email, String displayName, String photoURL, String company, String city, String phoneNumber, String githubLink, String twitterLink, String blueSkyLink, String linkedInLink, String biography, String otherLink) {
         this.uid = uid;
         this.email = email;
         this.displayName = displayName;
@@ -30,6 +31,8 @@ public class User {
         this.twitterLink = twitterLink;
         this.blueSkyLink = blueSkyLink;
         this.linkedInLink = linkedInLink;
+        this.biography = biography;
+        this.otherLink = otherLink;
     }
 
     public String getUid() {
@@ -118,6 +121,22 @@ public class User {
 
     public void setLinkedInLink(String linkedInLink) {
         this.linkedInLink = linkedInLink;
+    }
+
+    public String getBiography() {
+        return biography;
+    }
+
+    public void setBiography(String biography) {
+        this.biography = biography;
+    }
+
+    public String getOtherLink() {
+        return otherLink;
+    }
+
+    public void setOtherLink(String otherLink) {
+        this.otherLink = otherLink;
     }
 
     @Override

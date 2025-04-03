@@ -12,8 +12,10 @@ public class UserDTO {
     private String twitterLink;
     private String blueSkyLink;
     private String linkedInLink;
+    private String biography;
+    private String otherLink;
 
-    public UserDTO(String uid, String email, String displayName, String photoURL, String company, String city, String phoneNumber, String githubLink, String twitterLink, String blueSkyLink, String linkedInLink) {
+    public UserDTO(String uid, String email, String displayName, String photoURL, String company, String city, String phoneNumber, String githubLink, String twitterLink, String blueSkyLink, String linkedInLink, String biography, String otherLink) {
         this.uid = uid;
         this.email = email;
         this.displayName = displayName;
@@ -25,6 +27,8 @@ public class UserDTO {
         this.twitterLink = twitterLink;
         this.blueSkyLink = blueSkyLink;
         this.linkedInLink = linkedInLink;
+        this.biography = biography;
+        this.otherLink = otherLink;
     }
 
     public UserDTO() {
@@ -118,4 +122,19 @@ public class UserDTO {
         this.linkedInLink = linkedInLink;
     }
 
+    public String getBiography() {
+        return biography;
+    }
+
+    public void setBiography(String biography) {
+        this.biography = biography;
+    }
+
+    public String getOtherLink() {
+        return otherLink;
+    }
+
+    public void setOtherLink(String otherLink) {
+        this.otherLink = otherLink;
+    }
 }

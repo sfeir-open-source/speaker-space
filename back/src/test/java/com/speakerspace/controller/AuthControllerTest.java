@@ -60,7 +60,6 @@ public class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        // Configuration commune pour tous les tests
         testUserDTO = new UserDTO();
         testUserDTO.setUid(TEST_UID);
         testUserDTO.setDisplayName("Test User");

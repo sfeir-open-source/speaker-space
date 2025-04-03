@@ -89,8 +89,6 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (Exception e) {
-            // Toutes les exceptions (y compris RuntimeException) devraient être capturées ici
-            // Nettoyage du contexte de sécurité si nécessaire
             SecurityContextHolder.clearContext();
         }
 

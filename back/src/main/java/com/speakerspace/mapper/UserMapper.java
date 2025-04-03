@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
 
     public UserDTO convertToDTO(User user) {
+        if (user == null) {
+            return null;
+        }
+
         UserDTO userDTO = new UserDTO();
         userDTO.setUid(user.getUid());
         userDTO.setEmail(user.getEmail());
@@ -20,6 +24,8 @@ public class UserMapper {
         userDTO.setTwitterLink(user.getTwitterLink());
         userDTO.setBlueSkyLink(user.getBlueSkyLink());
         userDTO.setLinkedInLink(user.getLinkedInLink());
+        userDTO.setBiography(user.getBiography());
+        userDTO.setOtherLink(user.getOtherLink());
         return userDTO;
     }
 
@@ -36,6 +42,8 @@ public class UserMapper {
         user.setTwitterLink(userDTO.getTwitterLink());
         user.setBlueSkyLink(userDTO.getBlueSkyLink());
         user.setLinkedInLink(userDTO.getLinkedInLink());
+        user.setBiography(userDTO.getBiography());
+        user.setOtherLink(userDTO.getOtherLink());
         return user;
     }
 
@@ -78,6 +86,14 @@ public class UserMapper {
 
         if (dto.getLinkedInLink() != null) {
             existingUser.setLinkedInLink(dto.getLinkedInLink());
+        }
+
+        if (dto.getBiography() != null) {
+            existingUser.setBiography(dto.getBiography());
+        }
+
+        if (dto.getOtherLink() != null) {
+            existingUser.setOtherLink(dto.getOtherLink());
         }
 
         return existingUser;
