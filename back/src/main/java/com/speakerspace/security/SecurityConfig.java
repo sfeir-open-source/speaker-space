@@ -31,6 +31,7 @@ public class SecurityConfig {
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/firestore/admin-access").hasRole("ADMIN")
                         .requestMatchers("/firestore/user-access").hasRole("USER")
+                        .requestMatchers("/team/create").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(firebaseTokenFilter, UsernamePasswordAuthenticationFilter.class);

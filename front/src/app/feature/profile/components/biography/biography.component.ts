@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import {FormControl} from '@angular/forms';
 import {InputComponent} from '../../../../shared/input/input.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
-import {ProfileService} from '../../../../core/services/profile.service';
+import {ProfileService} from '../../services/profile.service';
 
 @Component({
   selector: 'app-biography',

@@ -2,8 +2,8 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {NavigationEnd, Router, RouterModule} from '@angular/router';
 import {filter, Subscription} from 'rxjs';
-import {AuthService} from '../services/auth.service';
-import {UserDataService} from '../services/user-data.service';
+import {AuthService} from '../login/services/auth.service';
+import {UserDataService} from '../services/user-services/user-data.service';
 
 @Component({
   selector: 'app-navbar',

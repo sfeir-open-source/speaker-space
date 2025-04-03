@@ -1,9 +1,9 @@
 import { Component, inject } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import {InputComponent} from '../../../../shared/input/input.component';
-import {ProfileService} from '../../../../core/services/profile.service';
-import {UserStateService} from '../../../../core/services/user-state.service';
 import {FormField} from '../../../../shared/input/interface/form-field';
+import {ProfileService} from '../../services/profile.service';
+import {UserStateService} from '../../../../core/services/user-services/user-state.service';
 
 @Component({
   selector: 'app-personal-info',

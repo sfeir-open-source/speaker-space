@@ -18,10 +18,10 @@ import {
   browserLocalPersistence,
   signOut
 } from '@angular/fire/auth';
-import { UserStateService } from './user-state.service';
-import { User } from '../models/user.model';
-import {environment} from '../../../environments/environment.development';
-import {AuthErrorDialogComponent} from '../../shared/auth-error-dialog/auth-error-dialog.component';
+import {UserStateService} from '../../services/user-services/user-state.service';
+import {User} from '../../models/user.model';
+import {environment} from '../../../../environments/environment.development';
+import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
 
 @Injectable({
   providedIn: 'root'

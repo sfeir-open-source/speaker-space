@@ -2,7 +2,7 @@ import {Component, inject, OnInit, Signal} from '@angular/core';
 import {Router} from '@angular/router';
 import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
 import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
-import {UserStateService} from '../../../../core/services/user-state.service';
+import {UserStateService} from '../../../../core/services/user-services/user-state.service';
 
 @Component({
   selector: 'app-navbar-profile',

@@ -10,7 +10,7 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
 import {getFirestore, provideFirestore} from '@angular/fire/firestore';
 import {provideAnimations} from '@angular/platform-browser/animations';
 import {authInterceptor} from './core/login/interceptors/auth.interceptor';
-import {AuthService} from './core/services/auth.service';
+import {AuthService} from './core/login/services/auth.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -2,10 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { UserStateService } from './user-state.service';
-import { AuthService } from './auth.service';
-import { User } from '../models/user.model';
-import {environment} from '../../../environments/environment.development';
+import {UserStateService} from '../../../core/services/user-services/user-state.service';
+import {AuthService} from '../../../core/login/services/auth.service';
+import {environment} from '../../../../environments/environment.development';
+import {User} from '../../../core/models/user.model';
 
 @Injectable({
   providedIn: 'root'

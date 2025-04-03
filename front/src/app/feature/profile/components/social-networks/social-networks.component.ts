@@ -3,8 +3,8 @@ import { Router } from '@angular/router';
 import { FormControl } from '@angular/forms';
 import {InputComponent} from '../../../../shared/input/input.component';
 import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
-import {ProfileService} from '../../../../core/services/profile.service';
 import {FormField} from '../../../../shared/input/interface/form-field';
+import {ProfileService} from '../../services/profile.service';
 
 @Component({
   selector: 'app-social-networks',
