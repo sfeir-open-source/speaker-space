@@ -1,8 +1,6 @@
-package com.speakerspace.model;
+package com.speakerspace.dto;
 
-import java.util.Objects;
-
-public class User {
+public class UserDTO {
     private String uid;
     private String email;
     private String displayName;
@@ -14,11 +12,8 @@ public class User {
     private String twitterLink;
     private String blueSkyLink;
     private String linkedInLink;
-//    private Text biography;
 
-    public User() {}
-
-    public User(String uid, String email, String displayName, String photoURL, String company, String city, String phoneNumber, String githubLink, String twitterLink, String blueSkyLink, String linkedInLink) {
+    public UserDTO(String uid, String email, String displayName, String photoURL, String company, String city, String phoneNumber, String githubLink, String twitterLink, String blueSkyLink, String linkedInLink) {
         this.uid = uid;
         this.email = email;
         this.displayName = displayName;
@@ -30,6 +25,9 @@ public class User {
         this.twitterLink = twitterLink;
         this.blueSkyLink = blueSkyLink;
         this.linkedInLink = linkedInLink;
+    }
+
+    public UserDTO() {
     }
 
     public String getUid() {
@@ -61,7 +59,7 @@ public class User {
     }
 
     public void setPhotoURL(String photoURL) {
-        this. photoURL= photoURL;
+        this.photoURL = photoURL;
     }
 
     public String getCompany() {
@@ -120,16 +118,4 @@ public class User {
         this.linkedInLink = linkedInLink;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(uid, user.uid);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(uid);
-    }
 }

@@ -5,7 +5,8 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.config.CookieService;
 import com.speakerspace.config.FirebaseTokenRequest;
-import com.speakerspace.model.User;
+import com.speakerspace.dto.UserDTO;
+import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,18 +23,22 @@ public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final CookieService cookieService;
+    private final FirebaseAuth firebaseAuth;
+    private final UserMapper userMapper;
 
     @Autowired
-    private CookieService cookieService;
-
-    @Autowired
-    private FirebaseAuth firebaseAuth;
+    public AuthController(UserService userService, CookieService cookieService,
+                          FirebaseAuth firebaseAuth, UserMapper userMapper) {
+        this.userService = userService;
+        this.cookieService = cookieService;
+        this.firebaseAuth = firebaseAuth;
+        this.userMapper = userMapper;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody FirebaseTokenRequest request, HttpServletResponse response) {
-
         if (request.getIdToken() == null) {
             logger.error("No token provided in request");
             return ResponseEntity.badRequest().body("No token provided");
@@ -45,17 +50,19 @@ public class AuthController {
 
             cookieService.setAuthCookie(response, request.getIdToken());
 
-            User user = userService.getUserByUid(uid);
-            if (user == null) {
-                user = new User();
-                user.setUid(uid);
-                user.setEmail(decodedToken.getEmail());
-                user.setDisplayName(decodedToken.getName());
-                user.setPhotoURL(decodedToken.getPicture());
-                user = userService.saveUser(user);
+            UserDTO userDTO = userService.getUserByUid(uid);
+
+            if (userDTO == null) {
+                userDTO = new UserDTO();
+                userDTO.setUid(uid);
+                userDTO.setEmail(decodedToken.getEmail());
+                userDTO.setDisplayName(decodedToken.getName());
+                userDTO.setPhotoURL(decodedToken.getPicture());
+
+                userDTO = userService.saveUser(userDTO);
             }
 
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(userDTO);
         } catch (Exception e) {
             logger.error("Error during login", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
@@ -63,39 +70,12 @@ public class AuthController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody User user) {
+    public ResponseEntity<?> createUser(@RequestBody UserDTO userDTO) {
         try {
-            logger.info("Creating/updating user: {}", user.getUid());
+            logger.info("Creating/updating user: {}", userDTO.getUid());
 
-            User existingUser = userService.getUserByUid(user.getUid());
-
-            if (existingUser != null) {
-                if (existingUser.getCompany() != null && user.getCompany() == null) {
-                    user.setCompany(existingUser.getCompany());
-                }
-                if (existingUser.getCity() != null && user.getCity() == null) {
-                    user.setCity(existingUser.getCity());
-                }
-                if (existingUser.getPhoneNumber() != null && user.getPhoneNumber() == null) {
-                    user.setPhoneNumber(existingUser.getPhoneNumber());
-                }
-                if (existingUser.getGithubLink() != null && user.getGithubLink() == null) {
-                    user.setGithubLink(existingUser.getGithubLink());
-                }
-                if (existingUser.getTwitterLink() != null && user.getTwitterLink() == null) {
-                    user.setTwitterLink(existingUser.getTwitterLink());
-                }
-                if (existingUser.getBlueSkyLink() != null && user.getBlueSkyLink() == null) {
-                    user.setBlueSkyLink(existingUser.getBlueSkyLink());
-                }
-                if (existingUser.getLinkedInLink() != null && user.getLinkedInLink() == null) {
-                    user.setLinkedInLink(existingUser.getLinkedInLink());
-                }
-// TODO : les autres après
-            }
-
-            User savedUser = userService.saveUser(user);
-            return ResponseEntity.ok(savedUser);
+            UserDTO savedUserDTO = userService.saveUser(userDTO);
+            return ResponseEntity.ok(savedUserDTO);
         } catch (Exception e) {
             logger.error("Error creating/updating user", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -105,15 +85,15 @@ public class AuthController {
 
     @GetMapping("/{uid}")
     public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
-        User user = userService.getUserByUid(uid);
-        if (user == null) {
+        UserDTO userDTO = userService.getUserByUid(uid);
+        if (userDTO == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(userDTO);
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<?> updateUserProfile(@RequestBody User user, HttpServletRequest request) {
+    public ResponseEntity<?> updateUserProfile(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         try {
             String token = cookieService.getAuthTokenFromCookies(request);
             if (token == null) {
@@ -131,36 +111,25 @@ public class AuthController {
             }
 
             String uid = decodedToken.getUid();
-            if (!uid.equals(user.getUid())) {
+            if (!uid.equals(userDTO.getUid())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not authorized to update this profile");
             }
 
-            User updatedUser = new User();
-            updatedUser.setUid(uid);
-            updatedUser.setDisplayName(user.getDisplayName());
-            updatedUser.setPhotoURL(user.getPhotoURL());
-            updatedUser.setCompany(user.getCompany());
-            updatedUser.setCity(user.getCity());
-            updatedUser.setPhoneNumber(user.getPhoneNumber());
-            updatedUser.setGithubLink(user.getGithubLink());
-            updatedUser.setTwitterLink(user.getTwitterLink());
-            updatedUser.setBlueSkyLink(user.getBlueSkyLink());
-            updatedUser.setLinkedInLink(user.getLinkedInLink());
-// TODO : les autres après
-            User result = userService.updateUser(updatedUser);
-            if (result == null) {
+            UserDTO updatedUserDTO = userService.updateUser(userDTO);
+            if (updatedUserDTO == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(updatedUserDTO);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update profile: " + e.getMessage());
+            logger.error("Failed to update profile", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update profile: " + e.getMessage());
         }
     }
 
     @GetMapping("/user/{uid}")
     public ResponseEntity<?> getUserData(@PathVariable String uid, HttpServletRequest request) {
-
         try {
             String token = cookieService.getAuthTokenFromCookies(request);
             if (token == null) {
@@ -174,14 +143,16 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not authorized to access this profile");
             }
 
-            User user = userService.getUserByUid(uid);
-            if (user == null) {
+            UserDTO userDTO = userService.getUserByUid(uid);
+            if (userDTO == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(userDTO);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve user data: " + e.getMessage());
+            logger.error("Failed to retrieve user data", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve user data: " + e.getMessage());
         }
     }
 

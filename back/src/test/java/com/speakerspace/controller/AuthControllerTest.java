@@ -4,9 +4,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.config.CookieService;
 import com.speakerspace.config.FirebaseTokenRequest;
-import com.speakerspace.model.User;
+import com.speakerspace.dto.UserDTO;
+import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +39,13 @@ public class AuthControllerTest {
     private FirebaseAuth firebaseAuth;
 
     @Mock
+    private UserMapper userMapper;
+
+    @Mock
     private HttpServletResponse response;
+
+    @Mock
+    private HttpServletRequest request;
 
     @Mock
     private FirebaseToken firebaseToken;
@@ -45,84 +53,96 @@ public class AuthControllerTest {
     @InjectMocks
     private AuthController authController;
 
-    private User testUser;
+    private UserDTO testUserDTO;
     private FirebaseTokenRequest tokenRequest;
+    private final String VALID_TOKEN = "valid-token-123";
+    private final String TEST_UID = "test-uid-123";
 
     @BeforeEach
     void setUp() {
-        testUser = new User();
-        testUser.setUid("test-uid-123");
-        testUser.setDisplayName("Test User");
-        testUser.setEmail("test@example.com");
-        testUser.setPhotoURL("https://example.com/photo.jpg");
+        // Configuration commune pour tous les tests
+        testUserDTO = new UserDTO();
+        testUserDTO.setUid(TEST_UID);
+        testUserDTO.setDisplayName("Test User");
+        testUserDTO.setEmail("test@example.com");
+        testUserDTO.setPhotoURL("https://example.com/photo.jpg");
 
         tokenRequest = new FirebaseTokenRequest();
-        tokenRequest.idToken = "valid-token-123";
+        tokenRequest.idToken = VALID_TOKEN;
 
-        when(firebaseToken.getUid()).thenReturn(testUser.getUid());
-        when(firebaseToken.getEmail()).thenReturn(testUser.getEmail());
-        when(firebaseToken.getName()).thenReturn(testUser.getDisplayName());
-        when(firebaseToken.getPicture()).thenReturn(testUser.getPhotoURL());
+        when(firebaseToken.getUid()).thenReturn(testUserDTO.getUid());
+        when(firebaseToken.getEmail()).thenReturn(testUserDTO.getEmail());
+        when(firebaseToken.getName()).thenReturn(testUserDTO.getDisplayName());
+        when(firebaseToken.getPicture()).thenReturn(testUserDTO.getPhotoURL());
     }
 
     @Test
     void login_WithValidTokenAndExistingUser_ShouldReturnUser() throws Exception {
-        when(firebaseAuth.verifyIdToken(anyString())).thenReturn(firebaseToken);
-        when(userService.getUserByUid(anyString())).thenReturn(testUser);
+        // Given
+        when(firebaseAuth.verifyIdToken(VALID_TOKEN)).thenReturn(firebaseToken);
+        when(userService.getUserByUid(TEST_UID)).thenReturn(testUserDTO);
 
-        ResponseEntity<?> responseEntity = authController.login(tokenRequest, this.response);
+        // When
+        ResponseEntity<?> responseEntity = authController.login(tokenRequest, response);
 
+        // Then
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals(testUser, responseEntity.getBody());
-
-        verify(firebaseAuth).verifyIdToken(anyString());
-        verify(cookieService).setAuthCookie(any(), anyString());
-        verify(userService).getUserByUid(anyString());
-        verify(userService, never()).saveUser(any(User.class));
+        assertEquals(testUserDTO, responseEntity.getBody());
+        verify(firebaseAuth).verifyIdToken(VALID_TOKEN);
+        verify(cookieService).setAuthCookie(response, VALID_TOKEN);
+        verify(userService).getUserByUid(TEST_UID);
+        verify(userService, never()).saveUser(any(UserDTO.class));
     }
 
     @Test
     void login_WithValidTokenAndNewUser_ShouldCreateAndReturnUser() throws Exception {
-        when(firebaseAuth.verifyIdToken(anyString())).thenReturn(firebaseToken);
-        when(userService.getUserByUid(anyString())).thenReturn(null);
-        when(userService.saveUser(any(User.class))).thenReturn(testUser);
+        // Given
+        when(firebaseAuth.verifyIdToken(VALID_TOKEN)).thenReturn(firebaseToken);
+        when(userService.getUserByUid(TEST_UID)).thenReturn(null);
+        when(userService.saveUser(any(UserDTO.class))).thenReturn(testUserDTO);
 
-        ResponseEntity<?> response = authController.login(tokenRequest, this.response);
+        // When
+        ResponseEntity<?> responseEntity = authController.login(tokenRequest, response);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(testUser, response.getBody());
-
-        verify(firebaseAuth).verifyIdToken(anyString());
-        verify(cookieService).setAuthCookie(any(), anyString());
-        verify(userService).getUserByUid(anyString());
-        verify(userService).saveUser(any(User.class));
+        // Then
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(testUserDTO, responseEntity.getBody());
+        verify(firebaseAuth).verifyIdToken(VALID_TOKEN);
+        verify(cookieService).setAuthCookie(response, VALID_TOKEN);
+        verify(userService).getUserByUid(TEST_UID);
+        verify(userService).saveUser(any(UserDTO.class));
     }
 
     @Test
     void login_WithInvalidToken_ShouldReturnUnauthorized() throws Exception {
-        when(firebaseAuth.verifyIdToken(anyString()))
+        // Given
+        when(firebaseAuth.verifyIdToken(VALID_TOKEN))
                 .thenThrow(new IllegalArgumentException("Invalid token"));
 
-        ResponseEntity<?> response = authController.login(tokenRequest, this.response);
+        // When
+        ResponseEntity<?> responseEntity = authController.login(tokenRequest, response);
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-
-        verify(firebaseAuth).verifyIdToken(anyString());
+        // Then
+        assertEquals(HttpStatus.UNAUTHORIZED, responseEntity.getStatusCode());
+        assertEquals("Invalid token", responseEntity.getBody());
+        verify(firebaseAuth).verifyIdToken(VALID_TOKEN);
         verify(cookieService, never()).setAuthCookie(any(), anyString());
         verify(userService, never()).getUserByUid(anyString());
-        verify(userService, never()).saveUser(any(User.class));
+        verify(userService, never()).saveUser(any(UserDTO.class));
     }
 
     @Test
     void login_WithNoToken_ShouldReturnBadRequest() {
+        // Given
         FirebaseTokenRequest emptyRequest = new FirebaseTokenRequest();
         emptyRequest.idToken = null;
 
-        ResponseEntity<?> responseEntity = authController.login(emptyRequest, this.response);
+        // When
+        ResponseEntity<?> responseEntity = authController.login(emptyRequest, response);
 
+        // Then
         assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
         assertEquals("No token provided", responseEntity.getBody());
-
         verifyNoInteractions(firebaseAuth);
         verifyNoInteractions(userService);
         verifyNoInteractions(cookieService);
@@ -130,47 +150,92 @@ public class AuthControllerTest {
 
     @Test
     void createUser_ShouldSaveAndReturnUser() {
-        when(userService.saveUser(any(User.class))).thenReturn(testUser);
+        // Given
+        when(userService.saveUser(testUserDTO)).thenReturn(testUserDTO);
 
-        ResponseEntity<?> response = authController.createUser(testUser);
+        // When
+        ResponseEntity<?> responseEntity = authController.createUser(testUserDTO);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(testUser, response.getBody());
-
-        verify(userService).saveUser(any(User.class));
+        // Then
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(testUserDTO, responseEntity.getBody());
+        verify(userService).saveUser(testUserDTO);
     }
 
     @Test
     void getUserByUid_ExistingUser_ShouldReturnUser() {
-        when(userService.getUserByUid(anyString())).thenReturn(testUser);
+        // Given
+        when(userService.getUserByUid(TEST_UID)).thenReturn(testUserDTO);
 
-        ResponseEntity<?> response = authController.getUserByUid(testUser.getUid());
+        // When
+        ResponseEntity<?> responseEntity = authController.getUserByUid(TEST_UID);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(testUser, response.getBody());
-
-        verify(userService).getUserByUid(anyString());
+        // Then
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(testUserDTO, responseEntity.getBody());
+        verify(userService).getUserByUid(TEST_UID);
     }
 
     @Test
     void getUserByUid_NonExistingUser_ShouldReturnNotFound() {
-        when(userService.getUserByUid(anyString())).thenReturn(null);
+        // Given
+        String nonExistingUid = "non-existing-uid";
+        when(userService.getUserByUid(nonExistingUid)).thenReturn(null);
 
-        ResponseEntity<?> response = authController.getUserByUid("non-existing-uid");
+        // When
+        ResponseEntity<?> responseEntity = authController.getUserByUid(nonExistingUid);
 
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNull(response.getBody());
+        // Then
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
+        assertNull(responseEntity.getBody());
+        verify(userService).getUserByUid(nonExistingUid);
+    }
 
-        verify(userService).getUserByUid(anyString());
+    @Test
+    void updateUserProfile_WithValidTokenAndAuthorizedUser_ShouldUpdateAndReturnUser() throws Exception {
+        // Given
+        when(cookieService.getAuthTokenFromCookies(request)).thenReturn(VALID_TOKEN);
+        when(firebaseAuth.verifyIdToken(VALID_TOKEN)).thenReturn(firebaseToken);
+        when(userService.updateUser(testUserDTO)).thenReturn(testUserDTO);
+
+        // When
+        ResponseEntity<?> responseEntity = authController.updateUserProfile(testUserDTO, request);
+
+        // Then
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(testUserDTO, responseEntity.getBody());
+        verify(cookieService).getAuthTokenFromCookies(request);
+        verify(firebaseAuth).verifyIdToken(VALID_TOKEN);
+        verify(userService).updateUser(testUserDTO);
+    }
+
+    @Test
+    void getUserData_WithValidTokenAndAuthorizedUser_ShouldReturnUser() throws Exception {
+        // Given
+        when(cookieService.getAuthTokenFromCookies(request)).thenReturn(VALID_TOKEN);
+        when(firebaseAuth.verifyIdToken(VALID_TOKEN)).thenReturn(firebaseToken);
+        when(userService.getUserByUid(TEST_UID)).thenReturn(testUserDTO);
+
+        // When
+        ResponseEntity<?> responseEntity = authController.getUserData(TEST_UID, request);
+
+        // Then
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        assertEquals(testUserDTO, responseEntity.getBody());
+        verify(cookieService).getAuthTokenFromCookies(request);
+        verify(firebaseAuth).verifyIdToken(VALID_TOKEN);
+        verify(userService).getUserByUid(TEST_UID);
     }
 
     @Test
     void logout_ShouldClearCookieAndReturnOk() {
+        // Given
 
-        ResponseEntity<?> response = authController.logout(this.response);
+        // When
+        ResponseEntity<?> responseEntity = authController.logout(response);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-
-        verify(cookieService).clearAuthCookie(this.response);
+        // Then
+        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
+        verify(cookieService).clearAuthCookie(response);
     }
 }
