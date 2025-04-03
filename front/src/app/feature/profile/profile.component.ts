@@ -1,16 +1,21 @@
-import {AfterViewInit, Component, ElementRef, OnInit} from '@angular/core';
-import {FormGroup, ReactiveFormsModule} from '@angular/forms';
-import {ProfileSidebarComponent} from './components/profile-sidebar/profile-sidebar.component';
-import {PersonalInfoComponent} from './components/personal-info/personal-info.component';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {ProfileService} from '../../core/services/profile.service';
-import {BiographyComponent} from './components/biography/biography.component';
-import {SocialNetworksComponent} from './components/social-networks/social-networks.component';
-import {NavbarProfileComponent} from './components/navbar-profile/navbar-profile.component';
+import { Component, ElementRef, inject, OnInit, AfterViewInit, signal, OnDestroy } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { ProfileService } from '../../core/services/profile.service';
+import { UserStateService } from '../../core/services/user-state.service';
+import { ProfileSidebarComponent } from './components/profile-sidebar/profile-sidebar.component';
+import { PersonalInfoComponent } from './components/personal-info/personal-info.component';
+import { BiographyComponent } from './components/biography/biography.component';
+import { SocialNetworksComponent } from './components/social-networks/social-networks.component';
+import { NavbarProfileComponent } from './components/navbar-profile/navbar-profile.component';
+import {CommonModule} from '@angular/common';
+import {SaveIndicatorComponent} from './components/save-indicator/save-indicator.component';
+import {SaveStatus} from './types/save-status.types';
 
 @Component({
   selector: 'app-profile',
-  standalone:true,
+  standalone: true,
   imports: [
     ReactiveFormsModule,
     ProfileSidebarComponent,
@@ -18,28 +23,50 @@ import {NavbarProfileComponent} from './components/navbar-profile/navbar-profile
     BiographyComponent,
     SocialNetworksComponent,
     NavbarProfileComponent,
+    CommonModule,
+    SaveIndicatorComponent
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })
-export class ProfileComponent implements OnInit, AfterViewInit {
-  activeSection: string = 'personal-info';
-  profileForm: FormGroup;
-  isSubmitting = false;
+export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
+  private profileService = inject(ProfileService);
+  private elementRef = inject(ElementRef);
+  private snackBar = inject(MatSnackBar);
+  private userState = inject(UserStateService);
+  private destroy$ = new Subject<void>();
 
-  constructor(
-    private profileService: ProfileService,
-    private elementRef: ElementRef,
-    private snackBar: MatSnackBar
-  ) {
-    this.profileForm = this.profileService.getForm();
-  }
+  activeSection = signal('personal-info');
+  saveStatus = signal<SaveStatus>('idle');
+
+  profileForm = this.profileService.getForm();
 
   ngOnInit() {
+    this.userState.loadFromStorage();
+    this.setupAutoSave();
   }
 
   ngAfterViewInit() {
     this.setupSectionObserver();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  setupAutoSave() {
+    this.profileForm.valueChanges
+      .pipe(
+        takeUntil(this.destroy$),
+        debounceTime(3000),
+        distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+      )
+      .subscribe(() => {
+        if (this.profileForm.dirty && this.profileForm.valid) {
+          this.saveProfile();
+        }
+      });
   }
 
   setupSectionObserver() {
@@ -53,7 +80,7 @@ export class ProfileComponent implements OnInit, AfterViewInit {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          this.activeSection = entry.target.id;
+          this.activeSection.set(entry.target.id);
         }
       });
     }, options);
@@ -64,28 +91,29 @@ export class ProfileComponent implements OnInit, AfterViewInit {
     });
   }
 
-  async onSubmit() {
-    if (this.isSubmitting) return;
-    console.log('Form submitted, values:', this.profileForm.value);
+  async saveProfile() {
+    if (this.saveStatus() === 'saving') return;
 
-    this.isSubmitting = true;
+    this.saveStatus.set('saving');
     try {
-      console.log('Calling saveProfile()');
-
       const success = await this.profileService.saveProfile();
-      console.log('saveProfile() result:', success);
 
       if (success) {
-        this.showSuccessMessage('Profile updated successfully!');
+        this.saveStatus.set('saved');
+        setTimeout(() => {
+          if (this.saveStatus() === 'saved') {
+            this.saveStatus.set('idle');
+          }
+        }, 3000);
       } else {
         this.profileForm.markAllAsTouched();
+        this.saveStatus.set('error');
         this.showErrorMessage('Please correct the errors in the form.');
       }
     } catch (error) {
       console.error('Error submitting form:', error);
+      this.saveStatus.set('error');
       this.showErrorMessage('An error occurred while saving your profile.');
-    } finally {
-      this.isSubmitting = false;
     }
   }
 

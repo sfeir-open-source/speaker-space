@@ -1,23 +1,24 @@
-import { Component } from '@angular/core';
-import {FormControl} from '@angular/forms';
-import {Observable} from 'rxjs';
-import {ProfileService} from '../../../../core/services/profile.service';
+import { Component, inject } from '@angular/core';
+import { FormControl } from '@angular/forms';
 import {InputComponent} from '../../../../shared/input/input.component';
-import {AsyncPipe} from '@angular/common';
+import {ProfileService} from '../../../../core/services/profile.service';
+import {UserStateService} from '../../../../core/services/user-state.service';
 import {FormField} from '../../../../shared/input/interface/form-field';
 
 @Component({
   selector: 'app-personal-info',
-  standalone:true,
+  standalone: true,
   templateUrl: './personal-info.component.html',
   imports: [
     InputComponent,
-    AsyncPipe
   ],
   styleUrls: ['./personal-info.component.scss']
 })
 export class PersonalInfoComponent {
-  userPhotoURL$: Observable<string | null>;
+  private profileService = inject(ProfileService);
+  private userState = inject(UserStateService);
+
+  userPhotoURL = this.userState.photoURL;
 
   formFields: FormField[] = [
     { name: 'displayName', label: 'Full name', type: 'text' },
@@ -28,12 +29,8 @@ export class PersonalInfoComponent {
 
   additionalFields: FormField[] = [
     { name: 'avatarPictureURL', label: 'Avatar picture URL', type: 'text' },
-    { name: 'phoneNumber', label: 'Phone number', type: 'tel' }
+    { name: 'phoneNumber', label: 'Phone number', type: 'text' }
   ];
-
-  constructor(public profileService: ProfileService) {
-    this.userPhotoURL$ = this.profileService.userPhotoURL$;
-  }
 
   getFormControl(name: string): FormControl {
     return this.profileService.getForm().get(name) as FormControl;

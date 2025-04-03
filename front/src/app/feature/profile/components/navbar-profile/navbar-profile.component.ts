@@ -1,10 +1,8 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, inject, OnInit, Signal} from '@angular/core';
 import {Router} from '@angular/router';
 import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
 import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
-import {Observable} from 'rxjs';
-import {AsyncPipe} from '@angular/common';
-import {ProfileService} from '../../../../core/services/profile.service';
+import {UserStateService} from '../../../../core/services/user-state.service';
 
 @Component({
   selector: 'app-navbar-profile',
@@ -12,19 +10,18 @@ import {ProfileService} from '../../../../core/services/profile.service';
   imports: [
     ButtonWithIconComponent,
     ButtonGreenActionsComponent,
-    AsyncPipe,
   ],
   templateUrl: './navbar-profile.component.html',
   styleUrl: './navbar-profile.component.scss'
 })
 export class NavbarProfileComponent implements OnInit{
-  userPhotoURL$: Observable<string | null>;
+  private userState = inject(UserStateService);
+  protected userPhotoURL: Signal<string>;
 
   constructor(
     private router: Router,
-    public profileService: ProfileService
   ) {
-    this.userPhotoURL$ = this.profileService.userPhotoURL$;
+    this.userPhotoURL = this.userState.photoURL;
   }
 
   navigateTo(path: string) {

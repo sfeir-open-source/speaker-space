@@ -1,13 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SidebarComponent } from './sidebar.component';
-import { SidebarService } from '../service/sidebar.service';
-import { AuthService } from '../../login/services/auth.service';
 import { Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ButtonWithIconComponent } from '../../../shared/button-with-icon/button-with-icon.component';
 import { By } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import {AuthService} from '../services/auth.service';
+import {UserDataService} from '../services/user-data.service';
 
 class MockSidebarNavItemComponent {}
 
@@ -40,7 +39,7 @@ class MockRouter {
 describe('SidebarComponent', () => {
   let component: SidebarComponent;
   let fixture: ComponentFixture<SidebarComponent>;
-  let sidebarService: MockSidebarService;
+  let userDataService: MockSidebarService;
   let authService: MockAuthService;
   let router: MockRouter;
 
@@ -48,7 +47,7 @@ describe('SidebarComponent', () => {
     await TestBed.configureTestingModule({
       imports: [CommonModule, SidebarComponent],
       providers: [
-        { provide: SidebarService, useClass: MockSidebarService },
+        { provide: UserDataService, useClass: MockSidebarService },
         { provide: AuthService, useClass: MockAuthService },
         { provide: Router, useClass: MockRouter }
       ],
@@ -58,7 +57,7 @@ describe('SidebarComponent', () => {
 
     fixture = TestBed.createComponent(SidebarComponent);
     component = fixture.componentInstance;
-    sidebarService = TestBed.inject(SidebarService) as unknown as MockSidebarService;
+    userDataService = TestBed.inject(UserDataService) as unknown as MockSidebarService;
     authService = TestBed.inject(AuthService) as unknown as MockAuthService;
     router = TestBed.inject(Router) as unknown as MockRouter;
 
@@ -85,21 +84,21 @@ describe('SidebarComponent', () => {
 
   it('should close sidebar when closeSidebar is called', () => {
     component.closeSidebar();
-    expect(sidebarService.toggleSidebar).toHaveBeenCalledWith(false);
+    expect(userDataService.toggleSidebar).toHaveBeenCalledWith(false);
   });
 
   it('should logout and close sidebar when logout is called', () => {
     component.logout();
 
     expect(authService.logout).toHaveBeenCalled();
-    expect(sidebarService.toggleSidebar).toHaveBeenCalledWith(false);
+    expect(userDataService.toggleSidebar).toHaveBeenCalledWith(false);
   });
 
   it('should navigate to path and close sidebar when navigateTo is called', () => {
     component.navigateTo('/test-path');
 
     expect(router.navigate).toHaveBeenCalledWith(['/test-path']);
-    expect(sidebarService.toggleSidebar).toHaveBeenCalledWith(false);
+    expect(userDataService.toggleSidebar).toHaveBeenCalledWith(false);
   });
 
   it('should call createNewTeam and close sidebar', () => {
@@ -108,7 +107,7 @@ describe('SidebarComponent', () => {
     component.createNewTeam();
 
     expect(consoleSpy).toHaveBeenCalledWith('Creating new team...');
-    expect(sidebarService.toggleSidebar).toHaveBeenCalledWith(false);
+    expect(userDataService.toggleSidebar).toHaveBeenCalledWith(false);
 
     consoleSpy.mockRestore();
   });
@@ -117,7 +116,7 @@ describe('SidebarComponent', () => {
     const overlay = fixture.debugElement.query(By.css('section.fixed.inset-0'));
     overlay.triggerEventHandler('click', {});
 
-    expect(sidebarService.toggleSidebar).toHaveBeenCalledWith(false);
+    expect(userDataService.toggleSidebar).toHaveBeenCalledWith(false);
   });
 
   it('should stop propagation when main content is clicked', () => {
@@ -130,10 +129,10 @@ describe('SidebarComponent', () => {
   });
 
   it('should display user information correctly', () => {
-    sidebarService.userName = 'Test User';
-    sidebarService.userEmail = 'test@example.com';
-    sidebarService.userPhotoURL = 'test-photo.jpg';
-    sidebarService.isSidebarOpen = true;
+    userDataService.userName = 'Test User';
+    userDataService.userEmail = 'test@example.com';
+    userDataService.userPhotoURL = 'test-photo.jpg';
+    userDataService.isSidebarOpen = true;
 
     fixture.detectChanges();
 
@@ -147,7 +146,7 @@ describe('SidebarComponent', () => {
   });
 
   it('should apply correct classes based on sidebar state', () => {
-    sidebarService.isSidebarOpen = false;
+    userDataService.isSidebarOpen = false;
     fixture.detectChanges();
 
     let overlay = fixture.debugElement.query(By.css('section.fixed.inset-0'));
@@ -159,7 +158,7 @@ describe('SidebarComponent', () => {
     expect(main.classes['translate-x-full']).toBeTruthy();
     expect(main.classes['translate-x-0']).toBeFalsy();
 
-    sidebarService.isSidebarOpen = true;
+    userDataService.isSidebarOpen = true;
     fixture.detectChanges();
 
     overlay = fixture.debugElement.query(By.css('section.fixed.inset-0'));

@@ -10,4 +10,6 @@ export interface User {
   twitterLink?: string | null;
   blueSkyLink?: string | null;
   linkedInLink?: string | null;
+  otherLink?: string | null;
+  biography?: string | null;
 }

@@ -49,7 +49,7 @@ export class LoginFormComponent {
 
   mailLinkLogin(email: string) {
     if (!email) {
-      this.authService.dialog.open(AuthErrorDialogComponent, {
+      this.authService.openDialog(AuthErrorDialogComponent, {
         width: '400px',
         data: {
           title: 'Error',

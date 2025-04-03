@@ -1,0 +1,25 @@
+<div class="fixed transition-opacity duration-300"
+     [ngClass]="getPositionClasses()">
+  <div class="flex items-center p-3 rounded-md shadow-md z-50"
+       [ngClass]="{
+         'bg-blue-100': status === 'saving',
+         'bg-green-100': status === 'saved',
+         'bg-red-100': status === 'error'
+       }">
+    <span class="material-icons mr-2"
+          [ngClass]="{
+            'text-blue-500': status === 'saving',
+            'text-green-500': status === 'saved',
+            'text-red-500': status === 'error'
+          }">
+      {{ getIcon() }}
+    </span>
+    <span [ngClass]="{
+            'text-blue-700': status === 'saving',
+            'text-green-700': status === 'saved',
+            'text-red-700': status === 'error'
+          }">
+      {{ getMessage() }}
+    </span>
+  </div>
+</div>

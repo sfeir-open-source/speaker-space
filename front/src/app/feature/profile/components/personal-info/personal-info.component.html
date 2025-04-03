@@ -1,5 +1,10 @@
 <article class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4 pb-16 mb-8">
-  <h1 class="text-2xl font-medium">Personal information</h1>
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <h1 class="text-2xl font-medium">Personal information</h1>
+    <p class="mt-1 sm:mt-0 text-xs text-gray-600">
+      Please note that if the data is modified, it is automatically saved !
+    </p>
+  </div>
   <p class="mt-2 text-sm text-gray-600">
     Informations used to contact you and complete your profile (all those informations where import from Conference Hall)
   </p>
@@ -7,7 +12,6 @@
   @for(field of formFields; track field.name) {
     <app-input
       [label]="field.label"
-      [placeholder]="profileService.getPlaceholder(field.name)"
       [type]="field.type"
       [control]="getFormControl(field.name)"
       [name]="field.name">
@@ -24,7 +28,7 @@
       </app-input>
     </div>
     <div class="ml-4 flex flex-col items-center">
-      <img [src]="userPhotoURL$ | async"
+      <img [src]="userPhotoURL()"
            alt="Profile Picture"
            class="w-20 h-20 rounded-md border-3 border-white shadow-md object-cover"
            (error)="handlePictureError($event)">

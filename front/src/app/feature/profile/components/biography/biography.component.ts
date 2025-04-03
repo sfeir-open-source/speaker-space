@@ -15,7 +15,7 @@ import {ProfileService} from '../../../../core/services/profile.service';
 })
 export class BiographyComponent {
   biographyField: FormField = {
-    name: 'biographySpeaker',
+    name: 'biography',
     label: 'Biography Speaker',
     type: 'textarea',
   };

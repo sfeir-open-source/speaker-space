@@ -2,9 +2,9 @@ import {Component} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {NavigationEnd, Router} from '@angular/router';
 import {filter} from 'rxjs';
-import {ButtonWithIconComponent} from '../../../shared/button-with-icon/button-with-icon.component';
-import {AuthService} from '../../services/auth.service';
-import {UserDataService} from '../../services/user-data.service';
+import {ButtonWithIconComponent} from '../../shared/button-with-icon/button-with-icon.component';
+import {UserDataService} from '../services/user-data.service';
+import {AuthService} from '../services/auth.service';
 
 @Component({
   selector: 'app-sidebar',

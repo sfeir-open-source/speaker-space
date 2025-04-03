@@ -15,6 +15,8 @@ export class UserDataService {
   userTwitterLink: string = '';
   userBlueSkyLink: string = '';
   userLinkedInLink: string = '';
+  userOtherLink: string = '';
+  userBiography: string = '';
 
   toggleSidebar(open: boolean, user: any = null) {
     this.isSidebarOpen = open;
@@ -29,6 +31,8 @@ export class UserDataService {
       this.userTwitterLink = user.twitterLink || '';
       this.userBlueSkyLink = user.blueSkyLink || '';
       this.userLinkedInLink = user.linkedInLink || '';
+      this.userOtherLink = user.otherLink || '';
+      this.userBiography = user.biography || '';
     }
   }
 }

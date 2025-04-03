@@ -1,46 +1,71 @@
-import { Injectable } from '@angular/core';
-import {FormBuilder, FormGroup} from '@angular/forms';
-import {BehaviorSubject, firstValueFrom, Observable} from 'rxjs';
-import {AuthService} from './auth.service';
-import {FormField} from '../../shared/input/interface/form-field';
+import { Injectable, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { UserStateService } from './user-state.service';
+import { AuthService } from './auth.service';
+import { User } from '../models/user.model';
 import {environment} from '../../../environments/environment.development';
-import {HttpClient} from '@angular/common/http';
-import {UserDataService} from './user-data.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProfileService {
-  private userPhotoURLSubject = new BehaviorSubject<string | null>(null);
-  userPhotoURL$ = this.userPhotoURLSubject.asObservable();
+  private fb = inject(FormBuilder);
+  private http = inject(HttpClient);
+  private userState = inject(UserStateService);
+  private authService = inject(AuthService);
 
   private profileForm: FormGroup;
-  private currentUserUid: string | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private userDataService: UserDataService,
-    private http: HttpClient
-  ) {
+  constructor() {
     this.profileForm = this.createForm();
-    this.initializeUserData();
+    this.initializeForm();
+
+    this.authService.user$.subscribe(user => {
+      if (user) {
+        this.fetchUserData(user.uid);
+      }
+    });
   }
 
   private createForm(): FormGroup {
     return this.fb.group({
       displayName: [''],
-      emailAddress: [''],
+      emailAddress: ['', [Validators.email]],
       company: [''],
       city: [''],
       avatarPictureURL: [''],
       phoneNumber: [''],
-      biographySpeaker: [''],
+      biography: [''],
       githubLink: [''],
       twitterLink: [''],
       blueSkyLink: [''],
       linkedInLink: [''],
-      otherlink: ['']
+      otherLink: ['']
+    });
+  }
+
+  private initializeForm(): void {
+    this.profileForm.patchValue({
+      displayName: this.userState.displayName(),
+      emailAddress: this.userState.email(),
+      avatarPictureURL: this.userState.photoURL(),
+      company: this.userState.company(),
+      city: this.userState.city(),
+      phoneNumber: this.userState.phoneNumber(),
+      githubLink: this.userState.githubLink(),
+      twitterLink: this.userState.twitterLink(),
+      blueSkyLink: this.userState.blueSkyLink(),
+      linkedInLink: this.userState.linkedInLink(),
+      otherLink: this.userState.otherLink(),
+      biography: this.userState.biography()
+    });
+
+    this.profileForm.get('avatarPictureURL')?.valueChanges.subscribe(url => {
+      if (url) {
+        this.userState.updateUser({ photoURL: url });
+      }
     });
   }
 
@@ -48,149 +73,83 @@ export class ProfileService {
     return this.profileForm;
   }
 
-  private initializeUserData(): void {
-    this.userPhotoURLSubject.next(this.userDataService.userPhotoURL || 'img/profil-picture.svg');
-
-    this.authService.user$.subscribe(user => {
-      if (user) {
-        this.currentUserUid = user.uid;
-        console.log('Current user UID set:', this.currentUserUid);
-
-        this.profileForm.patchValue({
-          displayName: user.displayName || this.userDataService.userName || '',
-          emailAddress: user.email || this.userDataService.userEmail || '',
-          avatarPictureURL: user.photoURL || this.userDataService.userPhotoURL || ''
-        });
-
-        this.userPhotoURLSubject.next(
-          user.photoURL || this.userDataService.userPhotoURL || 'img/profil-picture.svg'
-        );
-
-        this.fetchUserDataFromFirestore(user.uid);
-      }
-    });
-
-    this.profileForm.get('avatarPictureURL')?.valueChanges.subscribe(url => {
-      this.userPhotoURLSubject.next(url || 'img/profil-picture.svg');
-    });
-  }
-
-  private fetchUserDataFromFirestore(uid: string): void {
-    console.log('Fetching user data from Firestore for UID:', uid);
-
-    this.http.get<any>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
-      .subscribe({
-        next: (userData) => {
-          console.log('User data received from Firestore:', userData);
-
-          if (userData) {
-            this.profileForm.patchValue({
-              company: userData.company || '',
-              city: userData.city || '',
-              phoneNumber: userData.phoneNumber || '',
-              githubLink: userData.githubLink || '',
-              twitterLink: userData.twitterLink || '',
-              blueSkyLink: userData.blueSkyLink || '',
-              linkedInLink: userData.linkedInLink || ''
-            });
-
-            this.userDataService.userCompany = userData.company || this.userDataService.userCompany;
-            this.userDataService.userCity = userData.city || this.userDataService.userCity;
-            this.userDataService.userPhoneNumber = userData.phoneNumber || this.userDataService.userPhoneNumber;
-            this.userDataService.userGithubLink = userData.githubLink || this.userDataService.userGithubLink;
-            this.userDataService.userTwitterLink = userData.twitterLink || this.userDataService.userTwitterLink;
-            this.userDataService.userBlueSkyLink = userData.blueSkyLink || this.userDataService.userBlueSkyLink;
-            this.userDataService.userLinkedInLink = userData.linkedInLink || this.userDataService.userLinkedInLink;
-
-            console.log('UserDataService updated with Firestore data');
-          }
-        },
-        error: (error) => {
-          console.error('Error fetching user data from Firestore:', error);
-        }
-      });
-  }
-
-
   getPlaceholder(fieldName: string): string {
     switch (fieldName) {
-      case 'displayName':
-        return this.userDataService.userName || '';
-      case 'emailAddress':
-        return this.userDataService.userEmail || '';
-      case 'avatarPictureURL':
-        return this.userDataService.userPhotoURL || '';
-      case 'company':
-        return this.userDataService.userCompany || '';
-      case 'city':
-        return this.userDataService.userCity || '';
-      case 'phoneNumber':
-        return this.userDataService.userPhoneNumber || '';
-      case 'githubLink':
-        return this.userDataService.userGithubLink || '';
-      case 'twitterLink':
-        return this.userDataService.userTwitterLink || '';
-      case 'blueSkyLink':
-        return this.userDataService.userBlueSkyLink || '';
-      case 'linkedInLink':
-        return this.userDataService.userLinkedInLink || '';
-      default:
-        return '';
+      case 'displayName': return this.userState.displayName();
+      case 'emailAddress': return this.userState.email();
+      case 'avatarPictureURL': return this.userState.photoURL();
+      case 'company': return this.userState.company();
+      case 'city': return this.userState.city();
+      case 'phoneNumber': return this.userState.phoneNumber();
+      case 'githubLink': return this.userState.githubLink();
+      case 'twitterLink': return this.userState.twitterLink();
+      case 'blueSkyLink': return this.userState.blueSkyLink();
+      case 'linkedInLink': return this.userState.linkedInLink();
+      case 'otherLink': return this.userState.otherLink();
+      case 'biography': return this.userState.biography();
+      default: return '';
+    }
+  }
+
+  private async fetchUserData(uid: string): Promise<void> {
+    try {
+      const userData = await firstValueFrom(
+        this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
+      );
+
+      if (userData) {
+        this.userState.updateUser(userData);
+
+        this.profileForm.patchValue({
+          displayName: userData.displayName || '',
+          emailAddress: userData.email || '',
+          avatarPictureURL: userData.photoURL || '',
+          company: userData.company || '',
+          city: userData.city || '',
+          phoneNumber: userData.phoneNumber || '',
+          githubLink: userData.githubLink || '',
+          twitterLink: userData.twitterLink || '',
+          blueSkyLink: userData.blueSkyLink || '',
+          linkedInLink: userData.linkedInLink || '',
+          otherLink: userData.otherLink || '',
+          biography: userData.biography || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
     }
   }
 
   async saveProfile(): Promise<boolean> {
-    console.log('Saving profile, currentUserUid:', this.currentUserUid);
-    console.log('Form values:', this.profileForm.value);
-
-    if (!this.currentUserUid) {
-      console.error('No user UID available');
-      return false;
-    }
+    const user = this.userState.user();
+    if (!user?.uid) return false;
 
     try {
       await this.authService.getIdToken(true);
 
-      const userData = {
-        uid: this.currentUserUid,
-        displayName: this.profileForm.value.displayName,
-        photoURL: this.profileForm.value.avatarPictureURL,
-        company: this.profileForm.value.company,
-        city: this.profileForm.value.city,
-        phoneNumber: this.profileForm.value.phoneNumber,
-        githubLink: this.profileForm.value.githubLink,
-        twitterLink: this.profileForm.value.twitterLink,
-        blueSkyLink: this.profileForm.value.blueSkyLink,
-        linkedInLink: this.profileForm.value.linkedInLink,
+      const formValues = this.profileForm.value;
+      const userData: Partial<User> = {
+        uid: user.uid,
+        displayName: formValues.displayName,
+        photoURL: formValues.avatarPictureURL,
+        company: formValues.company,
+        city: formValues.city,
+        phoneNumber: formValues.phoneNumber,
+        githubLink: formValues.githubLink,
+        twitterLink: formValues.twitterLink,
+        blueSkyLink: formValues.blueSkyLink,
+        linkedInLink: formValues.linkedInLink,
+        biography: formValues.biography,
+        otherLink: formValues.otherLink
       };
 
-      console.log('Sending user data to backend:', userData);
-
-      const response = await firstValueFrom(
-        this.http.put<any>(`${environment.apiUrl}/auth/profile`, userData, {withCredentials: true})
+      await firstValueFrom(
+        this.http.put<any>(`${environment.apiUrl}/auth/profile`, userData, { withCredentials: true })
       );
 
-      console.log('Profile saved successfully, response:', response);
+      this.userState.updateUser(userData);
 
-      this.userDataService.userName = userData.displayName || this.userDataService.userName;
-      this.userDataService.userPhotoURL = userData.photoURL || this.userDataService.userPhotoURL;
-      this.userDataService.userCompany = userData.company || this.userDataService.userCompany;
-      this.userDataService.userCity = userData.city || this.userDataService.userCity;
-      this.userDataService.userPhoneNumber = userData.phoneNumber || this.userDataService.userPhoneNumber;
-      this.userDataService.userGithubLink = userData.githubLink || this.userDataService.userGithubLink;
-      this.userDataService.userTwitterLink = userData.twitterLink || this.userDataService.userTwitterLink;
-      this.userDataService.userBlueSkyLink = userData.blueSkyLink || this.userDataService.userBlueSkyLink;
-      this.userDataService.userLinkedInLink = userData.linkedInLink || this.userDataService.userLinkedInLink;
-
-      localStorage.setItem('userDisplayName', userData.displayName || '');
-      localStorage.setItem('userPhotoURL', userData.photoURL || '');
-      localStorage.setItem('userCompany', userData.company || '');
-      localStorage.setItem('userCity', userData.city || '');
-      localStorage.setItem('userPhoneNumber', userData.phoneNumber || '');
-      localStorage.setItem('userGithubLink', userData.githubLink || '');
-      localStorage.setItem('userTwitterLink', userData.twitterLink || '');
-      localStorage.setItem('userBlueSkyLink', userData.blueSkyLink || '');
-      localStorage.setItem('userLinkedInLink', userData.linkedInLink || '');
+      this.userState.saveToStorage();
 
       return true;
     } catch (error) {
@@ -198,48 +157,4 @@ export class ProfileService {
       return false;
     }
   }
-}
-
-export class PersonalInfoComponent {
-  userPhotoURL$: Observable<string | null>;
-
-  constructor(public profileService: ProfileService) {
-    this.userPhotoURL$ = this.profileService.userPhotoURL$;
-  }
-
-  formFields: FormField[] = [
-    {
-      name: 'displayName',
-      label: 'Full name',
-      type: 'text',
-    },
-    {
-      name: 'emailAddress',
-      label: 'Email address',
-      type: 'text',
-    },
-    {
-      name: 'company',
-      label: 'Company',
-      type: 'text',
-    },
-    {
-      name: 'city',
-      label: 'City',
-      type: 'text',
-    }
-  ];
-
-  additionalFields: FormField[] = [
-    {
-      name: 'avatarPictureURL',
-      label: 'Avatar picture URL',
-      type: 'text',
-    },
-    {
-      name: 'phoneNumber',
-      label: 'Phone number',
-      type: 'tel',
-    }
-  ];
 }

@@ -1,14 +1,14 @@
-import { Component } from '@angular/core';
-import {FormControl} from '@angular/forms';
-import {Router} from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { FormControl } from '@angular/forms';
 import {InputComponent} from '../../../../shared/input/input.component';
 import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
-import {FormField} from '../../../../shared/input/interface/form-field';
 import {ProfileService} from '../../../../core/services/profile.service';
+import {FormField} from '../../../../shared/input/interface/form-field';
 
 @Component({
   selector: 'app-social-networks',
-  standalone:true,
+  standalone: true,
   imports: [
     InputComponent,
     ButtonWithIconComponent
@@ -17,6 +17,9 @@ import {ProfileService} from '../../../../core/services/profile.service';
   styleUrl: './social-networks.component.scss'
 })
 export class SocialNetworksComponent {
+  private profileService = inject(ProfileService);
+  private router = inject(Router);
+
   socialLinkFields: FormField[] = [
     {
       name: 'githubLink',
@@ -41,15 +44,10 @@ export class SocialNetworksComponent {
   ];
 
   otherLinkField: FormField = {
-    name: 'otherlink',
+    name: 'otherLink',
     icon: 'link',
     type: 'text',
   };
-
-  constructor(
-    private profileService: ProfileService,
-    private router: Router
-  ) {}
 
   getFormControl(name: string): FormControl {
     return this.profileService.getForm().get(name) as FormControl;

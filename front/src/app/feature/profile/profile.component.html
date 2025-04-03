@@ -1,34 +1,23 @@
 <app-navbar-profile></app-navbar-profile>
 <main class="flex min-h-screen">
-  <app-profile-sidebar [activeSection]="activeSection"></app-profile-sidebar>
-    <section class="flex-1 p-4">
-      <article class="flex justify-start items-center bg-white shadow-md p-4 rounded-md">
-        <button class="bg-action hover:bg-action-hover text-white mr-3 px-2 py-2 rounded-md flex items-center gap-2 cursor-pointer">
-          <span class="material-icons">cached</span>
-        </button>
-        <h1 class="text-xl">Refresh data with datas in Conference Hall</h1>
-      </article>
-    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+  <app-profile-sidebar [activeSection]="activeSection()"></app-profile-sidebar>
+  <section class="flex-1 p-4">
+    <article class="flex justify-start items-center bg-white shadow-md p-4 rounded-md">
+      <button class="bg-action hover:bg-action-hover text-white mr-3 px-2 py-2 rounded-md flex items-center gap-2 cursor-pointer">
+        <span class="material-icons">cached</span>
+      </button>
+      <h1 class="text-xl">Refresh data with datas in Conference Hall</h1>
+    </article>
+
+    <app-save-indicator
+      [status]="saveStatus()"
+      position="bottom-right">
+    </app-save-indicator>
+
+    <form [formGroup]="profileForm">
       <app-personal-info id="personal-info"></app-personal-info>
       <app-biography id="biography"></app-biography>
       <app-social-networks id="social-networks"></app-social-networks>
-
-      <div class="flex justify-end mt-4">
-        <button
-          type="submit"
-          [disabled]="isSubmitting"
-          class="bg-action hover:bg-action-hover text-white px-4 py-2 rounded-md flex items-center">
-          @if(isSubmitting){
-            <span class="mr-2">
-              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </span>
-          }
-          {{ isSubmitting ? 'Saving...' : 'Save Profile' }}
-        </button>
-      </div>
     </form>
   </section>
 </main>

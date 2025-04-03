@@ -1,51 +1,52 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { User } from '../models/user.model';
+import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import {
   Auth,
+  User as FirebaseUser,
+  onAuthStateChanged,
+  signInWithPopup,
   GoogleAuthProvider,
   GithubAuthProvider,
-  signInWithPopup,
   signInWithEmailLink,
   isSignInWithEmailLink,
   sendSignInLinkToEmail,
   fetchSignInMethodsForEmail,
-  onAuthStateChanged,
-  signOut,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
+  signOut
 } from '@angular/fire/auth';
-import {AuthErrorDialogComponent} from '../../shared/auth-error-dialog/auth-error-dialog.component';
-import {HttpClient} from '@angular/common/http';
+import { UserStateService } from './user-state.service';
+import { User } from '../models/user.model';
 import {environment} from '../../../environments/environment.development';
-import {UserDataService} from './user-data.service';
+import {AuthErrorDialogComponent} from '../../shared/auth-error-dialog/auth-error-dialog.component';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  auth = inject(Auth);
-  user: User | null = null;
+  private auth = inject(Auth);
   private http = inject(HttpClient);
-  user$: BehaviorSubject<User | null> = new BehaviorSubject<User | null>(null);
   private router = inject(Router);
-  dialog = inject(MatDialog);
+  private dialog = inject(MatDialog);
+  private userState = inject(UserStateService);
 
-  constructor(private userDataService: UserDataService) {
+  user$ = new BehaviorSubject<FirebaseUser | null>(null);
+
+  constructor() {
     onAuthStateChanged(this.auth, (user) => {
-      this.user = user;
       this.user$.next(user);
 
       if (user) {
         this.fetchAndStoreUserData(user.uid);
       } else {
-        this.clearUserData();
+        this.userState.clearUser();
       }
     });
 
-    this.restoreUserDataFromStorage();
+    this.userState.loadFromStorage();
 
     this.checkEmailLink();
   }
@@ -81,24 +82,18 @@ export class AuthService {
         const token = await result.user.getIdToken();
         await this.sendTokenToBackend(token);
         const userData = await this.fetchUserData(result.user.uid);
-        const mergedUserData = {
+        const mergedUserData: Partial<User> = {
           ...userData,
           uid: result.user.uid,
           email: result.user.email,
           displayName: result.user.displayName,
           photoURL: result.user.photoURL
         };
-        await this.saveUserToBackend(result.user);
 
-        if (result.user.displayName) {
-          this.userDataService.userName = result.user.displayName;
-          localStorage.setItem('userDisplayName', result.user.displayName);
-        }
+        await this.saveUserToBackend(mergedUserData);
 
-        if (result.user.photoURL) {
-          this.userDataService.userPhotoURL = result.user.photoURL;
-          localStorage.setItem('userPhotoURL', result.user.photoURL);
-        }
+        this.userState.updateUser(mergedUserData);
+        this.userState.saveToStorage();
       }
       this.router.navigate(['/']);
       return result.user;
@@ -115,43 +110,16 @@ export class AuthService {
   }
   private async fetchAndStoreUserData(uid: string): Promise<void> {
     try {
-      console.log('Fetching user data for UID:', uid);
       const userData = await firstValueFrom(
-        this.http.get<any>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
-      );
-
-      console.log('User data received:', userData);
+        this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
+      ).catch(() => null);
 
       if (userData) {
-        if (userData.displayName) {
-          this.userDataService.userName = userData.displayName;
-          console.log('Updated userName in UserDataService:', userData.displayName);
-        }
-
-        if (userData.email) {
-          this.userDataService.userEmail = userData.email;
-          console.log('Updated userEmail in UserDataService:', userData.email);
-        }
-
-        if (userData.photoURL) {
-          this.userDataService.userPhotoURL = userData.photoURL;
-          console.log('Updated userPhotoURL in UserDataService:', userData.photoURL);
-        }
-
-        localStorage.setItem('userCity', userData.city || '');
-        localStorage.setItem('userPhoneNumber', userData.phoneNumber || '');
-        localStorage.setItem('userGithubLink', userData.githubLink || '');
-        localStorage.setItem('userTwitterLink', userData.twitterLink || '');
-        localStorage.setItem('userBlueSkyLink', userData.blueSkyLink || '');
-        localStorage.setItem('userLinkedInLink', userData.linkedInLink || '');
-        localStorage.setItem('userCompany', userData.company || '');
-        localStorage.setItem('userDisplayName', userData.displayName || '');
-        localStorage.setItem('userPhotoURL', userData.photoURL || '');
-
-        console.log('User data stored in localStorage');
+        this.userState.updateUser(userData);
+        this.userState.saveToStorage();
       }
     } catch (error) {
-      console.error('Error fetching user data from Firestore:', error);
+      console.error('Error fetching user data:', error);
     }
   }
 
@@ -191,7 +159,7 @@ export class AuthService {
       });
 
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error sending email link:", error);
 
       this.dialog.open(AuthErrorDialogComponent, {
@@ -231,7 +199,12 @@ export class AuthService {
 
           try {
             await this.sendTokenToBackend(token);
-            await this.saveUserToBackend(result.user);
+            await this.saveUserToBackend({
+              uid: result.user.uid,
+              email: result.user.email,
+              displayName: result.user.displayName,
+              photoURL: result.user.photoURL
+            });
             this.router.navigate(['/']);
           } catch (error) {
             console.error('Error during backend operations after email sign-in:', error);
@@ -239,7 +212,13 @@ export class AuthService {
         }
         return result.user;
       } catch (error) {
-        alert("Invalid email or expired Link");
+        this.dialog.open(AuthErrorDialogComponent, {
+          width: '400px',
+          data: {
+            title: 'Authentication Error',
+            message: 'Invalid email or expired link. Please try again.'
+          }
+        });
         return null;
       }
     }
@@ -268,8 +247,14 @@ export class AuthService {
 
               try {
                 await this.sendTokenToBackend(token);
-                await this.saveUserToBackend(result.user);
+                await this.saveUserToBackend({
+                  uid: result.user.uid,
+                  email: result.user.email,
+                  displayName: result.user.displayName,
+                  photoURL: result.user.photoURL
+                });
               } catch (error) {
+                console.error('Error during backend operations:', error);
               }
             }
 
@@ -277,7 +262,7 @@ export class AuthService {
             this.router.navigate(['/']);
           })
           .catch((error) => {
-            console.error('Connection error : ', error);
+            console.error('Connection error:', error);
           });
       } else {
         console.error("No email found in sessionStorage or URL");
@@ -287,56 +272,22 @@ export class AuthService {
 
   private async sendTokenToBackend(token: string) {
     try {
-      const response = await firstValueFrom(
+      return await firstValueFrom(
         this.http.post(`${environment.apiUrl}/auth/login`, { idToken: token }, { withCredentials: true })
       );
-      return response;
     } catch (error) {
       console.error('Error sending token to backend:', error);
       throw error;
     }
   }
 
-  private async saveUserToBackend(user: any) {
-    if (!user) return;
+  private async saveUserToBackend(user: Partial<User>) {
+    if (!user?.uid) return;
 
     try {
-      const existingUserData = await firstValueFrom(
-        this.http.get<any>(`${environment.apiUrl}/auth/user/${user.uid}`, { withCredentials: true })
-      ).catch(() => null);
-
-      interface UserData {
-        uid: string;
-        email: string | null;
-        displayName: string | null;
-        photoURL: string | null;
-        company?: string | null;
-        city?: string | null;
-        phoneNumber?: string | null;
-        githubLink?: string | null;
-        twitterLink?: string | null;
-        blueSkyLink?: string | null;
-        linkedInLink?: string | null;
-      };
-      const userData: UserData = {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        company: user.company,
-        city: user.city,
-        phoneNumber: user.phoneNumber,
-        githubLink: user.githubLink,
-        twitterLink: user.twitterLink,
-        blueSkyLink: user.blueSkyLink,
-        linkedInLink: user.linkedInLink,
-      };
-
-      const response = await firstValueFrom(
-        this.http.post(`${environment.apiUrl}/auth`, userData, { withCredentials: true })
+      return await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/auth`, user, { withCredentials: true })
       );
-
-      return response;
     } catch (error) {
       console.error('Error saving user to backend:', error);
       throw error;
@@ -353,13 +304,12 @@ export class AuthService {
       console.error('Error during logout:', error);
     }
 
-    this.clearUserData();
+    this.userState.clearUser();
 
     window.history.replaceState({}, document.title, '/');
     this.user$.next(null);
     this.router.navigate(['/']);
   }
-
 
   async getIdToken(forceRefresh = true): Promise<string | null> {
     try {
@@ -369,7 +319,6 @@ export class AuthService {
       }
 
       const token = await this.auth.currentUser.getIdToken(forceRefresh);
-
       await this.sendTokenToBackend(token);
 
       return token;
@@ -379,49 +328,18 @@ export class AuthService {
     }
   }
 
-  private restoreUserDataFromStorage(): void {
-    const company = localStorage.getItem('userCompany');
-    const city = localStorage.getItem('userCity');
-    const phoneNumber = localStorage.getItem('userPhoneNumber');
-    const githubLink = localStorage.getItem('userGithubLink');
-    const twitterLink = localStorage.getItem('userTwitterLink');
-    const blueSkyLink = localStorage.getItem('userBlueSkyLink');
-    const linkedInLink = localStorage.getItem('userLinkedInLink');
-    const displayName = localStorage.getItem('userDisplayName');
-    const photoURL = localStorage.getItem('userPhotoURL');
-    const email = localStorage.getItem('userEmail');
-
-    if (displayName) this.userDataService.userName = displayName;
-    if (photoURL) this.userDataService.userPhotoURL = photoURL;
-    if (displayName) this.userDataService.userName = displayName;
-    if (photoURL) this.userDataService.userPhotoURL = photoURL;
-    if (email) this.userDataService.userEmail = email;
-    if (company) this.userDataService.userCompany = company;
-    if (city) this.userDataService.userCity = city;
-    if (phoneNumber) this.userDataService.userPhoneNumber = phoneNumber;
-    if (githubLink) this.userDataService.userGithubLink = githubLink;
-    if (twitterLink) this.userDataService.userTwitterLink = twitterLink;
-    if (blueSkyLink) this.userDataService.userBlueSkyLink = blueSkyLink;
-    if (linkedInLink) this.userDataService.userLinkedInLink = linkedInLink;
-  }
-
-  private clearUserData(): void {
-    this.userDataService.userName = '';
-    this.userDataService.userEmail = '';
-    this.userDataService.userPhotoURL = '';
-
-    localStorage.removeItem('userDisplayName');
-    localStorage.removeItem('userPhotoURL');
-  }
-
-  private async fetchUserData(uid: string): Promise<any> {
+  private async fetchUserData(uid: string): Promise<User | null> {
     try {
       return await firstValueFrom(
-        this.http.get<any>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
+        this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
       );
     } catch (error) {
       console.error('Error fetching user data:', error);
       return null;
     }
+  }
+
+  public openDialog(component: any, config: any) {
+    return this.dialog.open(component, config);
   }
 }
