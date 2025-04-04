@@ -1,35 +1,25 @@
 package com.speakerspace.controller;
 
 import com.speakerspace.dto.TeamDTO;
-import com.speakerspace.mapper.TeamMapper;
 import com.speakerspace.service.TeamService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/team")
 public class TeamController {
 
-    private static final Logger logger = LoggerFactory.getLogger(TeamController.class);
-
-    private final TeamMapper teamMapper;
     private final TeamService teamService;
 
-
-    public TeamController(TeamMapper teamMapper, TeamService teamService) {
-        this.teamMapper = teamMapper;
+    public TeamController(TeamService teamService) {
         this.teamService = teamService;
     }
 
     @PostMapping("/create")
     public ResponseEntity<TeamDTO> createTeam(@RequestBody TeamDTO teamDTO) {
-
         if (teamDTO.getName() == null || teamDTO.getName().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -38,4 +28,15 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTeam);
     }
 
+    @GetMapping("/my-other-teams")
+    public ResponseEntity<List<TeamDTO>> getMyTeams() {
+        List<TeamDTO> teams = teamService.getTeamsForCurrentUser();
+        return ResponseEntity.ok(teams);
+    }
+
+    @GetMapping("/my-owned-teams")
+    public ResponseEntity<List<TeamDTO>> getMyOwnedTeams() {
+        List<TeamDTO> teams = teamService.getCreateTeamsForCurrentUser();
+        return ResponseEntity.ok(teams);
+    }
 }

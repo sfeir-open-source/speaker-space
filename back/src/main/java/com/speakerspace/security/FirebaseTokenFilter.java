@@ -1,7 +1,6 @@
 package com.speakerspace.security;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.config.CookieService;
 import jakarta.servlet.FilterChain;
@@ -83,7 +82,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             }
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    email, null, authorities);
+                    uid, null, authorities);
 
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);

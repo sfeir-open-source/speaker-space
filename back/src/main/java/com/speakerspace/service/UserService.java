@@ -7,9 +7,12 @@ import com.google.firebase.cloud.FirestoreClient;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.model.User;
+import com.speakerspace.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutionException;
@@ -20,10 +23,12 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private static final String COLLECTION_NAME = "users";
 
+    private final UserRepository userRepository;
     private final UserMapper userMapper;
 
     @Autowired
-    public UserService(UserMapper userMapper) {
+    public UserService(UserRepository userRepository, UserMapper userMapper) {
+        this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
 
@@ -116,5 +121,17 @@ public class UserService {
             logger.error("Failed to update user", e);
             throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
         }
+    }
+
+    public String getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getName())) {
+            String userId = authentication.getName();
+            return userId;
+        }
+        logger.warn("No authenticated user found");
+        throw new IllegalStateException("No authenticated user found");
     }
 }

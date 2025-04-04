@@ -1,15 +1,14 @@
 package com.speakerspace.repository;
 
 import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.DocumentReference;
-import com.google.cloud.firestore.DocumentSnapshot;
-import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.WriteResult;
+import com.google.cloud.firestore.*;
 import com.speakerspace.model.Team;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -65,6 +64,50 @@ public class TeamRepositoryImpl implements TeamRepository {
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error finding team by ID: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to find team", e);
+        }
+    }
+
+    @Override
+    public List<Team> findTeamsByMemberId(String memberId) {
+        try {
+            ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME)
+                    .whereArrayContains("memberIds", memberId)
+                    .get();
+
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            List<Team> teams = new ArrayList<>();
+
+            for (QueryDocumentSnapshot document : documents) {
+                Team team = document.toObject(Team.class);
+                teams.add(team);
+            }
+
+            return teams;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error finding teams by member ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find teams", e);
+        }
+    }
+
+    @Override
+    public List<Team> findTeamsByUserCreateId(String userCreateId) {
+        try {
+            ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("userCreateId", userCreateId)
+                    .get();
+
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+            List<Team> teams = new ArrayList<>();
+
+            for (QueryDocumentSnapshot document : documents) {
+                Team team = document.toObject(Team.class);
+                teams.add(team);
+            }
+
+            return teams;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error finding teams by owner ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find teams", e);
         }
     }
 }

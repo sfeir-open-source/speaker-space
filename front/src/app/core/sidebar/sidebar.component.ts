@@ -19,7 +19,7 @@ export class SidebarComponent {
   notificationCount: number = 1;
 
   constructor(
-    public sidebarService: UserDataService,
+    public userDataService: UserDataService,
     private authService: AuthService,
     private router: Router
   ) {}
@@ -36,7 +36,7 @@ export class SidebarComponent {
 
 
   closeSidebar() {
-    this.sidebarService.toggleSidebar(false);
+    this.userDataService.toggleSidebar(false);
   }
 
   logout() {

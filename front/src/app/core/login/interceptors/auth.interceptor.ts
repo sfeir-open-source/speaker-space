@@ -1,4 +1,4 @@
-import {inject, Injectable} from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
@@ -7,7 +7,7 @@ import {
   HttpInterceptorFn
 } from '@angular/common/http';
 import { Observable, from, switchMap } from 'rxjs';
-import {AuthService} from '../services/auth.service';
+import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -19,7 +19,13 @@ export class AuthInterceptor implements HttpInterceptor {
     }
 
     return from(this.authService.getIdToken(false)).pipe(
-      switchMap(() => {
+      switchMap(token => {
+        if (token) {
+          const authReq = request.clone({
+            headers: request.headers.set('Authorization', `Bearer ${token}`)
+          });
+          return next.handle(authReq);
+        }
         return next.handle(request);
       })
     );
@@ -34,7 +40,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
 
   return from(authService.getIdToken(false)).pipe(
-    switchMap(() => {
+    switchMap(token => {
+      if (token) {
+        const authReq = req.clone({
+          headers: req.headers.set('Authorization', `Bearer ${token}`)
+        });
+        return next(authReq);
+      }
       return next(req);
     })
   );

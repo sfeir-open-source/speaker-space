@@ -12,6 +12,8 @@ public class TeamMapper {
         teamDTO.setId(team.getId());
         teamDTO.setName(team.getName());
         teamDTO.setUrl(team.getUrl());
+        teamDTO.setUserCreateId(team.getUserCreateId());
+        teamDTO.setMemberIds(team.getMemberIds());
         return teamDTO;
     }
 
@@ -20,6 +22,8 @@ public class TeamMapper {
         team.setId(teamDTO.getId());
         team.setName(teamDTO.getName());
         team.setUrl(teamDTO.getUrl());
+        team.setUserCreateId(teamDTO.getUserCreateId());
+        team.setMemberIds(teamDTO.getMemberIds());
         return team;
     }
 }

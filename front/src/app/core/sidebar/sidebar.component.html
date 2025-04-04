@@ -1,24 +1,24 @@
 <section
   class="fixed inset-0 bg-slate-800/50 z-40 transition-opacity duration-300"
-  [class.opacity-0]="!sidebarService.isSidebarOpen"
-  [class.opacity-100]="sidebarService.isSidebarOpen"
-  [class.pointer-events-none]="!sidebarService.isSidebarOpen"
+  [class.opacity-0]="!userDataService.isSidebarOpen"
+  [class.opacity-100]="userDataService.isSidebarOpen"
+  [class.pointer-events-none]="!userDataService.isSidebarOpen"
   (click)="closeSidebar()">
 </section>
 
 <main
   class="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out rounded-l-xl"
-  [ngClass]="sidebarService.isSidebarOpen ? 'translate-x-0' : 'translate-x-full'"
+  [ngClass]="userDataService.isSidebarOpen ? 'translate-x-0' : 'translate-x-full'"
   (click)="$event.stopPropagation()">
 
   <header class="p-4 flex justify-between items-center">
     <article class="flex items-center gap-3">
-      <img [src]="sidebarService.userPhotoURL || 'img/profil-picture.svg'"
+      <img [src]="userDataService.userPhotoURL || 'img/profil-picture.svg'"
            alt="profile"
            class="w-12 h-12 rounded-full border-none">
       <section>
-        <p class="text-sm font-medium">{{ sidebarService.userName || sidebarService.userEmail }}</p>
-        <p class="text-xs text-gray-500">{{ sidebarService.userEmail || 'No email' }}</p>
+        <p class="text-sm font-medium">{{ userDataService.userName || userDataService.userEmail }}</p>
+        <p class="text-xs text-gray-500">{{ userDataService.userEmail || 'No email' }}</p>
       </section>
     </article>
     <button (click)="closeSidebar()" class="text-gray-500 hover:text-gray-800" aria-label="Close sidebar">
@@ -63,12 +63,16 @@
     <article class="p-4">
       <p class="font-medium text-lg mb-2">Organizer</p>
 
-      <app-button-with-icon
-        materialIcon="group"
-        route="/team-page"
-        (itemClick)="navigateTo($event)">
-        Team 1
-      </app-button-with-icon>
+<!--      @if(teams && teams.length > 0) {-->
+<!--        @for(team of teams; track $index) {-->
+<!--          <app-button-with-icon-->
+<!--            materialIcon="group"-->
+<!--            [route]="'/team/' + team.name"-->
+<!--            (itemClick)="navigateToTeam(team.name)">-->
+<!--            {{ team.name }}-->
+<!--          </app-button-with-icon>-->
+<!--        }-->
+<!--      }-->
 
       <app-button-with-icon
         class="font-medium"
