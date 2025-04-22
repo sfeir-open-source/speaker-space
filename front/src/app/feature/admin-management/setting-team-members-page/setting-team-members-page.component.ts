@@ -5,7 +5,7 @@ import {FormsModule} from '@angular/forms';
 import {InputComponent} from '../../../shared/input/input.component';
 import {FormField} from '../../../shared/input/interface/form-field';
 import {ButtonGreenActionsComponent} from '../../../shared/button-green-actions/button-green-actions.component';
-import {Router} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {MembersCardComponent} from '../components/members-card/members-card.component';
 import {MemberTeamField} from '../components/members-card/interface/member-team-field';
 
@@ -24,13 +24,20 @@ import {MemberTeamField} from '../components/members-card/interface/member-team-
 })
 export class SettingTeamMembersPageComponent {
   activeSection: string = 'setting-members';
+  teamUrl: string = '';
+  teamId: string = '';
+  teamName: string = '';
 
   constructor(
+    private route: ActivatedRoute,
     private router: Router,
   ) {}
 
   ngOnInit() {
     this.activeSection = 'setting-members';
+    this.route.paramMap.subscribe(params => {
+      this.teamUrl = params.get('teamUrl') || '';
+    });
   }
 
   field: FormField = {

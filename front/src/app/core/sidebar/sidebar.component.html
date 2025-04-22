@@ -63,16 +63,26 @@
     <article class="p-4">
       <p class="font-medium text-lg mb-2">Organizer</p>
 
-<!--      @if(teams && teams.length > 0) {-->
-<!--        @for(team of teams; track $index) {-->
-<!--          <app-button-with-icon-->
-<!--            materialIcon="group"-->
-<!--            [route]="'/team/' + team.name"-->
-<!--            (itemClick)="navigateToTeam(team.name)">-->
-<!--            {{ team.name }}-->
-<!--          </app-button-with-icon>-->
-<!--        }-->
-<!--      }-->
+      @if(isLoadingTeams) {
+        <div class="flex justify-center py-2">
+          <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+        </div>
+      } @else {
+        @if(teams && teams.length > 0) {
+          <div class="space-y-1">
+            @for(team of teams; track team.id ?? $index) {
+              <app-button-with-icon
+                materialIcon="group"
+                [route]="'/team/' + (team.url || team.id)"
+                (itemClick)="navigateToTeam(team.url || team.id)">
+                {{ team.name }}
+              </app-button-with-icon>
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-gray-500 italic mb-2">No teams yet</p>
+        }
+      }
 
       <app-button-with-icon
         class="font-medium"

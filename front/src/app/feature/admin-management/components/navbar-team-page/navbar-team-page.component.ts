@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
-import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
-import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
+import { Component, Input, OnInit } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { ButtonGreyComponent } from '../../../../shared/button-grey/button-grey.component';
 
 @Component({
   selector: 'app-navbar-team-page',
@@ -10,17 +10,19 @@ import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.co
   templateUrl: './navbar-team-page.component.html',
   styleUrl: './navbar-team-page.component.scss'
 })
-export class NavbarTeamPageComponent {
+export class NavbarTeamPageComponent implements OnInit {
+  @Input() teamUrl: string = '';
+  @Input() teamId: string = '';
+  @Input() teamName: string = '';
+
   activePage: string = '';
 
   constructor(
     private router: Router,
-    private activatedRoute: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.setActivePage();
-
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.setActivePage();
@@ -30,7 +32,7 @@ export class NavbarTeamPageComponent {
 
   setActivePage() {
     const currentRoute = this.router.url;
-    if (currentRoute.includes('team-page')) {
+    if (currentRoute.includes('/team/') && !currentRoute.includes('settings-')) {
       this.activePage = 'team-page';
     } else if (currentRoute.includes('settings-')) {
       this.activePage = 'settings';
@@ -38,12 +40,18 @@ export class NavbarTeamPageComponent {
   }
 
   events() {
-    console.log('Navigating to team page...');
-    this.router.navigate(['/team-page']);
+    if (this.teamUrl) {
+      this.router.navigate(['/team', this.teamUrl]);
+    } else if (this.teamId) {
+      this.router.navigate(['/team', this.teamId]);
+    }
   }
 
   settings() {
-    console.log('Navigating to settings...');
-    this.router.navigate(['/settings-general']);
+    if (this.teamUrl) {
+      this.router.navigate(['/settings-general', this.teamUrl]);
+    } else if (this.teamId) {
+      this.router.navigate(['/settings-general', this.teamId]);
+    }
   }
 }

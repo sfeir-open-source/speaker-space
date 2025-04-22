@@ -111,7 +111,6 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         this.showErrorMessage('Please correct the errors in the form.');
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
       this.saveStatus.set('error');
       this.showErrorMessage('An error occurred while saving your profile.');
     }

@@ -20,19 +20,23 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return from(this.authService.getIdToken(false)).pipe(
       switchMap(token => {
+        let authReq = request.clone({
+          withCredentials: true
+        });
+
         if (token) {
-          const authReq = request.clone({
-            headers: request.headers.set('Authorization', `Bearer ${token}`)
+          authReq = authReq.clone({
+            headers: authReq.headers.set('Authorization', `Bearer ${token}`)
           });
-          return next.handle(authReq);
         }
-        return next.handle(request);
+
+        return next.handle(authReq);
       })
     );
   }
 }
 
-export const authInterceptor: HttpInterceptorFn = (req, next) => {
+export const authInterceptorFn: HttpInterceptorFn = (req, next) => {
   if (req.url.includes('/auth/login') || req.url.includes('/auth/logout')) {
     return next(req);
   }
@@ -41,13 +45,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return from(authService.getIdToken(false)).pipe(
     switchMap(token => {
+      let authReq = req.clone({
+        withCredentials: true
+      });
+
       if (token) {
-        const authReq = req.clone({
-          headers: req.headers.set('Authorization', `Bearer ${token}`)
+        authReq = authReq.clone({
+          headers: authReq.headers.set('Authorization', `Bearer ${token}`)
         });
-        return next(authReq);
       }
-      return next(req);
+
+      return next(authReq);
     })
   );
 };

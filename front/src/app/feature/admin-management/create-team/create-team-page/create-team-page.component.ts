@@ -25,8 +25,9 @@ export class CreateTeamPageComponent {
   form: FormGroup;
   private _router = inject(Router);
   private _teamService = inject(TeamService);
+  private _baseUrl:string = 'https://speaker-space.io/team/';
 
-  isSubmitted = false;
+  isSubmitted:boolean = false;
 
   formFields: FormField[] = [
     {
@@ -42,13 +43,30 @@ export class CreateTeamPageComponent {
       placeholder: 'https://speaker-space.io/team/',
       type: 'text',
       required: false,
+      disabled: true,
     }
   ];
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      url: ['']
+      url: [{value: this._baseUrl, disabled: true}]
+    });
+  }
+
+  ngOnInit(): void {
+    this.form.get('name')?.valueChanges.subscribe(value => {
+      if (value) {
+        const urlSuffix = value.trim()
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9-]/g, '')
+          .replace(/-+/g, '-');
+
+        this.form.get('url')?.setValue(this._baseUrl + urlSuffix);
+      } else {
+        this.form.get('url')?.setValue(this._baseUrl);
+      }
     });
   }
 
@@ -61,12 +79,11 @@ export class CreateTeamPageComponent {
 
     const team: Team = {
       name: this.form.value.name || '',
-      url: this.form.value.url || ''
+      url: this.form.get('url')?.value || ''
     };
 
     this._teamService.post$(team).subscribe({
       next: response => {
-        console.log('team created', response);
         this._router.navigate(['/team-page']);
       },
       error: error => {
@@ -74,7 +91,6 @@ export class CreateTeamPageComponent {
       }
     });
   }
-
 
   getFormControl(name: string): FormControl {
     return this.form.get(name) as FormControl;

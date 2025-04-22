@@ -13,10 +13,50 @@ export class TeamService {
   constructor() { }
 
   post$(team: Team): Observable<any> {
-    console.log('Sending team data:', team);
     return this.http.post<any>(`${environment.apiUrl}/team/create`, team).pipe(
       catchError(error => {
-        console.error("Error saving team to backend:", error);
+        return throwError(() => ({
+          error: error.error || {},
+          status: error.status,
+          message: error.error?.message || 'An unknown error occurred',
+        }));
+      })
+    );
+  }
+
+  getUserTeams(): Observable<Team[]> {
+    return this.http.get<Team[]>(`${environment.apiUrl}/team/my-owned-teams`, { withCredentials: true }).pipe(
+      catchError(error => {
+        return throwError(() => ({
+          error: error.error || {},
+          status: error.status,
+          message: error.error?.message || 'An unknown error occurred',
+        }));
+      })
+    );
+  }
+
+  getTeamByUrl(teamUrl: string): Observable<Team> {
+    let urlId = teamUrl;
+    if (teamUrl.includes('/')) {
+      const urlParts = teamUrl.split('/');
+      urlId = urlParts[urlParts.length - 1];
+    }
+
+    return this.http.get<Team>(`${environment.apiUrl}/team/by-url/${urlId}`, { withCredentials: true }).pipe(
+      catchError(error => {
+        return throwError(() => ({
+          error: error.error || {},
+          status: error.status,
+          message: error.error?.message || 'An unknown error occurred',
+        }));
+      })
+    );
+  }
+
+  updateTeam(teamId: string, team: Partial<Team>): Observable<Team> {
+    return this.http.put<Team>(`${environment.apiUrl}/team/${teamId}`, team, { withCredentials: true }).pipe(
+      catchError(error => {
         return throwError(() => ({
           error: error.error || {},
           status: error.status,

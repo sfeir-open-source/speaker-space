@@ -153,7 +153,6 @@ export class ProfileService {
 
       return true;
     } catch (error) {
-      console.error('Error saving profile:', error);
       return false;
     }
   }

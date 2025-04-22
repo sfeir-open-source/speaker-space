@@ -36,7 +36,6 @@ export class NavbarComponent {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
         this.isHomePage = event.url === '/';
-        console.log('Current URL:', event.url, 'isHomePage:', this.isHomePage);
       });
 
     this.authService.user$.subscribe((user) => {

@@ -19,9 +19,9 @@ export const routes: Routes = [
   { path: 'system-info', component: TestConnectionBackFrontComponent, canActivate: [AuthGuard] },
   { path: 'login', component: LoginPageComponent },
   { path: 'create-team', component: CreateTeamPageComponent},
-  { path: 'team-page', component: TeamPageComponent},
-  { path: 'settings-general', component: SettingTeamGeneralPageComponent},
-  { path: 'settings-members', component: SettingTeamMembersPageComponent },
+  { path: 'team/:teamUrl', component: TeamPageComponent},
+  { path: 'settings-general/:teamUrl', component: SettingTeamGeneralPageComponent},
+  { path: 'settings-members/:teamUrl', component: SettingTeamMembersPageComponent },
   { path: 'profile', component: ProfileComponent},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }

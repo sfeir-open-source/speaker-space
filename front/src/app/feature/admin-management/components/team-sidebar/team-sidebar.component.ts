@@ -37,8 +37,6 @@ export class TeamSidebarComponent implements OnInit {
     } else if (url.includes('/settings-support-speaker-space')) {
       this.activeSection = 'support-speaker-space';
     }
-
-    console.log('Active section updated to:', this.activeSection);
   }
 
   navigateTo(path: string) {
