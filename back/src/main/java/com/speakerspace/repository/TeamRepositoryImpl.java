@@ -110,4 +110,28 @@ public class TeamRepositoryImpl implements TeamRepository {
             throw new RuntimeException("Failed to find teams", e);
         }
     }
+
+    @Override
+    public Team findByUrl(String url) {
+        try {
+            logger.info("Searching for team with URL: {}", url);
+
+            ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("url", url)
+                    .get();
+
+            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+
+            if (documents.isEmpty()) {
+                logger.info("No team found with URL: {}", url);
+                return null;
+            }
+
+            logger.info("Team found with URL: {}", url);
+            return documents.get(0).toObject(Team.class);
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error finding team by URL: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find team by URL", e);
+        }
+    }
 }

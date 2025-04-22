@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,4 +51,37 @@ public class TeamService {
                 .map(teamMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
+
+    public TeamDTO getTeamByUrl(String urlId) {
+        String url = "https://speaker-space.io/team/" + urlId;
+        Team team = teamRepository.findByUrl(url);
+
+        if (team == null) {
+            return null;
+        }
+
+        return teamMapper.convertToDTO(team);
+    }
+
+    public TeamDTO updateTeam(String teamId, TeamDTO teamDTO) throws AccessDeniedException {
+        Team existingTeam = teamRepository.findById(teamId).orElse(null);
+
+        if (existingTeam == null) {
+            return null;
+        }
+
+        String currentUserId = userService.getCurrentUserId();
+        if (!existingTeam.getUserCreateId().equals(currentUserId)) {
+            throw new AccessDeniedException("You are not authorized to update this team");
+        }
+
+        existingTeam.setName(teamDTO.getName());
+        if (teamDTO.getUrl() != null && !teamDTO.getUrl().isEmpty()) {
+            existingTeam.setUrl(teamDTO.getUrl());
+        }
+
+        Team updatedTeam = teamRepository.save(existingTeam);
+        return teamMapper.convertToDTO(updatedTeam);
+    }
+
 }

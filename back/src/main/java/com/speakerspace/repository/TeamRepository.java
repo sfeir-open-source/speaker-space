@@ -12,4 +12,5 @@ public interface TeamRepository {
     Optional<Team> findById(String id);
     List<Team> findTeamsByMemberId(String memberId);
     List<Team> findTeamsByUserCreateId(String userCreateId);
+    Team findByUrl(String url);
 }
