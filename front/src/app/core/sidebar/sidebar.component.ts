@@ -1,26 +1,31 @@
-import {Component, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {NavigationEnd, Router} from '@angular/router';
-import {filter, take} from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
+import { UserDataService } from '../services/user-services/user-data.service';
+import { AuthService } from '../login/services/auth.service';
+import { TeamService } from '../../feature/admin-management/services/team.service';
+import { Team } from '../../feature/admin-management/type/team';
 import {ButtonWithIconComponent} from '../../shared/button-with-icon/button-with-icon.component';
-import {UserDataService} from '../services/user-services/user-data.service';
-import {AuthService} from '../login/services/auth.service';
-import {Team} from '../../feature/admin-management/create-team/type/team';
-import {TeamService} from '../../feature/admin-management/create-team/service/team.service';
+import {CommonModule} from '@angular/common';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, ButtonWithIconComponent],
+  imports: [
+    ButtonWithIconComponent,
+    CommonModule],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
-export class SidebarComponent implements OnInit {
-  currentRoute: string = '';
-  hasUnreadNotifications: boolean = true;
-  notificationCount: number = 1;
+export class SidebarComponent implements OnInit, OnDestroy {
+  currentRoute = '';
+  hasUnreadNotifications = true;
+  notificationCount = 1;
   teams: Team[] = [];
-  isLoadingTeams: boolean = false;
+  isLoadingTeams = false;
+
+  private routerSubscription?: Subscription;
+  private teamsSubscription?: Subscription;
 
   constructor(
     public userDataService: UserDataService,
@@ -29,53 +34,71 @@ export class SidebarComponent implements OnInit {
     private teamService: TeamService
   ) {}
 
-  ngOnInit() {
-    this.router.events.pipe(
+  ngOnInit(): void {
+    this.subscribeToRouterEvents();
+    this.loadTeams();
+  }
+
+  ngOnDestroy(): void {
+    this.unsubscribeAll();
+  }
+
+  private subscribeToRouterEvents(): void {
+    this.routerSubscription = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.currentRoute = event.url;
     });
+
     this.currentRoute = this.router.url;
-    this.loadUserTeams();
   }
 
-  loadUserTeams() {
+  private loadTeams(): void {
     this.isLoadingTeams = true;
-
-    this.teamService.getUserTeams().pipe(
-      take(1)
-    ).subscribe({
+    this.teamsSubscription = this.teamService.teams$.subscribe({
       next: (teams) => {
         this.teams = teams;
         this.isLoadingTeams = false;
       },
-      error: (error) => {
+      error: () => {
         this.isLoadingTeams = false;
       }
     });
+
+    this.teamService.loadUserTeams();
   }
 
-  closeSidebar() {
+  closeSidebar(): void {
     this.userDataService.toggleSidebar(false);
   }
 
-  logout() {
+  logout(): void {
     this.authService.logout();
     this.closeSidebar();
   }
 
-  navigateTo(path: string) {
+  navigateTo(path: string): void {
     this.router.navigate([path]);
     this.closeSidebar();
   }
 
-  navigateToTeam(teamUrl: string | undefined) {
-    this.router.navigate(['/team', teamUrl]);
-    this.closeSidebar();
+  navigateToTeam(teamUrl: string | undefined): void {
+    if (teamUrl) {
+      this.router.navigate(['/team', teamUrl]);
+      this.closeSidebar();
+    }
   }
 
-  createNewTeam() {
+  createNewTeam(): void {
     this.navigateTo('/create-team');
-    this.closeSidebar();
+  }
+
+  private unsubscribeAll(): void {
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+    if (this.teamsSubscription) {
+      this.teamsSubscription.unsubscribe();
+    }
   }
 }

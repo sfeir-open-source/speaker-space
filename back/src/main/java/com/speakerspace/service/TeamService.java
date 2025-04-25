@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,6 +17,8 @@ import java.util.stream.Collectors;
 public class TeamService {
 
     private static final Logger logger = LoggerFactory.getLogger(TeamService.class);
+    private static final String BASE_URL = "https://speaker-space.io/team/";
+
     private final TeamMapper teamMapper;
     private final TeamRepository teamRepository;
     private final UserService userService;
@@ -31,41 +34,45 @@ public class TeamService {
         Team team = teamMapper.convertToEntity(teamDTO);
         team.setUserCreateId(currentUserId);
         team.addMember(currentUserId);
-        Team savedTeam = teamRepository.save(team);
 
+        Team savedTeam = teamRepository.save(team);
         return teamMapper.convertToDTO(savedTeam);
     }
 
     public List<TeamDTO> getTeamsForCurrentUser() {
         String currentUserId = userService.getCurrentUserId();
-        List<Team> teams = teamRepository.findTeamsByMemberId(currentUserId);
-        return teams.stream()
+        return teamRepository.findTeamsByMemberId(currentUserId).stream()
                 .map(teamMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public List<TeamDTO> getCreateTeamsForCurrentUser() {
         String currentUserId = userService.getCurrentUserId();
-        List<Team> teams = teamRepository.findTeamsByUserCreateId(currentUserId);
-        return teams.stream()
+        return teamRepository.findTeamsByUserCreateId(currentUserId).stream()
                 .map(teamMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
+    public List<TeamDTO> getAllUserTeams() {
+        List<TeamDTO> ownedTeams = getCreateTeamsForCurrentUser();
+        List<TeamDTO> memberTeams = getTeamsForCurrentUser();
+
+        List<TeamDTO> allTeams = new ArrayList<>(ownedTeams);
+        memberTeams.stream()
+                .filter(team -> ownedTeams.stream().noneMatch(t -> t.getId().equals(team.getId())))
+                .forEach(allTeams::add);
+
+        return allTeams;
+    }
+
     public TeamDTO getTeamByUrl(String urlId) {
-        String url = "https://speaker-space.io/team/" + urlId;
+        String url = BASE_URL + urlId;
         Team team = teamRepository.findByUrl(url);
-
-        if (team == null) {
-            return null;
-        }
-
-        return teamMapper.convertToDTO(team);
+        return team != null ? teamMapper.convertToDTO(team) : null;
     }
 
     public TeamDTO updateTeam(String teamId, TeamDTO teamDTO) throws AccessDeniedException {
         Team existingTeam = teamRepository.findById(teamId).orElse(null);
-
         if (existingTeam == null) {
             return null;
         }
@@ -84,4 +91,18 @@ public class TeamService {
         return teamMapper.convertToDTO(updatedTeam);
     }
 
+    public boolean deleteTeam(String teamId) throws AccessDeniedException {
+        Team existingTeam = teamRepository.findById(teamId).orElse(null);
+        if (existingTeam == null) {
+            return false;
+        }
+
+        String currentUserId = userService.getCurrentUserId();
+        if (!existingTeam.getUserCreateId().equals(currentUserId)) {
+            throw new AccessDeniedException("You are not authorized to delete this team");
+        }
+
+        teamRepository.delete(teamId);
+        return true;
+    }
 }

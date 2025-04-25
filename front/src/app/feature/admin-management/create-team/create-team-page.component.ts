@@ -1,13 +1,12 @@
-import {Component, inject} from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } from '@angular/forms';
-import {CommonModule} from '@angular/common';
-import {InputComponent} from '../../../../shared/input/input.component';
-import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
-import {FormField} from '../../../../shared/input/interface/form-field';
-import {Router} from '@angular/router';
-import {TeamService} from '../service/team.service';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import {InputComponent} from '../../../shared/input/input.component';
+import {ButtonGreenActionsComponent} from '../../../shared/button-green-actions/button-green-actions.component';
+import {TeamService} from '../services/team.service';
+import {FormField} from '../../../shared/input/interface/form-field';
 import {Team} from '../type/team';
-
 
 @Component({
   selector: 'app-create-team-page',
@@ -25,9 +24,9 @@ export class CreateTeamPageComponent {
   form: FormGroup;
   private _router = inject(Router);
   private _teamService = inject(TeamService);
-  private _baseUrl:string = 'https://speaker-space.io/team/';
+  private _baseUrl: string = 'https://speaker-space.io/team/';
 
-  isSubmitted:boolean = false;
+  isSubmitted: boolean = false;
 
   formFields: FormField[] = [
     {
@@ -82,9 +81,10 @@ export class CreateTeamPageComponent {
       url: this.form.get('url')?.value || ''
     };
 
-    this._teamService.post$(team).subscribe({
+    this._teamService.createTeam(team).subscribe({
       next: response => {
-        this._router.navigate(['/team-page']);
+        const navigationTarget = response.url ?? response.id ?? '';
+        this._router.navigate(['/team', navigationTarget]);
       },
       error: error => {
         console.error('Error creating team', error);

@@ -5,7 +5,7 @@ import { NavbarTeamPageComponent } from '../../components/navbar-team-page/navba
 import { EventTeamCardComponent } from '../../../../shared/event-team-card/event-team-card.component';
 import { EventTeamField } from '../../../../shared/event-team-card/interface/event-team-field';
 import { switchMap } from 'rxjs/operators';
-import {TeamService} from '../services/team.service';
+import {TeamService} from '../../services/team.service';
 
 @Component({
   selector: 'app-team-page',
@@ -41,7 +41,7 @@ export class TeamPageComponent implements OnInit {
     ).subscribe({
       next: (team) => {
         this.teamName = team.name;
-        this.teamId = team.id;
+        this.teamId = team.id ?? '';
         this.isLoading = false;
       },
       error: (err) => {

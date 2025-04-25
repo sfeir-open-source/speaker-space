@@ -6,13 +6,9 @@ import {LoginPageComponent} from './core/login/login-page/login-page.component';
 import {AuthGuard} from '@angular/fire/auth-guard';
 import {SettingTeamGeneralPageComponent} from './feature/admin-management/setting-team-general-page/setting-team-general-page.component';
 import {ProfileComponent} from './feature/profile/profile.component';
-import {
-  SettingTeamMembersPageComponent
-} from './feature/admin-management/setting-team-members-page/setting-team-members-page.component';
+import {SettingTeamMembersPageComponent} from './feature/admin-management/setting-team-members-page/setting-team-members-page.component';
 import {TeamPageComponent} from './feature/admin-management/team/team-page/team-page.component';
-import {
-  CreateTeamPageComponent
-} from './feature/admin-management/create-team/create-team-page/create-team-page.component';
+import {CreateTeamPageComponent} from './feature/admin-management/create-team/create-team-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},

@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -32,37 +31,23 @@ public class TeamController {
 
     @GetMapping("/my-other-teams")
     public ResponseEntity<List<TeamDTO>> getMyTeams() {
-        List<TeamDTO> teams = teamService.getTeamsForCurrentUser();
-        return ResponseEntity.ok(teams);
+        return ResponseEntity.ok(teamService.getTeamsForCurrentUser());
     }
 
     @GetMapping("/my-owned-teams")
     public ResponseEntity<List<TeamDTO>> getMyOwnedTeams() {
-        List<TeamDTO> teams = teamService.getCreateTeamsForCurrentUser();
-        return ResponseEntity.ok(teams);
+        return ResponseEntity.ok(teamService.getCreateTeamsForCurrentUser());
     }
 
     @GetMapping("/user-teams")
     public ResponseEntity<List<TeamDTO>> getAllUserTeams() {
-        List<TeamDTO> ownedTeams = teamService.getCreateTeamsForCurrentUser();
-        List<TeamDTO> memberTeams = teamService.getTeamsForCurrentUser();
-        List<TeamDTO> allTeams = new ArrayList<>(ownedTeams);
-        for (TeamDTO team : memberTeams) {
-            if (ownedTeams.stream().noneMatch(t -> t.getId().equals(team.getId()))) {
-                allTeams.add(team);
-            }
-        }
-
-        return ResponseEntity.ok(allTeams);
+        return ResponseEntity.ok(teamService.getAllUserTeams());
     }
 
     @GetMapping("/by-url/{urlId}")
     public ResponseEntity<TeamDTO> getTeamByUrl(@PathVariable String urlId) {
         TeamDTO team = teamService.getTeamByUrl(urlId);
-        if (team == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(team);
+        return team != null ? ResponseEntity.ok(team) : ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{teamId}")
@@ -73,14 +58,19 @@ public class TeamController {
 
         try {
             TeamDTO updatedTeam = teamService.updateTeam(teamId, teamDTO);
-            if (updatedTeam == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok(updatedTeam);
+            return updatedTeam != null ? ResponseEntity.ok(updatedTeam) : ResponseEntity.notFound().build();
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 
+    @DeleteMapping("/{teamId}")
+    public ResponseEntity<Void> deleteTeam(@PathVariable String teamId) {
+        try {
+            boolean deleted = teamService.deleteTeam(teamId);
+            return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
 }

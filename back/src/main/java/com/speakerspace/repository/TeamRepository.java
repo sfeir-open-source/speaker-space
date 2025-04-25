@@ -13,4 +13,5 @@ public interface TeamRepository {
     List<Team> findTeamsByMemberId(String memberId);
     List<Team> findTeamsByUserCreateId(String userCreateId);
     Team findByUrl(String url);
+    void delete(String id);
 }

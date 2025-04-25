@@ -27,8 +27,6 @@ describe('NotFoundPageComponent', () => {
 
     expect(h2Element.nativeElement.textContent.trim()).toContain('Not found');
 
-    console.log('Actual text:', JSON.stringify(actualText));
-
     const expectedText = actualText;
     expect(actualText).toBe(expectedText);
   });

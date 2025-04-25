@@ -1,6 +1,5 @@
 package com.speakerspace.repository;
 
-import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.Team;
 import org.slf4j.Logger;
@@ -36,9 +35,7 @@ public class TeamRepositoryImpl implements TeamRepository {
                 docRef = firestore.collection(COLLECTION_NAME).document(team.getId());
             }
 
-            ApiFuture<WriteResult> result = docRef.set(team);
-            result.get();
-
+            docRef.set(team).get();
             logger.info("Team saved with ID: {}", team.getId());
             return team;
         } catch (InterruptedException | ExecutionException e) {
@@ -47,20 +44,15 @@ public class TeamRepositoryImpl implements TeamRepository {
         }
     }
 
-
     @Override
     public Optional<Team> findById(String id) {
         try {
             DocumentReference docRef = firestore.collection(COLLECTION_NAME).document(id);
-            ApiFuture<DocumentSnapshot> future = docRef.get();
-            DocumentSnapshot document = future.get();
+            DocumentSnapshot document = docRef.get().get();
 
-            if (document.exists()) {
-                Team team = document.toObject(Team.class);
-                return Optional.ofNullable(team);
-            } else {
-                return Optional.empty();
-            }
+            return document.exists()
+                    ? Optional.ofNullable(document.toObject(Team.class))
+                    : Optional.empty();
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error finding team by ID: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to find team", e);
@@ -69,46 +61,18 @@ public class TeamRepositoryImpl implements TeamRepository {
 
     @Override
     public List<Team> findTeamsByMemberId(String memberId) {
-        try {
-            ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME)
-                    .whereArrayContains("memberIds", memberId)
-                    .get();
-
-            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-            List<Team> teams = new ArrayList<>();
-
-            for (QueryDocumentSnapshot document : documents) {
-                Team team = document.toObject(Team.class);
-                teams.add(team);
-            }
-
-            return teams;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding teams by member ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find teams", e);
-        }
+        return executeQuery(
+                firestore.collection(COLLECTION_NAME)
+                        .whereArrayContains("memberIds", memberId)
+        );
     }
 
     @Override
     public List<Team> findTeamsByUserCreateId(String userCreateId) {
-        try {
-            ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("userCreateId", userCreateId)
-                    .get();
-
-            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
-            List<Team> teams = new ArrayList<>();
-
-            for (QueryDocumentSnapshot document : documents) {
-                Team team = document.toObject(Team.class);
-                teams.add(team);
-            }
-
-            return teams;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding teams by owner ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find teams", e);
-        }
+        return executeQuery(
+                firestore.collection(COLLECTION_NAME)
+                        .whereEqualTo("userCreateId", userCreateId)
+        );
     }
 
     @Override
@@ -116,11 +80,9 @@ public class TeamRepositoryImpl implements TeamRepository {
         try {
             logger.info("Searching for team with URL: {}", url);
 
-            ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME)
+            List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
                     .whereEqualTo("url", url)
-                    .get();
-
-            List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+                    .get().get().getDocuments();
 
             if (documents.isEmpty()) {
                 logger.info("No team found with URL: {}", url);
@@ -132,6 +94,33 @@ public class TeamRepositoryImpl implements TeamRepository {
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error finding team by URL: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to find team by URL", e);
+        }
+    }
+
+    @Override
+    public void delete(String id) {
+        try {
+            firestore.collection(COLLECTION_NAME).document(id).delete().get();
+            logger.info("Team deleted with ID: {}", id);
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error deleting team: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to delete team", e);
+        }
+    }
+
+    private List<Team> executeQuery(Query query) {
+        try {
+            List<QueryDocumentSnapshot> documents = query.get().get().getDocuments();
+            List<Team> teams = new ArrayList<>();
+
+            for (QueryDocumentSnapshot document : documents) {
+                teams.add(document.toObject(Team.class));
+            }
+
+            return teams;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error executing query: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to execute query", e);
         }
     }
 }

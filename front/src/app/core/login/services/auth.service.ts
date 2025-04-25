@@ -103,7 +103,6 @@ export class AuthService {
         this.showAuthErrorDialog(email);
         return null;
       } else {
-        console.error("Login failed", error);
         return null;
       }
     }
@@ -160,7 +159,6 @@ export class AuthService {
 
       return true;
     } catch (error) {
-      console.error("Error sending email link:", error);
 
       this.dialog.open(AuthErrorDialogComponent, {
         width: '400px',
@@ -276,7 +274,6 @@ export class AuthService {
         this.http.post(`${environment.apiUrl}/auth/login`, { idToken: token }, { withCredentials: true })
       );
     } catch (error) {
-      console.error('Error sending token to backend:', error);
       throw error;
     }
   }
@@ -289,7 +286,6 @@ export class AuthService {
         this.http.post(`${environment.apiUrl}/auth`, user, { withCredentials: true })
       );
     } catch (error) {
-      console.error('Error saving user to backend:', error);
       throw error;
     }
   }
@@ -314,7 +310,6 @@ export class AuthService {
   async getIdToken(forceRefresh = true): Promise<string | null> {
     try {
       if (!this.auth.currentUser) {
-        console.error('No current user found');
         return null;
       }
 
@@ -323,7 +318,6 @@ export class AuthService {
 
       return token;
     } catch (error) {
-      console.error('Error getting fresh token:', error);
       return null;
     }
   }
@@ -334,7 +328,6 @@ export class AuthService {
         this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
       );
     } catch (error) {
-      console.error('Error fetching user data:', error);
       return null;
     }
   }
