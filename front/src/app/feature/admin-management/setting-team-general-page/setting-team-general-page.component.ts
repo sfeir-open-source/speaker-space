@@ -63,7 +63,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.activeSection = 'setting-general';
+    this.activeSection = 'settings-general';
     this.isLoading = true;
     this.checkForEmailModal();
     this.subscribeToRouteParams();

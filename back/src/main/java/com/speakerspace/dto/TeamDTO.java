@@ -1,5 +1,6 @@
 package com.speakerspace.dto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TeamDTO {
@@ -8,6 +9,7 @@ public class TeamDTO {
     private String url;
     private String userCreateId;
     private List<String> memberIds;
+    private List<TeamMemberDTO> members;
 
     public TeamDTO(String id, String name, String url, String userCreateId, List<String> memberIds) {
         this.id = id;
@@ -18,7 +20,8 @@ public class TeamDTO {
     }
 
     public TeamDTO() {
-
+        this.memberIds = new ArrayList<>();
+        this.members = new ArrayList<>();
     }
 
     public String getId() {
@@ -59,5 +62,13 @@ public class TeamDTO {
 
     public void setMemberIds(List<String> memberIds) {
         this.memberIds = memberIds;
+    }
+
+    public List<TeamMemberDTO> getMembers() {
+        return members;
+    }
+
+    public void setMembers(List<TeamMemberDTO> members) {
+        this.members = members;
     }
 }

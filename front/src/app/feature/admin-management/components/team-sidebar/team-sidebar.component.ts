@@ -14,6 +14,7 @@ import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/butto
 })
 export class TeamSidebarComponent implements OnInit {
   @Input() activeSection: string = '';
+  @Input() teamUrl: string = '';
 
   constructor(private router: Router) {}
 
@@ -34,18 +35,23 @@ export class TeamSidebarComponent implements OnInit {
       this.activeSection = 'settings-general';
     } else if (url.includes('/settings-members')) {
       this.activeSection = 'settings-members';
-    } else if (url.includes('/settings-support-speaker-space')) {
+    } else if (url.includes('/support-speaker-space')) {
       this.activeSection = 'support-speaker-space';
     }
   }
 
   navigateTo(path: string) {
+    if (!this.teamUrl) {
+      console.error('Team URL is missing');
+      return;
+    }
+
     if (path === 'settings-general') {
-      this.router.navigate(['/settings-general']);
+      this.router.navigate(['/settings-general', this.teamUrl]);
     } else if (path === 'settings-members') {
-      this.router.navigate(['/settings-members']);
+      this.router.navigate(['/settings-members', this.teamUrl]);
     } else if (path === 'support-speaker-space') {
-      this.router.navigate(['/settings-support-speaker-space']);
+      this.router.navigate(['/support-speaker-space', this.teamUrl]);
     }
   }
 

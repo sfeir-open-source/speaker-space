@@ -1,0 +1,76 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import {Observable, of, throwError} from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment.development';
+import {TeamMember} from '../type/team-member';
+import {UserSearchResult} from '../type/user-search-result';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TeamMemberService {
+  constructor(private http: HttpClient) {}
+
+  getTeamMembers(teamId: string): Observable<TeamMember[]> {
+    return this.http.get<TeamMember[]>(
+      `${environment.apiUrl}/team-members/${teamId}/members`,
+      { withCredentials: true }
+    ).pipe(
+      catchError(this.handleError('Error loading team members'))
+    );
+  }
+
+  addTeamMember(teamId: string, member: TeamMember): Observable<TeamMember> {
+    return this.http.post<TeamMember>(
+      `${environment.apiUrl}/team-members/${teamId}/members`,
+      member,
+      { withCredentials: true }
+    ).pipe(
+      catchError(this.handleError('Error adding team member'))
+    );
+  }
+
+  updateMemberRole(teamId: string, userId: string, role: string): Observable<TeamMember> {
+    return this.http.put<TeamMember>(
+      `${environment.apiUrl}/team-members/${teamId}/members/${userId}`,
+      { role },
+      { withCredentials: true }
+    ).pipe(
+      catchError(this.handleError('Error updating member role'))
+    );
+  }
+
+  removeTeamMember(teamId: string, userId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiUrl}/team-members/${teamId}/members/${userId}`,
+      { withCredentials: true }
+    ).pipe(
+      catchError(this.handleError('Error removing team member'))
+    );
+  }
+
+  searchUsersByEmail(query: string): Observable<UserSearchResult[]> {
+    if (!query || query.length < 2) {
+      return of([]);
+    }
+
+    return this.http.get<UserSearchResult[]>(
+      `${environment.apiUrl}/team-members/search?email=${encodeURIComponent(query)}`,
+      { withCredentials: true }
+    ).pipe(
+      catchError(this.handleError('Error searching users'))
+    );
+  }
+
+  private handleError(operation: string) {
+    return (error: any) => {
+      console.error(`${operation}: ${error.message}`);
+      return throwError(() => ({
+        error: error.error || {},
+        status: error.status,
+        message: error.error?.message || 'An unknown error occurred',
+      }));
+    };
+  }
+}

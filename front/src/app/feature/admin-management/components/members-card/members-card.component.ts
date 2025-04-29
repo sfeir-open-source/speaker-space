@@ -1,26 +1,34 @@
-import {Component, Input} from '@angular/core';
-import {MemberTeamField} from './interface/member-team-field';
-import {FormsModule} from "@angular/forms";
-import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
-import {ModalService} from './service/modal.service';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { FormsModule } from "@angular/forms";
+import { ModalService } from './service/modal.service';
+import { TeamMember } from '../../type/team-member';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-members-card',
   standalone: true,
   imports: [
+    CommonModule,
     FormsModule,
-    ButtonGreenActionsComponent
   ],
   templateUrl: './members-card.component.html',
   styleUrl: './members-card.component.scss'
 })
 export class MembersCardComponent {
-  @Input() name: string = '';
-  @Input() role: string = '';
-  @Input() img: string = '';
-  @Input() field!: MemberTeamField;
+  @Input() member!: TeamMember;
+  @Output() onRemove = new EventEmitter<void>();
+  @Output() onRoleChange = new EventEmitter<string>();
+
+  selectedRole: string = '';
 
   constructor(private modalService: ModalService) {}
+
+  ngOnInit() {
+    if (this.member) {
+      this.selectedRole = this.member.role;
+      console.log('Member initialized:', this.member);
+    }
+  }
 
   ngAfterViewInit() {
     this.initModalListeners();
@@ -50,10 +58,25 @@ export class MembersCardComponent {
   }
 
   openChangeRoleModal() {
-    this.modalService.openModal('crud-modal');
+    const modalId = `role-modal-${this.member.userId}`;
+    this.modalService.openModal(modalId);
   }
 
   closeChangeRoleModal() {
-    this.modalService.closeModal('crud-modal');
+    const modalId = `role-modal-${this.member.userId}`;
+    this.modalService.closeModal(modalId);
+  }
+
+  changeRole() {
+    this.onRoleChange.emit(this.selectedRole);
+    this.closeChangeRoleModal();
+  }
+
+  removeMember() {
+    this.onRemove.emit();
+  }
+
+  getDefaultAvatar(): string {
+    return 'img/profil-picture.svg';
   }
 }

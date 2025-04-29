@@ -3,11 +3,12 @@ package com.speakerspace.service;
 import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.FirestoreClient;
+import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.model.User;
-import com.speakerspace.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -23,19 +26,17 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     private static final String COLLECTION_NAME = "users";
 
-    private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final Firestore firestore;
 
     @Autowired
-    public UserService(UserRepository userRepository, UserMapper userMapper) {
-        this.userRepository = userRepository;
+    public UserService(UserMapper userMapper, Firestore firestore) {
         this.userMapper = userMapper;
+        this.firestore = firestore;
     }
 
     public UserDTO saveUser(UserDTO userDTO) {
         try {
-            logger.info("Saving user to Firestore: {}", userDTO.getUid());
-
             User userToSave = userMapper.convertToEntity(userDTO);
 
             Firestore firestore = FirestoreClient.getFirestore();
@@ -44,7 +45,6 @@ public class UserService {
             User existingUser = getUserEntityByUid(userDTO.getUid());
 
             if (existingUser != null) {
-                logger.info("User already exists, updating: {}", userDTO.getUid());
 
                 userToSave = preserveExistingFields(userToSave, existingUser);
             } else {
@@ -55,7 +55,6 @@ public class UserService {
 
             return userMapper.convertToDTO(userToSave);
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error saving user to Firestore", e);
             throw new RuntimeException("Failed to save user", e);
         }
     }
@@ -96,7 +95,6 @@ public class UserService {
 
             return document.toObject(User.class);
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error fetching user from Firestore", e);
             return null;
         }
     }
@@ -118,8 +116,38 @@ public class UserService {
 
             return userMapper.convertToDTO(updatedUser);
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Failed to update user", e);
             throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
+        }
+    }
+
+    public List<TeamMemberDTO> searchUsersByEmail(String emailQuery) {
+        String normalizedQuery = emailQuery.toLowerCase();
+
+        try {
+            QuerySnapshot querySnapshot = firestore.collection("users")
+                    .whereGreaterThanOrEqualTo("email", normalizedQuery)
+                    .whereLessThanOrEqualTo("email", normalizedQuery + "\uf8ff")
+                    .limit(10)
+                    .get()
+                    .get();
+
+            List<TeamMemberDTO> results = new ArrayList<>();
+
+            for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                User user = doc.toObject(User.class);
+                if (user != null && user.getEmail() != null) {
+                    TeamMemberDTO memberDTO = new TeamMemberDTO();
+                    memberDTO.setUserId(doc.getId());
+                    memberDTO.setDisplayName(user.getDisplayName());
+                    memberDTO.setPhotoURL(user.getPhotoURL());
+                    memberDTO.setEmail(user.getEmail());
+                    results.add(memberDTO);
+                }
+            }
+
+            return results;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to search users", e);
         }
     }
 
@@ -131,7 +159,6 @@ public class UserService {
             String userId = authentication.getName();
             return userId;
         }
-        logger.warn("No authenticated user found");
         throw new IllegalStateException("No authenticated user found");
     }
 }

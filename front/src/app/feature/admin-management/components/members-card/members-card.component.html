@@ -1,34 +1,35 @@
 <main class="mx-4 flex flex-col h-full items-center bg-white border border-gray-200 rounded-xs shadow-sm sm:flex-row hover:bg-gray-100">
   <div class="p-3 flex items-center justify-center overflow-hidden rounded-full">
     <img class="w-15 aspect-square object-cover rounded-full"
-         [src]="field.img"
-         [alt]="field.name"
-         (error)="field.img = 'assets/images/placeholder.jpg'">
+         [src]="member.photoURL || getDefaultAvatar()"
+         [alt]="member.displayName || 'Team member'">
   </div>
   <section class="flex items-center justify-between p-3 leading-normal w-full">
     <article class="flex flex-col justify-center">
-      <h1 class="text-md font-medium text-gray-900">{{field.name}}</h1>
-      <p class="text-sm text-gray-500">{{field.role}}</p>
+      <h1 class="text-md font-medium text-gray-900">{{ member.displayName || 'Unknown user' }}</h1>
+      <p class="text-sm text-gray-500">{{ member.role }}</p>
     </article>
     <article class="flex flex-col sm:flex-row items-center justify-between">
       <button
         (click)="openChangeRoleModal()"
-        type="submit"
+        type="button"
         class="bg-white text-sm mr-0 sm:mr-1 hover:bg-gray-100 mb-1 sm:mb-0 text-gray-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
         <span>Change role</span>
       </button>
       <button
-        type="submit"
+        (click)="removeMember()"
+        type="button"
         class="bg-white text-sm ml-0 sm:ml-1 hover:bg-gray-100 text-red-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
         <span>Remove</span>
       </button>
     </article>
   </section>
 </main>
-<main id="crud-modal" (click)="closeChangeRoleModal()" class="hidden fixed inset-0 bg-gray-300/75 overflow-y-auto z-50 flex justify-center items-center">
+
+<main [id]="'role-modal-' + member.userId" class="hidden fixed inset-0 bg-gray-300/75 overflow-y-auto z-50 flex justify-center items-center">
   <section (click)="$event.stopPropagation()" class="bg-white rounded-lg shadow p-10 w-full max-w-md lg:max-w-[500px] m-2 max-h-[600px] transition-transform scale-100">
     <article class="flex justify-between pb-4">
-      <h3 class="text-lg font-medium">Change the role of {{field.name}} ?</h3>
+      <h3 class="text-lg font-medium">Change the role of {{ member.displayName || 'this member' }}?</h3>
       <button
         (click)="closeChangeRoleModal()"
         class="text-gray-400 hover:text-gray-600 cursor-pointer">
@@ -37,27 +38,43 @@
     </article>
     <article class="mt-4">
       <div class="radio-container">
-        <input type="radio" class="custom-radio" id="owner" name="role" value="owner" checked />
-        <label class="text-md text-gray-900" for="owner">Owner</label>
+        <input
+          type="radio"
+          class="custom-radio"
+          id="owner-{{ member.userId }}"
+          name="role-{{ member.userId }}"
+          value="Owner"
+          [(ngModel)]="selectedRole"
+          [checked]="selectedRole === 'Owner'" />
+        <label class="text-md text-gray-900" for="owner-{{ member.userId }}">Owner</label>
         <p class="text-sm text-gray-500">Full control over team and events, including member management, event creation, and proposal publishing.</p>
       </div>
       <div class="radio-container">
-        <input type="radio" class="custom-radio" id="member" name="role" value="member" />
-        <label class="text-md text-gray-900" for="member">Member</label>
+        <input
+          type="radio"
+          class="custom-radio"
+          id="member-{{ member.userId }}"
+          name="role-{{ member.userId }}"
+          value="Member"
+          [(ngModel)]="selectedRole"
+          [checked]="selectedRole === 'Member'" />
+        <label class="text-md text-gray-900" for="member-{{ member.userId }}">Member</label>
         <p class="text-sm text-gray-500">Can view team, access and edit events, deliberate on proposals, and publish results. Cannot create events or manage team settings.</p>
       </div>
     </article>
     <article class="flex flex-col mt-12 sm:flex-row items-center justify-end">
       <button
         (click)="closeChangeRoleModal()"
-        type="submit"
+        type="button"
         class="bg-white px-4 py-1.5 text-sm mr-0 sm:mr-1 hover:bg-gray-100 mb-1 sm:mb-0 text-gray-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
         <span>Cancel</span>
       </button>
-      <app-button-green-actions
-        type="submit">
-        Change {{field.name}}'s role
-      </app-button-green-actions>
+      <button
+        (click)="changeRole()"
+        type="button"
+        class="bg-action hover:bg-action-hover text-white px-4 py-2 rounded-md cursor-pointer">
+        Change {{ member.displayName }}'s role
+      </button>
     </article>
   </section>
 </main>

@@ -1,0 +1,39 @@
+<div class="relative">
+  <input
+    type="text"
+    [formControl]="control"
+    [placeholder]="placeholder"
+    class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    (blur)="onBlur()"
+    (focus)="onFocus()"
+    (input)="onInputChange($event)"
+  />
+  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+    <i class="material-icons text-lg">{{ icon }}</i>
+  </span>
+
+  @if (showResults && results.length > 0) {
+    <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+      @if (isLoading) {
+        <div class="p-3 text-center text-gray-500">
+          <div class="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500 mr-2"></div>
+          Loading...
+        </div>
+      } @else {
+        @for (item of results; track trackBy(item)) {
+          <div
+            class="p-3 hover:bg-gray-100 cursor-pointer"
+            (click)="selectItem(item)">
+            <ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item }"></ng-container>
+          </div>
+        }
+      }
+    </div>
+  } @else if (showResults && control.value && control.value.length > 0 && !isLoading) {
+    <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+      <div class="p-3 text-center text-gray-500">
+        No results found
+      </div>
+    </div>
+  }
+</div>
