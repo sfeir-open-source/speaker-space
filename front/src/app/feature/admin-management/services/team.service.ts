@@ -81,29 +81,6 @@ export class TeamService {
       );
   }
 
-  getForm(): FormGroup {
-    return this.teamForm;
-  }
-
-  setupNameChangeListener(): void {
-    this.teamForm.get('name')?.valueChanges.subscribe(value => {
-      if (value) {
-        const urlSuffix = this.formatUrlFromName(value);
-        this.teamForm.get('url')?.setValue(this.BASE_URL + urlSuffix);
-      } else {
-        this.teamForm.get('url')?.setValue(this.BASE_URL);
-      }
-    });
-  }
-
-  formatUrlFromName(name: string): string {
-    return name.trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/-+/g, '-');
-  }
-
   extractUrlId(url: string): string {
     return url.includes('/') ? url.split('/').pop() || url : url;
   }

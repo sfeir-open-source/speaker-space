@@ -1,8 +1,10 @@
 <app-navbar-team-page
   [teamUrl]="teamUrl"
   [teamId]="teamId"
-  [teamName]="teamName">
+  [teamName]="teamName"
+  [userRole]="currentUserRole">
 </app-navbar-team-page>
+
 <div class="px-0 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
   <main class="flex">
     <app-team-sidebar [activeSection]="activeSection" [teamUrl]="teamUrl"></app-team-sidebar>
@@ -18,38 +20,41 @@
           <p>{{ error }}</p>
         </div>
       }
-
       @if (!isLoading && !error) {
         <form class="w-full mx-auto" (ngSubmit)="onSubmit($event)">
           <article class="w-full items-center bg-white shadow-md rounded-lg pb-4">
             <section class="p-4">
               <h1 class="text-xl font-medium">Members</h1>
-              <p class="mt-2 text-sm text-gray-600">
-                Invite, remove or change role of team members.
-              </p>
+              @if (currentUserRole === 'Owner') {
+                <p class="mt-2 text-sm text-gray-600">
+                  Invite, remove or change role of team members.
+                </p>
+              }
             </section>
 
-            <section class="px-4 pb-4">
-              <div class="flex items-center justify-between">
-                <app-auto-complete
-                  class="flex-1 mr-4"
-                  [control]="searchControl"
-                  [results]="searchResults"
-                  [isLoading]="isSearching"
-                  [placeholder]="'Find member by email'"
-                  [icon]="'search'"
-                  [itemTemplate]="userItemTemplate"
-                  (itemSelected)="selectUser($event)"
-                  (inputChanged)="onSearchInputChanged($event)">
-                </app-auto-complete>
-                <app-button-green-actions
-                  materialIcon="person_add"
-                  class="text-xs sm:text-sm lg:text-base"
-                  (click)="addMember()">
-                  <span class="hidden lg:inline">Invite member</span>
-                </app-button-green-actions>
-              </div>
-            </section>
+            @if (currentUserRole === 'Owner') {
+              <section class="px-4 pb-4">
+                <div class="flex items-center justify-between">
+                  <app-auto-complete
+                    class="flex-1 mr-4"
+                    [control]="searchControl"
+                    [results]="searchResults"
+                    [isLoading]="isSearching"
+                    [placeholder]="'Find member by email'"
+                    [icon]="'search'"
+                    [itemTemplate]="userItemTemplate"
+                    (itemSelected)="selectUser($event)"
+                    (inputChanged)="onSearchInputChanged($event)">
+                  </app-auto-complete>
+                  <app-button-green-actions
+                    materialIcon="person_add"
+                    class="text-xs sm:text-sm lg:text-base"
+                    (click)="addMember()">
+                    <span class="hidden lg:inline">Invite member</span>
+                  </app-button-green-actions>
+                </div>
+              </section>
+            }
 
             <ng-template #userItemTemplate let-user>
               <div class="flex items-center">
@@ -73,7 +78,10 @@
               @for (member of teamMembers; track member.userId) {
                 <app-members-card
                   [member]="member"
-                  (onRemove)="confirmDeleteMember(member)">
+                  [currentUserRole]="currentUserRole"
+                  [isCreator]="isCreator"
+                  (onRemove)="confirmDeleteMember(member)"
+                  (onRoleChange)="updateMemberRole(member, $event)">
                 </app-members-card>
               }
             }

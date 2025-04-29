@@ -7,6 +7,9 @@ import { FormField } from '../../../shared/input/interface/form-field';
 import {InputComponent} from '../../../shared/input/input.component';
 import {NavbarTeamPageComponent} from '../components/navbar-team-page/navbar-team-page.component';
 import {TeamSidebarComponent} from '../components/team-sidebar/team-sidebar.component';
+import {TeamMemberService} from '../services/team-member.service';
+import {AuthService} from '../../../core/login/services/auth.service';
+import {TeamMember} from '../type/team-member';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -22,14 +25,15 @@ import {TeamSidebarComponent} from '../components/team-sidebar/team-sidebar.comp
 export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   readonly BASE_URL = 'https://speaker-space.io/team/';
 
-  activeSection = 'settings-general';
-  teamUrl = '';
-  teamId = '';
-  teamName = '';
-  isLoading = true;
+  activeSection: string = 'settings-general';
+  teamUrl : string = '';
+  teamId : string = '';
+  teamName: string  = '';
+  isLoading : boolean = true;
   error: string | null = null;
-  isDeleting = false;
-  showDeleteConfirmation = false;
+  isDeleting : boolean = false;
+  showDeleteConfirmation : boolean = false;
+  currentUserRole: string = '';
 
   teamForm: FormGroup;
   private nameChangeSubscription?: Subscription;
@@ -57,7 +61,9 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private teamService: TeamService,
-    private fb: FormBuilder
+    private teamMemberService: TeamMemberService,
+    private fb: FormBuilder,
+    private authService: AuthService
   ) {
     this.teamForm = this.initializeForm();
   }
@@ -67,6 +73,12 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.checkForEmailModal();
     this.subscribeToRouteParams();
+
+    this.authService.user$.subscribe(user => {
+      if (user && this.teamId) {
+        this.loadUserRole(user.uid);
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -75,7 +87,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
   private initializeForm(): FormGroup {
     return this.fb.group({
-      teamName: ['', Validators.required],
+      teamName: [{value: '', disabled: false}, Validators.required],
       teamURL: {value: '', disabled: true}
     });
   }
@@ -115,6 +127,30 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  private updateFormControlsBasedOnRole(): void {
+    if (this.currentUserRole !== 'Owner') {
+      this.teamForm.get('teamName')?.disable();
+    } else {
+      this.teamForm.get('teamName')?.enable();
+    }
+  }
+
+  loadUserRole(userId: string): void {
+    this.teamMemberService.getTeamMembers(this.teamId)
+      .subscribe({
+        next: (members: TeamMember[]) => {
+          const currentMember = members.find(m => m.userId === userId);
+          if (currentMember) {
+            this.currentUserRole = currentMember.role;
+            this.updateFormControlsBasedOnRole();
+          }
+        },
+        error: (err) => {
+          console.error('Error loading team members:', err);
+        }
+      });
+  }
+
   private handleTeamDataLoaded(team: any): void {
     this.teamId = team.id || '';
     this.teamName = team.name;
@@ -128,6 +164,13 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
     this.setupNameChangeListener();
     this.error = null;
+
+    const user = this.authService.user$.getValue();
+    if (user) {
+      this.loadUserRole(user.uid);
+    } else {
+      this.teamForm.get('teamName')?.disable();
+    }
   }
 
   private extractOrGenerateUrlSuffix(team: any): string {

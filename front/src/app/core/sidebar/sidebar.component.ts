@@ -18,12 +18,13 @@ import {CommonModule} from '@angular/common';
   styleUrl: './sidebar.component.scss'
 })
 export class SidebarComponent implements OnInit, OnDestroy {
-  currentRoute = '';
-  hasUnreadNotifications = true;
-  notificationCount = 1;
+  currentRoute : string = '';
+  hasUnreadNotifications : boolean = true;
+  notificationCount : number = 1;
   teams: Team[] = [];
-  isLoadingTeams = false;
+  isLoadingTeams : boolean = true;
 
+  private subscriptions: Subscription = new Subscription();
   private routerSubscription?: Subscription;
   private teamsSubscription?: Subscription;
 
@@ -36,21 +37,30 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subscribeToRouterEvents();
-    this.loadTeams();
+
+    const teamsSub = this.teamService.teams$.subscribe(teams => {
+      this.teams = teams;
+      this.isLoadingTeams = false;
+    });
+
+    this.teamService.loadUserTeams();
+
+    this.subscriptions.add(teamsSub);
   }
 
   ngOnDestroy(): void {
-    this.unsubscribeAll();
+    this.subscriptions.unsubscribe();
   }
 
   private subscribeToRouterEvents(): void {
-    this.routerSubscription = this.router.events.pipe(
+    const routerSub = this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.currentRoute = event.url;
     });
 
     this.currentRoute = this.router.url;
+    this.subscriptions.add(routerSub);
   }
 
   private loadTeams(): void {

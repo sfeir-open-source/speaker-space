@@ -16,17 +16,20 @@ import { CommonModule } from '@angular/common';
 })
 export class MembersCardComponent {
   @Input() member!: TeamMember;
+  @Input() currentUserRole: string = '';
+  @Input() isCreator: boolean = false;
   @Output() onRemove = new EventEmitter<void>();
   @Output() onRoleChange = new EventEmitter<string>();
 
   selectedRole: string = '';
+  canManageRoles: boolean = false;
 
   constructor(private modalService: ModalService) {}
 
   ngOnInit() {
     if (this.member) {
       this.selectedRole = this.member.role;
-      console.log('Member initialized:', this.member);
+      this.canManageRoles = this.currentUserRole === 'Owner' || this.isCreator;
     }
   }
 

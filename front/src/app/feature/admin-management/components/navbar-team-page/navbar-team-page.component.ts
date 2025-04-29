@@ -1,24 +1,37 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { ButtonGreyComponent } from '../../../../shared/button-grey/button-grey.component';
+import { TeamMemberService } from '../../services/team-member.service';
+import { Subscription } from 'rxjs';
+import { AuthService } from '../../../../core/login/services/auth.service';
+import {UserRoleService} from '../../services/user-role.service';
 
 @Component({
   selector: 'app-navbar-team-page',
+  standalone: true,
   imports: [
     ButtonGreyComponent,
   ],
   templateUrl: './navbar-team-page.component.html',
   styleUrl: './navbar-team-page.component.scss'
 })
-export class NavbarTeamPageComponent implements OnInit {
+export class NavbarTeamPageComponent implements OnInit, OnChanges, OnDestroy {
   @Input() teamUrl: string = '';
   @Input() teamId: string = '';
   @Input() teamName: string = '';
+  @Input() userRole: string = '';
 
   activePage: string = '';
+  currentUserRole: string = 'Member';
+  private userSubscription?: Subscription;
+  private roleSubscription?: Subscription;
+  private currentUser: any = null;
 
   constructor(
     private router: Router,
+    private teamMemberService: TeamMemberService,
+    private authService: AuthService,
+    private userRoleService: UserRoleService
   ) {}
 
   ngOnInit(): void {
@@ -28,6 +41,57 @@ export class NavbarTeamPageComponent implements OnInit {
         this.setActivePage();
       }
     });
+
+    this.userSubscription = this.authService.user$.subscribe(user => {
+      this.currentUser = user;
+      if (user && this.teamId) {
+        this.loadUserRole(user.uid);
+      }
+    });
+
+    this.userRoleService.getRole().subscribe(role => {
+      if (role) {
+        this.currentUserRole = role;
+      }
+    });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['userRole'] && changes['userRole'].currentValue) {
+      this.currentUserRole = changes['userRole'].currentValue;
+    } else if (changes['teamId'] && changes['teamId'].currentValue && this.currentUser) {
+      this.loadUserRole(this.currentUser.uid);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.userSubscription) {
+      this.userSubscription.unsubscribe();
+    }
+    if (this.roleSubscription) {
+      this.roleSubscription.unsubscribe();
+    }
+  }
+
+  loadUserRole(userId: string): void {
+    if (!this.teamId) return;
+
+    if (this.roleSubscription) {
+      this.roleSubscription.unsubscribe();
+    }
+
+    this.roleSubscription = this.teamMemberService.getTeamMembers(this.teamId)
+      .subscribe({
+        next: (members) => {
+          const currentMember = members.find(m => m.userId === userId);
+          if (currentMember) {
+            this.currentUserRole = currentMember.role;
+          }
+        },
+        error: (err) => {
+          console.error('Error loading team members:', err);
+        }
+      });
   }
 
   setActivePage() {

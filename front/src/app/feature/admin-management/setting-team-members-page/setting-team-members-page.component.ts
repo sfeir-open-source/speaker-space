@@ -1,10 +1,10 @@
-import {Component, OnInit, OnDestroy, TemplateRef, ViewChild} from '@angular/core';
+import {Component, OnInit, OnDestroy, TemplateRef, ViewChild, Input, SimpleChanges} from '@angular/core';
 import { NavbarTeamPageComponent } from '../components/navbar-team-page/navbar-team-page.component';
 import { TeamSidebarComponent } from '../components/team-sidebar/team-sidebar.component';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { FormField } from '../../../shared/input/interface/form-field';
 import { ButtonGreenActionsComponent } from '../../../shared/button-green-actions/button-green-actions.component';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { MembersCardComponent } from '../components/members-card/members-card.component';
 import { TeamService } from '../services/team.service';
 import { TeamMemberService } from '../services/team-member.service';
@@ -13,6 +13,8 @@ import { TeamMember } from '../type/team-member';
 import { UserSearchResult } from '../type/user-search-result';
 import { CommonModule } from '@angular/common';
 import {AutocompleteComponent} from '../components/auto-complete/auto-complete.component';
+import {AuthService} from '../../../core/login/services/auth.service';
+import {UserRoleService} from '../services/user-role.service';
 
 @Component({
   selector: 'app-setting-team-members-page',
@@ -31,6 +33,8 @@ import {AutocompleteComponent} from '../components/auto-complete/auto-complete.c
   styleUrl: './setting-team-members-page.component.scss'
 })
 export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
+  @Input() member!: TeamMember;
+
   activeSection: string = 'settings-members';
   teamUrl: string = '';
   teamId: string = '';
@@ -41,13 +45,15 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   showDeleteConfirmation: boolean = false;
   memberToDelete: TeamMember | null = null;
   isDeleting: boolean = false;
-
   searchControl = new FormControl('');
   searchResults: UserSearchResult[] = [];
   isSearching: boolean = false;
   selectedUser: UserSearchResult | null = null;
   showSearchResults: boolean = false;
   isAddingMember: boolean = false;
+  currentUserRole: string = '';
+  isCreator: boolean = false;
+  currentUserId: string = '';
 
   private destroy$ = new Subject<void>();
 
@@ -57,20 +63,64 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private teamService: TeamService,
     private teamMemberService: TeamMemberService,
+    private authService: AuthService,
+    private userRoleService: UserRoleService
   ) {}
 
   ngOnInit() {
     this.activeSection = 'settings-members';
     this.isLoading = true;
 
-    this.route.paramMap.subscribe(params => {
-      this.teamUrl = params.get('teamUrl') || '';
+    this.authService.user$.pipe(
+      takeUntil(this.destroy$),
+      switchMap(user => {
+        if (!user) {
+          return [];
+        }
+        this.currentUserId = user.uid;
 
-      if (this.teamUrl) {
-        this.loadTeamData();
-      } else {
-        this.error = 'Team URL is missing';
+        return this.route.paramMap.pipe(
+          switchMap(params => {
+            this.teamUrl = params.get('teamUrl') || '';
+            if (!this.teamUrl) {
+              this.error = 'Team URL is missing';
+              this.isLoading = false;
+              return [];
+            }
+
+            return this.teamService.getTeamByUrl(this.teamUrl).pipe(
+              switchMap(team => {
+                this.teamId = team.id || '';
+                this.teamName = team.name;
+                this.isCreator = team.userCreateId === this.currentUserId;
+
+                if (!this.teamId) {
+                  this.error = 'Team ID is missing';
+                  this.isLoading = false;
+                  return [];
+                }
+
+                return this.teamMemberService.getTeamMembers(this.teamId);
+              })
+            );
+          })
+        );
+      })
+    ).subscribe({
+      next: (members: TeamMember[]) => {
+        this.teamMembers = members;
+        const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
+        if (currentMember) {
+          this.currentUserRole = currentMember.role;
+          this.userRoleService.setRole(this.currentUserRole);
+        }
         this.isLoading = false;
+        this.error = null;
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.error = 'Failed to load team data. Please try again.';
+        console.error('Error:', err);
       }
     });
 
@@ -168,34 +218,17 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       });
   }
 
-  loadTeamData(): void {
-    this.teamService.getTeamByUrl(this.teamUrl)
-      .subscribe({
-        next: (team: any) => {
-          this.teamId = team.id || '';
-          this.teamName = team.name;
-
-          if (this.teamId) {
-            this.loadTeamMembers();
-          } else {
-            this.isLoading = false;
-            this.error = 'Team ID is missing';
-          }
-        },
-        error: (err: any) => {
-          this.isLoading = false;
-          this.error = 'Failed to load team details. Please try again.';
-        }
-      });
-  }
-
   loadTeamMembers(): void {
     this.teamMemberService.getTeamMembers(this.teamId)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (members: TeamMember[]) => {
           this.teamMembers = members;
-          console.log('Team members loaded:', this.teamMembers);
+          const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
+          if (currentMember) {
+            this.currentUserRole = currentMember.role;
+            this.userRoleService.setRole(this.currentUserRole);
+          }
           this.error = null;
         },
         error: (err: any) => {
@@ -266,10 +299,6 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     if ((event.target as HTMLElement).id === 'delete-modal') {
       this.cancelDeleteMember();
     }
-  }
-
-  closeSearchResults() {
-    this.showSearchResults = false;
   }
 
   field: FormField = {
