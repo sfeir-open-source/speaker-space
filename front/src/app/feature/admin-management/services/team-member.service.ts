@@ -1,16 +1,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {Observable, of, throwError} from 'rxjs';
+import { Observable, of, switchMap, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment.development';
 import {TeamMember} from '../type/team-member';
 import {UserSearchResult} from '../type/user-search-result';
+import {AuthService} from '../../../core/login/services/auth.service';
+import {EmailService} from './email.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TeamMemberService {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService,
+    private emailService: EmailService
+  ) {}
 
   getTeamMembers(teamId: string): Observable<TeamMember[]> {
     return this.http.get<TeamMember[]>(
@@ -21,12 +27,35 @@ export class TeamMemberService {
     );
   }
 
-  addTeamMember(teamId: string, member: TeamMember): Observable<TeamMember> {
+  addTeamMember(teamId: string, member: TeamMember, teamName: string): Observable<TeamMember> {
     return this.http.post<TeamMember>(
       `${environment.apiUrl}/team-members/${teamId}/members`,
       member,
       { withCredentials: true }
     ).pipe(
+      switchMap(addedMember => {
+        return this.authService.user$.pipe(
+          switchMap(currentUser => {
+            if (!currentUser) {
+              return of(addedMember);
+            }
+
+            const inviterName = currentUser?.displayName || 'Un membre de l\'équipe';
+
+            this.emailService.sendTeamInvitation(
+              member.email || '',
+              teamName,
+              teamId,
+              inviterName
+            ).subscribe({
+              next: () => console.log('Invitation email sent to', member.email),
+              error: error => console.error('Failed to send invitation email:', error)
+            });
+
+            return of(addedMember);
+          })
+        );
+      }),
       catchError(this.handleError('Error adding team member'))
     );
   }

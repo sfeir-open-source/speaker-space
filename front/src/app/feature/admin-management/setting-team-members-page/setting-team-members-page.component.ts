@@ -199,9 +199,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       role: 'Member'
     };
 
-    console.log('Adding member:', newMember, 'to team:', this.teamId);
-
-    this.teamMemberService.addTeamMember(this.teamId, newMember)
+    this.teamMemberService.addTeamMember(this.teamId, newMember, this.teamName)
       .pipe(finalize(() => this.isAddingMember = false))
       .subscribe({
         next: (addedMember) => {

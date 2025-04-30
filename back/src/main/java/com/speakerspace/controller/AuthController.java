@@ -6,7 +6,6 @@ import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.config.CookieService;
 import com.speakerspace.config.FirebaseTokenRequest;
 import com.speakerspace.dto.UserDTO;
-import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,15 +25,13 @@ public class AuthController {
     private final UserService userService;
     private final CookieService cookieService;
     private final FirebaseAuth firebaseAuth;
-    private final UserMapper userMapper;
 
     @Autowired
     public AuthController(UserService userService, CookieService cookieService,
-                          FirebaseAuth firebaseAuth, UserMapper userMapper) {
+                          FirebaseAuth firebaseAuth) {
         this.userService = userService;
         this.cookieService = cookieService;
         this.firebaseAuth = firebaseAuth;
-        this.userMapper = userMapper;
     }
 
     @PostMapping("/login")

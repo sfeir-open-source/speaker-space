@@ -6,7 +6,7 @@
   </div>
   <section class="flex items-center justify-between p-3 leading-normal w-full">
     <article class="flex flex-col justify-center">
-      <h1 class="text-md font-medium text-gray-900">{{ member.displayName || 'Unknown user' }}</h1>
+      <h1 class="text-md font-medium text-gray-900">{{ member.displayName || 'User' }}</h1>
       <p class="text-sm text-gray-500">{{ member.role }}</p>
     </article>
     <article class="flex flex-col sm:flex-row items-center justify-between">
@@ -30,12 +30,15 @@
   </section>
 </main>
 
-<main [id]="'role-modal-' + member.userId" class="hidden fixed inset-0 bg-gray-300/75 overflow-y-auto z-50 flex justify-center items-center">
+<main [id]="'role-modal-' + member.userId"
+      class="hidden fixed inset-0 bg-gray-300/75 overflow-y-auto z-50 flex justify-center items-center"
+      (click)="closeChangeRoleModal()">
   <section (click)="$event.stopPropagation()" class="bg-white rounded-lg shadow p-10 w-full max-w-md lg:max-w-[500px] m-2 max-h-[600px] transition-transform scale-100">
     <article class="flex justify-between pb-4">
       <h3 class="text-lg font-medium">Change the role of {{ member.displayName || 'this member' }}?</h3>
       <button
         (click)="closeChangeRoleModal()"
+        type="button"
         class="text-gray-400 hover:text-gray-600 cursor-pointer">
         ✕
       </button>

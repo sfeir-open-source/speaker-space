@@ -5,6 +5,9 @@ import com.speakerspace.dto.UserDTO;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
 import com.speakerspace.repository.TeamRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -14,13 +17,20 @@ import java.util.Optional;
 
 @Service
 public class TeamMemberService {
+    private static final Logger logger = LoggerFactory.getLogger(TeamMemberService.class);
 
     private final TeamRepository teamRepository;
     private final UserService userService;
+    private final FormSubmitEmailService emailService;
 
-    public TeamMemberService(TeamRepository teamRepository, UserService userService) {
+    @Autowired
+    public TeamMemberService(
+            TeamRepository teamRepository,
+            UserService userService,
+            FormSubmitEmailService emailService) {
         this.teamRepository = teamRepository;
         this.userService = userService;
+        this.emailService = emailService;
     }
 
     public List<TeamMemberDTO> getTeamMembers(String teamId) throws AccessDeniedException {
@@ -72,6 +82,34 @@ public class TeamMemberService {
         resultDTO.setDisplayName(userDTO.getDisplayName());
         resultDTO.setPhotoURL(userDTO.getPhotoURL());
         resultDTO.setEmail(userDTO.getEmail());
+
+        String recipientEmail = userDTO.getEmail();
+        String teamName = team.getName();
+
+        String currentUserId = userService.getCurrentUserId();
+        UserDTO currentUser = userService.getUserByUid(currentUserId);
+        String inviterName = currentUser != null ? currentUser.getDisplayName() : "Un membre de l'équipe";
+
+        if (recipientEmail != null && !recipientEmail.isEmpty()) {
+            try {
+                boolean emailSent = emailService.sendTeamInvitation(
+                        recipientEmail,
+                        teamName,
+                        teamId,
+                        inviterName
+                );
+
+                if (emailSent) {
+                    logger.info("Invitation email sent successfully to {} for team {}", recipientEmail, teamName);
+                } else {
+                    logger.warn("Failed to send invitation email to {} for team {}", recipientEmail, teamName);
+                }
+            } catch (Exception e) {
+                logger.error("Error sending invitation email to {}: {}", recipientEmail, e.getMessage(), e);
+            }
+        } else {
+            logger.warn("Cannot send invitation email: recipient email is null or empty");
+        }
 
         return resultDTO;
     }
