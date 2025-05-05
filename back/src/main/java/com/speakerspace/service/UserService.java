@@ -60,6 +60,18 @@ public class UserService {
     }
 
     private User preserveExistingFields(User newUser, User existingUser) {
+        if (existingUser.getDisplayName() != null && !existingUser.getDisplayName().isEmpty()) {
+            newUser.setDisplayName(existingUser.getDisplayName());
+        }
+
+        if (existingUser.getPhotoURL() != null && !existingUser.getPhotoURL().isEmpty()) {
+            newUser.setPhotoURL(existingUser.getPhotoURL());
+        }
+
+        if (existingUser.getEmail() != null && !existingUser.getEmail().isEmpty()) {
+            newUser.setEmail(existingUser.getEmail());
+        }
+
         if (newUser.getCompany() == null) newUser.setCompany(existingUser.getCompany());
         if (newUser.getCity() == null) newUser.setCity(existingUser.getCity());
         if (newUser.getPhoneNumber() == null) newUser.setPhoneNumber(existingUser.getPhoneNumber());

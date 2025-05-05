@@ -48,24 +48,47 @@ public class AuthController {
             cookieService.setAuthCookie(response, request.getIdToken());
             logger.info("Setting auth cookie for user");
 
-            UserDTO userDTO = userService.getUserByUid(uid);
+            UserDTO existingUser = userService.getUserByUid(uid);
 
-            if (userDTO == null) {
-                userDTO = new UserDTO();
+            if (existingUser == null) {
+                UserDTO userDTO = new UserDTO();
                 userDTO.setUid(uid);
                 userDTO.setEmail(decodedToken.getEmail());
                 userDTO.setDisplayName(decodedToken.getName());
                 userDTO.setPhotoURL(decodedToken.getPicture());
 
-                userDTO = userService.saveUser(userDTO);
+                existingUser = userService.saveUser(userDTO);
 
-                if (userDTO == null) {
+                if (existingUser == null) {
                     logger.error("Failed to create new user");
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create user");
                 }
+            } else {
+                boolean needsUpdate = false;
+
+                if (existingUser.getEmail() == null && decodedToken.getEmail() != null) {
+                    existingUser.setEmail(decodedToken.getEmail());
+                    needsUpdate = true;
+                }
+
+                if ((existingUser.getDisplayName() == null || existingUser.getDisplayName().isEmpty())
+                        && decodedToken.getName() != null) {
+                    existingUser.setDisplayName(decodedToken.getName());
+                    needsUpdate = true;
+                }
+
+                if ((existingUser.getPhotoURL() == null || existingUser.getPhotoURL().isEmpty())
+                        && decodedToken.getPicture() != null) {
+                    existingUser.setPhotoURL(decodedToken.getPicture());
+                    needsUpdate = true;
+                }
+
+                if (needsUpdate) {
+                    existingUser = userService.saveUser(existingUser);
+                }
             }
 
-            return ResponseEntity.ok(userDTO);
+            return ResponseEntity.ok(existingUser);
         } catch (Exception e) {
             logger.error("Error during login", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
