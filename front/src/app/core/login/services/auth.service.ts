@@ -40,15 +40,49 @@ export class AuthService {
       this.user$.next(user);
 
       if (user) {
-        this.fetchAndStoreUserData(user.uid);
+        this.fetchAndMergeUserData(user);
       } else {
         this.userState.clearUser();
       }
     });
 
     this.userState.loadFromStorage();
-
     this.checkEmailLink();
+  }
+
+  private async fetchAndMergeUserData(firebaseUser: FirebaseUser): Promise<void> {
+    try {
+      const userData = await firstValueFrom(
+        this.http.get<User>(`${environment.apiUrl}/auth/user/${firebaseUser.uid}`, { withCredentials: true })
+      );
+
+      if (userData) {
+        const mergedUser: User = {
+          uid: firebaseUser.uid,
+          email: userData.email || firebaseUser.email || '',
+          displayName: userData.displayName || firebaseUser.displayName || '',
+          photoURL: userData.photoURL || firebaseUser.photoURL || '',
+          company: userData.company || '',
+          city: userData.city || '',
+          phoneNumber: userData.phoneNumber || '',
+          githubLink: userData.githubLink || '',
+          twitterLink: userData.twitterLink || '',
+          blueSkyLink: userData.blueSkyLink || '',
+          linkedInLink: userData.linkedInLink || '',
+          biography: userData.biography || '',
+          otherLink: userData.otherLink || ''
+        };
+
+        this.userState.updateUser(mergedUser);
+        this.userState.saveToStorage();
+      }
+    } catch (error) {
+      console.error('Error fetching and merging user data:', error);
+    }
+  }
+
+  private fetchAndStoreUserData(uid: string): void {
+    this.fetchAndMergeUserData(this.auth.currentUser as FirebaseUser);
   }
 
   async loginWithProvider(providerType: 'google' | 'github' | 'email', email?: string) {
@@ -105,20 +139,6 @@ export class AuthService {
       } else {
         return null;
       }
-    }
-  }
-  private async fetchAndStoreUserData(uid: string): Promise<void> {
-    try {
-      const userData = await firstValueFrom(
-        this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
-      ).catch(() => null);
-
-      if (userData) {
-        this.userState.updateUser(userData);
-        this.userState.saveToStorage();
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
     }
   }
 

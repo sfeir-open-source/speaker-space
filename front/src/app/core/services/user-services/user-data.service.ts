@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class UserDataService {
-  isSidebarOpen = false;
+  isSidebarOpen : boolean = false;
   userName: string | null = null;
   userPhotoURL: string | null = null;
   userEmail: string | null = null;
@@ -21,7 +21,7 @@ export class UserDataService {
   toggleSidebar(open: boolean, user: any = null) {
     this.isSidebarOpen = open;
     if (user) {
-      this.userName = user.displayName || user.email;
+      this.userName = user.displayName || null;
       this.userPhotoURL = user.photoURL || 'img/profil-picture.svg';
       this.userEmail = user.email || 'No email';
       this.userCompany = user.company || '';
@@ -34,5 +34,9 @@ export class UserDataService {
       this.userOtherLink = user.otherLink || '';
       this.userBiography = user.biography || '';
     }
+  }
+
+  get displayName(): string {
+    return this.userName || this.userEmail || 'Unknown User';
   }
 }

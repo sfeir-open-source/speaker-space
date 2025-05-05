@@ -17,8 +17,8 @@
            alt="profile"
            class="w-12 h-12 rounded-full border-none" referrerpolicy="no-referrer" >
       <section>
-        <p class="text-sm font-medium">{{ userDataService.userName || userDataService.userEmail }}</p>
-        <p class="text-xs text-gray-500">{{ userDataService.userEmail || 'No email' }}</p>
+        <p class="text-sm font-medium">{{ userDataService.displayName }}</p>
+        <p class="text-xs text-gray-500">{{ userDataService.userName ? userDataService.userEmail : '' }}</p>
       </section>
     </article>
     <button (click)="closeSidebar()" class="text-gray-500 hover:text-gray-800" aria-label="Close sidebar">
