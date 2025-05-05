@@ -1,4 +1,4 @@
-import {Component, OnInit, OnDestroy, TemplateRef, ViewChild, Input, SimpleChanges} from '@angular/core';
+import {Component, OnInit, OnDestroy, TemplateRef, ViewChild, Input, ElementRef} from '@angular/core';
 import { NavbarTeamPageComponent } from '../components/navbar-team-page/navbar-team-page.component';
 import { TeamSidebarComponent } from '../components/team-sidebar/team-sidebar.component';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -8,13 +8,14 @@ import { ActivatedRoute } from '@angular/router';
 import { MembersCardComponent } from '../components/members-card/members-card.component';
 import { TeamService } from '../services/team.service';
 import { TeamMemberService } from '../services/team-member.service';
-import { debounceTime, distinctUntilChanged, finalize, Subject, switchMap, takeUntil, tap } from 'rxjs';
+import {debounceTime, distinctUntilChanged, finalize, Subject, switchMap, take, takeUntil, tap} from 'rxjs';
 import { TeamMember } from '../type/team-member';
-import { UserSearchResult } from '../type/user-search-result';
 import { CommonModule } from '@angular/common';
 import {AutocompleteComponent} from '../components/auto-complete/auto-complete.component';
 import {AuthService} from '../../../core/login/services/auth.service';
 import {UserRoleService} from '../services/user-role.service';
+import {map} from 'rxjs/operators';
+import {FormSubmitData} from '../type/form-submit-data';
 
 @Component({
   selector: 'app-setting-team-members-page',
@@ -34,6 +35,8 @@ import {UserRoleService} from '../services/user-role.service';
 })
 export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   @Input() member!: TeamMember;
+  @Input() formSubmitData: FormSubmitData | undefined;
+  @ViewChild('formSubmit') formSubmitElement!: ElementRef<HTMLFormElement>;
 
   activeSection: string = 'settings-members';
   teamUrl: string = '';
@@ -43,13 +46,10 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   error: string | null = null;
   teamMembers: TeamMember[] = [];
   showDeleteConfirmation: boolean = false;
-  memberToDelete: TeamMember | null = null;
   isDeleting: boolean = false;
   searchControl = new FormControl('');
-  searchResults: UserSearchResult[] = [];
   isSearching: boolean = false;
-  selectedUser: UserSearchResult | null = null;
-  showSearchResults: boolean = false;
+  selectedUser: TeamMember | null = null;
   isAddingMember: boolean = false;
   currentUserRole: string = '';
   isCreator: boolean = false;
@@ -111,7 +111,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
         this.teamMembers = members;
         const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
         if (currentMember) {
-          this.currentUserRole = currentMember.role;
+          this.currentUserRole = currentMember.role ?? 'Member';
           this.userRoleService.setRole(this.currentUserRole);
         }
         this.isLoading = false;
@@ -142,7 +142,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     this.searchControl.valueChanges.pipe(
       tap(query => {
         if (!query || query.length < 2) {
-          this.searchResults = [];
+          this.teamMembers = [];
           this.isSearching = false;
           this.selectedUser = null;
         }
@@ -164,21 +164,21 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (results) => {
         if (Array.isArray(results)) {
-          this.searchResults = results.filter(user =>
+          this.teamMembers = results.filter(user =>
             !this.teamMembers.some(member => member.userId === user.userId)
           );
         } else {
-          this.searchResults = [];
+          this.teamMembers = [];
         }
       },
       error: (err) => {
         this.error = 'Error searching for users';
-        this.searchResults = [];
+        this.teamMembers = [];
       }
     });
   }
 
-  selectUser(user: UserSearchResult) {
+  selectUser(user: TeamMember) {
     this.selectedUser = user;
     this.searchControl.setValue(user.email);
   }
@@ -200,20 +200,71 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     };
 
     this.teamMemberService.addTeamMember(this.teamId, newMember, this.teamName)
-      .pipe(finalize(() => this.isAddingMember = false))
+      .pipe(
+        finalize(() => this.isAddingMember = false),
+        switchMap(addedMember => {
+          return this.authService.user$.pipe(
+            take(1),
+            map(currentUser => {
+              const inviterName = currentUser?.displayName || 'Un membre de l\'équipe';
+
+              this.submitFormSubmit(
+                newMember.email,
+                this.teamName,
+                this.teamId,
+                inviterName
+              );
+
+              return addedMember;
+            })
+          );
+        })
+      )
       .subscribe({
         next: (addedMember) => {
           this.teamMembers.push(addedMember);
           this.searchControl.setValue('');
           this.selectedUser = null;
           this.error = null;
-
           this.loadTeamMembers();
         },
         error: (err) => {
           this.error = err.message || 'Failed to add team member. Please try again.';
         }
       });
+  }
+
+  submitFormSubmit(email: string, teamName: string, teamId: string, inviterName: string): void {
+    const baseUrl = window.location.origin;
+    const invitationLink = `${baseUrl}/login`;
+
+    const message = ` Hello,
+
+    You have been invited by ${inviterName} to join the team "${teamName}".
+
+    Click on this link to connect with your email: "${invitationLink}".
+
+    Best regards,`;
+
+    this.formSubmitData = {
+      email: email,
+      subject: `Invitation to join "${teamName}" team on Speaker Space by ${inviterName}`,
+      message: message,
+      inviterName: inviterName,
+      teamName: teamName,
+      invitationLink: invitationLink,
+      autoresponse: ''
+    };
+
+    setTimeout(() => {
+      if (this.formSubmitElement && this.formSubmitElement.nativeElement) {
+        console.log('Submitting form to FormSubmit');
+        this.formSubmitElement.nativeElement.submit();
+        console.log('Form submitted');
+      } else {
+        console.error('Form element not found');
+      }
+    }, 100);
   }
 
   loadTeamMembers(): void {
@@ -224,7 +275,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
           this.teamMembers = members;
           const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
           if (currentMember) {
-            this.currentUserRole = currentMember.role;
+            this.currentUserRole = currentMember.role ?? 'Member';
             this.userRoleService.setRole(this.currentUserRole);
           }
           this.error = null;
@@ -237,22 +288,22 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   }
 
   confirmDeleteMember(member: TeamMember): void {
-    this.memberToDelete = member;
+    this.selectedUser = member;
     this.showDeleteConfirmation = true;
   }
 
   cancelDeleteMember(): void {
-    this.memberToDelete = null;
+    this.selectedUser = null;
     this.showDeleteConfirmation = false;
   }
 
   deleteMember(): void {
-    if (!this.memberToDelete || !this.teamId) {
+    if (!this.selectedUser || !this.teamId) {
       return;
     }
 
     this.isDeleting = true;
-    const userId = this.memberToDelete.userId;
+    const userId = this.selectedUser.userId;
 
     this.teamMemberService.removeTeamMember(this.teamId, userId)
       .pipe(finalize(() => {
@@ -262,7 +313,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.teamMembers = this.teamMembers.filter(member => member.userId !== userId);
-          this.memberToDelete = null;
+          this.selectedUser = null;
         },
         error: (err) => {
           this.error = err.message || 'Failed to remove team member. Please try again.';

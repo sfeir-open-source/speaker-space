@@ -6,15 +6,6 @@ spring:
       project-id: ${GOOGLE_CLOUD_PROJECT}
       firestore:
         project-id: ${FIRESTORE_PROJECT_ID}
-  mail:
-    host: localhost
-    port: 1025
-    properties:
-      mail:
-        smtp:
-          auth: false
-          starttls:
-            enable: false
 
 server:
   port: ${PORT:8080}
@@ -25,9 +16,6 @@ cors:
   allowedOrigins: ${CLIENT_URL_DEV}
 
 admin:
-  email: ${ADMIN_EMAIL}
-
-formsubmit:
   email: ${ADMIN_EMAIL}
 
 app:

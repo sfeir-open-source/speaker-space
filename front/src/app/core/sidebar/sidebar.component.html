@@ -15,7 +15,7 @@
     <article class="flex items-center gap-3">
       <img [src]="userDataService.userPhotoURL || 'img/profil-picture.svg'"
            alt="profile"
-           class="w-12 h-12 rounded-full border-none">
+           class="w-12 h-12 rounded-full border-none" referrerpolicy="no-referrer" >
       <section>
         <p class="text-sm font-medium">{{ userDataService.userName || userDataService.userEmail }}</p>
         <p class="text-xs text-gray-500">{{ userDataService.userEmail || 'No email' }}</p>

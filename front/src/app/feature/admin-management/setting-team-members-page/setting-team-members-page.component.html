@@ -38,7 +38,7 @@
                   <app-auto-complete
                     class="flex-1 mr-4"
                     [control]="searchControl"
-                    [results]="searchResults"
+                    [results]="teamMembers"
                     [isLoading]="isSearching"
                     [placeholder]="'Find member by email'"
                     [icon]="'search'"
@@ -88,6 +88,14 @@
           </article>
         </form>
       }
+      <form #formSubmit style="display: none;" action="https://formsubmit.co/3eb6459368d1cee500ae4d789742466b" method="POST" target="_blank">
+        <input type="hidden" name="_format" value="html">
+        <input type="hidden" name="_template" value="basic">
+        <input type="hidden" name="_cc" [value]="formSubmitData?.email">
+        <input type="hidden" name="_subject" [value]="formSubmitData?.subject">
+        <input type="hidden" name="message" [value]="formSubmitData?.message">
+        <input type="hidden" name="_captcha" value="false">
+      </form>
 
       @if (showDeleteConfirmation) {
         <div id="delete-modal"
@@ -96,7 +104,7 @@
           <div class="bg-white rounded-lg p-6 max-w-md w-full">
             <h2 class="text-xl font-medium mb-4">Confirm Member Removal</h2>
             <p class="mb-6">
-              Are you sure you want to remove {{ memberToDelete?.displayName || 'this member' }} from the team?
+              Are you sure you want to remove {{ selectedUser?.displayName || 'this member' }} from the team?
             </p>
             <div class="flex justify-end space-x-3">
               <button

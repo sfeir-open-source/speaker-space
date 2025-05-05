@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, switchMap, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import {Observable, of, switchMap, take, throwError} from 'rxjs';
+import {catchError, map} from 'rxjs/operators';
 import { environment } from '../../../../environments/environment.development';
 import {TeamMember} from '../type/team-member';
-import {UserSearchResult} from '../type/user-search-result';
 import {AuthService} from '../../../core/login/services/auth.service';
 import {EmailService} from './email.service';
 
@@ -35,6 +34,7 @@ export class TeamMemberService {
     ).pipe(
       switchMap(addedMember => {
         return this.authService.user$.pipe(
+          take(1),
           switchMap(currentUser => {
             if (!currentUser) {
               return of(addedMember);
@@ -42,17 +42,18 @@ export class TeamMemberService {
 
             const inviterName = currentUser?.displayName || 'Un membre de l\'équipe';
 
-            this.emailService.sendTeamInvitation(
+            return this.emailService.sendTeamInvitation(
               member.email || '',
               teamName,
               teamId,
               inviterName
-            ).subscribe({
-              next: () => console.log('Invitation email sent to', member.email),
-              error: error => console.error('Failed to send invitation email:', error)
-            });
-
-            return of(addedMember);
+            ).pipe(
+              catchError(error => {
+                console.error('Failed to send invitation email:', error);
+                return of(null);
+              }),
+              map(() => addedMember)
+            );
           })
         );
       }),
@@ -79,12 +80,12 @@ export class TeamMemberService {
     );
   }
 
-  searchUsersByEmail(query: string): Observable<UserSearchResult[]> {
+  searchUsersByEmail(query: string): Observable<TeamMember[]> {
     if (!query || query.length < 2) {
       return of([]);
     }
 
-    return this.http.get<UserSearchResult[]>(
+    return this.http.get<TeamMember[]>(
       `${environment.apiUrl}/team-members/search?email=${encodeURIComponent(query)}`,
       { withCredentials: true }
     ).pipe(

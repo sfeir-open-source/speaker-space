@@ -2,7 +2,7 @@
   <div class="absolute left-[10%] bottom-0 hidden lg:block">
     <img [src]="userPhotoURL()" alt="Profile Picture"
          class="w-24 h-24 xl:w-30 xl:h-30 rounded-full border-4 border-white shadow-xl object-cover"
-         (error)="handlePictureError($event)">
+         (error)="handlePictureError($event)" referrerpolicy="no-referrer" >
   </div>
   <section class="flex items-center gap-4 sm:gap-12 lg:gap-20 lg:ml-[12%]">
     <app-button-with-icon

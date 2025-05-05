@@ -17,7 +17,7 @@
           [src]="userPhotoURL || 'img/profil-picture.svg'"
           class="h-15 w-15 rounded-full"
           alt="Your profile picture"
-          (error)="handlePictureError($event)">
+          (error)="handlePictureError($event)" referrerpolicy="no-referrer">
         @if(haveNotification){
           <span class="absolute bottom-0 right-0 w-3 h-3 bg-primaryColor border-none rounded-full"
                 aria-label="You have notifications"></span>
