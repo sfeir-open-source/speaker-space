@@ -54,6 +54,8 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   currentUserRole: string = '';
   isCreator: boolean = false;
   currentUserId: string = '';
+  searchResults: TeamMember[] = [];
+  currentTeamMembers: TeamMember[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -109,6 +111,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (members: TeamMember[]) => {
         this.teamMembers = members;
+        this.currentTeamMembers = [...members];
         const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
         if (currentMember) {
           this.currentUserRole = currentMember.role ?? 'Member';
@@ -142,7 +145,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     this.searchControl.valueChanges.pipe(
       tap(query => {
         if (!query || query.length < 2) {
-          this.teamMembers = [];
+          this.searchResults  = [];
           this.isSearching = false;
           this.selectedUser = null;
         }
@@ -164,8 +167,8 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (results) => {
         if (Array.isArray(results)) {
-          this.teamMembers = results.filter(user =>
-            !this.teamMembers.some(member => member.userId === user.userId)
+          this.searchResults = results.filter(user =>
+            !this.currentTeamMembers.some(member => member.userId === user.userId)
           );
         } else {
           this.teamMembers = [];
@@ -184,61 +187,64 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   }
 
   addMember() {
-    if (!this.selectedUser || !this.teamId) {
-      this.error = 'Please select a user to add';
-      return;
+    const email = this.searchControl.value;
+
+    if (this.selectedUser && this.teamId) {
+      this.isAddingMember = true;
+
+      const newMember: TeamMember = {
+        userId: this.selectedUser.userId,
+        email: this.selectedUser.email,
+        displayName: this.selectedUser.displayName || '',
+        photoURL: this.selectedUser.photoURL || '',
+        role: 'Member'
+      };
+
+      this.teamMemberService.addTeamMember(this.teamId, newMember, this.teamName)
+        .pipe(
+          finalize(() => this.isAddingMember = false),
+          switchMap(addedMember => {
+            return this.authService.user$.pipe(
+              take(1),
+              map(currentUser => {
+                const inviterName = currentUser?.displayName || 'Un membre de l\'équipe';
+
+                this.submitFormSubmit(
+                  newMember.email,
+                  this.teamName,
+                  this.teamId,
+                  inviterName
+                );
+
+                return addedMember;
+              })
+            );
+          })
+        )
+        .subscribe({
+          next: (addedMember) => {
+            this.currentTeamMembers = [...this.currentTeamMembers, addedMember];
+            this.searchControl.setValue('');
+            this.selectedUser = null;
+            this.error = null;
+          },
+          error: (err) => {
+            this.error = err.message || 'Failed to add team member. Please try again.';
+          }
+        });
+    } else if (email && this.validateEmail(email)) {
+      this.inviteMemberByEmail();
+    } else {
+      this.error = 'Please select a user or enter a valid email address';
     }
-
-    this.isAddingMember = true;
-
-    const newMember: TeamMember = {
-      userId: this.selectedUser.userId,
-      email: this.selectedUser.email,
-      displayName: this.selectedUser.displayName || '',
-      photoURL: this.selectedUser.photoURL || '',
-      role: 'Member'
-    };
-
-    this.teamMemberService.addTeamMember(this.teamId, newMember, this.teamName)
-      .pipe(
-        finalize(() => this.isAddingMember = false),
-        switchMap(addedMember => {
-          return this.authService.user$.pipe(
-            take(1),
-            map(currentUser => {
-              const inviterName = currentUser?.displayName || 'Un membre de l\'équipe';
-
-              this.submitFormSubmit(
-                newMember.email,
-                this.teamName,
-                this.teamId,
-                inviterName
-              );
-
-              return addedMember;
-            })
-          );
-        })
-      )
-      .subscribe({
-        next: (addedMember) => {
-          this.teamMembers.push(addedMember);
-          this.searchControl.setValue('');
-          this.selectedUser = null;
-          this.error = null;
-          this.loadTeamMembers();
-        },
-        error: (err) => {
-          this.error = err.message || 'Failed to add team member. Please try again.';
-        }
-      });
   }
 
   submitFormSubmit(email: string, teamName: string, teamId: string, inviterName: string): void {
     const baseUrl = window.location.origin;
     const invitationLink = `${baseUrl}/login`;
 
-    const message = ` Hello,
+    const message = `
+    Hello,
 
     You have been invited by ${inviterName} to join the team "${teamName}".
 
@@ -273,6 +279,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (members: TeamMember[]) => {
           this.teamMembers = members;
+          this.currentTeamMembers = [...members];
           const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
           if (currentMember) {
             this.currentUserRole = currentMember.role ?? 'Member';
@@ -312,6 +319,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       }))
       .subscribe({
         next: () => {
+          this.currentTeamMembers = this.currentTeamMembers.filter(member => member.userId !== userId);
           this.teamMembers = this.teamMembers.filter(member => member.userId !== userId);
           this.selectedUser = null;
         },
@@ -333,6 +341,9 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (updatedMember: TeamMember) => {
+          this.currentTeamMembers = this.currentTeamMembers.map(m =>
+            m.userId === updatedMember.userId ? updatedMember : m
+          );
           this.teamMembers = this.teamMembers.map(m =>
             m.userId === updatedMember.userId ? updatedMember : m
           );
@@ -360,5 +371,51 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   onSubmit(event: Event) {
     event.preventDefault();
     this.addMember();
+  }
+
+  inviteMemberByEmail() {
+    const email = this.searchControl.value;
+
+    if (!email || !this.validateEmail(email)) {
+      this.error = 'Please enter a valid email address';
+      return;
+    }
+
+    this.isAddingMember = true;
+    const normalizedEmail = email.toLowerCase();
+
+    this.teamMemberService.inviteMemberByEmail(this.teamId, normalizedEmail, this.teamName)
+      .pipe(
+        finalize(() => this.isAddingMember = false)
+      )
+      .subscribe({
+        next: (invitedMember) => {
+          this.authService.user$.pipe(
+            take(1)
+          ).subscribe(currentUser => {
+            const inviterName = currentUser?.displayName || 'Un membre de l\'équipe';
+
+            this.submitFormSubmit(
+              normalizedEmail,
+              this.teamName,
+              this.teamId,
+              inviterName
+            );
+
+            this.currentTeamMembers = [...this.currentTeamMembers, invitedMember];
+            this.searchControl.setValue('');
+            this.error = null;
+          });
+        },
+        error: (err) => {
+          this.error = 'Failed to invite member. Please try again.';
+          console.error('Error inviting member:', err);
+        }
+      });
+  }
+
+  validateEmail(email: string): boolean {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
   }
 }

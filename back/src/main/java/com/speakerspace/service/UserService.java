@@ -1,14 +1,13 @@
 package com.speakerspace.service;
 
-import com.google.cloud.firestore.CollectionReference;
-import com.google.cloud.firestore.DocumentSnapshot;
-import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.QuerySnapshot;
+import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.mapper.UserMapper;
+import com.speakerspace.model.Team;
 import com.speakerspace.model.User;
+import com.speakerspace.repository.TeamRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +27,13 @@ public class UserService {
 
     private final UserMapper userMapper;
     private final Firestore firestore;
+    private final TeamRepository teamRepository;
 
     @Autowired
-    public UserService(UserMapper userMapper, Firestore firestore) {
+    public UserService(UserMapper userMapper, Firestore firestore, TeamRepository teamRepository) {
         this.userMapper = userMapper;
         this.firestore = firestore;
+        this.teamRepository = teamRepository;
     }
 
     public UserDTO saveUser(UserDTO userDTO) {
@@ -172,5 +173,43 @@ public class UserService {
             return userId;
         }
         throw new IllegalStateException("No authenticated user found");
+    }
+
+    public UserDTO getUserByEmail(String email) {
+        try {
+            List<QueryDocumentSnapshot> documents = firestore.collection("users")
+                    .whereEqualTo("email", email)
+                    .get().get().getDocuments();
+
+            if (documents.isEmpty()) {
+                return null;
+            }
+
+            User user = documents.get(0).toObject(User.class);
+            return userMapper.convertToDTO(user);
+        } catch (Exception e) {
+            logger.error("Error getting user by email", e);
+            return null;
+        }
+    }
+
+    public void processUserLogin(String email, String uid) {
+        if (email == null || uid == null) {
+            logger.error("Email or UID is null");
+            return;
+        }
+
+        email = email.toLowerCase();
+
+        List<Team> teamsWithInvitation = teamRepository.findTeamsByInvitedEmail(email);
+
+        for (Team team : teamsWithInvitation) {
+            String temporaryUserId = team.getTemporaryUserIdByEmail(email);
+            if (temporaryUserId != null) {
+                team.updateMemberId(temporaryUserId, uid);
+                team.removeInvitedEmail(email);
+                teamRepository.save(team);
+            }
+        }
     }
 }

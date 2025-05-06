@@ -6,8 +6,18 @@
   </div>
   <section class="flex items-center justify-between p-3 leading-normal w-full">
     <article class="flex flex-col justify-center">
-      <h1 class="text-md font-medium text-gray-900">{{ member.displayName || 'User' }}</h1>
-      <p class="text-sm text-gray-500">{{ member.role }}</p>
+      <h1 class="text-md font-medium text-gray-900">
+        {{ member.displayName || 'User' }}
+        @if (member.status === 'invited') {
+          <span class="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">Invited</span>
+        }
+      </h1>
+      <p class="text-sm text-gray-500">
+        {{ member.role }}
+        @if (member.status === 'invited') {
+          <span class="ml-1 text-gray-400">{{ member.email }}</span>
+        }
+      </p>
     </article>
     <article class="flex flex-col sm:flex-row items-center justify-between">
       @if (canManageRoles) {

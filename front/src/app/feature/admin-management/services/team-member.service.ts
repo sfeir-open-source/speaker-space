@@ -103,4 +103,79 @@ export class TeamMemberService {
       }));
     };
   }
+
+  createInvitation(teamId: string, email: string, teamName: string, role: string = 'Member'): Observable<TeamMember> {
+    return this.authService.user$.pipe(
+      take(1),
+      switchMap(currentUser => {
+        if (!currentUser) {
+          return throwError(() => new Error('User not authenticated'));
+        }
+
+        const invitation: TeamMember = {
+          teamId,
+          teamName,
+          userId:'',
+          email: email.toLowerCase(),
+          role,
+          invitedBy: currentUser.uid,
+          invitedAt: new Date(),
+          status: 'invited'
+        };
+
+        return this.http.post<TeamMember>(
+          `${environment.apiUrl}/team-invitations`,
+          invitation,
+          { withCredentials: true }
+        ).pipe(
+          catchError(error => {
+            console.error('Error creating invitation:', error);
+            return throwError(() => error);
+          })
+        );
+      })
+    );
+  }
+
+  inviteMemberByEmail(teamId: string, email: string, teamName: string): Observable<TeamMember> {
+    if (!email) {
+      return throwError(() => new Error('Email is required'));
+    }
+
+    const normalizedEmail = email.toLowerCase();
+
+    return this.http.post<TeamMember>(
+      `${environment.apiUrl}/team-members/${teamId}/invite`,
+      { email: normalizedEmail },
+      { withCredentials: true }
+    ).pipe(
+      catchError(error => {
+        console.error('Error creating invitation:', error);
+
+        const temporaryUserId = 'invited_' + new Date().getTime();
+        const invitedMember: TeamMember = {
+          userId: temporaryUserId,
+          email: normalizedEmail,
+          displayName: 'Invited User',
+          role: 'Member',
+          status: 'invited'
+        };
+
+        return of(invitedMember);
+      })
+    );
+  }
+
+  saveInvitation(teamId: string, invitedMember: TeamMember): Observable<TeamMember> {
+    return this.http.post<TeamMember>(
+      `${environment.apiUrl}/team-members/${teamId}/invitations`,
+      invitedMember,
+      { withCredentials: true }
+    ).pipe(
+      catchError(error => {
+        console.error('Error saving invitation:', error);
+        return of(invitedMember);
+      })
+    );
+  }
 }

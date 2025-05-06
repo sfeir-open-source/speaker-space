@@ -38,7 +38,7 @@
                   <app-auto-complete
                     class="flex-1 mr-4"
                     [control]="searchControl"
-                    [results]="teamMembers"
+                    [results]="searchResults"
                     [isLoading]="isSearching"
                     [placeholder]="'Find member by email'"
                     [icon]="'search'"
@@ -70,12 +70,12 @@
               </div>
             </ng-template>
 
-            @if (teamMembers.length === 0) {
+            @if (currentTeamMembers.length === 0) {
               <div class="p-4 text-center text-gray-500">
                 No members found in this team.
               </div>
             } @else {
-              @for (member of teamMembers; track member.userId) {
+              @for (member of currentTeamMembers; track member.userId) {
                 <app-members-card
                   [member]="member"
                   [currentUserRole]="currentUserRole"

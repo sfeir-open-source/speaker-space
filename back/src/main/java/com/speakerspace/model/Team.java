@@ -1,7 +1,9 @@
 package com.speakerspace.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Team {
     private String id;
@@ -10,6 +12,7 @@ public class Team {
     private String userCreateId;
     private List<String> memberIds;
     private List<TeamMember> members;
+    private Map<String, String> invitedEmails;
 
     public Team(String id, String name, String url, String userCreateId, List<String> memberIds) {
         this.id = id;
@@ -72,6 +75,14 @@ public class Team {
         this.members = members;
     }
 
+    public Map<String, String> getInvitedEmails() {
+        return invitedEmails;
+    }
+
+    public void setInvitedEmails(Map<String, String> invitedEmails) {
+        this.invitedEmails = invitedEmails;
+    }
+
     public void addMember(String userId) {
         if (memberIds == null) {
             memberIds = new ArrayList<>();
@@ -129,4 +140,40 @@ public class Team {
             }
         }
     }
+
+    public void addInvitedEmail(String email, String temporaryUserId) {
+        if (invitedEmails == null) {
+            invitedEmails = new HashMap<>();
+        }
+        invitedEmails.put(email, temporaryUserId);
+    }
+
+    public String getTemporaryUserIdByEmail(String email) {
+        return invitedEmails != null ? invitedEmails.get(email) : null;
+    }
+
+    public void removeInvitedEmail(String email) {
+        if (invitedEmails != null) {
+            invitedEmails.remove(email);
+        }
+    }
+
+    public void updateMemberId(String oldId, String newId) {
+        if (members != null) {
+            for (TeamMember member : members) {
+                if (member.getUserId().equals(oldId)) {
+                    member.setUserId(newId);
+                }
+            }
+        }
+
+        if (memberIds != null) {
+            List<String> updatedMemberIds = new ArrayList<>();
+            for (String id : memberIds) {
+                updatedMemberIds.add(id.equals(oldId) ? newId : id);
+            }
+            memberIds = updatedMemberIds;
+        }
+    }
+
 }

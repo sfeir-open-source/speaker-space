@@ -4,6 +4,8 @@ public class TeamMember {
 
     private String userId;
     private String role;
+    private String email;
+    private String status;
 
     public TeamMember() {}
 
@@ -26,5 +28,21 @@ public class TeamMember {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

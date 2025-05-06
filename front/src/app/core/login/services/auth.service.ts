@@ -113,6 +113,7 @@ export class AuthService {
       const result = await signInWithPopup(this.auth, provider);
       this.user$.next(result.user);
       if (result.user) {
+        await this.processInvitations(result.user);
         const token = await result.user.getIdToken();
         await this.sendTokenToBackend(token);
         const userData = await this.fetchUserData(result.user.uid);
@@ -217,6 +218,7 @@ export class AuthService {
 
           try {
             await this.sendTokenToBackend(token);
+            await this.processInvitations(result.user);
             await this.saveUserToBackend({
               uid: result.user.uid,
               email: result.user.email,
@@ -354,5 +356,23 @@ export class AuthService {
 
   public openDialog(component: any, config: any) {
     return this.dialog.open(component, config);
+  }
+
+  async processInvitations(user: FirebaseUser): Promise<void> {
+    if (!user || !user.email) return;
+
+    try {
+      await firstValueFrom(
+        this.http.post(
+          `${environment.apiUrl}/public/invitations/process`,
+          {
+            email: user.email.toLowerCase(),
+            uid: user.uid
+          }
+        )
+      );
+    } catch (error) {
+      console.error('Error processing invitations:', error);
+    }
   }
 }

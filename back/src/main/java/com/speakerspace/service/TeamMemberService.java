@@ -11,6 +11,7 @@ import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class TeamMemberService {
@@ -165,5 +166,37 @@ public class TeamMemberService {
         }
 
         return team;
+    }
+
+    public TeamMemberDTO inviteMemberByEmail(String teamId, String email) throws AccessDeniedException {
+        Team team = validateTeamOwnership(teamId);
+
+        UserDTO existingUser = userService.getUserByEmail(email);
+
+        if (existingUser != null) {
+            TeamMemberDTO memberDTO = new TeamMemberDTO();
+            memberDTO.setUserId(existingUser.getUid());
+            memberDTO.setRole("Member");
+            return addTeamMember(teamId, memberDTO);
+        } else {
+            String temporaryUserId = "invited_" + UUID.randomUUID().toString();
+
+            TeamMember invitedMember = new TeamMember(temporaryUserId, "Member");
+            invitedMember.setEmail(email);
+            invitedMember.setStatus("invited");
+
+            team.addMemberWithRole(temporaryUserId, "Member");
+            team.addInvitedEmail(email, temporaryUserId);
+
+            teamRepository.save(team);
+
+            TeamMemberDTO resultDTO = new TeamMemberDTO();
+            resultDTO.setUserId(temporaryUserId);
+            resultDTO.setRole("Member");
+            resultDTO.setEmail(email);
+            resultDTO.setStatus("invited");
+
+            return resultDTO;
+        }
     }
 }

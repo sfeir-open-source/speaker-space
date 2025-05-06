@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -121,6 +122,26 @@ public class TeamRepositoryImpl implements TeamRepository {
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error executing query: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to execute query", e);
+        }
+    }
+
+    @Override
+    public List<Team> findTeamsByInvitedEmail(String email) {
+        try {
+            List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
+                    .get().get().getDocuments();
+
+            List<Team> teams = new ArrayList<>();
+            for (QueryDocumentSnapshot document : documents) {
+                Team team = document.toObject(Team.class);
+                if (team.getInvitedEmails() != null && team.getInvitedEmails().containsKey(email)) {
+                    teams.add(team);
+                }
+            }
+
+            return teams;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to find teams by invited email", e);
         }
     }
 }
