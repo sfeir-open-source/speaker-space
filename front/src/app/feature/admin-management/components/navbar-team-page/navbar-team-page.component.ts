@@ -95,11 +95,25 @@ export class NavbarTeamPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   setActivePage() {
-    const currentRoute = this.router.url;
-    if (currentRoute.includes('/team/') && !currentRoute.includes('settings-')) {
-      this.activePage = 'team-page';
-    } else if (currentRoute.includes('settings-')) {
-      this.activePage = 'settings';
+    const currentRoute : string = this.router.url;
+    const isMobile : boolean = window.innerWidth < 1024;
+
+    switch (true) {
+      case currentRoute.includes('/team/') && !currentRoute.includes('settings-'):
+        this.activePage = 'team-page';
+        break;
+
+      case currentRoute.includes('settings-general'):
+        this.activePage = 'settings';
+        break;
+
+      case currentRoute.includes('settings-members'):
+        this.activePage = isMobile ? 'members' : 'settings';
+        break;
+
+      default:
+        this.activePage = '';
+        break;
     }
   }
 
@@ -116,6 +130,14 @@ export class NavbarTeamPageComponent implements OnInit, OnChanges, OnDestroy {
       this.router.navigate(['/settings-general', this.teamUrl]);
     } else if (this.teamId) {
       this.router.navigate(['/settings-general', this.teamId]);
+    }
+  }
+
+  members() {
+    if (this.teamUrl) {
+      this.router.navigate(['/settings-members', this.teamUrl]);
+    } else if (this.teamId) {
+      this.router.navigate(['/settings-members', this.teamId]);
     }
   }
 }

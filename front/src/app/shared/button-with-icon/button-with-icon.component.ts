@@ -14,15 +14,22 @@ export class ButtonWithIconComponent {
   @Input() hasNotification: boolean = false;
   @Input() buttonHandler: (() => void) | null = null;
   @Input() notificationCount: number = 1;
+  @Input() disabled: boolean = false;
   @Input() customClass: string = '';
 
   @Output() itemClick = new EventEmitter<string>();
 
   navigate() {
-    this.itemClick.emit(this.route);
+    if (!this.disabled) {
+      this.itemClick.emit(this.route);
+    }
   }
 
   handleButtonClick() {
+    if (this.disabled) {
+      return;
+    }
+
     if (this.buttonHandler) {
       this.buttonHandler();
     } else if (this.route) {

@@ -1,6 +1,10 @@
 <button
   (click)="handleButtonClick()"
-  class="group flex items-center gap-x-3 w-full text-left rounded-md p-2 leading-6 hover:bg-gray-100 cursor-pointer {{customClass}}">
+  [disabled]="disabled"
+  class="group flex items-center gap-x-3 w-full text-left rounded-md p-2 leading-6 hover:bg-gray-100 cursor-pointer {{customClass}}"
+  [class.opacity-50]="disabled"
+  [class.cursor-not-allowed]="disabled"
+  [class.hover:bg-transparent]="disabled">
   @if(materialIcon){
     <div class="relative inline-flex items-center justify-center">
       <span class="material-symbols-outlined">

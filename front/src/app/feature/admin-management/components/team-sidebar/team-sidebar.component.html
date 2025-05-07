@@ -16,8 +16,8 @@
   <app-button-with-icon
     materialIcon="favorite"
     route="support-speaker-space"
-    [customClass]="isActive('support-speaker-space') ? 'bg-gray-100' : ''"
-    (itemClick)="navigateTo('support-speaker-space')">
+    [disabled]="true"
+    (itemClick)="navigateTo($event)">
     Support Speaker Space
   </app-button-with-icon>
 </aside>
