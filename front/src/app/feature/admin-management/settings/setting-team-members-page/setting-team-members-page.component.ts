@@ -1,21 +1,21 @@
 import {Component, OnInit, OnDestroy, TemplateRef, ViewChild, Input, ElementRef} from '@angular/core';
-import { NavbarTeamPageComponent } from '../components/navbar-team-page/navbar-team-page.component';
-import { TeamSidebarComponent } from '../components/team-sidebar/team-sidebar.component';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { FormField } from '../../../shared/input/interface/form-field';
-import { ButtonGreenActionsComponent } from '../../../shared/button-green-actions/button-green-actions.component';
 import { ActivatedRoute } from '@angular/router';
-import { MembersCardComponent } from '../components/members-card/members-card.component';
-import { TeamService } from '../services/team.service';
-import { TeamMemberService } from '../services/team-member.service';
 import {debounceTime, distinctUntilChanged, finalize, Subject, switchMap, take, takeUntil, tap} from 'rxjs';
-import { TeamMember } from '../type/team-member';
 import { CommonModule } from '@angular/common';
-import {AutocompleteComponent} from '../components/auto-complete/auto-complete.component';
-import {AuthService} from '../../../core/login/services/auth.service';
-import {UserRoleService} from '../services/user-role.service';
 import {map} from 'rxjs/operators';
-import {FormSubmitData} from '../type/form-submit-data';
+import {MembersCardComponent} from '../../components/members-card/members-card.component';
+import {NavbarTeamPageComponent} from '../../components/navbar-team-page/navbar-team-page.component';
+import {TeamSidebarComponent} from '../../components/team-sidebar/team-sidebar.component';
+import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
+import {AutocompleteComponent} from '../../components/auto-complete/auto-complete.component';
+import {TeamMember} from '../../type/team-member';
+import {FormSubmitData} from '../../type/form-submit-data';
+import {TeamService} from '../../services/team.service';
+import {TeamMemberService} from '../../services/team-member.service';
+import {AuthService} from '../../../../core/login/services/auth.service';
+import {UserRoleService} from '../../services/user-role.service';
+import {FormField} from '../../../../shared/input/interface/form-field';
 
 @Component({
   selector: 'app-setting-team-members-page',

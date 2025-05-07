@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { SettingTeamMembersPageComponent } from './setting-team-members-page.component';
 
 describe('SettingTeamMembersPageComponent', () => {

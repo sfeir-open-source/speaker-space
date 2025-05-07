@@ -13,6 +13,7 @@ export class ButtonGreyComponent {
   @Input() materialIcon: string = '';
   @Input() buttonHandler: (() => void) | null = null;
   @Input() isActivePage: boolean = false;
+  @Input() customTextClass: string = '';
 
   @Output() itemClick = new EventEmitter<string>();
 

@@ -1,23 +1,25 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import { NavbarTeamPageComponent } from '../../components/navbar-team-page/navbar-team-page.component';
 import { EventTeamCardComponent } from '../../../../shared/event-team-card/event-team-card.component';
 import { EventTeamField } from '../../../../shared/event-team-card/interface/event-team-field';
 import { switchMap } from 'rxjs/operators';
 import {TeamService} from '../../services/team.service';
+import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
 
 @Component({
-  selector: 'app-team-page',
+  selector: 'app-team-event-page',
   imports: [
-    NavbarTeamPageComponent,
     CommonModule,
     EventTeamCardComponent,
+    NavbarTeamPageComponent,
+    ButtonGreyComponent,
   ],
-  templateUrl: './team-page.component.html',
-  styleUrl: './team-page.component.scss'
+  templateUrl: './team-event-page.component.html',
+  styleUrl: './team-event-page.component.scss'
 })
-export class TeamPageComponent implements OnInit {
+export class TeamEventPageComponent implements OnInit {
   activeTab: string = 'Active';
   teamUrl: string = '';
   teamId: string = '';
@@ -27,6 +29,7 @@ export class TeamPageComponent implements OnInit {
   error: string | null = null;
 
   constructor(
+    private router: Router,
     private route: ActivatedRoute,
     private teamService: TeamService,
   ) {}
@@ -53,5 +56,13 @@ export class TeamPageComponent implements OnInit {
 
   setActiveTab(tab: string) {
     this.activeTab = tab;
+  }
+
+  addEvent() {
+    if (this.teamUrl) {
+      this.router.navigate(['/create-event', this.teamUrl]);
+    } else if (this.teamId) {
+      this.router.navigate(['/create-event', this.teamId]);
+    }
   }
 }

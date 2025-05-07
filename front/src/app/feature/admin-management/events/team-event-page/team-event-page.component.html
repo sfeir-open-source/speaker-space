@@ -33,12 +33,14 @@
             Active
           </button>
         </nav>
-        <button
+        <app-button-grey
           type="submit"
-          class="rounded-md py-1 px-2 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer text-gray-600 shadow-sm">
-          <span class="material-symbols-outlined text-sm">add</span>
+          [buttonHandler]="addEvent.bind(this)"
+          materialIcon="add"
+          customTextClass = "text-gray-600 hover:text-gray-600"
+          class="rounded-md text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
           New Event
-        </button>
+        </app-button-grey>
       </article>
     </div>
   </section>

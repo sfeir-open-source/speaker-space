@@ -2,11 +2,11 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import {InputComponent} from '../../../shared/input/input.component';
-import {ButtonGreenActionsComponent} from '../../../shared/button-green-actions/button-green-actions.component';
-import {TeamService} from '../services/team.service';
-import {FormField} from '../../../shared/input/interface/form-field';
-import {Team} from '../type/team';
+import {InputComponent} from '../../../../shared/input/input.component';
+import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
+import {TeamService} from '../../services/team.service';
+import {FormField} from '../../../../shared/input/interface/form-field';
+import {Team} from '../../type/team';
 
 @Component({
   selector: 'app-create-team-page',
