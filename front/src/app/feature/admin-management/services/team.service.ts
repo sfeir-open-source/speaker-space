@@ -69,7 +69,16 @@ export class TeamService {
     return this.http.put<Team>(`${environment.apiUrl}/team/${teamId}`, team, { withCredentials: true })
       .pipe(
         tap(updatedTeam => this.updateTeamInList(updatedTeam)),
-        catchError(this.handleError('Error updating team'))
+        catchError(error => {
+          if (error.status === 403) {
+            return throwError(() => ({
+              error: error.error || {},
+              status: error.status,
+              message: 'You do not have permission to update this team. Only Owners can update teams.',
+            }));
+          }
+          return this.handleError('Error updating team')(error);
+        })
       );
   }
 
@@ -77,7 +86,16 @@ export class TeamService {
     return this.http.delete<void>(`${environment.apiUrl}/team/${teamId}`, { withCredentials: true })
       .pipe(
         tap(() => this.removeTeamFromList(teamId)),
-        catchError(this.handleError('Error deleting team'))
+        catchError(error => {
+          if (error.status === 403) {
+            return throwError(() => ({
+              error: error.error || {},
+              status: error.status,
+              message: 'You do not have permission to delete this team. Only Owners can delete teams.',
+            }));
+          }
+          return this.handleError('Error deleting team')(error);
+        })
       );
   }
 

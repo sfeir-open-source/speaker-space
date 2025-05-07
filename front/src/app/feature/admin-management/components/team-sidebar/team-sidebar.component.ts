@@ -42,7 +42,6 @@ export class TeamSidebarComponent implements OnInit {
 
   navigateTo(path: string) {
     if (!this.teamUrl) {
-      console.error('Team URL is missing');
       return;
     }
 

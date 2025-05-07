@@ -6,6 +6,7 @@ import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.model.Team;
+import com.speakerspace.model.TeamMember;
 import com.speakerspace.model.User;
 import com.speakerspace.repository.TeamRepository;
 import org.slf4j.Logger;
@@ -207,6 +208,14 @@ public class UserService {
             String temporaryUserId = team.getTemporaryUserIdByEmail(email);
             if (temporaryUserId != null) {
                 team.updateMemberId(temporaryUserId, uid);
+
+                for (TeamMember member : team.getMembers()) {
+                    if (member.getUserId().equals(uid)) {
+                        member.setStatus("active");
+                        break;
+                    }
+                }
+
                 team.removeInvitedEmail(email);
                 teamRepository.save(team);
             }

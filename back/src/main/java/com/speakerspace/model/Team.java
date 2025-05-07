@@ -10,17 +10,10 @@ public class Team {
     private String name;
     private String url;
     private String userCreateId;
+    private String creatorEmail;
     private List<String> memberIds;
     private List<TeamMember> members;
     private Map<String, String> invitedEmails;
-
-    public Team(String id, String name, String url, String userCreateId, List<String> memberIds) {
-        this.id = id;
-        this.name = name;
-        this.url = url;
-        this.userCreateId = userCreateId;
-        this.memberIds = memberIds;
-    }
 
     public Team() {
         this.memberIds = new ArrayList<>();
@@ -83,6 +76,14 @@ public class Team {
         this.invitedEmails = invitedEmails;
     }
 
+    public String getCreatorEmail() {
+        return creatorEmail;
+    }
+
+    public void setCreatorEmail(String creatorEmail) {
+        this.creatorEmail = creatorEmail;
+    }
+
     public void addMember(String userId) {
         if (memberIds == null) {
             memberIds = new ArrayList<>();
@@ -91,7 +92,37 @@ public class Team {
             memberIds.add(userId);
         }
 
-        addMemberWithRole(userId, "Owner");
+        addMemberWithRole(userId, "Owner", true);
+    }
+
+    public void addMemberWithRole(String userId, String role, boolean isCreator) {
+        if (memberIds == null) {
+            memberIds = new ArrayList<>();
+        }
+        if (!memberIds.contains(userId)) {
+            memberIds.add(userId);
+        }
+
+        if (members == null) {
+            members = new ArrayList<>();
+        }
+
+        boolean memberExists = false;
+        for (TeamMember member : members) {
+            if (member.getUserId().equals(userId)) {
+                member.setRole(role);
+                member.setCreator(isCreator);
+                memberExists = true;
+                break;
+            }
+        }
+
+        if (!memberExists) {
+            TeamMember newMember = new TeamMember(userId, role);
+            newMember.setCreator(isCreator);
+            newMember.setStatus("active");
+            members.add(newMember);
+        }
     }
 
     public void addMemberWithRole(String userId, String role) {
@@ -116,7 +147,9 @@ public class Team {
         }
 
         if (!memberExists) {
-            members.add(new TeamMember(userId, role));
+            TeamMember newMember = new TeamMember(userId, role);
+            newMember.setStatus("active");
+            members.add(newMember);
         }
     }
 

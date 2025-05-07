@@ -8,6 +8,7 @@ public class TeamDTO {
     private String name;
     private String url;
     private String userCreateId;
+    private String creatorEmail;
     private List<String> memberIds;
     private List<TeamMemberDTO> members;
 
@@ -70,5 +71,13 @@ public class TeamDTO {
 
     public void setMembers(List<TeamMemberDTO> members) {
         this.members = members;
+    }
+
+    public String getCreatorEmail() {
+        return creatorEmail;
+    }
+
+    public void setCreatorEmail(String creatorEmail) {
+        this.creatorEmail = creatorEmail;
     }
 }

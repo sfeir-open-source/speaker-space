@@ -6,12 +6,21 @@ public class TeamMember {
     private String role;
     private String email;
     private String status;
+    private boolean isCreator;
 
     public TeamMember() {}
 
     public TeamMember(String userId, String role) {
         this.userId = userId;
         this.role = role;
+    }
+
+    public TeamMember(String userId, String role, String email, String status, boolean isCreator) {
+        this.userId = userId;
+        this.role = role;
+        this.email = email;
+        this.status = status;
+        this.isCreator = isCreator;
     }
 
     public String getUserId() {
@@ -44,5 +53,13 @@ public class TeamMember {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public boolean isCreator() {
+        return isCreator;
+    }
+
+    public void setCreator(boolean creator) {
+        isCreator = creator;
     }
 }

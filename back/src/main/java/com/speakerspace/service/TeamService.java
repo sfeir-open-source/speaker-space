@@ -1,8 +1,10 @@
 package com.speakerspace.service;
 
 import com.speakerspace.dto.TeamDTO;
+import com.speakerspace.dto.UserDTO;
 import com.speakerspace.mapper.TeamMapper;
 import com.speakerspace.model.Team;
+import com.speakerspace.model.TeamMember;
 import com.speakerspace.repository.TeamRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +18,6 @@ import java.util.stream.Collectors;
 @Service
 public class TeamService {
 
-    private static final Logger logger = LoggerFactory.getLogger(TeamService.class);
     private static final String BASE_URL = "https://speaker-space.io/team/";
 
     private final TeamMapper teamMapper;
@@ -31,9 +32,21 @@ public class TeamService {
 
     public TeamDTO createTeam(TeamDTO teamDTO) {
         String currentUserId = userService.getCurrentUserId();
+
+        UserDTO currentUser = userService.getUserByUid(currentUserId);
         Team team = teamMapper.convertToEntity(teamDTO);
         team.setUserCreateId(currentUserId);
-        team.addMember(currentUserId);
+        team.addMemberWithRole(currentUserId, "Owner");
+
+        for (TeamMember member : team.getMembers()) {
+            if (member.getUserId().equals(currentUserId)) {
+                member.setEmail(currentUser.getEmail());
+                member.setStatus("active");
+                break;
+            }
+        }
+
+        team.setCreatorEmail(currentUser.getEmail());
 
         Team savedTeam = teamRepository.save(team);
         return teamMapper.convertToDTO(savedTeam);
@@ -78,8 +91,17 @@ public class TeamService {
         }
 
         String currentUserId = userService.getCurrentUserId();
-        if (!existingTeam.getUserCreateId().equals(currentUserId)) {
-            throw new AccessDeniedException("You are not authorized to update this team");
+
+        boolean isOwner = false;
+        for (TeamMember member : existingTeam.getMembers()) {
+            if (member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole())) {
+                isOwner = true;
+                break;
+            }
+        }
+
+        if (!isOwner) {
+            throw new AccessDeniedException("Only Owners can update the team");
         }
 
         existingTeam.setName(teamDTO.getName());
@@ -98,8 +120,17 @@ public class TeamService {
         }
 
         String currentUserId = userService.getCurrentUserId();
-        if (!existingTeam.getUserCreateId().equals(currentUserId)) {
-            throw new AccessDeniedException("You are not authorized to delete this team");
+
+        boolean isOwner = false;
+        for (TeamMember member : existingTeam.getMembers()) {
+            if (member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole())) {
+                isOwner = true;
+                break;
+            }
+        }
+
+        if (!isOwner) {
+            throw new AccessDeniedException("Only Owners can delete the team");
         }
 
         teamRepository.delete(teamId);

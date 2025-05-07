@@ -51,7 +51,6 @@ export class InvitationService {
         );
       }),
       catchError(error => {
-        console.error('Error accepting invitation:', error);
         return throwError(() => error);
       })
     );

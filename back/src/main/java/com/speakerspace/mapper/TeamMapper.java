@@ -23,6 +23,7 @@ public class TeamMapper {
         teamDTO.setName(team.getName());
         teamDTO.setUrl(team.getUrl());
         teamDTO.setUserCreateId(team.getUserCreateId());
+        teamDTO.setCreatorEmail(team.getCreatorEmail());
         teamDTO.setMemberIds(team.getMemberIds());
 
         if (team.getMembers() != null) {
@@ -47,6 +48,7 @@ public class TeamMapper {
         team.setName(teamDTO.getName());
         team.setUrl(teamDTO.getUrl());
         team.setUserCreateId(teamDTO.getUserCreateId());
+        team.setCreatorEmail(teamDTO.getCreatorEmail());
         team.setMemberIds(teamDTO.getMemberIds());
 
         if (teamDTO.getMembers() != null) {

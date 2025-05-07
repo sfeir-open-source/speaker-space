@@ -14,9 +14,6 @@
       </h1>
       <p class="text-sm text-gray-500">
         {{ member.role }}
-        @if (member.status === 'invited') {
-          <span class="ml-1 text-gray-400">{{ member.email }}</span>
-        }
       </p>
     </article>
     <article class="flex flex-col sm:flex-row items-center justify-between">
@@ -24,14 +21,16 @@
         <button
           (click)="openChangeRoleModal()"
           type="button"
+          [disabled]="member.userId === currentUserId"
+          [class.opacity-50]="member.userId === currentUserId"
           class="bg-white text-sm mr-0 sm:mr-1 hover:bg-gray-100 mb-1 sm:mb-0 text-gray-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
           <span>Change role</span>
         </button>
         <button
           (click)="removeMember()"
           type="button"
-          [disabled]="isCreator && member.role === 'Owner'"
-          [class.opacity-50]="isCreator && member.role === 'Owner'"
+          [disabled]="!canRemoveThisMember"
+          [class.opacity-50]="!canRemoveThisMember"
           class="bg-white text-sm ml-0 sm:ml-1 hover:bg-gray-100 text-red-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
           <span>Remove</span>
         </button>
@@ -66,7 +65,7 @@
         <label class="text-md text-gray-900" for="owner-{{ member.userId }}">Owner</label>
         <p class="text-sm text-gray-500">Full control over team and events, including member management, event creation, and proposal publishing.</p>
       </div>
-      <div class="radio-container">
+      <div class="radio-container mt-7">
         <input
           type="radio"
           class="custom-radio"

@@ -57,7 +57,14 @@ export class TeamMemberService {
           })
         );
       }),
-      catchError(this.handleError('Error adding team member'))
+      catchError(error => {
+        if (error.status === 403) {
+          return throwError(() => new Error('You do not have permission to add members'));
+        } else if (error.status === 400 && error.error?.message) {
+          return throwError(() => new Error(error.error.message));
+        }
+        return throwError(() => new Error('Error adding team member'));
+      })
     );
   }
 
@@ -67,7 +74,14 @@ export class TeamMemberService {
       { role },
       { withCredentials: true }
     ).pipe(
-      catchError(this.handleError('Error updating member role'))
+      catchError(error => {
+        if (error.status === 403) {
+          return throwError(() => new Error('You do not have permission to change member roles'));
+        } else if (error.status === 400 && error.error?.message) {
+          return throwError(() => new Error(error.error.message));
+        }
+        return throwError(() => new Error('Error updating member role'));
+      })
     );
   }
 
@@ -76,7 +90,14 @@ export class TeamMemberService {
       `${environment.apiUrl}/team-members/${teamId}/members/${userId}`,
       { withCredentials: true }
     ).pipe(
-      catchError(this.handleError('Error removing team member'))
+      catchError(error => {
+        if (error.status === 403) {
+          return throwError(() => new Error('You do not have permission to remove members'));
+        } else if (error.status === 400 && error.error?.message) {
+          return throwError(() => new Error(error.error.message));
+        }
+        return throwError(() => new Error('Error removing team member'));
+      })
     );
   }
 
@@ -129,7 +150,6 @@ export class TeamMemberService {
           { withCredentials: true }
         ).pipe(
           catchError(error => {
-            console.error('Error creating invitation:', error);
             return throwError(() => error);
           })
         );
@@ -150,18 +170,12 @@ export class TeamMemberService {
       { withCredentials: true }
     ).pipe(
       catchError(error => {
-        console.error('Error creating invitation:', error);
-
-        const temporaryUserId = 'invited_' + new Date().getTime();
-        const invitedMember: TeamMember = {
-          userId: temporaryUserId,
-          email: normalizedEmail,
-          displayName: 'Invited User',
-          role: 'Member',
-          status: 'invited'
-        };
-
-        return of(invitedMember);
+        if (error.status === 403) {
+          return throwError(() => new Error('You do not have permission to invite members'));
+        } else if (error.status === 400 && error.error?.message) {
+          return throwError(() => new Error(error.error.message));
+        }
+        return throwError(() => new Error('Failed to invite member'));
       })
     );
   }

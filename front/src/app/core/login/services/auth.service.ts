@@ -284,8 +284,6 @@ export class AuthService {
           .catch((error) => {
             console.error('Connection error:', error);
           });
-      } else {
-        console.error("No email found in sessionStorage or URL");
       }
     }
   }

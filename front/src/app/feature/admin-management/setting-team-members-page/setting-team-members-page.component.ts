@@ -73,6 +73,12 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     this.activeSection = 'settings-members';
     this.isLoading = true;
 
+    this.authService.user$.subscribe(user => {
+      if (user) {
+        this.currentUserId = user.uid;
+      }
+    });
+
     this.authService.user$.pipe(
       takeUntil(this.destroy$),
       switchMap(user => {
@@ -112,11 +118,13 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       next: (members: TeamMember[]) => {
         this.teamMembers = members;
         this.currentTeamMembers = [...members];
+
         const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
         if (currentMember) {
           this.currentUserRole = currentMember.role ?? 'Member';
           this.userRoleService.setRole(this.currentUserRole);
         }
+
         this.isLoading = false;
         this.error = null;
       },
@@ -187,6 +195,11 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   }
 
   addMember() {
+    if (this.currentUserRole !== 'Owner') {
+      this.error = 'Only Owners can add members';
+      return;
+    }
+
     const email = this.searchControl.value;
 
     if (this.selectedUser && this.teamId) {
@@ -264,11 +277,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
     setTimeout(() => {
       if (this.formSubmitElement && this.formSubmitElement.nativeElement) {
-        console.log('Submitting form to FormSubmit');
         this.formSubmitElement.nativeElement.submit();
-        console.log('Form submitted');
-      } else {
-        console.error('Form element not found');
       }
     }, 100);
   }
@@ -309,6 +318,18 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.currentUserRole !== 'Owner') {
+      this.error = 'Only Owners can remove members';
+      this.showDeleteConfirmation = false;
+      return;
+    }
+
+    if (this.selectedUser.role === 'Owner') {
+      this.error = 'Cannot remove an Owner. Change their role to Member first.';
+      this.showDeleteConfirmation = false;
+      return;
+    }
+
     this.isDeleting = true;
     const userId = this.selectedUser.userId;
 
@@ -322,6 +343,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
           this.currentTeamMembers = this.currentTeamMembers.filter(member => member.userId !== userId);
           this.teamMembers = this.teamMembers.filter(member => member.userId !== userId);
           this.selectedUser = null;
+          this.error = null;
         },
         error: (err) => {
           this.error = err.message || 'Failed to remove team member. Please try again.';
@@ -329,10 +351,29 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       });
   }
 
+
   updateMemberRole(member: TeamMember, newRole: string): void {
     if (!this.teamId) {
       this.error = 'Team ID is missing';
       return;
+    }
+
+    if (this.currentUserRole !== 'Owner') {
+      this.error = 'Only Owners can change member roles';
+      return;
+    }
+
+    if (member.userId === this.currentUserId) {
+      this.error = 'You cannot change your own role';
+      return;
+    }
+
+    if (member.role === 'Owner' && newRole === 'Member') {
+      const ownerCount = this.currentTeamMembers.filter(m => m.role === 'Owner').length;
+      if (ownerCount <= 1) {
+        this.error = 'Cannot demote the last Owner. Promote another member to Owner first.';
+        return;
+      }
     }
 
     this.isLoading = true;

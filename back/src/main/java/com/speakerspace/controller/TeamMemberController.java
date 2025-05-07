@@ -16,9 +16,7 @@ import java.util.List;
 @RequestMapping("/team-members")
 public class TeamMemberController {
 
-    private static final Logger logger = LoggerFactory.getLogger(TeamMemberController.class);
-
-        private final UserService userService;
+    private final UserService userService;
     private final TeamMemberService teamMemberService;
 
     public TeamMemberController(UserService userService, TeamMemberService teamMemberService) {

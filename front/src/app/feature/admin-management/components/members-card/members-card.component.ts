@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {Component, EventEmitter, Input, Output, OnInit, AfterViewInit, SimpleChanges} from '@angular/core';
 import { FormsModule } from "@angular/forms";
 import { ModalService } from './service/modal.service';
 import { TeamMember } from '../../type/team-member';
@@ -14,24 +14,43 @@ import { CommonModule } from '@angular/common';
   templateUrl: './members-card.component.html',
   styleUrl: './members-card.component.scss'
 })
-export class MembersCardComponent {
+export class MembersCardComponent implements OnInit, AfterViewInit {
   @Input() member!: TeamMember;
   @Input() currentUserRole: string = '';
+  @Input() currentUserId: string = '';
   @Input() isCreator: boolean = false;
+
   @Output() onRemove = new EventEmitter<void>();
   @Output() onRoleChange = new EventEmitter<string>();
 
   selectedRole: string = '';
   canManageRoles: boolean = false;
+  canChangeThisRole: boolean = false;
+  canRemoveThisMember: boolean = false;
 
   constructor(private modalService: ModalService) {}
 
   ngOnInit() {
     if (this.member) {
       this.selectedRole = this.member.role;
-      this.canManageRoles = this.currentUserRole === 'Owner' || this.isCreator;
+      this.canManageRoles = this.currentUserRole === 'Owner';
+      this.updatePermissions();
     }
   }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['currentUserId'] || changes['member'] || changes['currentUserRole']) {
+      this.updatePermissions();
+    }
+  }
+
+  updatePermissions() {
+    const isCurrentUser : boolean = Boolean(this.currentUserId) && this.member.userId === this.currentUserId;
+
+    this.canChangeThisRole = this.canManageRoles && !isCurrentUser;
+    this.canRemoveThisMember = this.canManageRoles && this.member.role !== 'Owner';
+  }
+
 
   ngAfterViewInit() {
     this.initModalListeners();
@@ -61,6 +80,10 @@ export class MembersCardComponent {
   }
 
   openChangeRoleModal() {
+    if (!this.canChangeThisRole || this.member.userId === this.currentUserId) {
+      return;
+    }
+
     const modalId = `role-modal-${this.member.userId}`;
     this.modalService.openModal(modalId);
   }
@@ -71,11 +94,15 @@ export class MembersCardComponent {
   }
 
   changeRole() {
+    if (!this.canChangeThisRole) return;
+
     this.onRoleChange.emit(this.selectedRole);
     this.closeChangeRoleModal();
   }
 
   removeMember() {
+    if (!this.canRemoveThisMember) return;
+
     this.onRemove.emit();
   }
 
