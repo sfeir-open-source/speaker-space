@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { environment } from '../../../../environments/environment.development';
-import { Team } from '../type/team';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {environment} from '../../../../../environments/environment.development';
+import {Team} from '../../type/team';
 
 @Injectable({
   providedIn: 'root'

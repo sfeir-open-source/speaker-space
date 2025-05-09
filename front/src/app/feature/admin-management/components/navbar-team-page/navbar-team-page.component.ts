@@ -1,10 +1,10 @@
 import { Component, Input, OnInit, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { ButtonGreyComponent } from '../../../../shared/button-grey/button-grey.component';
-import { TeamMemberService } from '../../services/team-member.service';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../services/user-role.service';
+import {TeamMemberService} from '../../services/team/team-member.service';
+import {UserRoleService} from '../../services/team/user-role.service';
 
 @Component({
   selector: 'app-navbar-team-page',

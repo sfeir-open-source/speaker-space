@@ -5,8 +5,8 @@ import { NavbarTeamPageComponent } from '../../components/navbar-team-page/navba
 import { EventTeamCardComponent } from '../../../../shared/event-team-card/event-team-card.component';
 import { EventTeamField } from '../../../../shared/event-team-card/interface/event-team-field';
 import { switchMap } from 'rxjs/operators';
-import {TeamService} from '../../services/team.service';
 import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
+import {TeamService} from '../../services/team/team.service';
 
 @Component({
   selector: 'app-team-event-page',

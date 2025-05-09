@@ -11,11 +11,11 @@ import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actio
 import {AutocompleteComponent} from '../../components/auto-complete/auto-complete.component';
 import {TeamMember} from '../../type/team-member';
 import {FormSubmitData} from '../../type/form-submit-data';
-import {TeamService} from '../../services/team.service';
-import {TeamMemberService} from '../../services/team-member.service';
 import {AuthService} from '../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../services/user-role.service';
 import {FormField} from '../../../../shared/input/interface/form-field';
+import {TeamService} from '../../services/team/team.service';
+import {TeamMemberService} from '../../services/team/team-member.service';
+import {UserRoleService} from '../../services/team/user-role.service';
 
 @Component({
   selector: 'app-setting-team-members-page',
@@ -305,7 +305,6 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
   confirmDeleteMember(member: TeamMember): void {
     this.selectedUser = member;
-    this.showDeleteConfirmation = true;
   }
 
   cancelDeleteMember(): void {
@@ -313,36 +312,19 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     this.showDeleteConfirmation = false;
   }
 
-  deleteMember(): void {
-    if (!this.selectedUser || !this.teamId) {
-      return;
-    }
-
-    if (this.currentUserRole !== 'Owner') {
-      this.error = 'Only Owners can remove members';
-      this.showDeleteConfirmation = false;
-      return;
-    }
-
-    if (this.selectedUser.role === 'Owner') {
-      this.error = 'Cannot remove an Owner. Change their role to Member first.';
-      this.showDeleteConfirmation = false;
-      return;
-    }
-
+  deleteMember(member: TeamMember): void {
     this.isDeleting = true;
-    const userId = this.selectedUser.userId;
+    const userId : string = member.userId;
 
     this.teamMemberService.removeTeamMember(this.teamId, userId)
       .pipe(finalize(() => {
         this.isDeleting = false;
-        this.showDeleteConfirmation = false;
+        this.selectedUser = null;
       }))
       .subscribe({
         next: () => {
-          this.currentTeamMembers = this.currentTeamMembers.filter(member => member.userId !== userId);
-          this.teamMembers = this.teamMembers.filter(member => member.userId !== userId);
-          this.selectedUser = null;
+          this.currentTeamMembers = this.currentTeamMembers.filter(m => m.userId !== userId);
+          this.teamMembers = this.teamMembers.filter(m => m.userId !== userId);
           this.error = null;
         },
         error: (err) => {
@@ -351,8 +333,9 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  updateMemberRole(data: {member: TeamMember, newRole: string}): void {
+    const { member, newRole } = data;
 
-  updateMemberRole(member: TeamMember, newRole: string): void {
     if (!this.teamId) {
       this.error = 'Team ID is missing';
       return;
@@ -369,7 +352,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     }
 
     if (member.role === 'Owner' && newRole === 'Member') {
-      const ownerCount = this.currentTeamMembers.filter(m => m.role === 'Owner').length;
+      const ownerCount : number = this.currentTeamMembers.filter(m => m.role === 'Owner').length;
       if (ownerCount <= 1) {
         this.error = 'Cannot demote the last Owner. Promote another member to Owner first.';
         return;

@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/team/**").permitAll()
                         .requestMatchers("/team-members/**").permitAll()
                         .requestMatchers("/emails/**").permitAll()
+                        .requestMatchers("/event/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(firebaseTokenFilter, UsernamePasswordAuthenticationFilter.class);

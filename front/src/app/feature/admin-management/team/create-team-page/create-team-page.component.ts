@@ -4,9 +4,9 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import {InputComponent} from '../../../../shared/input/input.component';
 import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
-import {TeamService} from '../../services/team.service';
 import {FormField} from '../../../../shared/input/interface/form-field';
 import {Team} from '../../type/team';
+import {TeamService} from '../../services/team/team.service';
 
 @Component({
   selector: 'app-create-team-page',
@@ -22,8 +22,8 @@ import {Team} from '../../type/team';
 })
 export class CreateTeamPageComponent {
   form: FormGroup;
-  private _router = inject(Router);
-  private _teamService = inject(TeamService);
+  private _router : Router = inject(Router);
+  private _teamService : TeamService = inject(TeamService);
   private _baseUrl: string = 'https://speaker-space.io/team/';
 
   isSubmitted: boolean = false;

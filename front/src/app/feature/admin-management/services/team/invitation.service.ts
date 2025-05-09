@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {AuthService} from '../../../core/login/services/auth.service';
 import {Observable, of, switchMap, take, throwError} from 'rxjs';
-import {environment} from '../../../../environments/environment.development';
 import {catchError} from 'rxjs/operators';
-import {TeamMember} from '../type/team-member';
+import {AuthService} from '../../../../core/login/services/auth.service';
+import {TeamMember} from '../../type/team-member';
+import {environment} from '../../../../../environments/environment.development';
 
 @Injectable({
   providedIn: 'root'

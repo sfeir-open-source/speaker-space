@@ -1,36 +1,44 @@
-package com.speakerspace.model;
+package com.speakerspace.dto;
 
 import com.google.cloud.Timestamp;
 
-public class Event {
-
+public class EventDTO {
     private String idEvent;
     private String eventName;
     private String description;
     private Timestamp startDate;
+    private String url;
     private Timestamp endDate;
     private boolean isOnline;
-    private String url;
     private String location;
     private boolean isPrivate;
     private String webLinkUrl;
     private boolean isFinish;
 
-    public Event() {
-    }
-
-    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url) {
+    public EventDTO(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
         this.startDate = startDate;
-        this.url = url;
         this.endDate = endDate;
         this.isOnline = isOnline;
         this.location = location;
         this.isPrivate = isPrivate;
         this.webLinkUrl = webLinkUrl;
         this.isFinish = isFinish;
+        this.url = url;
+    }
+
+    public EventDTO() {
+
+    }
+
+    public String getIdEvent() {
+        return idEvent;
+    }
+
+    public void setIdEvent(String idEvent) {
+        this.idEvent = idEvent;
     }
 
     public String getEventName() {
@@ -103,22 +111,6 @@ public class Event {
 
     public void setFinish(boolean finish) {
         isFinish = finish;
-    }
-
-    public String getId() {
-        return idEvent;
-    }
-
-    public void setId(String idEvent) {
-        this.idEvent = idEvent;
-    }
-
-    public String getIdEvent() {
-        return idEvent;
-    }
-
-    public void setIdEvent(String idEvent) {
-        this.idEvent = idEvent;
     }
 
     public String getUrl() {

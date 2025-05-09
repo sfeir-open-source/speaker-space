@@ -6,10 +6,11 @@ import {InputComponent} from '../../../../shared/input/input.component';
 import {NavbarTeamPageComponent} from '../../components/navbar-team-page/navbar-team-page.component';
 import {TeamSidebarComponent} from '../../components/team-sidebar/team-sidebar.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
-import {TeamService} from '../../services/team.service';
-import {TeamMemberService} from '../../services/team-member.service';
 import {AuthService} from '../../../../core/login/services/auth.service';
 import {TeamMember} from '../../type/team-member';
+import {DeleteTeamPopupComponent} from '../../components/delete-team-popup/delete-team-popup.component';
+import {TeamService} from '../../services/team/team.service';
+import {TeamMemberService} from '../../services/team/team-member.service';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -18,7 +19,8 @@ import {TeamMember} from '../../type/team-member';
     InputComponent,
     NavbarTeamPageComponent,
     TeamSidebarComponent,
-    FormsModule],
+    FormsModule,
+    DeleteTeamPopupComponent ],
   templateUrl: './setting-team-general-page.component.html',
   styleUrl: './setting-team-general-page.component.scss'
 })
@@ -280,12 +282,6 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
           this.error = 'Failed to delete team. Please try again.';
         }
       });
-  }
-
-  handleBackdropClick(event: MouseEvent): void {
-    if ((event.target as HTMLElement).id === 'crud-modal') {
-      this.cancelDeleteTeam();
-    }
   }
 
   getFormControl(name: string): FormControl {

@@ -1,0 +1,54 @@
+@if(isOpen) {
+  <div id="delete-modal"
+       aria-modal="true"
+       role="dialog"
+       aria-labelledby="delete-modal-title"
+       class="fixed inset-0 bg-gray-300/90 overflow-y-auto flex items-center justify-center z-50"
+       (click)="onBackdropClick($event)">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full shadow-xl"
+         role="document"
+         (click)="$event.stopPropagation()">
+      <header class="flex justify-between items-center mb-4">
+        <h2 id="delete-modal-title" class="text-xl font-medium">Confirm Member Removal</h2>
+        <button
+          type="button"
+          aria-label="Close dialog"
+          (click)="onCancel($event)"
+          class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+          <span aria-hidden="true">✕</span>
+        </button>
+      </header>
+
+      <div class="mb-6">
+        <p>
+          Are you sure you want to remove {{ memberName }} from the team?
+        </p>
+        <p class="mt-2 text-sm text-gray-600">
+          This action cannot be undone.
+        </p>
+      </div>
+
+      <footer class="flex justify-end space-x-3">
+        <button
+          type="button"
+          [disabled]="isDeleting"
+          (click)="onCancel($event)"
+          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+          Cancel
+        </button>
+        <button
+          type="button"
+          [disabled]="isDeleting"
+          (click)="onConfirm($event)"
+          class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center">
+          @if (isDeleting) {
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" aria-hidden="true"></div>
+            <span>Removing...</span>
+          } @else {
+            <span>Remove</span>
+          }
+        </button>
+      </footer>
+    </div>
+  </div>
+}
