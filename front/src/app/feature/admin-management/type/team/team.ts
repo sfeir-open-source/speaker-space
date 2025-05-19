@@ -1,6 +1,7 @@
 import {
   SettingTeamMembersPageComponent
-} from '../settings/setting-team-members-page/setting-team-members-page.component';
+} from '../../team/setting-team-members-page/setting-team-members-page.component';
+
 
 export type Team = {
   id?: string;

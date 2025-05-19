@@ -9,17 +9,17 @@ import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.co
 import {TeamService} from '../../services/team/team.service';
 
 @Component({
-  selector: 'app-team-event-page',
+  selector: 'app-event-list-page',
   imports: [
     CommonModule,
     EventTeamCardComponent,
     NavbarTeamPageComponent,
     ButtonGreyComponent,
   ],
-  templateUrl: './team-event-page.component.html',
-  styleUrl: './team-event-page.component.scss'
+  templateUrl: './event-list-page.component.html',
+  styleUrl: './event-list-page.component.scss'
 })
-export class TeamEventPageComponent implements OnInit {
+export class EventListPageComponent implements OnInit {
   activeTab: string = 'Active';
   teamUrl: string = '';
   teamId: string = '';

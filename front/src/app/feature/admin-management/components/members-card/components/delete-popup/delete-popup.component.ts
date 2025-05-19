@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, Output, SimpleChanges} from '@angular/core';
-import {TeamMember} from '../../../../type/team-member';
+import {TeamMember} from '../../../../type/team/team-member';
 
 @Component({
   selector: 'app-delete-popup',

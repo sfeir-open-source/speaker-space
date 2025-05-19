@@ -7,10 +7,10 @@ import {NavbarTeamPageComponent} from '../../components/navbar-team-page/navbar-
 import {TeamSidebarComponent} from '../../components/team-sidebar/team-sidebar.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
 import {AuthService} from '../../../../core/login/services/auth.service';
-import {TeamMember} from '../../type/team-member';
 import {DeleteTeamPopupComponent} from '../../components/delete-team-popup/delete-team-popup.component';
 import {TeamService} from '../../services/team/team.service';
 import {TeamMemberService} from '../../services/team/team-member.service';
+import {TeamMember} from '../../type/team/team-member';
 
 @Component({
   selector: 'app-setting-team-general-page',

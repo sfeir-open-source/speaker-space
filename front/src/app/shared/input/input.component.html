@@ -1,8 +1,12 @@
 <div class="mt-5">
-  <div class="flex justify-between">
+  <div >
     <label [for]="name" class="block text-start text-md" [class.required]="required">
       {{ label }}
       <ng-content select="[labelSuffix]"></ng-content>
+    </label>
+    <label [for]="name" class="block text-start text-xs text-gray-600" [class.required]="required">
+      {{ paragraph }}
+      <ng-content select="[paragraphSuffix]"></ng-content>
     </label>
   </div>
 

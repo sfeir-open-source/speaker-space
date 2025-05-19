@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TeamEventPageComponent } from './team-event-page.component';
+import { EventListPageComponent } from './event-list-page.component';
 
 describe('TeamPageComponent', () => {
-  let component: TeamEventPageComponent;
-  let fixture: ComponentFixture<TeamEventPageComponent>;
+  let component: EventListPageComponent;
+  let fixture: ComponentFixture<EventListPageComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TeamEventPageComponent]
+      imports: [EventListPageComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(TeamEventPageComponent);
+    fixture = TestBed.createComponent(EventListPageComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

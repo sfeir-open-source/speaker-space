@@ -9,13 +9,13 @@ import {NavbarTeamPageComponent} from '../../components/navbar-team-page/navbar-
 import {TeamSidebarComponent} from '../../components/team-sidebar/team-sidebar.component';
 import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
 import {AutocompleteComponent} from '../../components/auto-complete/auto-complete.component';
-import {TeamMember} from '../../type/team-member';
-import {FormSubmitData} from '../../type/form-submit-data';
 import {AuthService} from '../../../../core/login/services/auth.service';
 import {FormField} from '../../../../shared/input/interface/form-field';
 import {TeamService} from '../../services/team/team.service';
 import {TeamMemberService} from '../../services/team/team-member.service';
 import {UserRoleService} from '../../services/team/user-role.service';
+import {TeamMember} from '../../type/team/team-member';
+import {FormSubmitData} from '../../type/team/form-submit-data';
 
 @Component({
   selector: 'app-setting-team-members-page',

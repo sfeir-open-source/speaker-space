@@ -1,7 +1,6 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {TeamMember} from '../../../../type/team-member';
-import {ModalService} from '../../service/modal.service';
+import {TeamMember} from '../../../../type/team/team-member';
 
 @Component({
   selector: 'app-role-popup',

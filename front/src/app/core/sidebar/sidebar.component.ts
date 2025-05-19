@@ -3,10 +3,10 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { UserDataService } from '../services/user-services/user-data.service';
 import { AuthService } from '../login/services/auth.service';
-import { Team } from '../../feature/admin-management/type/team';
 import {ButtonWithIconComponent} from '../../shared/button-with-icon/button-with-icon.component';
 import {CommonModule} from '@angular/common';
 import {TeamService} from '../../feature/admin-management/services/team/team.service';
+import {Team} from '../../feature/admin-management/type/team/team';
 
 @Component({
   selector: 'app-sidebar',

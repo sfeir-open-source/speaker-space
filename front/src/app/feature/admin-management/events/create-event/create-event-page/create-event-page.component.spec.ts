@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CreateEventPageComponent } from './create-event-page.component';
 
-describe('CreateEventPageComponent', () => {
+describe('EventPageComponent', () => {
   let component: CreateEventPageComponent;
   let fixture: ComponentFixture<CreateEventPageComponent>;
 

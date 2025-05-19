@@ -14,13 +14,13 @@ import {filter, take} from 'rxjs';
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {
-  title = 'frontend';
-  showNavbar = true;
+  title:string = 'frontend';
+  showNavbar: boolean = true;
 
   constructor(private router: Router, private authService: AuthService) {
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
-        const hiddenRoutes = ['/not-found', '/login'];
+        const hiddenRoutes: string[] = ['/not-found', '/login'];
         this.showNavbar = !hiddenRoutes.includes(this.router.url);
       }
     });

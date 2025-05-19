@@ -1,9 +1,9 @@
 import {Component, EventEmitter, Input, Output, OnInit, SimpleChanges, OnChanges} from '@angular/core';
 import { FormsModule } from "@angular/forms";
-import { TeamMember } from '../../type/team-member';
 import { CommonModule } from '@angular/common';
 import {RolePopupComponent} from './components/role-popup/role-popup.component';
 import {DeletePopupComponent} from './components/delete-popup/delete-popup.component';
+import {TeamMember} from '../../type/team/team-member';
 
 @Component({
   selector: 'app-members-card',

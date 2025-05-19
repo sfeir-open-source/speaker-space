@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import {Event} from '../../type/event';
 import {BehaviorSubject, Observable, throwError} from 'rxjs';
-import {environment} from '../../../../../environments/environment.development';
 import {catchError, map, tap} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
+import {environment} from '../../../../../environments/environment.development';
+import {Event} from '../../type/event/event';
 
 @Injectable({
   providedIn: 'root'

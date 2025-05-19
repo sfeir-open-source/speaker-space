@@ -1,6 +1,7 @@
 export interface FormField {
   name: string;
   label?: string;
+  paragraph?: string;
   placeholder?: string;
   type: string;
   required?: boolean;

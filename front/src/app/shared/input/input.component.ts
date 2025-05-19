@@ -18,6 +18,7 @@ export class InputComponent implements OnInit {
   sanitizedIconPath: SafeHtml = '';
   @Input() iconViewBox: string = '0 0 16 16';
   @Input() label?: string = '';
+  @Input() paragraph?: string = '';
   @Input() placeholder?: string = '';
   @Input() type: string = 'text';
   @Input() control!: FormControl;

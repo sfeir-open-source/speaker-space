@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {environment} from '../../../../../environments/environment.development';
-import {Team} from '../../type/team';
+import {Team} from '../../type/team/team';
 
 @Injectable({
   providedIn: 'root'

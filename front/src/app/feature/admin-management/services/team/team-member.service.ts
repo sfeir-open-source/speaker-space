@@ -3,9 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import {Observable, of, switchMap, take, throwError} from 'rxjs';
 import {catchError, map} from 'rxjs/operators';
 import {EmailService} from './email.service';
-import {TeamMember} from '../../type/team-member';
 import {AuthService} from '../../../../core/login/services/auth.service';
 import {environment} from '../../../../../environments/environment.development';
+import {TeamMember} from '../../type/team/team-member';
 
 @Injectable({
   providedIn: 'root'

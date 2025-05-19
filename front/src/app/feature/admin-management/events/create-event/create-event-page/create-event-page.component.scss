@@ -1,0 +1,32 @@
+.radio-container {
+  .radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    .radio-custom {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      margin-right: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .radio-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #045d5e;
+        transition: all 0.2s ease;
+      }
+    }
+
+    &.active {
+      .radio-custom {
+        border-color: #045d5e;
+      }
+    }
+  }
+}

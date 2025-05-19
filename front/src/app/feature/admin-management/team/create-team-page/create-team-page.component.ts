@@ -5,8 +5,8 @@ import { Router } from '@angular/router';
 import {InputComponent} from '../../../../shared/input/input.component';
 import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
-import {Team} from '../../type/team';
 import {TeamService} from '../../services/team/team.service';
+import {Team} from '../../type/team/team';
 
 @Component({
   selector: 'app-create-team-page',
