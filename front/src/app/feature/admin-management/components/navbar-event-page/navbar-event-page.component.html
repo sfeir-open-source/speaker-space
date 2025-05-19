@@ -1,0 +1,11 @@
+<main class="relative bg-white h-[50px] w-full px-4 lg:px-8 flex items-center shadow-sm">
+  <section class="flex items-start center gap-4 ml-10">
+    <app-button-grey
+      materialIcon="settings"
+      [buttonHandler]="settings.bind(this)"
+      [isActivePage]="activePage === 'settings'"
+    >
+      Settings
+    </app-button-grey>
+  </section>
+</main>

@@ -1,19 +1,19 @@
-import {Component, inject, OnInit} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
-import {CommonModule} from '@angular/common';
-import {FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {
-  ButtonGreenActionsComponent
-} from '../../../../../../shared/button-green-actions/button-green-actions.component';
-import {InputComponent} from '../../../../../../shared/input/input.component';
-import {ButtonGreyComponent} from '../../../../../../shared/button-grey/button-grey.component';
-import {FormField} from '../../../../../../shared/input/interface/form-field';
+import { Component, inject, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ButtonGreenActionsComponent } from '../../../../../../shared/button-green-actions/button-green-actions.component';
+import { InputComponent } from '../../../../../../shared/input/input.component';
+import { ButtonGreyComponent } from '../../../../../../shared/button-grey/button-grey.component';
+import { FormField } from '../../../../../../shared/input/interface/form-field';
 import moment from 'moment';
 import 'moment-timezone';
-import {TimezoneOption} from '../../../../type/event/time-zone-option';
-import {EventService} from '../../../../services/event/event.service';
-import {EventDataService} from '../../../../services/event/event-data.service';
-import {Event} from '../../../../type/event/event';
+import { TimezoneOption } from '../../../../type/event/time-zone-option';
+import { EventService } from '../../../../services/event/event.service';
+import { EventDataService } from '../../../../services/event/event-data.service';
+import { Event } from '../../../../type/event/event';
+import { TeamService } from '../../../../services/team/team.service';
+import { Team } from '../../../../type/team/team';
 
 @Component({
   selector: 'app-create-new-event',
@@ -28,30 +28,39 @@ export class CreateNewEventComponent implements OnInit {
   dateTimeUtc: moment.Moment;
   dateTimeLocal: moment.Moment | null = null;
   timezoneOptions: TimezoneOption[] = [];
-  timezoneSelector = new FormControl('Europe/Madrid');
+  timezoneSelector = new FormControl('Europe/Paris');
   tzs: TimezoneOption[] = [];
   form: FormGroup;
+  teams: Team[] = [];
+
   private _router = inject(Router);
   private _eventService = inject(EventService);
+  private _teamService = inject(TeamService);
   private _baseUrl: string = 'https://speaker-space.io/event/';
 
   isSubmitted: boolean = false;
 
-  constructor(  private fb: FormBuilder,
-                private route: ActivatedRoute,
-                private eventDataService: EventDataService
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private eventDataService: EventDataService
   ) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       url: [{value: this._baseUrl, disabled: true}],
       urlConferenceHall: [''],
-      timeZone: ['', Validators.required]
+      teamId: [''],
+      timeZone: [this.timezoneSelector.value, Validators.required]
     });
     this.dateTimeUtc = moment("2017-06-05T19:41:03Z").utc();
     this.prepareTimezoneOptions();
   }
 
   ngOnInit(): void {
+    this._teamService.teams$.subscribe(teams => {
+      this.teams = teams;
+    });
+
     this.eventUrl = this.route.snapshot.paramMap.get('eventUrl') || '';
     this.form.get('name')?.valueChanges.subscribe(value => {
       if (value) {
@@ -69,14 +78,16 @@ export class CreateNewEventComponent implements OnInit {
         this.eventDataService.setEventName('');
       }
     });
+
     this.timezoneSelector.valueChanges.subscribe(timezone => {
       if (timezone) {
         this.updateLocalTime(timezone);
+        this.form.get('timeZone')?.setValue(timezone);
       }
     });
 
+    this.form.get('timeZone')?.setValue(this.timezoneSelector.value);
     this.updateLocalTime(this.timezoneSelector.value as string);
-
     this.tzs = this.timezoneOptions;
   }
 
@@ -92,40 +103,53 @@ export class CreateNewEventComponent implements OnInit {
       label: 'Event URL',
       placeholder: 'https://speaker-space.io/event/',
       type: 'text',
-      required: false,
+      required: true,
       disabled: true,
     },
     {
       name: 'urlConferenceHall',
       label: 'Conference Hall Url Connexion',
-      paragraph:'Use a conference hall existing URL if you want to synchronize conference Hall Datas',
+      paragraph: 'Use a conference hall existing URL if you want to synchronize conference Hall Datas',
       type: 'text',
       required: false,
     }
   ];
 
   onSubmit(): void {
+    console.log('Form submitted');
     this.isSubmitted = true;
 
     if (this.form.invalid) {
+      console.log('Form controls with errors:', Object.keys(this.form.controls)
+        .filter(key => this.form.controls[key].errors)
+        .map(key => ({ key, errors: this.form.controls[key].errors })));
       return;
     }
 
+    const fullUrl = this.form.get('url')?.value || '';
+
     const event: Event = {
       eventName: this.form.value.name || '',
-      url: this.form.get('url')?.value || ''
+      url: fullUrl,
+      conferenceHallUrl: this.form.value.urlConferenceHall || '',
+      timeZone: this.form.value.timeZone || 'Europe/Paris'
     };
 
+    console.log('Event object to send:', event);
+
     this._eventService.createEvent(event).subscribe({
-      next: response => {
-        const navigationTarget: string = response.url ?? response.idEvent ?? '';
-
-        this.eventDataService.setEventId(navigationTarget);
-
+      next: (response) => {
+        console.log('Event created successfully:', response);
+        this.eventDataService.setEventId(response.idEvent || '');
+        this.eventDataService.updateEventData({
+          conferenceHallUrl: response.conferenceHallUrl,
+          url: response.url
+        });
         this.eventDataService.goToNextStep();
       },
-      error: error => {
+      error: (error) => {
         console.error('Error creating event', error);
+        alert('Failed to create event: ' + (error.message || 'Unknown error'));
       }
     });
   }

@@ -1,12 +1,13 @@
 package com.speakerspace.repository;
 
-import com.google.cloud.firestore.DocumentReference;
-import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.*;
 import com.speakerspace.model.Event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Repository
@@ -25,19 +26,98 @@ public class EventRepositoryImpl implements EventRepository {
         try {
             DocumentReference docRef;
 
-            if (event.getId() == null || event.getId().isEmpty()) {
+            if (event.getIdEvent() == null || event.getIdEvent().isEmpty()) {
                 docRef = firestore.collection(COLLECTION_NAME).document();
-                event.setId(docRef.getId());
+                event.setIdEvent(docRef.getId());
             } else {
-                docRef = firestore.collection(COLLECTION_NAME).document(event.getId());
+                docRef = firestore.collection(COLLECTION_NAME).document(event.getIdEvent());
             }
 
             docRef.set(event).get();
-            logger.info("Event saved with ID: {}", event.getId());
+            logger.info("Event saved with ID: {}", event.getIdEvent());
             return event;
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error saving event: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to save event", e);
+        }
+    }
+
+    @Override
+    public Event findById(String id) {
+        try {
+            DocumentSnapshot document = firestore.collection(COLLECTION_NAME).document(id).get().get();
+            if (document.exists()) {
+                Event event = document.toObject(Event.class);
+                return event;
+            }
+            return null;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error finding event by ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find event", e);
+        }
+    }
+
+    @Override
+    public Event findByUrl(String url) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("url", url);
+            QuerySnapshot querySnapshot = query.get().get();
+
+            if (!querySnapshot.isEmpty()) {
+                return querySnapshot.getDocuments().get(0).toObject(Event.class);
+            }
+            return null;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error finding event by URL: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find event by URL", e);
+        }
+    }
+
+    @Override
+    public List<Event> findByTeamId(String teamId) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("teamId", teamId);
+            QuerySnapshot querySnapshot = query.get().get();
+
+            List<Event> events = new ArrayList<>();
+            querySnapshot.getDocuments().forEach(doc -> {
+                events.add(doc.toObject(Event.class));
+            });
+
+            return events;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error finding events by team ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find events by team ID", e);
+        }
+    }
+
+    @Override
+    public List<Event> findByUserCreateId(String userId) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("userCreateId", userId);
+            QuerySnapshot querySnapshot = query.get().get();
+
+            List<Event> events = new ArrayList<>();
+            querySnapshot.getDocuments().forEach(doc -> {
+                events.add(doc.toObject(Event.class));
+            });
+
+            return events;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error finding events by user ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find events by user ID", e);
+        }
+    }
+
+    @Override
+    public boolean delete(String id) {
+        try {
+            firestore.collection(COLLECTION_NAME).document(id).delete().get();
+            logger.info("Event deleted with ID: {}", id);
+            return true;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error deleting event: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to delete event", e);
         }
     }
 }

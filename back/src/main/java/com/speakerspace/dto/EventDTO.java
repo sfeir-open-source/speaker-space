@@ -14,8 +14,11 @@ public class EventDTO {
     private boolean isPrivate;
     private String webLinkUrl;
     private boolean isFinish;
+    private String userCreateId;
+    private String conferenceHallUrl;
+    private String teamId;
 
-    public EventDTO(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url) {
+    public EventDTO(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
@@ -27,6 +30,9 @@ public class EventDTO {
         this.webLinkUrl = webLinkUrl;
         this.isFinish = isFinish;
         this.url = url;
+        this.conferenceHallUrl = conferenceHallUrl;
+        this.userCreateId = userCreateId;
+        this.teamId = teamId;
     }
 
     public EventDTO() {
@@ -119,5 +125,29 @@ public class EventDTO {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getUserCreateId() {
+        return userCreateId;
+    }
+
+    public void setUserCreateId(String userCreateId) {
+        this.userCreateId = userCreateId;
+    }
+
+    public String getConferenceHallUrl() {
+        return conferenceHallUrl;
+    }
+
+    public void setConferenceHallUrl(String conferenceHallUrl) {
+        this.conferenceHallUrl = conferenceHallUrl;
+    }
+
+    public String getTeamId() {
+        return teamId;
+    }
+
+    public void setTeamId(String teamId) {
+        this.teamId = teamId;
     }
 }

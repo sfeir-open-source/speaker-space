@@ -14,6 +14,9 @@ import {
 import {
   SettingTeamMembersPageComponent
 } from './feature/admin-management/team/setting-team-members-page/setting-team-members-page.component';
+import {
+  EventDetailPageComponent
+} from './feature/admin-management/events/event-detail-page/event-detail-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -21,9 +24,10 @@ export const routes: Routes = [
   { path: 'login', component: LoginPageComponent },
   { path: 'create-team', component: CreateTeamPageComponent},
   { path: 'team/:teamUrl', component: EventListPageComponent},
-  { path: 'create-event/:teamUrl', component: CreateEventPageComponent},
+  { path: 'create-event/:eventUrl', component: CreateEventPageComponent},
   { path: 'settings-general/:teamUrl', component: SettingTeamGeneralPageComponent},
   { path: 'settings-members/:teamUrl', component: SettingTeamMembersPageComponent },
+  { path: 'event-detail', component: EventDetailPageComponent },
   { path: 'profile', component: ProfileComponent},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }

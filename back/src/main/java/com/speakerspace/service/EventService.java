@@ -7,6 +7,10 @@ import com.speakerspace.model.Event;
 import com.speakerspace.repository.EventRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
 public class EventService {
 
@@ -22,15 +26,92 @@ public class EventService {
         this.userService = userService;
     }
 
-
     public EventDTO createEvent(EventDTO eventDTO) {
         String currentUserId = userService.getCurrentUserId();
-
-        UserDTO currentUser = userService.getUserByUid(currentUserId);
         Event event = eventMapper.convertToEntity(eventDTO);
 
+        if (event.getUrl() == null || event.getUrl().isEmpty()) {
+            String urlSuffix = generateUrlSuffix(event.getEventName());
+            event.setUrl(BASE_URL + urlSuffix);
+        }
+
+        event.setUserCreateId(currentUserId);
 
         Event savedEvent = eventRepository.save(event);
         return eventMapper.convertToDTO(savedEvent);
+    }
+
+    public EventDTO updateEvent(EventDTO eventDTO) {
+        String currentUserId = userService.getCurrentUserId();
+
+        Event existingEvent = eventRepository.findById(eventDTO.getIdEvent());
+        if (existingEvent == null) {
+            throw new RuntimeException("Event not found");
+        }
+
+        if (!existingEvent.getUserCreateId().equals(currentUserId)) {
+            throw new RuntimeException("Not authorized to update this event");
+        }
+
+        Event event = eventMapper.convertToEntity(eventDTO);
+
+        event.setIdEvent(existingEvent.getIdEvent());
+        event.setUserCreateId(existingEvent.getUserCreateId());
+
+        Event updatedEvent = eventRepository.save(event);
+        return eventMapper.convertToDTO(updatedEvent);
+    }
+
+    public EventDTO getEventById(String id) {
+        Event event = eventRepository.findById(id);
+        return event != null ? eventMapper.convertToDTO(event) : null;
+    }
+
+    public EventDTO getEventByUrl(String urlId) {
+        String url = BASE_URL + urlId;
+        Event event = eventRepository.findByUrl(url);
+        return event != null ? eventMapper.convertToDTO(event) : null;
+    }
+
+    public List<EventDTO> getEventsByTeamId(String teamId) {
+        List<Event> events = eventRepository.findByTeamId(teamId);
+        return events.stream()
+                .map(eventMapper::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<EventDTO> getEventsForCurrentUser() {
+        String currentUserId = userService.getCurrentUserId();
+        List<Event> events = eventRepository.findByUserCreateId(currentUserId);
+        return events.stream()
+                .map(eventMapper::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public boolean deleteEvent(String id) {
+        String currentUserId = userService.getCurrentUserId();
+
+        Event existingEvent = eventRepository.findById(id);
+        if (existingEvent == null) {
+            return false;
+        }
+
+        if (!existingEvent.getUserCreateId().equals(currentUserId)) {
+            throw new RuntimeException("Not authorized to delete this event");
+        }
+
+        return eventRepository.delete(id);
+    }
+
+    private String generateUrlSuffix(String eventName) {
+        if (eventName == null || eventName.isEmpty()) {
+            return UUID.randomUUID().toString();
+        }
+
+        return eventName.trim()
+                .toLowerCase()
+                .replaceAll("\\s+", "-")
+                .replaceAll("[^a-z0-9-]", "")
+                .replaceAll("-+", "-");
     }
 }

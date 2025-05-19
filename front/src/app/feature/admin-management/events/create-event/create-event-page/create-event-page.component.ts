@@ -2,7 +2,6 @@ import {Component, OnInit} from '@angular/core';
 import {CreateNewEventComponent} from '../components/create-new-event/create-new-event.component';
 import {FormsModule} from '@angular/forms';
 import {InformationEventComponent} from '../components/information-event/information-event.component';
-import {NgClass} from '@angular/common';
 import {EventDataService} from '../../../services/event/event-data.service';
 
 @Component({
@@ -10,7 +9,6 @@ import {EventDataService} from '../../../services/event/event-data.service';
   standalone: true,
   imports: [
     FormsModule,
-    NgClass,
     CreateNewEventComponent,
     InformationEventComponent
   ],

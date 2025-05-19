@@ -1,15 +1,21 @@
 <article class="mt-5 w-full max-w-5xl flex-grow bg-white shadow-xs border border-gray-200 rounded-lg p-5">
-
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="flex flex-col md:flex-row w-full gap-4">
       @for(field of formFields; track field.name) {
         <div class="flex-1">
+          @if(getFormControl(field.name).hasError('required') && isSubmitted) {
+            <p class="text-red-500 text-sm mt-1">This field is required</p>
+          }
+          @if(field.name === 'endDate' && getFormControl(field.name).hasError('endBeforeStart')) {
+            <p class="text-red-500 text-sm mt-1">End date must be after start date</p>
+          }
           <app-input
             [label]="field.label"
             [placeholder]="field.placeholder"
             [type]="field.type"
             [control]="getFormControl(field.name)"
-            [name]="field.name">
+            [name]="field.name"
+            [required]="field.required">
           </app-input>
         </div>
       }
@@ -17,14 +23,19 @@
 
     <div class="online-switch flex justify-start mt-5">
       <div class="switch-container mr-4">
-        <input id="online-toggle" type="checkbox" class="toggle-input" />
+        <input
+          id="online-toggle"
+          type="checkbox"
+          class="toggle-input"
+          formControlName="isOnline"
+        />
         <label for="online-toggle" class="toggle-label">
           <span class="toggle-button"></span>
         </label>
       </div>
       <div>
-        <p class = "text-sm">Is online event ? </p>
-        <p class = "text-sm text-gray-600">Indicate whether the event will be help online. </p>
+        <p class="text-sm">Is online event?</p>
+        <p class="text-sm text-gray-600">Indicate whether the event will be held online.</p>
       </div>
     </div>
 
@@ -47,12 +58,11 @@
       </app-input>
       <div class="flex items-center justify-between px-3 py-2 border border-gray-200 rounded-b-md">
         <p class="text-gray-600 text-xs">Markdown supported</p>
-        <app-button-grey type="submit" class="rounded-md text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+        <app-button-grey type="button" class="rounded-md text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
           Preview
         </app-button-grey>
       </div>
     </div>
-
 
     <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
 
@@ -65,7 +75,7 @@
         Do it later
       </app-button-grey>
       <app-button-green-actions [type]="'submit'" materialIcon="arrow_forward">
-        Continue
+        Save
       </app-button-green-actions>
     </div>
   </form>

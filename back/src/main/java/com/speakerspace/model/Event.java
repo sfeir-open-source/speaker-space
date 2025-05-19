@@ -15,11 +15,14 @@ public class Event {
     private boolean isPrivate;
     private String webLinkUrl;
     private boolean isFinish;
+    private String userCreateId;
+    private String conferenceHallUrl;
+    private String teamId;
 
     public Event() {
     }
 
-    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url) {
+    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
@@ -31,6 +34,17 @@ public class Event {
         this.isPrivate = isPrivate;
         this.webLinkUrl = webLinkUrl;
         this.isFinish = isFinish;
+        this.userCreateId = userCreateId;
+        this.conferenceHallUrl = conferenceHallUrl;
+        this.teamId = teamId;
+    }
+
+    public String getIdEvent() {
+        return idEvent;
+    }
+
+    public void setIdEvent(String idEvent) {
+        this.idEvent = idEvent;
     }
 
     public String getEventName() {
@@ -73,6 +87,14 @@ public class Event {
         isOnline = online;
     }
 
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
     public String getLocation() {
         return location;
     }
@@ -105,27 +127,27 @@ public class Event {
         isFinish = finish;
     }
 
-    public String getId() {
-        return idEvent;
+    public String getUserCreateId() {
+        return userCreateId;
     }
 
-    public void setId(String idEvent) {
-        this.idEvent = idEvent;
+    public void setUserCreateId(String userCreateId) {
+        this.userCreateId = userCreateId;
     }
 
-    public String getIdEvent() {
-        return idEvent;
+    public String getConferenceHallUrl() {
+        return conferenceHallUrl;
     }
 
-    public void setIdEvent(String idEvent) {
-        this.idEvent = idEvent;
+    public void setConferenceHallUrl(String conferenceHallUrl) {
+        this.conferenceHallUrl = conferenceHallUrl;
     }
 
-    public String getUrl() {
-        return url;
+    public String getTeamId() {
+        return teamId;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setTeamId(String teamId) {
+        this.teamId = teamId;
     }
 }

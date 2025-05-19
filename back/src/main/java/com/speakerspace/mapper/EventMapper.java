@@ -13,7 +13,7 @@ public class EventMapper {
         }
 
         EventDTO eventDTO = new EventDTO();
-        eventDTO.setIdEvent(event.getId());
+        eventDTO.setIdEvent(event.getIdEvent());
         eventDTO.setEventName(event.getEventName());
         eventDTO.setDescription(event.getDescription());
         eventDTO.setStartDate(event.getStartDate());
@@ -24,6 +24,9 @@ public class EventMapper {
         eventDTO.setWebLinkUrl(event.getWebLinkUrl());
         eventDTO.setFinish(event.isFinish());
         eventDTO.setUrl(event.getUrl());
+        eventDTO.setUserCreateId(event.getUserCreateId());
+        eventDTO.setConferenceHallUrl(event.getConferenceHallUrl());
+        eventDTO.setTeamId(event.getTeamId());
 
         return eventDTO;
     }
@@ -34,7 +37,7 @@ public class EventMapper {
         }
 
         Event event = new Event();
-        event.setId(eventDTO.getIdEvent());
+        event.setIdEvent(eventDTO.getIdEvent());
         event.setEventName(eventDTO.getEventName());
         event.setDescription(eventDTO.getDescription());
         event.setStartDate(eventDTO.getStartDate());
@@ -45,6 +48,9 @@ public class EventMapper {
         event.setWebLinkUrl(eventDTO.getWebLinkUrl());
         event.setFinish(eventDTO.isFinish());
         event.setUrl(eventDTO.getUrl());
+        event.setUserCreateId(eventDTO.getUserCreateId());
+        event.setConferenceHallUrl(eventDTO.getConferenceHallUrl());
+        event.setTeamId(eventDTO.getTeamId());
 
         return event;
     }
