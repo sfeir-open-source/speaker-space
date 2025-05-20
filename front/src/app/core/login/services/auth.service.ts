@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import {BehaviorSubject, firstValueFrom, Observable, of} from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import {
   Auth,
@@ -27,6 +27,8 @@ import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-e
   providedIn: 'root'
 })
 export class AuthService {
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+
   private auth = inject(Auth);
   private http = inject(HttpClient);
   private router = inject(Router);
@@ -373,4 +375,15 @@ export class AuthService {
       console.error('Error processing invitations:', error);
     }
   }
+
+  getToken(): Observable<string | null> {
+    const user = this.currentUserSubject.value;
+    if (user && user.token) {
+      return of(user.token);
+    }
+
+    const token = localStorage.getItem('token');
+    return of(token);
+  }
+
 }

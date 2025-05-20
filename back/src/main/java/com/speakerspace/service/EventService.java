@@ -1,10 +1,11 @@
 package com.speakerspace.service;
 
 import com.speakerspace.dto.EventDTO;
-import com.speakerspace.dto.UserDTO;
 import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.repository.EventRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class EventService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     private static final String BASE_URL = "https://speaker-space.io/event/";
 
@@ -42,23 +45,19 @@ public class EventService {
     }
 
     public EventDTO updateEvent(EventDTO eventDTO) {
-        String currentUserId = userService.getCurrentUserId();
-
         Event existingEvent = eventRepository.findById(eventDTO.getIdEvent());
+
         if (existingEvent == null) {
+            logger.error("Event with ID {} not found", eventDTO.getIdEvent());
             throw new RuntimeException("Event not found");
         }
 
-        if (!existingEvent.getUserCreateId().equals(currentUserId)) {
-            throw new RuntimeException("Not authorized to update this event");
-        }
+        Event eventToUpdate = eventMapper.convertToEntity(eventDTO);
 
-        Event event = eventMapper.convertToEntity(eventDTO);
+        eventToUpdate.setUserCreateId(existingEvent.getUserCreateId());
 
-        event.setIdEvent(existingEvent.getIdEvent());
-        event.setUserCreateId(existingEvent.getUserCreateId());
+        Event updatedEvent = eventRepository.save(eventToUpdate);
 
-        Event updatedEvent = eventRepository.save(event);
         return eventMapper.convertToDTO(updatedEvent);
     }
 

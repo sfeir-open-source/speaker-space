@@ -44,6 +44,8 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
+        logger.info("Processing request for path: {}", path);
+
         if (path.contains("/auth/login") || path.contains("/auth/logout") || path.contains("/public/")) {
             filterChain.doFilter(request, response);
             return;
@@ -54,15 +56,17 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             token = authorizationHeader.substring(7);
-        }
-        else {
+        } else {
             token = cookieService.getAuthTokenFromCookies(request);
             if (token != null) {
+                logger.info("Token found in cookies");
             }
         }
 
         if (token == null) {
-            filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Authentication required\"}");
             return;
         }
 
@@ -77,8 +81,6 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             if (email != null && email.equals(adminEmail)) {
                 logger.info("Admin role granted to: {}", email);
                 authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-            } else {
-                logger.info("User email: {}, Admin email from config: {}", email, adminEmail);
             }
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -87,10 +89,12 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            filterChain.doFilter(request, response);
         } catch (Exception e) {
             SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Invalid token\"}");
         }
-
-        filterChain.doFilter(request, response);
     }
 }

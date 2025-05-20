@@ -3,6 +3,7 @@ package com.speakerspace.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,15 +28,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/invitations/**").permitAll()
                         .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/auth/logout").permitAll()
+                        .requestMatchers("/auth/logout").authenticated()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/firestore/admin-access").hasRole("ADMIN")
                         .requestMatchers("/firestore/user-access").hasRole("USER")
-                        .requestMatchers("/team/**").permitAll()
-                        .requestMatchers("/team-members/**").permitAll()
+                        .requestMatchers("/team/**").authenticated()
+                        .requestMatchers("/team-members/**").authenticated()
                         .requestMatchers("/emails/**").permitAll()
-                        .requestMatchers("/event/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/event/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/event/create").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/event/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(firebaseTokenFilter, UsernamePasswordAuthenticationFilter.class);

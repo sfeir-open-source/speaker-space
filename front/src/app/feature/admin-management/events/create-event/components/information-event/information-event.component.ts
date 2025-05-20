@@ -9,7 +9,7 @@ import {FormField} from '../../../../../../shared/input/interface/form-field';
 import {Router} from '@angular/router';
 import {EventDataService} from '../../../../services/event/event-data.service';
 import {EventService} from '../../../../services/event/event.service';
-import {Event} from '../../../../type/event/event';
+import {EventDTO} from '../../../../type/event/event';
 
 @Component({
   selector: 'app-information-event',
@@ -29,7 +29,7 @@ export class InformationEventComponent implements OnInit {
   form!: FormGroup;
   eventId: string = '';
   eventName: string = '';
-  eventData: Partial<Event> = {};
+  currentEvent: EventDTO = {} as EventDTO;
 
   constructor(
     private fb: FormBuilder,
@@ -49,23 +49,23 @@ export class InformationEventComponent implements OnInit {
       this.eventName = name;
     });
 
-    this.eventDataService.eventData$.subscribe(data => {
-      this.eventData = data;
+    this.eventDataService.event$.subscribe(event => {
+      this.currentEvent = event;
 
-      if (data.startDate) {
-        this.form.get('startDate')?.setValue(this.formatDateForInput(data.startDate));
+      if (event.startDate) {
+        this.form.get('startDate')?.setValue(this.formatDateForInput(event.startDate));
       }
-      if (data.endDate) {
-        this.form.get('endDate')?.setValue(this.formatDateForInput(data.endDate));
+      if (event.endDate) {
+        this.form.get('endDate')?.setValue(this.formatDateForInput(event.endDate));
       }
-      if (data.isOnline !== undefined) {
-        this.form.get('isOnline')?.setValue(data.isOnline);
+      if (event.isOnline !== undefined) {
+        this.form.get('isOnline')?.setValue(event.isOnline);
       }
-      if (data.location) {
-        this.form.get('venueLocation')?.setValue(data.location);
+      if (event.location) {
+        this.form.get('venueLocation')?.setValue(event.location);
       }
-      if (data.description) {
-        this.form.get('description')?.setValue(data.description);
+      if (event.description) {
+        this.form.get('description')?.setValue(event.description);
       }
     });
   }
@@ -95,57 +95,45 @@ export class InformationEventComponent implements OnInit {
     return d.toISOString().split('T')[0];
   }
 
-  onSubmit(): void {
+  async onSubmit() {
     this.isSubmitted = true;
 
     if (this.form.invalid) {
-      Object.keys(this.form.controls).forEach(key => {
-        const control = this.form.get(key);
-        if (control?.invalid) {
-          control.markAsTouched();
-        }
-      });
       return;
     }
 
-    const secondStepData: Partial<Event> = {
-      startDate: this.form.value.startDate ? new Date(this.form.value.startDate) : null,
-      endDate: this.form.value.endDate ? new Date(this.form.value.endDate) : null,
-      isOnline: this.form.value.isOnline || false,
-      location: this.form.value.venueLocation || '',
-      description: this.form.value.description || ''
-    };
-
-    if (this.eventId) {
-      this.eventService.updateEvent({
-        idEvent: this.eventId,
-        ...secondStepData
-      }).subscribe({
-        next: () => {
-          this.router.navigate(['/events']);
-        },
-        error: (error) => {
-          console.error('Error updating event', error);
-          alert('Failed to update event: ' + (error.message || 'Unknown error'));
-        }
-      });
-    } else {
-      const completeEventData: Event = {
-        ...this.eventData as Event,
-        ...secondStepData,
-        eventName: this.eventName || 'Unnamed Event'
-      };
-
-      this.eventService.createEvent(completeEventData).subscribe({
-        next: (response) => {
-          this.router.navigate(['/events']);
-        },
-        error: (error) => {
-          console.error('Error creating complete event', error);
-          alert('Failed to create event: ' + (error.message || 'Unknown error'));
-        }
-      });
+    if (!this.validateDates()) {
+      return;
     }
+
+    const formValues = this.form.value;
+
+    const startDate = formValues.startDate ? new Date(formValues.startDate).toISOString() : undefined;
+    const endDate = formValues.endDate ? new Date(formValues.endDate).toISOString() : undefined;
+
+    this.eventDataService.updateEventData({
+      startDate: startDate,
+      endDate: endDate,
+      location: formValues.venueLocation,
+      description: formValues.description,
+      isOnline: formValues.isOnline
+    });
+
+    const updatedEvent = this.eventDataService.getCurrentEvent();
+
+    if (!updatedEvent.idEvent) {
+      console.error("Event ID is missing");
+      return;
+    }
+
+    this.eventService.updateEvent(updatedEvent).subscribe({
+      next: (response) => {
+        console.log("Event updated successfully", response);
+      },
+      error: (err) => {
+        console.error("Error updating event:", err);
+      }
+    });
   }
 
   getFormControl(name: string): FormControl {

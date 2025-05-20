@@ -10,7 +10,7 @@ spring:
 server:
   port: ${PORT:8080}
   servlet:
-    context-path: /api
+    context-path:
 
 cors:
   allowedOrigins: ${CLIENT_URL_DEV}

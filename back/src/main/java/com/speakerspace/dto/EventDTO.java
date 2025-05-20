@@ -1,14 +1,12 @@
 package com.speakerspace.dto;
 
-import com.google.cloud.Timestamp;
-
 public class EventDTO {
     private String idEvent;
     private String eventName;
     private String description;
-    private Timestamp startDate;
+    private String endDate;
     private String url;
-    private Timestamp endDate;
+    private String startDate;
     private boolean isOnline;
     private String location;
     private boolean isPrivate;
@@ -17,8 +15,10 @@ public class EventDTO {
     private String userCreateId;
     private String conferenceHallUrl;
     private String teamId;
+    private String timeZone;
 
-    public EventDTO(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId) {
+
+    public EventDTO(String idEvent, String eventName, String description, String startDate, String endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
@@ -33,6 +33,7 @@ public class EventDTO {
         this.conferenceHallUrl = conferenceHallUrl;
         this.userCreateId = userCreateId;
         this.teamId = teamId;
+        this.timeZone = timeZone;
     }
 
     public EventDTO() {
@@ -63,28 +64,28 @@ public class EventDTO {
         this.description = description;
     }
 
-    public Timestamp getStartDate() {
+    public String getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(Timestamp startDate) {
+    public void setStartDate(String startDate) {
         this.startDate = startDate;
     }
 
-    public Timestamp getEndDate() {
+    public String getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(Timestamp endDate) {
+    public void setEndDate(String endDate) {
         this.endDate = endDate;
     }
 
-    public boolean isOnline() {
+    public Boolean getIsOnline() {
         return isOnline;
     }
 
-    public void setOnline(boolean online) {
-        isOnline = online;
+    public void setIsOnline(Boolean isOnline) {
+        this.isOnline = isOnline;
     }
 
     public String getLocation() {
@@ -149,5 +150,13 @@ public class EventDTO {
 
     public void setTeamId(String teamId) {
         this.teamId = teamId;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
     }
 }

@@ -4,6 +4,7 @@ import com.speakerspace.dto.EventDTO;
 import com.speakerspace.service.EventService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,20 +20,59 @@ public class EventController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO) {
-        EventDTO createdEvent = eventService.createEvent(eventDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdEvent);
+    public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO, Authentication authentication) {
+
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        String userId = authentication.getName();
+
+        eventDTO.setUserCreateId(userId);
+
+        try {
+            EventDTO createdEvent = eventService.createEvent(eventDTO);
+            return ResponseEntity.ok(createdEvent);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EventDTO> updateEvent(@PathVariable String id, @RequestBody EventDTO eventDTO) {
+    public ResponseEntity<EventDTO> updateEvent(@PathVariable String id, @RequestBody EventDTO eventDTO, Authentication authentication) {
+
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        String userId = authentication.getName();
+
         if (!id.equals(eventDTO.getIdEvent())) {
             return ResponseEntity.badRequest().build();
         }
 
-        EventDTO updatedEvent = eventService.updateEvent(eventDTO);
-        return ResponseEntity.ok(updatedEvent);
+        try {
+            EventDTO existingEvent = eventService.getEventById(id);
+
+            if (existingEvent == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            if (!userId.equals(existingEvent.getUserCreateId()) &&
+                    !authentication.getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            eventDTO.setUserCreateId(existingEvent.getUserCreateId()); // Conserver le créateur original
+            EventDTO updatedEvent = eventService.updateEvent(eventDTO);
+
+            return ResponseEntity.ok(updatedEvent);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<EventDTO> getEvent(@PathVariable String id) {

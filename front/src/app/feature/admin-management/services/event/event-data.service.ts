@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { Event } from '../../type/event/event';
+import {EventDTO} from '../../type/event/event';
 
 @Injectable({
   providedIn: 'root'
@@ -12,8 +12,8 @@ export class EventDataService {
   private eventIdSubject = new BehaviorSubject<string>('');
   eventId$ = this.eventIdSubject.asObservable();
 
-  private eventDataSubject = new BehaviorSubject<Partial<Event>>({});
-  eventData$ = this.eventDataSubject.asObservable();
+  private eventSubject = new BehaviorSubject<EventDTO>({} as EventDTO);
+  event$ = this.eventSubject.asObservable();
 
   private nextStepSubject = new Subject<void>();
   nextStep$ = this.nextStepSubject.asObservable();
@@ -28,13 +28,13 @@ export class EventDataService {
     this.updateEventData({ idEvent: idEvent });
   }
 
-  updateEventData(data: Partial<Event>): void {
-    const currentData = this.eventDataSubject.value;
-    this.eventDataSubject.next({ ...currentData, ...data });
+  updateEventData(partial: Partial<EventDTO>) {
+    const current = this.eventSubject.getValue();
+    this.eventSubject.next({ ...current, ...partial });
   }
 
-  getEventData(): Partial<Event> {
-    return this.eventDataSubject.value;
+  getCurrentEvent(): EventDTO {
+    return this.eventSubject.getValue();
   }
 
   goToNextStep(): void {
@@ -42,14 +42,14 @@ export class EventDataService {
   }
 
   resetEventData(): void {
-    this.eventDataSubject.next({});
+    this.eventSubject.next({} as EventDTO);
     this.eventNameSubject.next('');
     this.eventIdSubject.next('');
   }
 
-  loadEvent(event: Event): void {
+  loadEvent(event: EventDTO): void {
     this.eventIdSubject.next(event.idEvent || '');
     this.eventNameSubject.next(event.eventName || '');
-    this.eventDataSubject.next(event);
+    this.eventSubject.next(event);
   }
 }

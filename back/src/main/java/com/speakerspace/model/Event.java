@@ -18,11 +18,12 @@ public class Event {
     private String userCreateId;
     private String conferenceHallUrl;
     private String teamId;
+    private String timeZone;
 
     public Event() {
     }
 
-    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId) {
+    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
@@ -37,6 +38,7 @@ public class Event {
         this.userCreateId = userCreateId;
         this.conferenceHallUrl = conferenceHallUrl;
         this.teamId = teamId;
+        this.timeZone = timeZone;
     }
 
     public String getIdEvent() {
@@ -149,5 +151,13 @@ public class Event {
 
     public void setTeamId(String teamId) {
         this.teamId = teamId;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
     }
 }
