@@ -1,4 +1,6 @@
 export interface FormField {
+  isRequired?: boolean;
+  minLength?: number;
   name: string;
   label?: string;
   paragraph?: string;

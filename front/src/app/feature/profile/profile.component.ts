@@ -1,5 +1,5 @@
 import { Component, ElementRef, inject, OnInit, AfterViewInit, signal, OnDestroy } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import {FormGroup, ReactiveFormsModule} from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ProfileSidebarComponent } from './components/profile-sidebar/profile-sidebar.component';
@@ -95,6 +95,14 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.saveStatus() === 'saving') return;
 
     this.saveStatus.set('saving');
+
+    if (this.profileForm.invalid) {
+      this.markFormGroupTouched(this.profileForm);
+      this.saveStatus.set('error');
+      this.showErrorMessage('Please correct the errors in the form before saving.');
+      return;
+    }
+
     try {
       const success = await this.profileService.saveProfile();
 
@@ -106,7 +114,6 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }, 3000);
       } else {
-        this.profileForm.markAllAsTouched();
         this.saveStatus.set('error');
         this.showErrorMessage('Please correct the errors in the form.');
       }
@@ -116,10 +123,12 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  showSuccessMessage(message: string) {
-    this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      panelClass: ['success-snackbar']
+  private markFormGroupTouched(formGroup: FormGroup) {
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
     });
   }
 

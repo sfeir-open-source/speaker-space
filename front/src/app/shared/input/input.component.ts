@@ -1,5 +1,14 @@
-import {booleanAttribute, Component, Input, OnInit, SimpleChanges} from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  booleanAttribute,
+  Component,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges
+} from '@angular/core';
+import {FormControl, FormsModule, ReactiveFormsModule, ValidatorFn, Validators} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 
@@ -14,7 +23,7 @@ import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
   templateUrl: './input.component.html',
   styleUrl: './input.component.scss'
 })
-export class InputComponent implements OnInit {
+export class InputComponent implements OnInit, OnChanges {
   sanitizedIconPath: SafeHtml = '';
   @Input() iconViewBox: string = '0 0 16 16';
   @Input() label?: string = '';
@@ -31,15 +40,67 @@ export class InputComponent implements OnInit {
   @Input() iconPath?: string = '';
   @Input() customClass: string = '';
   @Input() staticPlaceholder?: string;
+  @Input() isRequired: boolean = false;
+  @Input() minLength: number = 2;
+  @Input() serverErrors: Record<string, string> | null = null;
+  @Output() blur = new EventEmitter<void>();
 
   constructor(private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
-    if (this.required && !this.control.hasValidator(Validators.required)) {
-      const currentValidators = this.control.validator ? [this.control.validator, Validators.required] : Validators.required;
-      this.control.setValidators(currentValidators);
+    this.applyValidators();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['iconPath'] && this.iconPath) {
+      try {
+        if (this.iconPath.trim().startsWith('<svg')) {
+          this.sanitizedIconPath = this.sanitizer.bypassSecurityTrustHtml(this.iconPath);
+        } else {
+          const svgWrapper = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="${this.iconViewBox}" fill="currentColor">${this.iconPath}</svg>`;
+          this.sanitizedIconPath = this.sanitizer.bypassSecurityTrustHtml(svgWrapper);
+        }
+      } catch (error) {
+        console.error('Error processing SVG:', error, this.iconPath);
+        this.sanitizedIconPath = '';
+      }
+    }
+
+    if (changes['required'] || changes['minLength']) {
+      this.applyValidators();
+    }
+  }
+
+  private applyValidators() {
+    const validators: ValidatorFn[] = [];
+
+    if (this.required) {
+      validators.push(Validators.required);
+    }
+
+    if (this.minLength && this.minLength > 0) {
+      validators.push(Validators.minLength(this.minLength));
+    }
+
+    if (this.type === 'email') {
+      validators.push(Validators.email);
+    }
+
+    if (this.name === 'phoneNumber') {
+      validators.push(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'));
+    } else if (this.name === 'avatarPictureURL' || this.name.toLowerCase().includes('link')) {
+      validators.push(Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?'));
+    }
+
+    if (validators.length > 0) {
+      this.control.setValidators(validators);
       this.control.updateValueAndValidity();
     }
+  }
+
+  onInputBlur() {
+    this.control.markAsTouched();
+    this.blur.emit();
   }
 
   get effectivePlaceholder(): string {
@@ -61,7 +122,15 @@ export class InputComponent implements OnInit {
   }
 
   get hasError(): boolean {
-    return this.control?.invalid && this.control?.touched;
+    if (!this.control) return false;
+
+    const shouldShowError : boolean = this.control.invalid && (this.control.touched || this.control.dirty);
+
+    if (shouldShowError) {
+      console.debug(`Field ${this.name} has errors:`, this.control.errors);
+    }
+
+    return shouldShowError;
   }
 
   get errorMessages(): string[] {
@@ -70,27 +139,44 @@ export class InputComponent implements OnInit {
     const errors = this.control.errors || {};
     const messages: string[] = [];
 
-    if (errors['required']) messages.push(this.errorMessage);
-    if (errors['email']) messages.push('Please enter a valid email address');
-    if (errors['minlength']) messages.push(`Minimum length is ${errors['minlength'].requiredLength} characters`);
-    if (errors['maxlength']) messages.push(`Maximum length is ${errors['maxlength'].requiredLength} characters`);
-    if (errors['pattern']) messages.push('The value does not match the required pattern');
+    if (errors['required']) {
+      messages.push(this.errorMessage || 'This field is required');
+    }
 
-    return messages;
-  }
+    if (errors['email']) {
+      messages.push('Please enter a valid email address');
+    }
 
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['iconPath'] && this.iconPath) {
-      let cleanPath = this.iconPath;
-
-      if (cleanPath.trim().startsWith('<svg')) {
-        this.sanitizedIconPath = this.sanitizer.bypassSecurityTrustHtml(cleanPath);
+    if (errors['minlength']) {
+      if (this.errorMessage && this.errorMessage.includes('minimum')) {
+        messages.push(this.errorMessage);
       } else {
-        this.sanitizedIconPath = this.sanitizer.bypassSecurityTrustHtml(
-          `<svg role="presentation" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="h-5 w-5" viewBox="${this.iconViewBox}">${cleanPath}</svg>`
-        );
+        messages.push(`Minimum length is ${errors['minlength'].requiredLength} characters`);
       }
     }
+
+    if (errors['maxlength']) {
+      messages.push(`Maximum length is ${errors['maxlength'].requiredLength} characters`);
+    }
+
+    if (errors['pattern']) {
+      if (this.name.toLowerCase().includes('link') || this.name === 'avatarPictureURL') {
+        messages.push(this.errorMessage || 'Please enter a valid URL');
+      } else if (this.name === 'phoneNumber') {
+        messages.push(this.errorMessage || 'Please enter a valid phone number');
+      } else {
+        messages.push(this.errorMessage || 'The value does not match the required pattern');
+      }
+    }
+
+    if (errors['serverError']) {
+      messages.push(errors['serverError']);
+    }
+
+    if (messages.length === 0 && Object.keys(errors).length > 0) {
+      messages.push(this.errorMessage || 'Invalid value');
+    }
+
+    return messages;
   }
 }

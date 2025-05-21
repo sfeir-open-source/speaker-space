@@ -3,6 +3,7 @@ import {CreateNewEventComponent} from '../components/create-new-event/create-new
 import {FormsModule} from '@angular/forms';
 import {InformationEventComponent} from '../components/information-event/information-event.component';
 import {EventDataService} from '../../../services/event/event-data.service';
+import {ActivatedRoute} from '@angular/router';
 
 @Component({
   selector: 'app-create-event-page',
@@ -18,10 +19,21 @@ import {EventDataService} from '../../../services/event/event-data.service';
 export class CreateEventPageComponent implements OnInit {
   activePage: 'pageOne' | 'pageTwo' = 'pageOne';
   eventName: string = '';
+  teamId: string | null = null;
 
-  constructor(private eventDataService: EventDataService) {}
+  constructor(
+    private eventDataService: EventDataService,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
+    this.route.paramMap.subscribe(params => {
+      this.teamId = params.get('teamId');
+      if (this.teamId) {
+        this.eventDataService.updateEventData({ teamId: this.teamId });
+      }
+    });
+
     this.eventDataService.eventName$.subscribe(name => {
       this.eventName = name;
     });

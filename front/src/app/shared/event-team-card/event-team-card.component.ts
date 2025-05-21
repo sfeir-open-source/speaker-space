@@ -14,8 +14,10 @@ export class EventTeamCardComponent {
   @Input() type: string = '';
   @Input() img: string = '';
   @Input() link: string = '';
-  @Input() isOpen: boolean = false;
-  @Input() statusText: string = 'Call for paper';
   @Input() field!: EventTeamField;
 
+  handleImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    imgElement.src = 'img/logo-speaker-space.svg';
+  }
 }

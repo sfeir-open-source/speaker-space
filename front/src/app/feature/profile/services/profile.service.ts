@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {AbstractControl, FormBuilder, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import {UserStateService} from '../../../core/services/user-services/user-state.service';
@@ -11,10 +11,10 @@ import {User} from '../../../core/models/user.model';
   providedIn: 'root'
 })
 export class ProfileService {
-  private fb = inject(FormBuilder);
-  private http = inject(HttpClient);
-  private userState = inject(UserStateService);
-  private authService = inject(AuthService);
+  private fb : FormBuilder = inject(FormBuilder);
+  private http : HttpClient = inject(HttpClient);
+  private userState : UserStateService = inject(UserStateService);
+  private authService : AuthService = inject(AuthService);
 
   private profileForm: FormGroup;
 
@@ -30,20 +30,31 @@ export class ProfileService {
   }
 
   private createForm(): FormGroup {
+    const urlPattern = '(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?';
+
     return this.fb.group({
-      displayName: [''],
-      emailAddress: ['', [Validators.email]],
-      company: [''],
-      city: [''],
-      avatarPictureURL: [''],
-      phoneNumber: [''],
+      displayName: ['', [Validators.minLength(2)]],
+      emailAddress: ['', [Validators.required, Validators.email]],
+      company: ['', [this.conditionalValidator(Validators.minLength(2))]],
+      city: ['', [this.conditionalValidator(Validators.minLength(2))]],
+      avatarPictureURL: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
+      phoneNumber: ['', [this.conditionalValidator(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'))]],
       biography: [''],
-      githubLink: [''],
-      twitterLink: [''],
-      blueSkyLink: [''],
-      linkedInLink: [''],
-      otherLink: ['']
+      githubLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
+      twitterLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
+      blueSkyLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
+      linkedInLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
+      otherLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]]
     });
+  }
+
+  private conditionalValidator(validator: ValidatorFn): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value || control.value.trim() === '') {
+        return null;
+      }
+      return validator(control);
+    };
   }
 
   private initializeForm(): void {
@@ -73,27 +84,9 @@ export class ProfileService {
     return this.profileForm;
   }
 
-  getPlaceholder(fieldName: string): string {
-    switch (fieldName) {
-      case 'displayName': return this.userState.displayName();
-      case 'emailAddress': return this.userState.email();
-      case 'avatarPictureURL': return this.userState.photoURL();
-      case 'company': return this.userState.company();
-      case 'city': return this.userState.city();
-      case 'phoneNumber': return this.userState.phoneNumber();
-      case 'githubLink': return this.userState.githubLink();
-      case 'twitterLink': return this.userState.twitterLink();
-      case 'blueSkyLink': return this.userState.blueSkyLink();
-      case 'linkedInLink': return this.userState.linkedInLink();
-      case 'otherLink': return this.userState.otherLink();
-      case 'biography': return this.userState.biography();
-      default: return '';
-    }
-  }
-
   private async fetchUserData(uid: string): Promise<void> {
     try {
-      const userData = await firstValueFrom(
+      const userData: User = await firstValueFrom(
         this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
       );
 
@@ -121,15 +114,16 @@ export class ProfileService {
   }
 
   async saveProfile(): Promise<boolean> {
-    const user = this.userState.user();
+    const user: User | null = this.userState.user();
     if (!user?.uid) return false;
 
     try {
       await this.authService.getIdToken(true);
 
-      const formValues = this.profileForm.value;
+      const formValues : any = this.profileForm.value;
       const userData: Partial<User> = {
         uid: user.uid,
+        email: user.email,
         displayName: formValues.displayName,
         photoURL: formValues.avatarPictureURL,
         company: formValues.company,
@@ -143,17 +137,32 @@ export class ProfileService {
         otherLink: formValues.otherLink
       };
 
-      await firstValueFrom(
-        this.http.put<any>(`${environment.apiUrl}/auth/profile`, userData, { withCredentials: true })
-      );
-
       this.userState.updateUser(userData);
-
       this.userState.saveToStorage();
-
       return true;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.status === 400 && error.error) {
+        this.handleValidationErrors(error.error);
+        return false;
+      }
       return false;
     }
+  }
+
+  private handleValidationErrors(errors: Record<string, string>) {
+    const fieldMapping: Record<string, string> = {
+      'photoURL': 'avatarPictureURL',
+      'email': 'emailAddress'
+    };
+
+    Object.entries(errors).forEach(([field, message]) => {
+      const formField : string = fieldMapping[field] || field;
+      const control = this.profileForm.get(formField);
+
+      if (control) {
+        control.setErrors({ serverError: message });
+        control.markAsTouched();
+      }
+    });
   }
 }

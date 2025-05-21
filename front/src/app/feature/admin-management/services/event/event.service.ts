@@ -3,8 +3,9 @@ import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import { environment } from '../../../../../environments/environment.development';
-import { Event, EventDTO } from '../../type/event/event';
+import { Event } from '../../type/event/event';
 import { AuthService } from '../../../../core/login/services/auth.service';
+import {EventDTO} from '../../type/event/eventDTO';
 
 @Injectable({
   providedIn: 'root'

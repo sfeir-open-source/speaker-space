@@ -7,6 +7,8 @@ import { EventTeamField } from '../../../../shared/event-team-card/interface/eve
 import { switchMap } from 'rxjs/operators';
 import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
 import {TeamService} from '../../services/team/team.service';
+import {EventService} from '../../services/event/event.service';
+import {Event} from '../../type/event/event';
 
 @Component({
   selector: 'app-event-list-page',
@@ -27,11 +29,13 @@ export class EventListPageComponent implements OnInit {
   formFields: EventTeamField[] = [];
   isLoading: boolean = true;
   error: string | null = null;
+  events: Event[] = [];
 
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private teamService: TeamService,
+    private eventService: EventService
   ) {}
 
   ngOnInit(): void {
@@ -40,28 +44,54 @@ export class EventListPageComponent implements OnInit {
         this.teamUrl = params.get('teamUrl') || '';
         this.isLoading = true;
         return this.teamService.getTeamByUrl(this.teamUrl);
-      })
-    ).subscribe({
-      next: (team) => {
+      }),
+      switchMap(team => {
         this.teamName = team.name;
         this.teamId = team.id ?? '';
+        return this.eventService.getEventsByTeam(this.teamId);
+      })
+    ).subscribe({
+      next: (events: Event[]) => {
+        this.events = events;
+        this.formFields = this.transformEventsToFields(events);
         this.isLoading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load team details';
+        this.error = 'Failed to load team details or events';
         this.isLoading = false;
       }
     });
   }
 
+  transformEventsToFields(events: Event[]): EventTeamField[] {
+    return events
+      .filter(event => {
+        const isFinished = event.isFinish || false;
+        return this.activeTab === 'Achived' ? isFinished : !isFinished;
+      })
+      .map(event => ({
+        title: event.eventName,
+        description: event.description || '',
+        date: event.startDate || '',
+        url: event.url || '',
+        id: event.idEvent || '',
+        type: 'event',
+        isOpen: !event.isFinish,
+        img: '',
+        link: event.webLinkUrl || '',
+        statusText: event.isFinish ? 'Closed' : 'Open'
+      }));
+  }
+
   setActiveTab(tab: string) {
     this.activeTab = tab;
+    if (this.events.length > 0) {
+      this.formFields = this.transformEventsToFields(this.events);
+    }
   }
 
   addEvent() {
-    if (this.teamUrl) {
-      this.router.navigate(['/create-event', this.teamUrl]);
-    } else if (this.teamId) {
+    if (this.teamId) {
       this.router.navigate(['/create-event', this.teamId]);
     }
   }

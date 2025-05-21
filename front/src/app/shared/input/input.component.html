@@ -1,10 +1,10 @@
 <div class="mt-5">
-  <div >
+  <div>
     <label [for]="name" class="block text-start text-md" [class.required]="required">
       {{ label }}
       <ng-content select="[labelSuffix]"></ng-content>
     </label>
-    <label [for]="name" class="block text-start text-xs text-gray-600" >
+    <label [for]="name" class="block text-start text-xs text-gray-600">
       {{ paragraph }}
       <ng-content select="[paragraphSuffix]"></ng-content>
     </label>
@@ -31,6 +31,7 @@
         [attr.rows]="rows"
         [attr.aria-required]="required"
         [attr.aria-invalid]="hasError"
+        (blur)="onInputBlur()"
         class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6 resize-none"
         [class.pl-10]="hasIcon || iconPath"
         [class.border-red-300]="hasError"
@@ -47,6 +48,7 @@
         [disabled]="disabled"
         [attr.aria-required]="required"
         [attr.aria-invalid]="hasError"
+        (blur)="onInputBlur()"
         class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6"
         [class.pl-10]="hasIcon || iconPath"
         [class.border-red-300]="hasError"
@@ -57,9 +59,12 @@
   </div>
 
   @if(hasError){
-    <div class="mt-1">
+    <div class="mt-1 text-left">
       @for(message of errorMessages; track $index){
-        <p class="text-sm text-red-600">{{ message }}</p>
+        <p class="text-sm text-red-600 flex items-center">
+          <span class="material-icons text-red-600 mr-1 text-sm">error_outline</span>
+          {{ message }}
+        </p>
       }
     </div>
   }

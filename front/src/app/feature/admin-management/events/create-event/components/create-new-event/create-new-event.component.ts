@@ -11,9 +11,9 @@ import 'moment-timezone';
 import { TimezoneOption } from '../../../../type/event/time-zone-option';
 import { EventService } from '../../../../services/event/event.service';
 import { EventDataService } from '../../../../services/event/event-data.service';
-import { EventDTO } from '../../../../type/event/event';
 import { TeamService } from '../../../../services/team/team.service';
 import { Team } from '../../../../type/team/team';
+import {EventDTO} from '../../../../type/event/eventDTO';
 
 @Component({
   selector: 'app-create-new-event',
@@ -24,6 +24,7 @@ import { Team } from '../../../../type/team/team';
 })
 export class CreateNewEventComponent implements OnInit {
   eventUrl: string = '';
+  teamId: string | null = null;
   form: FormGroup;
   isSubmitted: boolean = false;
   dateTimeUtc = moment.utc();
@@ -79,10 +80,23 @@ export class CreateNewEventComponent implements OnInit {
   ngOnInit(): void {
     this._teamService.teams$.subscribe(teams => this.teams = teams);
 
+    this._route.paramMap.subscribe(params => {
+      const param: string|null = params.get('eventUrl') || params.get('teamId');
+
+      if (param) {
+        if (param.includes('team-') || /^[a-zA-Z0-9]{20,}$/.test(param)) {
+          this.teamId = param;
+          this.form.get('teamId')?.setValue(param);
+        } else {
+          this.eventUrl = param;
+        }
+      }
+    });
+
     this.eventUrl = this._route.snapshot.paramMap.get('eventUrl') || '';
 
     this.form.get('name')?.valueChanges.subscribe(name => {
-      const urlSuffix = name?.trim()
+      const urlSuffix: any = name?.trim()
         .toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '')
@@ -107,20 +121,22 @@ export class CreateNewEventComponent implements OnInit {
       return;
     }
 
-    const formValue = this.form.getRawValue();
+    const formValue: any = this.form.getRawValue();
     const newEvent: EventDTO = {
       eventName: formValue.name,
       url: formValue.url,
       conferenceHallUrl: formValue.urlConferenceHall,
-      timeZone: formValue.timeZone
+      timeZone: formValue.timeZone,
+      teamId: formValue.teamId || this.teamId
     };
 
     this._eventService.createEvent(newEvent).subscribe({
-      next: (response) => {
+      next: (response : EventDTO) => {
         this._eventDataService.setEventId(response.idEvent || '');
         this._eventDataService.updateEventData({
           conferenceHallUrl: response.conferenceHallUrl,
-          url: response.url
+          url: response.url,
+          teamId: response.teamId
         });
         this._eventDataService.goToNextStep();
       },

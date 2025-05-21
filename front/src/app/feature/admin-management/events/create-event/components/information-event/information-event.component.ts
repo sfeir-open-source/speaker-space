@@ -9,7 +9,8 @@ import {FormField} from '../../../../../../shared/input/interface/form-field';
 import {Router} from '@angular/router';
 import {EventDataService} from '../../../../services/event/event-data.service';
 import {EventService} from '../../../../services/event/event.service';
-import {EventDTO} from '../../../../type/event/event';
+import {TeamService} from '../../../../services/team/team.service';
+import {EventDTO} from '../../../../type/event/eventDTO';
 
 @Component({
   selector: 'app-information-event',
@@ -28,6 +29,8 @@ export class InformationEventComponent implements OnInit {
   isSubmitted: boolean = false;
   form!: FormGroup;
   eventId: string = '';
+  teamId: string | null = null;
+  teamUrl: string | null = null;
   eventName: string = '';
   currentEvent: EventDTO = {} as EventDTO;
 
@@ -35,7 +38,8 @@ export class InformationEventComponent implements OnInit {
     private fb: FormBuilder,
     private eventDataService: EventDataService,
     private eventService: EventService,
-    private router: Router
+    private router: Router,
+    private teamService: TeamService
   ) {
     this.initializeForm();
   }
@@ -51,6 +55,15 @@ export class InformationEventComponent implements OnInit {
 
     this.eventDataService.event$.subscribe(event => {
       this.currentEvent = event;
+
+      if (event.teamId) {
+        this.teamId = event.teamId;
+        this.teamService.getTeamById(event.teamId).subscribe(team => {
+          if (team && team.url) {
+            this.teamUrl = team.url.split('/').pop() || null;
+          }
+        });
+      }
 
       if (event.startDate) {
         this.form.get('startDate')?.setValue(this.formatDateForInput(event.startDate));
@@ -129,6 +142,19 @@ export class InformationEventComponent implements OnInit {
     this.eventService.updateEvent(updatedEvent).subscribe({
       next: (response) => {
         console.log("Event updated successfully", response);
+
+        if (this.teamUrl) {
+          this.router.navigate(['/team', this.teamUrl]);
+        } else if (this.teamId) {
+          this.teamService.getTeamById(this.teamId).subscribe(team => {
+            if (team && team.url) {
+              const teamUrlSegment = team.url.split('/').pop();
+              if (teamUrlSegment) {
+                this.router.navigate(['/team', teamUrlSegment]);
+              }
+            }
+          });
+        }
       },
       error: (err) => {
         console.error("Error updating event:", err);

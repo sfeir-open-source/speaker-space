@@ -15,14 +15,14 @@ import {UserStateService} from '../../../../core/services/user-services/user-sta
   styleUrls: ['./personal-info.component.scss']
 })
 export class PersonalInfoComponent {
-  private profileService = inject(ProfileService);
-  private userState = inject(UserStateService);
+  private profileService: ProfileService = inject(ProfileService);
+  private userState: UserStateService = inject(UserStateService);
 
   userPhotoURL = this.userState.photoURL;
 
   formFields: FormField[] = [
     { name: 'displayName', label: 'Full name', type: 'text' },
-    { name: 'emailAddress', label: 'Email address', type: 'text' },
+    { name: 'emailAddress', label: 'Email address', type: 'email' },
     { name: 'company', label: 'Company', type: 'text' },
     { name: 'city', label: 'City', type: 'text' }
   ];

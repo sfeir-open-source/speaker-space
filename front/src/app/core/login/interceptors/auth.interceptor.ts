@@ -33,7 +33,7 @@ export const authInterceptorFn: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
-  const authService = inject(AuthService);
+  const authService: AuthService = inject(AuthService);
 
   return from(authService.getIdToken(false)).pipe(
     switchMap(token => {

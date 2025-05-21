@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import {BehaviorSubject, Observable, of, throwError} from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {environment} from '../../../../../environments/environment.development';
@@ -10,9 +10,8 @@ import {Team} from '../../type/team/team';
   providedIn: 'root'
 })
 export class TeamService {
-  private readonly BASE_URL = 'https://speaker-space.io/team/';
-  private teamsSubject = new BehaviorSubject<Team[]>([]);
-  public teams$ = this.teamsSubject.asObservable();
+  private teamsSubject: BehaviorSubject<Team[]> = new BehaviorSubject<Team[]>([]);
+  public teams$:Observable<Team[]> = this.teamsSubject.asObservable();
   private teamForm: FormGroup;
 
   constructor(
@@ -45,7 +44,7 @@ export class TeamService {
           id: newTeam.id || ''
         })),
         tap(newTeam => {
-          const currentTeams = this.teamsSubject.value;
+          const currentTeams: Team[] = this.teamsSubject.value;
           this.teamsSubject.next([...currentTeams, newTeam]);
         }),
         catchError(this.handleError('Error creating team'))
@@ -53,7 +52,7 @@ export class TeamService {
   }
 
   getTeamByUrl(teamUrl: string): Observable<Team> {
-    const urlId = this.extractUrlId(teamUrl);
+    const urlId: string = this.extractUrlId(teamUrl);
 
     return this.http.get<Team>(`${environment.apiUrl}/team/by-url/${urlId}`, { withCredentials: true })
       .pipe(
@@ -132,5 +131,14 @@ export class TeamService {
         message: error.error?.message || 'An unknown error occurred',
       }));
     };
+  }
+
+  getTeamById(id: string): Observable<Team | null> {
+    return this.http.get<Team>(`${environment.apiUrl}/team/${id}`, { withCredentials: true })
+      .pipe(
+        catchError(error => {
+          return of(null);
+        })
+      );
   }
 }
