@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.config.CookieService;
 import com.speakerspace.config.FirebaseTokenRequest;
 import com.speakerspace.dto.UserDTO;
+import com.speakerspace.exception.ValidationException;
 import com.speakerspace.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -147,6 +148,9 @@ public class AuthController {
             }
 
             return ResponseEntity.ok(updatedUserDTO);
+        } catch (ValidationException e) {
+            logger.warn("Validation error during profile update: {}", e.getErrors());
+            return ResponseEntity.badRequest().body(e.getErrors());
         } catch (Exception e) {
             logger.error("Failed to update profile", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

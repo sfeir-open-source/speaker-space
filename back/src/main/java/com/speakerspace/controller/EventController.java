@@ -64,7 +64,7 @@ public class EventController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
-            eventDTO.setUserCreateId(existingEvent.getUserCreateId()); // Conserver le créateur original
+            eventDTO.setUserCreateId(existingEvent.getUserCreateId());
             EventDTO updatedEvent = eventService.updateEvent(eventDTO);
 
             return ResponseEntity.ok(updatedEvent);

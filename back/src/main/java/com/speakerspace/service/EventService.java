@@ -44,23 +44,6 @@ public class EventService {
         return eventMapper.convertToDTO(savedEvent);
     }
 
-    public EventDTO updateEvent(EventDTO eventDTO) {
-        Event existingEvent = eventRepository.findById(eventDTO.getIdEvent());
-
-        if (existingEvent == null) {
-            logger.error("Event with ID {} not found", eventDTO.getIdEvent());
-            throw new RuntimeException("Event not found");
-        }
-
-        Event eventToUpdate = eventMapper.convertToEntity(eventDTO);
-
-        eventToUpdate.setUserCreateId(existingEvent.getUserCreateId());
-
-        Event updatedEvent = eventRepository.save(eventToUpdate);
-
-        return eventMapper.convertToDTO(updatedEvent);
-    }
-
     public EventDTO getEventById(String id) {
         Event event = eventRepository.findById(id);
         return event != null ? eventMapper.convertToDTO(event) : null;
@@ -85,6 +68,22 @@ public class EventService {
         return events.stream()
                 .map(eventMapper::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public EventDTO updateEvent(EventDTO eventDTO) {
+        Event existingEvent = eventRepository.findById(eventDTO.getIdEvent());
+
+        if (existingEvent == null) {
+            throw new RuntimeException("Event not found");
+        }
+
+        Event eventToUpdate = eventMapper.convertToEntity(eventDTO);
+
+        eventToUpdate.setUserCreateId(existingEvent.getUserCreateId());
+
+        Event updatedEvent = eventRepository.save(eventToUpdate);
+
+        return eventMapper.convertToDTO(updatedEvent);
     }
 
     public boolean deleteEvent(String id) {
