@@ -15,8 +15,6 @@ import java.util.stream.Collectors;
 @Service
 public class EventService {
 
-    private static final Logger logger = LoggerFactory.getLogger(EventService.class);
-
     private static final String BASE_URL = "https://speaker-space.io/event/";
 
     private final EventMapper eventMapper;

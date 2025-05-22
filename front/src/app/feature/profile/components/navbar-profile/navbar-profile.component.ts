@@ -15,7 +15,7 @@ import {UserStateService} from '../../../../core/services/user-services/user-sta
   styleUrl: './navbar-profile.component.scss'
 })
 export class NavbarProfileComponent implements OnInit{
-  private userState = inject(UserStateService);
+  private userState : UserStateService = inject(UserStateService);
   protected userPhotoURL: Signal<string>;
 
   constructor(

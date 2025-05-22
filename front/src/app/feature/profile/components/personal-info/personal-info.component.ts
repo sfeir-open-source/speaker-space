@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import {Component, inject, Signal} from '@angular/core';
 import { FormControl } from '@angular/forms';
 import {InputComponent} from '../../../../shared/input/input.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
@@ -18,7 +18,7 @@ export class PersonalInfoComponent {
   private profileService: ProfileService = inject(ProfileService);
   private userState: UserStateService = inject(UserStateService);
 
-  userPhotoURL = this.userState.photoURL;
+  userPhotoURL: Signal<string>  = this.userState.photoURL;
 
   formFields: FormField[] = [
     { name: 'displayName', label: 'Full name', type: 'text' },

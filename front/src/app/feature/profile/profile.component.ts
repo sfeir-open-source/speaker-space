@@ -12,6 +12,7 @@ import {SaveIndicatorComponent} from './components/save-indicator/save-indicator
 import {SaveStatus} from './types/save-status.types';
 import {ProfileService} from './services/profile.service';
 import {UserStateService} from '../../core/services/user-services/user-state.service';
+import {User} from '../../core/models/user.model';
 
 @Component({
   selector: 'app-profile',
@@ -30,11 +31,11 @@ import {UserStateService} from '../../core/services/user-services/user-state.ser
   styleUrl: './profile.component.scss'
 })
 export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
-  private profileService = inject(ProfileService);
-  private elementRef = inject(ElementRef);
-  private snackBar = inject(MatSnackBar);
-  private userState = inject(UserStateService);
-  private destroy$ = new Subject<void>();
+  private profileService :ProfileService = inject(ProfileService);
+  private elementRef : ElementRef= inject(ElementRef);
+  private snackBar : MatSnackBar = inject(MatSnackBar);
+  private userState : UserStateService = inject(UserStateService);
+  private destroy$ : Subject<void> = new Subject<void>();
 
   activeSection = signal('personal-info');
   saveStatus = signal<SaveStatus>('idle');
@@ -63,14 +64,14 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
       )
       .subscribe(() => {
-        if (this.profileForm.dirty && this.profileForm.valid) {
+        if (this.profileForm.dirty) {
           this.saveProfile();
         }
       });
   }
 
   setupSectionObserver() {
-    const sections = ['personal-info', 'biography', 'social-networks'];
+    const sections : string[] = ['personal-info', 'biography', 'social-networks'];
     const options = {
       root: null,
       rootMargin: '0px 0px -50% 0px',
@@ -86,7 +87,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     }, options);
 
     sections.forEach(id => {
-      const element = this.elementRef.nativeElement.querySelector(`#${id}`);
+      const element : any = this.elementRef.nativeElement.querySelector(`#${id}`);
       if (element) observer.observe(element);
     });
   }
@@ -96,15 +97,9 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.saveStatus.set('saving');
 
-    if (this.profileForm.invalid) {
-      this.markFormGroupTouched(this.profileForm);
-      this.saveStatus.set('error');
-      this.showErrorMessage('Please correct the errors in the form before saving.');
-      return;
-    }
-
     try {
-      const success = await this.profileService.saveProfile();
+      const validFields : Partial<User> = this.extractValidFields();
+      const success : boolean = await this.profileService.savePartialProfile(validFields);
 
       if (success) {
         this.saveStatus.set('saved');
@@ -115,21 +110,32 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         }, 3000);
       } else {
         this.saveStatus.set('error');
-        this.showErrorMessage('Please correct the errors in the form.');
+        this.showErrorMessage('Erreur lors de la sauvegarde.');
       }
     } catch (error) {
       this.saveStatus.set('error');
-      this.showErrorMessage('An error occurred while saving your profile.');
+      this.showErrorMessage('Une erreur est survenue lors de la sauvegarde.');
     }
   }
 
-  private markFormGroupTouched(formGroup: FormGroup) {
-    Object.values(formGroup.controls).forEach(control => {
-      control.markAsTouched();
-      if (control instanceof FormGroup) {
-        this.markFormGroupTouched(control);
+  private extractValidFields(): Partial<User> {
+    const user : User | null = this.userState.user();
+    const result: Partial<User> = { uid: user?.uid, email: user?.email };
+
+    Object.keys(this.profileForm.controls).forEach(key => {
+      const control = this.profileForm.get(key);
+      if (control && control.valid && control.value !== null) {
+        const fieldMapping: Record<string, string> = {
+          'avatarPictureURL': 'photoURL',
+          'emailAddress': 'email'
+        };
+
+        const userField : string = fieldMapping[key] || key;
+        result[userField as keyof User] = control.value;
       }
     });
+
+    return result;
   }
 
   showErrorMessage(message: string) {

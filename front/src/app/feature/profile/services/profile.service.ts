@@ -113,56 +113,27 @@ export class ProfileService {
     }
   }
 
-  async saveProfile(): Promise<boolean> {
-    const user: User | null = this.userState.user();
-    if (!user?.uid) return false;
+  async savePartialProfile(partialData: Partial<User>): Promise<boolean> {
+    if (!partialData.uid) return false;
 
     try {
       await this.authService.getIdToken(true);
 
-      const formValues : any = this.profileForm.value;
-      const userData: Partial<User> = {
-        uid: user.uid,
-        email: user.email,
-        displayName: formValues.displayName,
-        photoURL: formValues.avatarPictureURL,
-        company: formValues.company,
-        city: formValues.city,
-        phoneNumber: formValues.phoneNumber,
-        githubLink: formValues.githubLink,
-        twitterLink: formValues.twitterLink,
-        blueSkyLink: formValues.blueSkyLink,
-        linkedInLink: formValues.linkedInLink,
-        biography: formValues.biography,
-        otherLink: formValues.otherLink
-      };
+      const response: User = await firstValueFrom(
+        this.http.put<User>(`${environment.apiUrl}/auth/profile`, partialData, {
+          withCredentials: true
+        })
+      );
 
-      this.userState.updateUser(userData);
-      this.userState.saveToStorage();
-      return true;
-    } catch (error: any) {
-      if (error.status === 400 && error.error) {
-        this.handleValidationErrors(error.error);
-        return false;
+      if (response) {
+        this.userState.updateUser(partialData);
+        this.userState.saveToStorage();
+        return true;
       }
       return false;
+    } catch (error: any) {
+      console.error('Error saving partial profile:', error);
+      return false;
     }
-  }
-
-  private handleValidationErrors(errors: Record<string, string>) {
-    const fieldMapping: Record<string, string> = {
-      'photoURL': 'avatarPictureURL',
-      'email': 'emailAddress'
-    };
-
-    Object.entries(errors).forEach(([field, message]) => {
-      const formField : string = fieldMapping[field] || field;
-      const control = this.profileForm.get(formField);
-
-      if (control) {
-        control.setErrors({ serverError: message });
-        control.markAsTouched();
-      }
-    });
   }
 }

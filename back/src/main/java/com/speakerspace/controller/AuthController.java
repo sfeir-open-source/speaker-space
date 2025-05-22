@@ -10,30 +10,22 @@ import com.speakerspace.exception.ValidationException;
 import com.speakerspace.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
-
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final UserService userService;
     private final CookieService cookieService;
     private final FirebaseAuth firebaseAuth;
-
-    @Autowired
-    public AuthController(UserService userService, CookieService cookieService,
-                          FirebaseAuth firebaseAuth) {
-        this.userService = userService;
-        this.cookieService = cookieService;
-        this.firebaseAuth = firebaseAuth;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody FirebaseTokenRequest request, HttpServletResponse response) {
@@ -52,41 +44,9 @@ public class AuthController {
             UserDTO existingUser = userService.getUserByUid(uid);
 
             if (existingUser == null) {
-                UserDTO userDTO = new UserDTO();
-                userDTO.setUid(uid);
-                userDTO.setEmail(decodedToken.getEmail());
-                userDTO.setDisplayName(decodedToken.getName());
-                userDTO.setPhotoURL(decodedToken.getPicture());
-
-                existingUser = userService.saveUser(userDTO);
-
-                if (existingUser == null) {
-                    logger.error("Failed to create new user");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create user");
-                }
+                existingUser = createNewUser(decodedToken);
             } else {
-                boolean needsUpdate = false;
-
-                if (existingUser.getEmail() == null && decodedToken.getEmail() != null) {
-                    existingUser.setEmail(decodedToken.getEmail());
-                    needsUpdate = true;
-                }
-
-                if ((existingUser.getDisplayName() == null || existingUser.getDisplayName().isEmpty())
-                        && decodedToken.getName() != null) {
-                    existingUser.setDisplayName(decodedToken.getName());
-                    needsUpdate = true;
-                }
-
-                if ((existingUser.getPhotoURL() == null || existingUser.getPhotoURL().isEmpty())
-                        && decodedToken.getPicture() != null) {
-                    existingUser.setPhotoURL(decodedToken.getPicture());
-                    needsUpdate = true;
-                }
-
-                if (needsUpdate) {
-                    existingUser = userService.saveUser(existingUser);
-                }
+                existingUser = updateExistingUserIfNeeded(existingUser, decodedToken);
             }
 
             return ResponseEntity.ok(existingUser);
@@ -96,13 +56,53 @@ public class AuthController {
         }
     }
 
+    private UserDTO createNewUser(FirebaseToken decodedToken) {
+        UserDTO userDTO = new UserDTO();
+        userDTO.setUid(decodedToken.getUid());
+        userDTO.setEmail(decodedToken.getEmail());
+        userDTO.setDisplayName(decodedToken.getName());
+        userDTO.setPhotoURL(decodedToken.getPicture());
+
+        UserDTO createdUser = userService.saveUser(userDTO);
+        if (createdUser == null) {
+            logger.error("Failed to create new user");
+            throw new RuntimeException("Failed to create user");
+        }
+        return createdUser;
+    }
+
+    private UserDTO updateExistingUserIfNeeded(UserDTO existingUser, FirebaseToken decodedToken) {
+        boolean needsUpdate = false;
+
+        if (existingUser.getEmail() == null && decodedToken.getEmail() != null) {
+            existingUser.setEmail(decodedToken.getEmail());
+            needsUpdate = true;
+        }
+
+        if ((existingUser.getDisplayName() == null || existingUser.getDisplayName().isEmpty())
+                && decodedToken.getName() != null) {
+            existingUser.setDisplayName(decodedToken.getName());
+            needsUpdate = true;
+        }
+
+        if ((existingUser.getPhotoURL() == null || existingUser.getPhotoURL().isEmpty())
+                && decodedToken.getPicture() != null) {
+            existingUser.setPhotoURL(decodedToken.getPicture());
+            needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+            existingUser = userService.saveUser(existingUser);
+        }
+
+        return existingUser;
+    }
+
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody UserDTO userDTO) {
         try {
             logger.info("Creating/updating user: {}", userDTO.getUid());
-
-            UserDTO savedUserDTO = userService.saveUser(userDTO);
-            return ResponseEntity.ok(savedUserDTO);
+            return ResponseEntity.ok(userService.saveUser(userDTO));
         } catch (Exception e) {
             logger.error("Error creating/updating user", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -113,44 +113,30 @@ public class AuthController {
     @GetMapping("/{uid}")
     public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
         UserDTO userDTO = userService.getUserByUid(uid);
-        if (userDTO == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(userDTO);
+        return userDTO != null
+                ? ResponseEntity.ok(userDTO)
+                : ResponseEntity.notFound().build();
     }
 
     @PutMapping("/profile")
     public ResponseEntity<?> updateUserProfile(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         try {
-            String token = cookieService.getAuthTokenFromCookies(request);
-            if (token == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
-            }
+            String uid = authenticateAndAuthorize(request, userDTO.getUid());
 
-            FirebaseToken decodedToken;
-            try {
-                decodedToken = firebaseAuth.verifyIdToken(token);
-            } catch (FirebaseAuthException e) {
-                if (e.getMessage().contains("expired")) {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token expired, please refresh");
-                }
-                throw e;
-            }
-
-            String uid = decodedToken.getUid();
-            if (!uid.equals(userDTO.getUid())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not authorized to update this profile");
-            }
-
-            UserDTO updatedUserDTO = userService.updateUser(userDTO);
-            if (updatedUserDTO == null) {
+            UserDTO existingUser = userService.getUserByUid(uid);
+            if (existingUser == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            return ResponseEntity.ok(updatedUserDTO);
+            UserDTO updatedUser = userService.partialUpdateUser(userDTO, existingUser);
+            return ResponseEntity.ok(updatedUser);
         } catch (ValidationException e) {
             logger.warn("Validation error during profile update: {}", e.getErrors());
             return ResponseEntity.badRequest().body(e.getErrors());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         } catch (Exception e) {
             logger.error("Failed to update profile", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -161,17 +147,7 @@ public class AuthController {
     @GetMapping("/user/{uid}")
     public ResponseEntity<?> getUserData(@PathVariable String uid, HttpServletRequest request) {
         try {
-            String token = cookieService.getAuthTokenFromCookies(request);
-            if (token == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
-            }
-
-            FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
-            String tokenUid = decodedToken.getUid();
-
-            if (!tokenUid.equals(uid)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not authorized to access this profile");
-            }
+            String tokenUid = authenticateAndAuthorize(request, uid);
 
             UserDTO userDTO = userService.getUserByUid(uid);
             if (userDTO == null) {
@@ -179,6 +155,10 @@ public class AuthController {
             }
 
             return ResponseEntity.ok(userDTO);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         } catch (Exception e) {
             logger.error("Failed to retrieve user data", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -186,9 +166,45 @@ public class AuthController {
         }
     }
 
+    private String authenticateAndAuthorize(HttpServletRequest request, String targetUid)
+            throws AuthenticationException, SecurityException {
+        String token = cookieService.getAuthTokenFromCookies(request);
+        if (token == null) {
+            throw new AuthenticationException("Authentication required");
+        }
+
+        try {
+            FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
+            String tokenUid = decodedToken.getUid();
+
+            if (!tokenUid.equals(targetUid)) {
+                throw new SecurityException("Not authorized to access this profile");
+            }
+
+            return tokenUid;
+        } catch (FirebaseAuthException e) {
+            if (e.getMessage().contains("expired")) {
+                throw new AuthenticationException("Token expired, please refresh");
+            }
+            throw new RuntimeException(e);
+        }
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         cookieService.clearAuthCookie(response);
         return ResponseEntity.ok().build();
+    }
+
+    private static class AuthenticationException extends Exception {
+        public AuthenticationException(String message) {
+            super(message);
+        }
+    }
+
+    private static class SecurityException extends Exception {
+        public SecurityException(String message) {
+            super(message);
+        }
     }
 }
