@@ -152,9 +152,6 @@ describe('AuthService', () => {
     httpMock = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
 
-    service.auth = mockAuth;
-    service.user$ = new BehaviorSubject<User | null>(null);
-    service.dialog = mockDialog;
   });
 
   afterEach(() => {

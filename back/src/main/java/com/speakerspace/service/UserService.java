@@ -81,7 +81,6 @@ public class UserService {
     }
 
     private User preserveExistingFields(User newUser, User existingUser) {
-        // Préserver les champs non nuls existants
         if (existingUser.getDisplayName() != null && !existingUser.getDisplayName().isEmpty()) {
             newUser.setDisplayName(existingUser.getDisplayName());
         }
@@ -94,7 +93,6 @@ public class UserService {
             newUser.setEmail(existingUser.getEmail());
         }
 
-        // Utiliser une approche fonctionnelle pour les champs restants
         Map<Function<User, String>, BiConsumer<User, String>> fieldMap = new HashMap<>();
         fieldMap.put(User::getCompany, User::setCompany);
         fieldMap.put(User::getCity, User::setCity);
@@ -158,7 +156,6 @@ public class UserService {
     private void validateFullUser(User user) {
         Map<String, String> validationErrors = new HashMap<>();
 
-        // Validation des champs obligatoires
         if (user.getUid() == null || user.getUid().trim().isEmpty()) {
             validationErrors.put("uid", "User ID is required");
         }
@@ -169,7 +166,6 @@ public class UserService {
             validationErrors.put("email", "Invalid email format");
         }
 
-        // Validation des champs optionnels s'ils sont présents
         validateOptionalField(user.getDisplayName(), "displayName",
                 "Display name must be at least 2 characters", 2, validationErrors);
         validateOptionalField(user.getCompany(), "company",
@@ -177,7 +173,6 @@ public class UserService {
         validateOptionalField(user.getCity(), "city",
                 "City must be at least 2 characters", 2, validationErrors);
 
-        // Validation des URLs
         validateOptionalUrl(user.getPhotoURL(), "photoURL",
                 "Invalid photo URL format", validationErrors);
         validateOptionalUrl(user.getGithubLink(), "githubLink",
@@ -191,7 +186,6 @@ public class UserService {
         validateOptionalUrl(user.getOtherLink(), "otherLink",
                 "Invalid URL format", validationErrors);
 
-        // Validation du numéro de téléphone
         if (user.getPhoneNumber() != null && !user.getPhoneNumber().isEmpty()
                 && !user.getPhoneNumber().matches("^(\\+?[0-9\\s.-]{6,})?$")) {
             validationErrors.put("phoneNumber", "Invalid phone number format");
@@ -314,14 +308,11 @@ public class UserService {
     }
 
     public UserDTO partialUpdateUser(UserDTO partialUserDTO, UserDTO existingUserDTO) {
-        // Convertir les DTOs en entités
         User existingUser = userMapper.convertToEntity(existingUserDTO);
         User partialUser = userMapper.convertToEntity(partialUserDTO);
 
-        // Créer l'utilisateur mis à jour en combinant les deux
         User updatedUser = mergeUsers(partialUser, existingUser);
 
-        // Valider uniquement les champs fournis dans la mise à jour partielle
         Map<String, String> validationErrors = validatePartialUser(partialUser);
 
         if (!validationErrors.isEmpty()) {
@@ -329,7 +320,6 @@ public class UserService {
         }
 
         try {
-            // Sauvegarder l'utilisateur mis à jour
             firestore.collection(COLLECTION_NAME)
                     .document(updatedUser.getUid())
                     .set(updatedUser)
@@ -344,11 +334,9 @@ public class UserService {
     private User mergeUsers(User partialUser, User existingUser) {
         User updatedUser = new User();
 
-        // Toujours conserver l'uid et l'email
         updatedUser.setUid(existingUser.getUid());
         updatedUser.setEmail(existingUser.getEmail());
 
-        // Utiliser une approche fonctionnelle pour les champs restants
         Map<Function<User, String>, BiConsumer<User, String>> fieldMap = new HashMap<>();
         fieldMap.put(User::getDisplayName, User::setDisplayName);
         fieldMap.put(User::getPhotoURL, User::setPhotoURL);
@@ -374,7 +362,6 @@ public class UserService {
     private Map<String, String> validatePartialUser(User partialUser) {
         Map<String, String> validationErrors = new HashMap<>();
 
-        // Valider uniquement les champs qui ont été fournis dans la mise à jour partielle
         validateOptionalField(partialUser.getDisplayName(), "displayName",
                 "Display name must be at least 2 characters", 2, validationErrors);
         validateOptionalField(partialUser.getCompany(), "company",

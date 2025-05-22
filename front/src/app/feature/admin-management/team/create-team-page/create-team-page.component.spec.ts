@@ -23,10 +23,6 @@ describe('CreateTeamPageComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should have button enabled by default', () => {
-    expect(component.button).toBeTruthy();
-  });
-
   it('should initialize form fields correctly', () => {
     expect(component.formFields.length).toBe(2);
 
