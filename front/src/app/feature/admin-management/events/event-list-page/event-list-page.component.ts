@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
-import { NavbarTeamPageComponent } from '../../components/navbar-team-page/navbar-team-page.component';
 import { EventTeamCardComponent } from '../../../../shared/event-team-card/event-team-card.component';
 import { EventTeamField } from '../../../../shared/event-team-card/interface/event-team-field';
 import { switchMap } from 'rxjs/operators';
@@ -9,6 +8,7 @@ import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.co
 import {TeamService} from '../../services/team/team.service';
 import {EventService} from '../../services/event/event.service';
 import {Event} from '../../type/event/event';
+import {NavbarTeamPageComponent} from '../../components/team/navbar-team-page/navbar-team-page.component';
 
 @Component({
   selector: 'app-event-list-page',
@@ -70,13 +70,9 @@ export class EventListPageComponent implements OnInit {
         return this.activeTab === 'Achived' ? isFinished : !isFinished;
       })
       .map(event => ({
+        idEvent: event.idEvent || '',
         title: event.eventName,
-        description: event.description || '',
-        date: event.startDate || '',
-        url: event.url || '',
-        id: event.idEvent || '',
         type: 'event',
-        isOpen: !event.isFinish,
         img: '',
         link: event.webLinkUrl || '',
         statusText: event.isFinish ? 'Closed' : 'Open'

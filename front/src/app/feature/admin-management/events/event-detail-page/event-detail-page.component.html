@@ -1,1 +1,85 @@
 <app-navbar-event-page></app-navbar-event-page>
+<div class="px-10 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
+  <main class="flex">
+    <app-sidebar-event [activeSection]="activeSection" [eventUrl]="eventUrl"></app-sidebar-event>
+    <section class="flex-1 p-4">
+      @if (isLoading) {
+        <div class="flex justify-center items-center h-40">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      }
+
+      @if (error) {
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <p>{{ error }}</p>
+        </div>
+      }
+
+      @if (!isLoading && !error) {
+        <form class="w-full mx-auto" (ngSubmit)="onSubmit()">
+          <article class="w-full items-center bg-white shadow-md rounded-lg">
+            <header class="p-4">
+              <h1 class="text-xl font-medium">General</h1>
+              <p class="mt-2 text-sm text-gray-600">
+                Change event name and URL
+              </p>
+
+              @for(field of formFields; track field.name) {
+                <app-input
+                  [label]="field.label"
+                  [type]="field.type"
+                  [required]="field.required || false"
+                  [control]="getFormControl(field.name)"
+                  [name]="field.name">
+                </app-input>
+              }
+
+            </header>
+            <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+            @if (currentUserRole === 'Owner') {
+              <footer class="flex justify-end mt-4 p-4">
+                <button
+                  type="submit"
+                  class="bg-action hover:bg-action-hover text-white px-4 py-2 rounded-md cursor-pointer">
+                  Save
+                </button>
+              </footer>
+            }
+          </article>
+
+          @if (currentUserRole === 'Owner') {
+            <article class="w-full items-center bg-white shadow-md border-2 border-red-300 rounded-lg mt-5">
+              <header class="p-4">
+                <h1 class="text-xl font-medium">Danger zone</h1>
+              </header>
+              <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+              <section class="p-4">
+                <h2 class="text-lg font-medium">Delete this event</h2>
+                <div class="flex items-center justify-between mt-2">
+                  <p class="text-sm text-gray-800 flex-1 mr-4">
+                    This will <strong class="font-medium text-black">permanently delete the "{{ eventName }}"</strong> event, events, speakers proposals, reviews, comments, schedule, and settings. This action cannot be undone.
+                  </p>
+                  <button
+                    type="button"
+                    [disabled]="isDeleting"
+                    (click)="confirmDeleteEvent()"
+                    class="bg-white hover:bg-gray-100 text-red-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
+                    <span class="material-symbols-outlined mr-2">delete</span>
+                    <span>Delete event</span>
+                  </button>
+                </div>
+              </section>
+            </article>
+          }
+        </form>
+      }
+      <app-delete-event-popup
+        [eventName]="eventName"
+        [isOpen]="showDeleteConfirmation"
+        [isDeleting]="isDeleting"
+        (confirm)="deleteEvent()"
+        (cancel)="cancelDeleteEvent()">
+      </app-delete-event-popup>
+    </section>
+  </main>
+</div>

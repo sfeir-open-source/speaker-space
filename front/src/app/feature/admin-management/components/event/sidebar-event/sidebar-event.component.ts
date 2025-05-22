@@ -1,20 +1,20 @@
 import {Component, Input, OnInit} from '@angular/core';
 import {NavigationEnd, Router} from '@angular/router';
 import {filter} from 'rxjs';
-import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
+import {ButtonWithIconComponent} from '../../../../../shared/button-with-icon/button-with-icon.component';
 
 @Component({
-  selector: 'app-team-sidebar',
+  selector: 'app-sidebar-event',
   standalone: true,
   imports: [
     ButtonWithIconComponent
   ],
-  templateUrl: './team-sidebar.component.html',
-  styleUrl: './team-sidebar.component.scss'
+  templateUrl: './sidebar-event.component.html',
+  styleUrl: './sidebar-event.component.scss'
 })
-export class TeamSidebarComponent implements OnInit {
+export class SidebarEventComponent implements OnInit {
   @Input() activeSection: string = '';
-  @Input() teamUrl: string = '';
+  @Input() eventUrl: string = '';
 
   constructor(private router: Router) {}
 
@@ -29,7 +29,7 @@ export class TeamSidebarComponent implements OnInit {
   }
 
   updateActiveSection() {
-    const url = this.router.url;
+    const url: string = this.router.url;
 
     if (url.includes('/settings-general')) {
       this.activeSection = 'settings-general';
@@ -41,16 +41,16 @@ export class TeamSidebarComponent implements OnInit {
   }
 
   navigateTo(path: string) {
-    if (!this.teamUrl) {
+    if (!this.eventUrl) {
       return;
     }
 
     if (path === 'settings-general') {
-      this.router.navigate(['/settings-general', this.teamUrl]);
+      this.router.navigate(['/settings-general', this.eventUrl]);
     } else if (path === 'settings-members') {
-      this.router.navigate(['/settings-members', this.teamUrl]);
+      this.router.navigate(['/settings-members', this.eventUrl]);
     } else if (path === 'support-speaker-space') {
-      this.router.navigate(['/support-speaker-space', this.teamUrl]);
+      this.router.navigate(['/support-speaker-space', this.eventUrl]);
     }
   }
 

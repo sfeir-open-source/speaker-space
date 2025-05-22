@@ -28,7 +28,7 @@ export const routes: Routes = [
   { path: 'create-event/:teamId', component: CreateEventPageComponent },
   { path: 'settings-general/:teamUrl', component: SettingTeamGeneralPageComponent},
   { path: 'settings-members/:teamUrl', component: SettingTeamMembersPageComponent },
-  { path: 'event-detail', component: EventDetailPageComponent },
+  { path: 'event-detail/:eventId', component: EventDetailPageComponent },
   { path: 'profile', component: ProfileComponent},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }

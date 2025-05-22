@@ -3,14 +3,14 @@ import {FormBuilder, FormControl, FormGroup, FormsModule, Validators} from '@ang
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Subscription } from 'rxjs';
 import {InputComponent} from '../../../../shared/input/input.component';
-import {NavbarTeamPageComponent} from '../../components/navbar-team-page/navbar-team-page.component';
-import {TeamSidebarComponent} from '../../components/team-sidebar/team-sidebar.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
 import {AuthService} from '../../../../core/login/services/auth.service';
-import {DeleteTeamPopupComponent} from '../../components/delete-team-popup/delete-team-popup.component';
 import {TeamService} from '../../services/team/team.service';
 import {TeamMemberService} from '../../services/team/team-member.service';
 import {TeamMember} from '../../type/team/team-member';
+import {NavbarTeamPageComponent} from '../../components/team/navbar-team-page/navbar-team-page.component';
+import {DeleteTeamPopupComponent} from '../../components/team/delete-team-popup/delete-team-popup.component';
+import {SidebarTeamComponent} from '../../components/team/sidebar-team/sidebar-team.component';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -18,9 +18,10 @@ import {TeamMember} from '../../type/team/team-member';
   imports: [
     InputComponent,
     NavbarTeamPageComponent,
-    TeamSidebarComponent,
     FormsModule,
-    DeleteTeamPopupComponent ],
+    DeleteTeamPopupComponent,
+    SidebarTeamComponent
+  ],
   templateUrl: './setting-team-general-page.component.html',
   styleUrl: './setting-team-general-page.component.scss'
 })

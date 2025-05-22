@@ -5,8 +5,6 @@ import {debounceTime, distinctUntilChanged, finalize, Subject, switchMap, take, 
 import { CommonModule } from '@angular/common';
 import {map} from 'rxjs/operators';
 import {MembersCardComponent} from '../../components/members-card/members-card.component';
-import {NavbarTeamPageComponent} from '../../components/navbar-team-page/navbar-team-page.component';
-import {TeamSidebarComponent} from '../../components/team-sidebar/team-sidebar.component';
 import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
 import {AutocompleteComponent} from '../../components/auto-complete/auto-complete.component';
 import {AuthService} from '../../../../core/login/services/auth.service';
@@ -16,19 +14,21 @@ import {TeamMemberService} from '../../services/team/team-member.service';
 import {UserRoleService} from '../../services/team/user-role.service';
 import {TeamMember} from '../../type/team/team-member';
 import {FormSubmitData} from '../../type/team/form-submit-data';
+import {SidebarTeamComponent} from '../../components/team/sidebar-team/sidebar-team.component';
+import {NavbarTeamPageComponent} from '../../components/team/navbar-team-page/navbar-team-page.component';
 
 @Component({
   selector: 'app-setting-team-members-page',
   standalone: true,
   imports: [
     CommonModule,
-    NavbarTeamPageComponent,
-    TeamSidebarComponent,
+    SidebarTeamComponent,
     FormsModule,
     ReactiveFormsModule,
     MembersCardComponent,
     ButtonGreenActionsComponent,
     AutocompleteComponent,
+    NavbarTeamPageComponent,
   ],
   templateUrl: './setting-team-members-page.component.html',
   styleUrl: './setting-team-members-page.component.scss'
