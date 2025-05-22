@@ -4,12 +4,14 @@ import {InputComponent} from '../../../../shared/input/input.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
 import {finalize, Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
-import {AuthService} from '../../../../core/login/services/auth.service';
 import {EventService} from '../../services/event/event.service';
 import {DeleteEventPopupComponent} from '../../components/event/delete-event-popup/delete-event-popup.component';
-import {SidebarEventComponent} from '../../components/event/sidebar-event/sidebar-event.component';
 import {NavbarEventPageComponent} from '../../components/event/navbar-event-page/navbar-event-page.component';
 import {EventDataService} from '../../services/event/event-data.service';
+import moment from 'moment';
+import 'moment-timezone';
+import {TimezoneOption} from '../../type/event/time-zone-option';
+import {NgClass} from '@angular/common';
 
 @Component({
   selector: 'app-event-detail-page',
@@ -20,7 +22,7 @@ import {EventDataService} from '../../services/event/event-data.service';
     InputComponent,
     ReactiveFormsModule,
     DeleteEventPopupComponent,
-    SidebarEventComponent,
+    NgClass,
   ],
   templateUrl: './event-detail-page.component.html',
   styleUrl: './event-detail-page.component.scss'
@@ -37,7 +39,11 @@ export class EventDetailPageComponent {
   isDeleting : boolean = false;
   showDeleteConfirmation : boolean = false;
   currentUserRole: string = '';
-
+  dateTimeUtc = moment.utc();
+  dateTimeLocal: moment.Moment | null = null;
+  visibility: 'private' | 'public' = 'private';
+  timezoneSelector = new FormControl('Europe/Paris');
+  timezoneOptions: TimezoneOption[] = [];
   eventForm: FormGroup;
   private nameChangeSubscription?: Subscription;
   private routeSubscription?: Subscription;
@@ -66,7 +72,6 @@ export class EventDetailPageComponent {
     private eventService: EventService,
     private eventDataService: EventDataService,
     private fb: FormBuilder,
-    private authService: AuthService
   ) {
     this.eventForm = this.initializeForm();
   }
@@ -75,7 +80,15 @@ export class EventDetailPageComponent {
     this.activeSection = 'settings-general';
     this.isLoading = true;
     this.checkForEmailModal();
+    this.currentUserRole = 'Owner';
+
     this.subscribeToRouteParams();
+    this.timezoneSelector.valueChanges.subscribe(timezone => {
+      this.updateLocalTime(timezone || 'Europe/Paris');
+      this.eventForm.get('timeZone')?.setValue(timezone);
+    });
+
+    this.updateLocalTime(this.timezoneSelector.value || 'Europe/Paris');
   }
 
   ngOnDestroy(): void {
@@ -110,13 +123,16 @@ export class EventDetailPageComponent {
   }
 
   private handleEventDataLoaded(event: any): void {
-    this.eventId = event.id || '';
-    this.eventName = event.name;
+    console.log('Event data loaded:', event);
+
+    this.eventId = event.idEvent || '';
+    this.eventName = event.eventName || '';
+    this.currentUserRole = 'Owner';
 
     const urlSuffix = this.extractOrGenerateUrlSuffix(event);
 
     this.eventForm.patchValue({
-      eventName: event.name,
+      eventName: event.eventName || '',
       eventURL: this.BASE_URL + urlSuffix
     });
 
@@ -132,7 +148,7 @@ export class EventDetailPageComponent {
       return event.url;
     }
 
-    return this.formatUrlFromName(event.name);
+    return this.formatUrlFromName(event.eventName || '');
   }
 
   private formatUrlFromName(name: string): string {
@@ -177,18 +193,24 @@ export class EventDetailPageComponent {
 
     const formValues = this.eventForm.getRawValue();
     const updatedEvent = {
-      name: formValues.eventName,
-      url: formValues.eventURL
+      idEvent: this.eventId,
+      eventName: formValues.eventName,
+      timeZone: formValues.timeZone,
+      url: formValues.eventURL.replace(this.BASE_URL, '')
     };
 
     this.isLoading = true;
 
-    // this.eventService.updateEvent(this.eventId, updatedEvent)
-    //   .pipe(finalize(() => this.isLoading = false))
-    //   .subscribe({
-    //     next: this.handleEventUpdated.bind(this),
-    //     error: this.handleEventUpdateError.bind(this)
-    //   });
+    this.eventService.updateEvent(updatedEvent)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => {
+          this.handleEventUpdated(response);
+        },
+        error: (err) => {
+          this.handleEventUpdateError(err);
+        }
+      });
   }
 
   private handleEventUpdated(event: any): void {
@@ -227,7 +249,7 @@ export class EventDetailPageComponent {
         next: () => {
           this.router.navigate(['/']);
         },
-        error: (err) => {
+        error: () => {
           this.error = 'Failed to delete event. Please try again.';
         }
       });
@@ -268,14 +290,32 @@ export class EventDetailPageComponent {
 
           this.eventUrl = event.url || '';
 
-          // this.eventDataService.loadEvent({
-          //   idEvent: event.idEvent,
-          //   eventName: event.eventName,
-          //   teamId: event.teamId,
-          //   // autres propriétés si nécessaire
-          // });
+          this.eventDataService.loadEvent({
+            idEvent: event.idEvent || this.eventId,
+            eventName: event.eventName || '',
+            teamId: event.teamId || '',
+            url: event.url || '',
+          });
         },
-        error: this.handleEventDataError.bind(this)
+        error: (err) => {
+          this.handleEventDataError(err);
+        }
       });
+  }
+
+  prepareTimezoneOptions(): void {
+    this.timezoneOptions = moment.tz.names().map(tz => ({
+      name: tz,
+      offset: moment.tz(tz).utcOffset()
+    })).sort((a, b) => a.offset - b.offset);
+  }
+
+  updateLocalTime(timezone: string): void {
+    this.dateTimeLocal = this.dateTimeUtc.clone().tz(timezone);
+  }
+
+  formatTimezoneOption(tz: TimezoneOption): string {
+    const offsetFormatted = moment.tz(tz.name).format('Z');
+    return `(GMT${offsetFormatted}) ${tz.name}`;
   }
 }

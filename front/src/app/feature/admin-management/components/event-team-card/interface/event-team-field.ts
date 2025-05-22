@@ -1,4 +1,4 @@
-export interface EventTeamField {
+export type EventTeamField = {
   idEvent: string;
   title: string;
   type: string;

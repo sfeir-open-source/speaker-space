@@ -1,7 +1,9 @@
-<app-navbar-event-page></app-navbar-event-page>
-<div class="px-10 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
+<app-navbar-event-page
+  [eventUrl]="eventUrl"
+  [eventId]="eventId"
+  [eventName]="eventName">
+</app-navbar-event-page><div class="px-10 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
   <main class="flex">
-    <app-sidebar-event [activeSection]="activeSection" [eventUrl]="eventUrl"></app-sidebar-event>
     <section class="flex-1 p-4">
       @if (isLoading) {
         <div class="flex justify-center items-center h-40">
@@ -34,8 +36,71 @@
                 </app-input>
               }
 
+              <section class="mt-5">
+                <label class="block text-start text-md font-medium text-gray-700">Visibility</label>
+                <div class="mt-3 bg-white rounded-md -space-y-px">
+                  <label class="relative border rounded-t-md p-4 flex cursor-pointer transition-all" [ngClass]="{ 'bg-indigo-100 border-indigo-200 z-10': visibility === 'private', 'border-gray-200': visibility !== 'private' }">
+                    <div class="flex items-center h-5">
+                      <input
+                      id="visibility-private"
+                      name="visibility"
+                      type="radio"
+                      [(ngModel)]="visibility"
+                      value="private"
+                      class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"/>
+                    </div>
+                    <div class="ml-3 flex flex-col">
+                      <span class="block text-sm font-medium text-gray-900">
+                        Private
+                      </span>
+                      <span class="block text-sm text-gray-600">
+                        This event would be available to anyone who has the link.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label class="relative border rounded-b-md p-4 flex cursor-pointer transition-all" [ngClass]="{'bg-indigo-100 border-indigo-200 z-10': visibility === 'public','border-gray-200': visibility !== 'public'}">
+                    <div class="flex items-center h-5">
+                      <input
+                      id="visibility-public"
+                      name="visibility"
+                      type="radio"
+                      [(ngModel)]="visibility"
+                      value="public"
+                      class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
+                      />
+                    </div>
+                    <div class="ml-3 flex flex-col">
+                      <span class="block text-sm font-medium text-gray-900">
+                        Public
+                      </span>
+                      <span class="block text-sm text-gray-600">
+                        This event will be available in the Speaker Space search and visible to anyone.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </section>
+
+              <div class="mt-20">
+                <label for="timezone-selector" class="block text-start text-md">Event timezone</label>
+                <div class="relative">
+                  <select
+                    id="timezone-selector"
+                    [formControl]="timezoneSelector"
+                    class="block w-full rounded-md bg-white px-3 py-2.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6 resize-none">
+                    @for(tz of timezoneOptions; track tz.name) {
+                      <option [value]="tz.name">
+                        {{ formatTimezoneOption(tz) }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              </div>
             </header>
+
             <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+
             @if (currentUserRole === 'Owner') {
               <footer class="flex justify-end mt-4 p-4">
                 <button
@@ -52,6 +117,23 @@
               <header class="p-4">
                 <h1 class="text-xl font-medium">Danger zone</h1>
               </header>
+              <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+              <section class="p-4">
+                <h2 class="text-lg font-medium">Archive this event</h2>
+                <div class="flex items-center justify-between mt-2">
+                  <p class="text-sm text-gray-800 flex-1 mr-4">
+                    Archived events are not displayed anymore in the team list and in the Speaker Space search. Nothing is deleted, you can restore them when you want.
+                  </p>
+                  <button
+                    type="button"
+                    [disabled]="isDeleting"
+                    (click)="confirmDeleteEvent()"
+                    class="bg-white hover:bg-gray-100 text-red-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
+                    <span class="material-symbols-outlined mr-2">archive</span>
+                    <span>Archive event</span>
+                  </button>
+                </div>
+              </section>
               <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
               <section class="p-4">
                 <h2 class="text-lg font-medium">Delete this event</h2>

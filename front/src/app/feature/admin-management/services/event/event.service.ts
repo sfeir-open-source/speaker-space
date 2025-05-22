@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import {catchError, map, tap} from 'rxjs/operators';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import { environment } from '../../../../../environments/environment.development';
 import { Event } from '../../type/event/event';
@@ -74,12 +74,16 @@ export class EventService {
 
   getEventById(id: string): Observable<Event> {
     return this.http.get<Event>(`${environment.apiUrl}/event/${id}`, { withCredentials: true })
-      .pipe(catchError(this.handleError('Error getting event by ID')));
-  }
-
-  getEventByUrl(urlId: string): Observable<Event> {
-    return this.http.get<Event>(`${environment.apiUrl}/event/by-url/${urlId}`, { withCredentials: true })
-      .pipe(catchError(this.handleError('Error getting event by URL')));
+      .pipe(
+        tap(response => console.log('Event data from API:', response)),
+        map(response => {
+          return {
+            idEvent: response.idEvent || response.idEvent,
+            eventName: response.eventName || response.eventName,
+          };
+        }),
+        catchError(this.handleError('Error getting event by ID'))
+      );
   }
 
   getEventsByTeam(teamId: string): Observable<Event[]> {

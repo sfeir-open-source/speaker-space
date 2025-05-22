@@ -12,13 +12,11 @@ import {Team} from '../../type/team/team';
 export class TeamService {
   private teamsSubject: BehaviorSubject<Team[]> = new BehaviorSubject<Team[]>([]);
   public teams$:Observable<Team[]> = this.teamsSubject.asObservable();
-  private teamForm: FormGroup;
 
   constructor(
     private http: HttpClient,
     private fb: FormBuilder
   ) {
-    this.teamForm = this.createForm();
     this.loadUserTeams();
   }
 

@@ -1,14 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
-import { EventTeamCardComponent } from '../../../../shared/event-team-card/event-team-card.component';
-import { EventTeamField } from '../../../../shared/event-team-card/interface/event-team-field';
 import { switchMap } from 'rxjs/operators';
 import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
 import {TeamService} from '../../services/team/team.service';
 import {EventService} from '../../services/event/event.service';
 import {Event} from '../../type/event/event';
 import {NavbarTeamPageComponent} from '../../components/team/navbar-team-page/navbar-team-page.component';
+import {EventTeamCardComponent} from '../../components/event-team-card/event-team-card.component';
+import {EventTeamField} from '../../components/event-team-card/interface/event-team-field';
 
 @Component({
   selector: 'app-event-list-page',

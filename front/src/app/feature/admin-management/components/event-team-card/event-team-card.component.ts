@@ -17,7 +17,6 @@ export class EventTeamCardComponent {
 
   navigateToEvent(eventId: string): void {
     if (eventId) {
-      console.log('Navigating to event detail:', eventId);
       this.router.navigate(['/event-detail', eventId]);
     } else {
       console.warn('Cannot navigate: Event ID is missing');
