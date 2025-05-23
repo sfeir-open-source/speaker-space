@@ -43,11 +43,14 @@ export class InputComponent implements OnInit, OnChanges {
   @Input() isRequired: boolean = false;
   @Input() minLength: number = 2;
   @Input() serverErrors: Record<string, string> | null = null;
-  @Output() blur = new EventEmitter<void>();
+  @Output() blur : EventEmitter<void> = new EventEmitter<void>();
+
+  private isInitialized : boolean = false;
 
   constructor(private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
+    this.isInitialized = true;
     this.applyValidators();
   }
 
@@ -66,40 +69,55 @@ export class InputComponent implements OnInit, OnChanges {
       }
     }
 
-    if (changes['required'] || changes['minLength']) {
+    if (this.isInitialized && (changes['required'] || changes['minLength'] || changes['control'])) {
       this.applyValidators();
     }
   }
 
-  private applyValidators() {
-    const validators: ValidatorFn[] = [];
-
-    if (this.required) {
-      validators.push(Validators.required);
+  private applyValidators(): void {
+    if (!this.control) {
+      console.warn(`FormControl manquant pour le champ '${this.name}'. Les validateurs ne peuvent pas être appliqués.`);
+      return;
     }
 
-    if (this.minLength && this.minLength > 0) {
-      validators.push(Validators.minLength(this.minLength));
+    if (this.control === null || this.control === undefined) {
+      console.warn(`FormControl null ou undefined pour le champ '${this.name}'.`);
+      return;
     }
 
-    if (this.type === 'email') {
-      validators.push(Validators.email);
-    }
+    try {
+      const validators: ValidatorFn[] = [];
 
-    if (this.name === 'phoneNumber') {
-      validators.push(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'));
-    } else if (this.name === 'avatarPictureURL' || this.name.toLowerCase().includes('link')) {
-      validators.push(Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?'));
-    }
+      if (this.required) {
+        validators.push(Validators.required);
+      }
 
-    if (validators.length > 0) {
-      this.control.setValidators(validators);
+      if (this.minLength && this.minLength > 0) {
+        validators.push(Validators.minLength(this.minLength));
+      }
+
+      if (this.type === 'email') {
+        validators.push(Validators.email);
+      }
+
+      if (this.name === 'phoneNumber') {
+        validators.push(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'));
+      } else if (this.name === 'avatarPictureURL' || this.name.toLowerCase().includes('link')) {
+        validators.push(Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?'));
+      }
+
+      this.control.setValidators(validators.length > 0 ? validators : null);
       this.control.updateValueAndValidity();
+
+    } catch (error) {
+      console.error(`Erreur lors de l'application des validateurs pour le champ '${this.name}':`, error);
     }
   }
 
-  onInputBlur() {
-    this.control.markAsTouched();
+  onInputBlur(): void {
+    if (this.control) {
+      this.control.markAsTouched();
+    }
     this.blur.emit();
   }
 
@@ -122,9 +140,11 @@ export class InputComponent implements OnInit, OnChanges {
   }
 
   get hasError(): boolean {
-    if (!this.control) return false;
+    if (!this.control) {
+      return false;
+    }
 
-    const shouldShowError : boolean = this.control.invalid && (this.control.touched || this.control.dirty);
+    const shouldShowError: boolean = this.control.invalid && (this.control.touched || this.control.dirty);
 
     if (shouldShowError) {
       console.debug(`Field ${this.name} has errors:`, this.control.errors);
@@ -134,7 +154,9 @@ export class InputComponent implements OnInit, OnChanges {
   }
 
   get errorMessages(): string[] {
-    if (!this.hasError) return [];
+    if (!this.hasError || !this.control) {
+      return [];
+    }
 
     const errors = this.control.errors || {};
     const messages: string[] = [];

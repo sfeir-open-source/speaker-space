@@ -95,10 +95,14 @@ export class EventService {
     return this.http.delete<void>(`${environment.apiUrl}/event/${id}`, { withCredentials: true })
       .pipe(
         tap(() => {
-          const updated = this.eventsSubject.value.filter(event => event.idEvent !== id);
+          const updated : Event[] = this.eventsSubject.value.filter(event => event.idEvent !== id);
           this.eventsSubject.next(updated);
         }),
         catchError(this.handleError('Error deleting event'))
       );
+  }
+
+  uploadEventLogo(eventId: string, formData: FormData): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/events/${eventId}/logo`, formData);
   }
 }
