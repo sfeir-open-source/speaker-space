@@ -1,0 +1,23 @@
+<aside class="hidden lg:block bg-white p-4 ml-3 mt-4 shadow-md rounded-md sticky top-4 self-start max-h-screen overflow-y-auto">
+  <app-button-with-icon
+    materialIcon="settings"
+    route="settings-general"
+    [customClass]="isActive('settings-general') ? 'bg-gray-100' : ''"
+    (itemClick)="navigateTo('settings-general')">
+    General
+  </app-button-with-icon>
+  <app-button-with-icon
+    materialIcon="brush"
+    route="settings-customize"
+    [customClass]="isActive('settings-customize') ? 'bg-gray-100' : ''"
+    (itemClick)="navigateTo('settings-customize')">
+    Customize
+  </app-button-with-icon>
+  <app-button-with-icon
+    materialIcon="favorite"
+    route="support-speaker-space"
+    [disabled]="true"
+    (itemClick)="navigateTo($event)">
+    Support Speaker Space
+  </app-button-with-icon>
+</aside>

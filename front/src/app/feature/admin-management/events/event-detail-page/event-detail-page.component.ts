@@ -12,6 +12,8 @@ import moment from 'moment';
 import 'moment-timezone';
 import {TimezoneOption} from '../../type/event/time-zone-option';
 import {NgClass} from '@angular/common';
+import {InformationEventComponent} from '../create-event/components/information-event/information-event.component';
+import {SidebarEventComponent} from '../../components/event/sidebar-event/sidebar-event.component';
 
 @Component({
   selector: 'app-event-detail-page',
@@ -23,6 +25,8 @@ import {NgClass} from '@angular/common';
     ReactiveFormsModule,
     DeleteEventPopupComponent,
     NgClass,
+    InformationEventComponent,
+    SidebarEventComponent,
   ],
   templateUrl: './event-detail-page.component.html',
   styleUrl: './event-detail-page.component.scss'

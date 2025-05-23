@@ -3,6 +3,7 @@ import {CommonModule} from '@angular/common';
 
 @Component({
   selector: 'app-button-grey',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './button-grey.component.html',
   styleUrl: './button-grey.component.scss'

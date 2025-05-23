@@ -1,5 +1,13 @@
-<main class="relative bg-white h-[50px] w-full px-4 lg:px-8 flex items-center shadow-sm">
-  <section class="flex items-start center gap-4 ml-10">
+<main class="relative bg-white h-[50px] w-full px-4 lg:px-8 flex justify-around items-center shadow-sm">
+  <section class="flex items-center gap-4">
+    <app-button-grey
+      materialIcon="brush"
+      [buttonHandler]="events.bind(this)"
+      [route]="'/event/' + (eventUrl || eventId)"
+      [isActivePage]="activePage === 'event-page'"
+    >
+      Customize
+    </app-button-grey>
     <app-button-grey
       materialIcon="settings"
       [buttonHandler]="settings.bind(this)"
@@ -8,4 +16,9 @@
       Settings
     </app-button-grey>
   </section>
+  <button class="flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer">
+    <span>Event page</span>
+    <span class="material-icons text-lg ml-2">open_in_new</span>
+  </button>
+
 </main>
