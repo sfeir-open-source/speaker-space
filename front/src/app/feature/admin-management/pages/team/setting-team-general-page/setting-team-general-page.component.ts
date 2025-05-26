@@ -11,6 +11,7 @@ import {TeamService} from '../../../services/team/team.service';
 import {TeamMemberService} from '../../../services/team/team-member.service';
 import {AuthService} from '../../../../../core/login/services/auth.service';
 import {TeamMember} from '../../../type/team/team-member';
+import {environment} from '../../../../../../environments/environment.development';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -26,7 +27,6 @@ import {TeamMember} from '../../../type/team/team-member';
   styleUrl: './setting-team-general-page.component.scss'
 })
 export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
-  readonly BASE_URL = 'https://speaker-space.io/team/';
 
   activeSection: string = 'settings-general';
   teamUrl : string = '';
@@ -162,7 +162,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
     this.teamForm.patchValue({
       teamName: team.name,
-      teamURL: this.BASE_URL + urlSuffix
+      teamURL: `${environment.baseUrl}/team/` + urlSuffix
     });
 
     this.setupNameChangeListener();
@@ -178,8 +178,8 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
   private extractOrGenerateUrlSuffix(team: any): string {
     if (team.url) {
-      if (team.url.startsWith(this.BASE_URL)) {
-        return team.url.substring(this.BASE_URL.length);
+      if (team.url.startsWith(`${environment.baseUrl}/team/`)) {
+        return team.url.substring(`${environment.baseUrl}/team/`.length);
       }
       return team.url;
     }
@@ -209,9 +209,9 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
       this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
         if (value) {
           const urlSuffix = this.formatUrlFromName(value);
-          this.teamForm.get('teamURL')?.setValue(this.BASE_URL + urlSuffix);
+          this.teamForm.get('teamURL')?.setValue(`${environment.baseUrl}/team/` + urlSuffix);
         } else {
-          this.teamForm.get('teamURL')?.setValue(this.BASE_URL);
+          this.teamForm.get('teamURL')?.setValue(`${environment.baseUrl}/team/`);
         }
       });
     }

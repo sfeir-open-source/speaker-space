@@ -1,13 +1,17 @@
 export type EventDTO = {
+  idEvent?: string;
   eventName: string;
-  url: string;
-  conferenceHallUrl?: string;
-  timeZone?: string;
+  description?: string;
   startDate?: string;
   endDate?: string;
-  location?: string;
-  description?: string;
   isOnline?: boolean;
+  url?: string;
+  location?: string;
+  isPrivate?: boolean;
+  webLinkUrl?: string;
+  isFinish?: boolean;
+  userCreateId?: string;
+  conferenceHallUrl?: string;
   teamId?: string;
-  idEvent?: string;
+  timeZone?: string;
 }

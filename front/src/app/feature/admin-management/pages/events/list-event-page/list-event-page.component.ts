@@ -66,7 +66,7 @@ export class ListEventPageComponent implements OnInit {
   transformEventsToFields(events: Event[]): EventTeamField[] {
     return events
       .filter(event => {
-        const isFinished = event.isFinish || false;
+        const isFinished : boolean = event.isFinish || false;
         return this.activeTab === 'Achived' ? isFinished : !isFinished;
       })
       .map(event => ({
@@ -75,7 +75,8 @@ export class ListEventPageComponent implements OnInit {
         type: 'event',
         img: '',
         link: event.webLinkUrl || '',
-        statusText: event.isFinish ? 'Closed' : 'Open'
+        statusText: event.isFinish ? 'Closed' : 'Open',
+        publicUrl: event.url || ''
       }));
   }
 

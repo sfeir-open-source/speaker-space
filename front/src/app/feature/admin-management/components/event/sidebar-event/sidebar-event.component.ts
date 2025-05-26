@@ -1,60 +1,40 @@
-import {Component, Input, OnInit} from '@angular/core';
-import {NavigationEnd, Router} from '@angular/router';
-import {filter} from 'rxjs';
-import {ButtonWithIconComponent} from '../../../../../shared/button-with-icon/button-with-icon.component';
+import {Component, Input } from '@angular/core';
+import {SidebarConfig} from '../../../type/components/sidebar-config';
+import {SidebarAdminPageComponent} from '../../sidebar-admin-page/sidebar-admin-page.component';
 
 @Component({
   selector: 'app-sidebar-event',
   standalone: true,
   imports: [
-    ButtonWithIconComponent
+    SidebarAdminPageComponent
   ],
   templateUrl: './sidebar-event.component.html',
   styleUrl: './sidebar-event.component.scss'
 })
-export class SidebarEventComponent implements OnInit {
-  @Input() activeSection: string = '';
-  @Input() teamUrl: string = '';
+export class SidebarEventComponent {
+  @Input() eventId: string = '';
 
-  constructor(private router: Router) {}
-
-  ngOnInit() {
-    this.updateActiveSection();
-
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
-      this.updateActiveSection();
-    });
-  }
-
-  updateActiveSection() {
-    const url = this.router.url;
-
-    if (url.includes('/settings-general')) {
-      this.activeSection = 'settings-general';
-    } else if (url.includes('/settings-customize')) {
-      this.activeSection = 'settings-customize';
-    } else if (url.includes('/support-speaker-space')) {
-      this.activeSection = 'support-speaker-space';
-    }
-  }
-
-  navigateTo(path: string) {
-    if (!this.teamUrl) {
-      return;
-    }
-
-    if (path === 'settings-general') {
-      this.router.navigate(['/settings-general', this.teamUrl]);
-    } else if (path === 'settings-customize') {
-      this.router.navigate(['/settings-customize', this.teamUrl]);
-    } else if (path === 'support-speaker-space') {
-      this.router.navigate(['/support-speaker-space', this.teamUrl]);
-    }
-  }
-
-  isActive(route: string): boolean {
-    return this.activeSection === route;
-  }
+  readonly sidebarConfig: SidebarConfig = {
+    buttons: [
+      {
+        id: 'event-detail',
+        label: 'General',
+        materialIcon: 'settings',
+        route: 'event-detail'
+      },
+      {
+        id: 'event-customize',
+        label: 'Customize',
+        materialIcon: 'brush',
+        route: 'event-customize'
+      },
+      {
+        id: 'support-speaker-space',
+        label: 'Support Speaker Space',
+        materialIcon: 'favorite',
+        route: 'support-speaker-space',
+        isDisabled: true
+      }
+    ]
+  };
 }

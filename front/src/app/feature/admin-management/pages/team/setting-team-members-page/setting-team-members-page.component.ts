@@ -22,13 +22,13 @@ import {FormField} from '../../../../../shared/input/interface/form-field';
   standalone: true,
   imports: [
     CommonModule,
-    SidebarTeamComponent,
     FormsModule,
     ReactiveFormsModule,
     MembersCardComponent,
     ButtonGreenActionsComponent,
     AutocompleteComponent,
     NavbarTeamPageComponent,
+    SidebarTeamComponent,
   ],
   templateUrl: './setting-team-members-page.component.html',
   styleUrl: './setting-team-members-page.component.scss'

@@ -135,7 +135,6 @@ export class InformationEventComponent implements OnInit {
     const updatedEvent = this.eventDataService.getCurrentEvent();
 
     if (!updatedEvent.idEvent) {
-      console.error("Event ID is missing");
       return;
     }
 

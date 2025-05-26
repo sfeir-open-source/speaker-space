@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import {BehaviorSubject, Observable, of, throwError} from 'rxjs';
+import {BehaviorSubject, Observable, throwError} from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import {environment} from '../../../../../environments/environment.development';
 import {Team} from '../../type/team/team';
 
@@ -15,7 +14,6 @@ export class TeamService {
 
   constructor(
     private http: HttpClient,
-    private fb: FormBuilder
   ) {
     this.loadUserTeams();
   }
@@ -100,13 +98,6 @@ export class TeamService {
     return url.includes('/') ? url.split('/').pop() || url : url;
   }
 
-  private createForm(): FormGroup {
-    return this.fb.group({
-      name: ['', Validators.required],
-      url: [{value: '', disabled: true}]
-    });
-  }
-
   private updateTeamInList(updatedTeam: Team): void {
     const currentTeams = this.teamsSubject.value;
     const updatedTeams = currentTeams.map(t =>
@@ -135,7 +126,7 @@ export class TeamService {
     return this.http.get<Team>(`${environment.apiUrl}/team/${id}`, { withCredentials: true })
       .pipe(
         catchError(error => {
-          return of(null);
+          return throwError(() => error);
         })
       );
   }

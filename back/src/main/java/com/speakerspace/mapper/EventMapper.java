@@ -31,7 +31,7 @@ public class EventMapper {
             eventDTO.setEndDate(event.getEndDate().toDate().toInstant().toString());
         }
 
-        eventDTO.setIsOnline(event.isOnline());
+        eventDTO.setOnline(event.isOnline());
         eventDTO.setLocation(event.getLocation());
         eventDTO.setPrivate(event.isPrivate());
         eventDTO.setWebLinkUrl(event.getWebLinkUrl());
@@ -75,7 +75,7 @@ public class EventMapper {
             }
         }
 
-        event.setOnline(event.isOnline());
+        event.setOnline(eventDTO.isOnline());
         event.setLocation(eventDTO.getLocation());
         event.setPrivate(eventDTO.isPrivate());
         event.setWebLinkUrl(eventDTO.getWebLinkUrl());

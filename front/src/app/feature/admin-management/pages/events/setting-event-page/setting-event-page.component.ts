@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {finalize, Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -31,17 +31,17 @@ import {EventDataService} from '../../../services/event/event-data.service';
   templateUrl: './setting-event-page.component.html',
   styleUrl: './setting-event-page.component.scss'
 })
-export class SettingEventPageComponent {
-  readonly BASE_URL = 'https://speaker-space.io/event/';
-
+export class SettingEventPageComponent implements OnInit, OnDestroy {
   activeSection: string = 'settings-general';
-  eventUrl : string = '';
-  eventId : string = '';
-  eventName: string  = '';
-  isLoading : boolean = true;
+  eventId: string = '';
+  eventUrl: string = '';
+  eventName: string = '';
+  teamUrl: string = '';
+  teamId: string = '';
+  isLoading: boolean = true;
   error: string | null = null;
-  isDeleting : boolean = false;
-  showDeleteConfirmation : boolean = false;
+  isDeleting: boolean = false;
+  showDeleteConfirmation: boolean = false;
   currentUserRole: string = '';
   dateTimeUtc = moment.utc();
   dateTimeLocal: moment.Moment | null = null;
@@ -118,36 +118,10 @@ export class SettingEventPageComponent {
     }
   }
 
-  private updateFormControlsBasedOnRole(): void {
-    if (this.currentUserRole !== 'Owner') {
-      this.eventForm.get('eventName')?.disable();
-    } else {
-      this.eventForm.get('eventName')?.enable();
-    }
-  }
-
-  private handleEventDataLoaded(event: any): void {
-    console.log('Event data loaded:', event);
-
-    this.eventId = event.idEvent || '';
-    this.eventName = event.eventName || '';
-    this.currentUserRole = 'Owner';
-
-    const urlSuffix = this.extractOrGenerateUrlSuffix(event);
-
-    this.eventForm.patchValue({
-      eventName: event.eventName || '',
-      eventURL: this.BASE_URL + urlSuffix
-    });
-
-    this.setupNameChangeListener();
-    this.error = null;
-  }
-
   private extractOrGenerateUrlSuffix(event: any): string {
     if (event.url) {
-      if (event.url.startsWith(this.BASE_URL)) {
-        return event.url.substring(this.BASE_URL.length);
+      if (event.url.startsWith('${environment.baseUrl}/event/')) {
+        return event.url.substring('${environment.baseUrl}/event/'.length);
       }
       return event.url;
     }
@@ -165,6 +139,7 @@ export class SettingEventPageComponent {
 
   private handleEventDataError(err: any): void {
     this.error = 'Failed to load event details. Please try again.';
+    this.isLoading = false;
   }
 
   setupNameChangeListener(): void {
@@ -177,9 +152,9 @@ export class SettingEventPageComponent {
       this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
         if (value) {
           const urlSuffix = this.formatUrlFromName(value);
-          this.eventForm.get('eventURL')?.setValue(this.BASE_URL + urlSuffix);
+          this.eventForm.get('eventURL')?.setValue('${environment.baseUrl}/event/' + urlSuffix);
         } else {
-          this.eventForm.get('eventURL')?.setValue(this.BASE_URL);
+          this.eventForm.get('eventURL')?.setValue('${environment.baseUrl}/event/');
         }
       });
     }
@@ -191,7 +166,7 @@ export class SettingEventPageComponent {
     }
 
     if (!this.eventId) {
-      this.error = 'Event ID is missing';
+      this.error = 'Event ID is missing - cannot update event';
       return;
     }
 
@@ -200,7 +175,7 @@ export class SettingEventPageComponent {
       idEvent: this.eventId,
       eventName: formValues.eventName,
       timeZone: formValues.timeZone,
-      url: formValues.eventURL.replace(this.BASE_URL, '')
+      url: formValues.eventURL.replace('${environment.baseUrl}/event/', '')
     };
 
     this.isLoading = true;
@@ -218,7 +193,7 @@ export class SettingEventPageComponent {
   }
 
   private handleEventUpdated(event: any): void {
-    this.eventName = event.name;
+    this.eventName = event.eventName || event.name;
     this.eventUrl = event.url || '';
   }
 
@@ -236,7 +211,7 @@ export class SettingEventPageComponent {
 
   deleteEvent(): void {
     if (!this.eventId) {
-      this.error = 'Event ID is missing';
+      this.error = 'Event ID is missing - cannot delete event';
       return;
     }
 
@@ -253,7 +228,8 @@ export class SettingEventPageComponent {
         next: () => {
           this.router.navigate(['/']);
         },
-        error: () => {
+        error: (err) => {
+          console.error('Error deleting event:', err);
           this.error = 'Failed to delete event. Please try again.';
         }
       });
@@ -272,26 +248,18 @@ export class SettingEventPageComponent {
     }
   }
 
-  private subscribeToRouteParams(): void {
-    this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.eventId = params.get('eventId') || '';
-
-      if (this.eventId) {
-        this.loadEventData();
-      } else {
-        this.error = 'Event ID is missing';
-        this.isLoading = false;
-      }
-    });
-  }
-
   loadEventData(): void {
+    if (!this.eventId) {
+      this.error = 'Event ID is required to load event data';
+      this.isLoading = false;
+      return;
+    }
+
     this.eventService.getEventById(this.eventId)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (event) => {
           this.handleEventDataLoaded(event);
-
           this.eventUrl = event.url || '';
 
           this.eventDataService.loadEvent({
@@ -307,13 +275,6 @@ export class SettingEventPageComponent {
       });
   }
 
-  prepareTimezoneOptions(): void {
-    this.timezoneOptions = moment.tz.names().map(tz => ({
-      name: tz,
-      offset: moment.tz(tz).utcOffset()
-    })).sort((a, b) => a.offset - b.offset);
-  }
-
   updateLocalTime(timezone: string): void {
     this.dateTimeLocal = this.dateTimeUtc.clone().tz(timezone);
   }
@@ -321,5 +282,37 @@ export class SettingEventPageComponent {
   formatTimezoneOption(tz: TimezoneOption): string {
     const offsetFormatted = moment.tz(tz.name).format('Z');
     return `(GMT${offsetFormatted}) ${tz.name}`;
+  }
+
+  private subscribeToRouteParams(): void {
+    this.routeSubscription = this.route.paramMap.subscribe(params => {
+      this.eventId = params.get('eventId') || '';
+
+      if (this.eventId) {
+        this.loadEventData();
+      } else {
+        this.error = 'Event ID is missing from route parameters';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  private handleEventDataLoaded(event: any): void {
+    this.eventId = event.idEvent || this.eventId;
+    this.eventName = event.eventName || '';
+    this.eventUrl = event.url || '';
+    this.teamUrl = event.teamUrl || '';
+    this.teamId = event.teamId || '';
+    this.currentUserRole = 'Owner';
+
+    const urlSuffix: string = this.extractOrGenerateUrlSuffix(event);
+
+    this.eventForm.patchValue({
+      eventName: event.eventName || '',
+      eventURL: '${environment.baseUrl}/event/' + urlSuffix
+    });
+
+    this.setupNameChangeListener();
+    this.error = null;
   }
 }

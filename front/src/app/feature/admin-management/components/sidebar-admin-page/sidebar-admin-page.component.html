@@ -1,0 +1,15 @@
+<aside [ngClass]="config.containerCssClass || 'hidden lg:block bg-white p-4 ml-3 mt-4 shadow-md rounded-md sticky top-4 self-start max-h-screen overflow-y-auto'">
+  @for (button of config.buttons; track button.id) {
+    @if (button.isVisible !== false) {
+      <app-button-with-icon
+        [materialIcon]="button.materialIcon"
+        [route]="button.route"
+        [customClass]="getButtonClasses(button)"
+        [disabled]="button.isDisabled || false"
+        (itemClick)="onButtonClick(button)"
+      >
+        {{ button.label }}
+      </app-button-with-icon>
+    }
+  }
+</aside>

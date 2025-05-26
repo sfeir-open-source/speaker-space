@@ -80,12 +80,12 @@ public class EventDTO {
         this.endDate = endDate;
     }
 
-    public Boolean getIsOnline() {
+    public boolean isOnline() {
         return isOnline;
     }
 
-    public void setIsOnline(Boolean isOnline) {
-        this.isOnline = isOnline;
+    public void setOnline(boolean online) {
+        isOnline = online;
     }
 
     public String getLocation() {

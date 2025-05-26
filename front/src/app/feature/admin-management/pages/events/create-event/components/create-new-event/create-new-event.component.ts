@@ -16,6 +16,7 @@ import {
 import {InputComponent} from '../../../../../../../shared/input/input.component';
 import {EventDTO} from '../../../../../type/event/eventDTO';
 import {ButtonGreyComponent} from '../../../../../../../shared/button-grey/button-grey.component';
+import {environment} from '../../../../../../../../environments/environment.development';
 
 @Component({
   selector: 'app-create-new-event',
@@ -41,7 +42,6 @@ export class CreateNewEventComponent implements OnInit {
   private _eventService = inject(EventService);
   private _eventDataService = inject(EventDataService);
   private _route = inject(ActivatedRoute);
-  private readonly _baseUrl: string = 'https://speaker-space.io/event/';
 
   formFields: FormField[] = [
     {
@@ -70,7 +70,7 @@ export class CreateNewEventComponent implements OnInit {
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      url: [{ value: this._baseUrl, disabled: true }],
+      url: [{ value: `${environment.baseUrl}/event/`, disabled: true }],
       urlConferenceHall: [''],
       teamId: [''],
       timeZone: [this.timezoneSelector.value, Validators.required]
@@ -103,7 +103,7 @@ export class CreateNewEventComponent implements OnInit {
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '')
         .replace(/-+/g, '-') || '';
-      this.form.get('url')?.setValue(this._baseUrl + urlSuffix);
+      this.form.get('url')?.setValue(`${environment.baseUrl}/event/` + urlSuffix);
       this._eventDataService.setEventName(name || '');
     });
 

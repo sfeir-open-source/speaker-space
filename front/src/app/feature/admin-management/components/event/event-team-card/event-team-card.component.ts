@@ -15,11 +15,9 @@ export class EventTeamCardComponent {
 
   constructor(private router: Router) {}
 
-  navigateToEvent(eventId: string): void {
-    if (eventId) {
-      this.router.navigate(['/event-detail', eventId]);
-    } else {
-      console.warn('Cannot navigate: Event ID is missing');
+  navigateToEvent(eventUrl: string): void {
+    if (eventUrl) {
+      this.router.navigate(['/event-detail', eventUrl]);
     }
   }
 

@@ -3,9 +3,9 @@ export type Event = {
   eventName: string;
   description?: string;
   startDate?: string;
-  url?: string;
   endDate?: string;
   isOnline?: boolean;
+  url?: string;
   location?: string;
   isPrivate?: boolean;
   webLinkUrl?: string;

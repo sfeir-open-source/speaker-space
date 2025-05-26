@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import {catchError, map, tap} from 'rxjs/operators';
+import {catchError, tap} from 'rxjs/operators';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import { environment } from '../../../../../environments/environment.development';
 import { Event } from '../../type/event/event';
@@ -52,7 +52,7 @@ export class EventService {
   updateEvent(event: EventDTO): Observable<EventDTO> {
 
     if (!event.idEvent) {
-      return throwError(() => new Error('Event ID is missing'));
+      return throwError(() => new Error('Event ID is missing 8'));
     }
 
     return this.http.put<EventDTO>(
@@ -72,17 +72,16 @@ export class EventService {
     );
   }
 
-  getEventById(id: string): Observable<Event> {
-    return this.http.get<Event>(`${environment.apiUrl}/event/${id}`, { withCredentials: true })
+  getEventById(eventId: string): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/event/${eventId}`)
       .pipe(
-        tap(response => console.log('Event data from API:', response)),
-        map(response => {
-          return {
-            idEvent: response.idEvent || response.idEvent,
-            eventName: response.eventName || response.eventName,
-          };
-        }),
-        catchError(this.handleError('Error getting event by ID'))
+        catchError(error => {
+          return throwError(() => ({
+            error: error.error || 'Unknown error',
+            status: error.status,
+            message: 'Failed to load event'
+          }));
+        })
       );
   }
 

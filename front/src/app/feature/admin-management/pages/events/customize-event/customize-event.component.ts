@@ -1,13 +1,14 @@
-import { Component, ViewChild, ElementRef } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms";
-import { InputComponent } from "../../../../../shared/input/input.component";
-import { NavbarEventPageComponent } from "../../../components/event/navbar-event-page/navbar-event-page.component";
-import { SidebarEventComponent } from "../../../components/event/sidebar-event/sidebar-event.component";
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
 import { finalize, Subscription } from 'rxjs';
 import { FormField } from '../../../../../shared/input/interface/form-field';
 import { ActivatedRoute } from '@angular/router';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
+import {InputComponent} from '../../../../../shared/input/input.component';
+import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
+import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
+import {environment} from '../../../../../../environments/environment.development';
 
 @Component({
   selector: 'app-customize-event',
@@ -22,19 +23,20 @@ import { EventDataService } from '../../../services/event/event-data.service';
   templateUrl: './customize-event.component.html',
   styleUrl: './customize-event.component.scss'
 })
-export class CustomizeEventComponent {
+
+export class CustomizeEventComponent implements OnInit, OnDestroy {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
-  readonly BASE_URL = 'https://speaker-space.io/event/';
-
-  activeSection: string = 'settings-general';
-  eventUrl: string = '';
+  activeSection: string = 'event-customize';
   eventId: string = '';
+  eventUrl: string = '';
   eventName: string = '';
   isLoading: boolean = true;
   error: string | null = null;
   isDeleting: boolean = false;
   currentUserRole: string = '';
+  teamUrl: string = '';
+  teamId: string = '';
   eventForm: FormGroup;
   private nameChangeSubscription?: Subscription;
   private routeSubscription?: Subscription;
@@ -65,7 +67,7 @@ export class CustomizeEventComponent {
   }
 
   ngOnInit(): void {
-    this.activeSection = 'settings-general';
+    this.activeSection = 'event-customize';
     this.isLoading = true;
     this.checkForEmailModal();
     this.currentUserRole = 'Owner';
@@ -77,6 +79,47 @@ export class CustomizeEventComponent {
     if (this.selectedImageUrl) {
       URL.revokeObjectURL(this.selectedImageUrl);
     }
+  }
+
+
+  private subscribeToRouteParams(): void {
+    this.routeSubscription = this.route.paramMap.subscribe(params => {
+      this.eventId = params.get('eventId') || '';
+
+      if (this.eventId) {
+        this.loadEventData();
+      } else {
+        this.error = 'Event ID is missing from route parameters';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  loadEventData(): void {
+    if (!this.eventId) {
+      this.error = 'Event ID is required to load event data';
+      this.isLoading = false;
+      return;
+    }
+
+    this.eventService.getEventById(this.eventId)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (event) => {
+          this.handleEventDataLoaded(event);
+
+          this.eventUrl = event.url || '';
+          this.eventDataService.loadEvent({
+            idEvent: event.idEvent || this.eventId,
+            eventName: event.eventName || '',
+            teamId: event.teamId || '',
+            url: event.url || '',
+          });
+        },
+        error: (err) => {
+          this.handleEventDataError(err);
+        }
+      });
   }
 
   triggerFileInput(): void {
@@ -134,7 +177,6 @@ export class CustomizeEventComponent {
 
     this.selectedFile = file;
     this.selectedImageUrl = URL.createObjectURL(file);
-
   }
 
   removeImage(event: Event): void {
@@ -180,8 +222,8 @@ export class CustomizeEventComponent {
 
   private initializeForm(): FormGroup {
     return this.fb.group({
-      eventName: [{ value: '', disabled: false }, Validators.required],
-      eventURL: { value: '', disabled: true },
+      eventName: [{value: '', disabled: false}, Validators.required],
+      eventURL: {value: '', disabled: true},
       weblink: ['']
     });
   }
@@ -192,19 +234,20 @@ export class CustomizeEventComponent {
     }
 
     if (!this.eventId) {
-      this.error = 'Event ID is missing';
+      this.error = 'Event ID is missing - cannot update event';
       return;
     }
 
     if (this.selectedFile) {
       this.uploadImage();
     }
+
     const formValues = this.eventForm.getRawValue();
     const updatedEvent = {
       idEvent: this.eventId,
       eventName: formValues.eventName,
       timeZone: formValues.timeZone,
-      url: formValues.eventURL.replace(this.BASE_URL, ''),
+      url: formValues.eventURL.replace(`${environment.baseUrl}/event/`),
       weblink: formValues.weblink
     };
 
@@ -224,7 +267,7 @@ export class CustomizeEventComponent {
 
   private checkForEmailModal(): void {
     const params = new URLSearchParams(window.location.search);
-    const showEmailModal : string | null = params.get('showEmailModal');
+    const showEmailModal: string | null = params.get('showEmailModal');
 
     if (showEmailModal === 'true') {
       const modal = document.getElementById('crud-modal');
@@ -235,17 +278,18 @@ export class CustomizeEventComponent {
   }
 
   private handleEventDataLoaded(event: any): void {
-    console.log('Event data loaded:', event);
-
-    this.eventId = event.idEvent || '';
+    this.eventId = event.idEvent || this.eventId;
     this.eventName = event.eventName || '';
+    this.eventUrl = event.url || '';
+    this.teamUrl = event.teamUrl || '';
+    this.teamId = event.teamId || '';
     this.currentUserRole = 'Owner';
 
-    const urlSuffix : string = this.extractOrGenerateUrlSuffix(event);
+    const urlSuffix: string = this.extractOrGenerateUrlSuffix(event);
 
     this.eventForm.patchValue({
       eventName: event.eventName || '',
-      eventURL: this.BASE_URL + urlSuffix,
+      eventURL: `${environment.baseUrl}/event/` + urlSuffix,
       weblink: event.weblink || ''
     });
 
@@ -259,8 +303,8 @@ export class CustomizeEventComponent {
 
   private extractOrGenerateUrlSuffix(event: any): string {
     if (event.url) {
-      if (event.url.startsWith(this.BASE_URL)) {
-        return event.url.substring(this.BASE_URL.length);
+      if (event.url.startsWith(`${environment.baseUrl}/event/`)) {
+        return event.url.substring(`${environment.baseUrl}/event/`.length);
       }
       return event.url;
     }
@@ -277,7 +321,9 @@ export class CustomizeEventComponent {
   }
 
   private handleEventDataError(err: any): void {
+    console.error('Error loading event data:', err);
     this.error = 'Failed to load event details. Please try again.';
+    this.isLoading = false;
   }
 
   setupNameChangeListener(): void {
@@ -290,16 +336,16 @@ export class CustomizeEventComponent {
       this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
         if (value) {
           const urlSuffix = this.formatUrlFromName(value);
-          this.eventForm.get('eventURL')?.setValue(this.BASE_URL + urlSuffix);
+          this.eventForm.get('eventURL')?.setValue(`${environment.baseUrl}/event/` + urlSuffix);
         } else {
-          this.eventForm.get('eventURL')?.setValue(this.BASE_URL);
+          this.eventForm.get('eventURL')?.setValue(`${environment.baseUrl}/event/`);
         }
       });
     }
   }
 
   private handleEventUpdated(event: any): void {
-    this.eventName = event.name;
+    this.eventName = event.eventName || event.name;
     this.eventUrl = event.url || '';
   }
 
@@ -318,40 +364,5 @@ export class CustomizeEventComponent {
     if (this.routeSubscription) {
       this.routeSubscription.unsubscribe();
     }
-  }
-
-  private subscribeToRouteParams(): void {
-    this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.eventId = params.get('eventId') || '';
-
-      if (this.eventId) {
-        this.loadEventData();
-      } else {
-        this.error = 'Event ID is missing';
-        this.isLoading = false;
-      }
-    });
-  }
-
-  loadEventData(): void {
-    this.eventService.getEventById(this.eventId)
-      .pipe(finalize(() => this.isLoading = false))
-      .subscribe({
-        next: (event) => {
-          this.handleEventDataLoaded(event);
-
-          this.eventUrl = event.url || '';
-
-          this.eventDataService.loadEvent({
-            idEvent: event.idEvent || this.eventId,
-            eventName: event.eventName || '',
-            teamId: event.teamId || '',
-            url: event.url || '',
-          });
-        },
-        error: (err) => {
-          this.handleEventDataError(err);
-        }
-      });
   }
 }

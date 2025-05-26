@@ -1,45 +1,56 @@
-import {Component, Input, OnInit, SimpleChanges} from '@angular/core';
+import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {Subscription} from 'rxjs';
 import {AuthService} from '../../../../../core/login/services/auth.service';
 import {UserRoleService} from '../../../services/team/user-role.service';
+import {EventService} from '../../../services/event/event.service';
+import {TeamService} from '../../../services/team/team.service';
+import {NavbarAdminPageComponent} from '../../navbar-admin-page/navbar-admin-page.component';
+import {NavbarConfig} from '../../../type/components/navbar-config';
 
 @Component({
   selector: 'app-navbar-event-page',
   standalone: true,
   imports: [
-    ButtonGreyComponent,
+    NavbarAdminPageComponent,
   ],
   templateUrl: './navbar-event-page.component.html',
   styleUrl: './navbar-event-page.component.scss'
 })
-export class NavbarEventPageComponent implements OnInit {
-  @Input() eventUrl: string = '';
+
+export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
   @Input() eventId: string = '';
+  @Input() eventUrl: string = '';
   @Input() eventName: string = '';
   @Input() userRole: string = '';
+  @Input() teamUrl: string = '';
 
   activePage: string = '';
   currentUserRole: string = 'Member';
+  navbarConfig: NavbarConfig = { leftButtons: [] };
+
   private userSubscription?: Subscription;
   private roleSubscription?: Subscription;
+  private routerSubscription?: Subscription;
   private currentUser: any = null;
 
   constructor(
     private router: Router,
     private authService: AuthService,
-    private userRoleService: UserRoleService
+    private userRoleService: UserRoleService,
+    private eventService: EventService,
+    private teamService: TeamService
   ) {}
 
   ngOnInit(): void {
+    this.setupNavbarConfig();
     this.setActivePage();
-    this.router.events.subscribe(event => {
+
+    this.routerSubscription = this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
         this.setActivePage();
       }
     });
-
     this.userSubscription = this.authService.user$.subscribe(user => {
       this.currentUser = user;
       if (user && this.eventId) {
@@ -60,69 +71,134 @@ export class NavbarEventPageComponent implements OnInit {
     } else if (changes['eventId'] && changes['eventId'].currentValue && this.currentUser) {
       this.loadUserRole(this.currentUser.uid);
     }
+
+    if (changes['eventId'] || changes['eventUrl']) {
+      this.setupNavbarConfig();
+    }
   }
 
   ngOnDestroy(): void {
-    if (this.userSubscription) {
-      this.userSubscription.unsubscribe();
-    }
-    if (this.roleSubscription) {
-      this.roleSubscription.unsubscribe();
-    }
+    this.userSubscription?.unsubscribe();
+    this.roleSubscription?.unsubscribe();
+    this.routerSubscription?.unsubscribe();
   }
 
-  loadUserRole(userId: string): void {
+  private setupNavbarConfig(): void {
+    this.navbarConfig = {
+      leftButtons: [
+        {
+          id: 'customize',
+          label: 'Customize',
+          materialIcon: 'brush',
+          route: `/event-customize/${this.eventId}`,
+          handler: this.customize.bind(this)
+        },
+        {
+          id: 'settings',
+          label: 'Settings',
+          materialIcon: 'settings',
+          route: `/event-detail/${this.eventId}`,
+          handler: this.settings.bind(this)
+        }
+      ],
+      rightContent: 'custom-button',
+      rightButtonConfig: {
+        label: 'Event page',
+        icon: 'arrow_forward',
+        handler: this.goToEventPage.bind(this),
+        cssClass: 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'
+      }
+    };
+  }
+
+  private loadUserRole(userId: string): void {
     if (!this.eventId) return;
 
-    if (this.roleSubscription) {
-      this.roleSubscription.unsubscribe();
-    }
+    this.roleSubscription?.unsubscribe();
   }
 
-  setActivePage() {
-    const currentRoute : string = this.router.url;
-    const isMobile : boolean = window.innerWidth < 1024;
+  private setActivePage(): void {
+    const currentRoute: string = this.router.url;
 
     switch (true) {
-      case currentRoute.includes('/event/') && !currentRoute.includes('settings-'):
-        this.activePage = 'event-page';
+      case currentRoute.includes('event-customize'):
+        this.activePage = 'customize';
         break;
-
-      case currentRoute.includes('settings-general'):
+      case currentRoute.includes('event-detail'):
         this.activePage = 'settings';
         break;
-
-      case currentRoute.includes('settings-members'):
-        this.activePage = isMobile ? 'members' : 'settings';
-        break;
-
       default:
         this.activePage = '';
         break;
     }
   }
 
-  events() {
-    if (this.eventUrl) {
-      this.router.navigate(['/event', this.eventUrl]);
+  private customize(): void {
+    if (!this.eventId) {
+      console.error('Cannot navigate: Event ID is missing');
+      return;
+    }
+
+    console.log('Navigating to customize with eventId:', this.eventId);
+    this.router.navigate(['/event-customize', this.eventId]);
+  }
+
+  private settings(): void {
+    if (!this.eventId) {
+      console.error('Cannot navigate: Event ID is missing');
+      return;
+    }
+
+    console.log('Navigating to settings with eventId:', this.eventId);
+    this.router.navigate(['/event-detail', this.eventId]);
+  }
+
+  private goToEventPage(): void {
+    if (this.teamUrl) {
+      this.router.navigate(['/team', this.teamUrl]);
     } else if (this.eventId) {
-      this.router.navigate(['/event', this.eventId]);
+      this.eventService.getEventById(this.eventId).subscribe({
+        next: (event) => {
+          if (!event) {
+            return;
+          }
+
+          if (event.teamUrl && typeof event.teamUrl === 'string' && event.teamUrl.trim() !== '') {
+            this.router.navigate(['/team', event.teamUrl]);
+          } else {
+            if (event.teamId && typeof event.teamId === 'string' && event.teamId.trim() !== '') {
+              this.navigateToTeamById(event.teamId);
+            }
+          }
+        },
+        error: (err) => {
+          console.error('Error fetching event details for team navigation:', err);
+        }
+      });
     }
   }
 
-  settings() {
-    if (this.eventUrl) {
-      this.router.navigate(['/settings-general', this.eventUrl]);
-    } else if (this.eventId) {
-      this.router.navigate(['/settings-general', this.eventId]);
+  private navigateToTeamById(teamId: string): void {
+    if (!teamId || typeof teamId !== 'string' || teamId.trim() === '') {
+      return;
     }
-  }
 
-  members() {
-    if (this.eventUrl) {
-      this.router.navigate(['/settings-members', this.eventUrl]);
-    } else if (this.eventId) {
-      this.router.navigate(['/settings-members', this.eventId]);
-    }
+    this.teamService.getTeamById(teamId).subscribe({
+      next: (team) => {
+        if (!team) {
+          console.error('Team data is null or undefined for teamId:', teamId);
+          return;
+        }
+
+        if (team.url && typeof team.url === 'string' && team.url.trim() !== '') {
+          this.router.navigate(['/team', team.url]);
+        } else {
+          console.warn('Team URL not found in team data for teamId:', teamId);
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching team details for teamId:', teamId, err);
+      }
+    });
   }
 }
