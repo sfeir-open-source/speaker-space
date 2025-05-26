@@ -39,9 +39,17 @@
     </article>
 
     @if (activePage === 'pageOne') {
-      <app-create-new-event></app-create-new-event>
+      <app-general-info-event
+        mode="create"
+        (formSubmitted)="onGeneralFormSubmitted($event)"
+        (goBack)="onGoBack()">
+      </app-general-info-event>
     } @else {
-      <app-information-event></app-information-event>
+      <app-information-event
+        mode="create"
+        (formSubmitted)="onInformationFormSubmitted($event)"
+        (doItLater)="onDoItLater()">
+      </app-information-event>
     }
   </section>
 </main>

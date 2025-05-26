@@ -1,0 +1,134 @@
+<article class="mt-5 w-full max-w-5xl flex-grow bg-white shadow-xs border border-gray-200 rounded-lg p-5">
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+    @for(field of formFields; track field.name) {
+      <div class="mb-4">
+        @if(getFormControl(field.name).hasError('required') && isSubmitted) {
+          <p class="text-red-500 text-sm mt-1"
+             [attr.aria-describedby]="field.name + '-error'"
+             role="alert">
+            This field is required
+          </p>
+        }
+        @if(field.name === 'name' && getFormControl(field.name).hasError('minlength') && isSubmitted) {
+          <p class="text-red-500 text-sm mt-1" role="alert">
+            Name must be at least 2 characters long
+          </p>
+        }
+        @if(field.name === 'name' && getFormControl(field.name).hasError('maxlength') && isSubmitted) {
+          <p class="text-red-500 text-sm mt-1" role="alert">
+            Name must not exceed 50 characters
+          </p>
+        }
+
+        <app-input
+          [label]="field.label"
+          [placeholder]="field.placeholder"
+          [paragraph]="field.paragraph"
+          [type]="field.type"
+          [control]="getFormControl(field.name)"
+          [name]="field.name"
+          [required]="field.required"
+          [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted">
+        </app-input>
+      </div>
+    }
+
+    @if (showVisibilitySection) {
+      <section class="mt-5">
+        <label class="block text-start text-md font-medium text-gray-700">Visibility</label>
+        <div class="mt-3 bg-white rounded-md -space-y-px">
+          <label
+            class="relative border rounded-t-md p-4 flex cursor-pointer transition-all"
+            [ngClass]="{ 'bg-indigo-100 border-indigo-200 z-10': visibility === 'private', 'border-gray-200': visibility !== 'private' }">
+            <div class="flex items-center h-5">
+              <input
+                id="visibility-private"
+                name="visibility"
+                type="radio"
+                [(ngModel)]="visibility"
+                value="private"
+                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
+                [attr.aria-describedby]="'visibility-private-description'"/>
+            </div>
+            <div class="ml-3 flex flex-col">
+              <span class="block text-sm font-medium text-gray-900">
+                Private
+              </span>
+              <span id="visibility-private-description" class="block text-sm text-gray-600">
+                This event would be available to anyone who has the link.
+              </span>
+            </div>
+          </label>
+
+          <label
+            class="relative border rounded-b-md p-4 flex cursor-pointer transition-all"
+            [ngClass]="{'bg-indigo-100 border-indigo-200 z-10': visibility === 'public','border-gray-200': visibility !== 'public'}">
+            <div class="flex items-center h-5">
+              <input
+                id="visibility-public"
+                name="visibility"
+                type="radio"
+                [(ngModel)]="visibility"
+                value="public"
+                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 cursor-pointer border-gray-300"
+                [attr.aria-describedby]="'visibility-public-description'"/>
+            </div>
+            <div class="ml-3 flex flex-col">
+              <span class="block text-sm font-medium text-gray-900">
+                Public
+              </span>
+              <span id="visibility-public-description" class="block text-sm text-gray-600">
+                This event will be available in the Speaker Space search and visible to anyone.
+              </span>
+            </div>
+          </label>
+        </div>
+      </section>
+    }
+
+    <div class="mt-20">
+      <label for="timezone-selector" class="block text-start text-md font-medium text-gray-700">
+        Event timezone
+      </label>
+      <div class="relative mt-2">
+        <select
+          id="timezone-selector"
+          [formControl]="timezoneSelector"
+          class="block w-full rounded-md bg-white px-3 py-2.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6 resize-none"
+          [attr.aria-describedby]="'timezone-description'">
+          @for(tz of timezoneOptions; track tz.name) {
+            <option [value]="tz.name">
+              {{ formatTimezoneOption(tz) }}
+            </option>
+          }
+        </select>
+        <p id="timezone-description" class="sr-only">
+          Select the timezone for your event
+        </p>
+      </div>
+    </div>
+
+    <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+
+    <div class="flex justify-end p-4">
+      @if (showGoBackButton) {
+        <app-button-grey
+          type="button"
+          (click)="onGoBack()"
+          customTextClass="text-gray-600 hover:text-gray-600"
+          class="rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm"
+          [attr.aria-label]="'Go back to previous step'">
+          Go back
+        </app-button-grey>
+      }
+
+      <app-button-green-actions
+        [type]="'submit'"
+        [materialIcon]="submitButtonIcon"
+        [attr.aria-label]="mode === 'create' ? 'Continue to next step' : 'Update event information'">
+        {{ submitButtonText }}
+      </app-button-green-actions>
+    </div>
+  </form>
+</article>

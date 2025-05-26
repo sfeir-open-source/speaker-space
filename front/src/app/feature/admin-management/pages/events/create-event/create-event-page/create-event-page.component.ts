@@ -1,17 +1,19 @@
 import {Component, OnInit} from '@angular/core';
-import {CreateNewEventComponent} from '../components/create-new-event/create-new-event.component';
 import {FormsModule} from '@angular/forms';
-import {InformationEventComponent} from '../components/information-event/information-event.component';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {EventDataService} from '../../../../services/event/event-data.service';
+import {EventService} from '../../../../services/event/event.service';
+import {InformationEventComponent} from '../../../../components/event/information-event/information-event.component';
+import {EventDTO} from '../../../../type/event/eventDTO';
+import {GeneralInfoEventComponent} from '../components/general-info-event/general-info-event.component';
 
 @Component({
   selector: 'app-create-event-page',
   standalone: true,
   imports: [
     FormsModule,
-    CreateNewEventComponent,
-    InformationEventComponent
+    InformationEventComponent,
+    GeneralInfoEventComponent
   ],
   templateUrl: './create-event-page.component.html',
   styleUrl: './create-event-page.component.scss'
@@ -23,7 +25,9 @@ export class CreateEventPageComponent implements OnInit {
 
   constructor(
     private eventDataService: EventDataService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router,
+    private eventService: EventService
   ) {}
 
   ngOnInit(): void {
@@ -41,6 +45,84 @@ export class CreateEventPageComponent implements OnInit {
     this.eventDataService.nextStep$.subscribe(() => {
       this.activePage = 'pageTwo';
     });
+  }
+
+  onGeneralFormSubmitted(eventData: EventDTO): void {
+    this.eventService.createEvent(eventData).subscribe({
+      next: (response: EventDTO) => {
+        this.eventDataService.setEventId(response.idEvent || '');
+        this.eventDataService.updateEventData({
+          conferenceHallUrl: response.conferenceHallUrl,
+          url: response.url,
+          teamId: response.teamId,
+          eventName: response.eventName,
+          timeZone: response.timeZone
+        });
+
+        this.eventDataService.goToNextStep();
+      },
+      error: (err) => {
+        console.error('Failed to create event:', err);
+        alert('Failed to create event: ' + (err.message || 'Unknown error'));
+      }
+    });
+  }
+
+  onGoBack(): void {
+    const currentEvent = this.eventDataService.getCurrentEvent();
+
+    if (currentEvent.teamId) {
+      this.router.navigate(['/team', currentEvent.teamId]);
+    } else {
+      this.router.navigate(['/events']);
+    }
+  }
+
+  onInformationFormSubmitted(formData: any): void {
+    this.eventDataService.updateEventData({
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      location: formData.location,
+      description: formData.description,
+      isOnline: formData.isOnline
+    });
+
+    const updatedEvent: EventDTO = this.eventDataService.getCurrentEvent();
+
+    if (!updatedEvent.idEvent) {
+      console.error('Event ID is missing - cannot save event');
+      return;
+    }
+
+    this.eventService.updateEvent(updatedEvent).subscribe({
+      next: (response: any) => {
+        console.log("Event information saved successfully", response);
+        this.proceedToNextStep();
+      },
+      error: (err: any) => {
+        console.error("Error saving event information:", err);
+      }
+    });
+  }
+
+  onDoItLater(): void {
+    const currentEvent: EventDTO = this.eventDataService.getCurrentEvent();
+
+    if (currentEvent.teamId) {
+      this.router.navigate(['/team', currentEvent.teamId]);
+    } else {
+      this.router.navigate(['/']);
+    }
+  }
+
+  private proceedToNextStep(): void {
+    const currentEvent = this.eventDataService.getCurrentEvent();
+
+    if (currentEvent.teamId) {
+      this.router.navigate(['/team', currentEvent.teamId]);
+    } else {
+      this.router.navigate(['/events']);
+    }
   }
 
   changePage(page: 'pageOne' | 'pageTwo'): void {

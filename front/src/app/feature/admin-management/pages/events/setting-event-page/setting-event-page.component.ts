@@ -3,17 +3,16 @@ import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, V
 import {finalize, Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import moment from 'moment';
-import 'moment-timezone';
-import {NgClass} from '@angular/common';
-import {InformationEventComponent} from '../create-event/components/information-event/information-event.component';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {InputComponent} from '../../../../../shared/input/input.component';
 import {DeleteEventPopupComponent} from '../../../components/event/delete-event-popup/delete-event-popup.component';
 import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
 import {TimezoneOption} from '../../../type/event/time-zone-option';
 import {FormField} from '../../../../../shared/input/interface/form-field';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
+import {EventDTO} from '../../../type/event/eventDTO';
+import {InformationEventComponent} from '../../../components/event/information-event/information-event.component';
+import {GeneralInfoEventComponent} from '../create-event/components/general-info-event/general-info-event.component';
 
 @Component({
   selector: 'app-setting-event-page',
@@ -21,12 +20,11 @@ import {EventDataService} from '../../../services/event/event-data.service';
   imports: [
     NavbarEventPageComponent,
     FormsModule,
-    InputComponent,
     ReactiveFormsModule,
     DeleteEventPopupComponent,
-    NgClass,
     InformationEventComponent,
     SidebarEventComponent,
+    GeneralInfoEventComponent,
   ],
   templateUrl: './setting-event-page.component.html',
   styleUrl: './setting-event-page.component.scss'
@@ -47,10 +45,11 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
   dateTimeLocal: moment.Moment | null = null;
   visibility: 'private' | 'public' = 'private';
   timezoneSelector = new FormControl('Europe/Paris');
-  timezoneOptions: TimezoneOption[] = [];
   eventForm: FormGroup;
   private nameChangeSubscription?: Subscription;
   private routeSubscription?: Subscription;
+  eventInformationData: Partial<EventDTO> | null = null;
+  eventGeneralData: Partial<EventDTO> | null = null
 
   formFields: FormField[] = [
     {
@@ -67,6 +66,13 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
       type: 'text',
       required: false,
       disabled: true,
+    },
+    {
+      name: 'urlConferenceHall',
+      label: 'Conference Hall Url Connexion',
+      paragraph: 'Use a conference hall existing URL if you want to synchronize conference Hall Datas',
+      type: 'text',
+      required: false,
     }
   ];
 
@@ -140,24 +146,6 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
   private handleEventDataError(err: any): void {
     this.error = 'Failed to load event details. Please try again.';
     this.isLoading = false;
-  }
-
-  setupNameChangeListener(): void {
-    if (this.nameChangeSubscription) {
-      this.nameChangeSubscription.unsubscribe();
-    }
-
-    const nameControl = this.eventForm.get('eventName');
-    if (nameControl) {
-      this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
-        if (value) {
-          const urlSuffix = this.formatUrlFromName(value);
-          this.eventForm.get('eventURL')?.setValue('${environment.baseUrl}/event/' + urlSuffix);
-        } else {
-          this.eventForm.get('eventURL')?.setValue('${environment.baseUrl}/event/');
-        }
-      });
-    }
   }
 
   onSubmit(): void {
@@ -297,6 +285,37 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  onGeneralFormSubmitted(formData: any): void {
+    if (!this.eventId) {
+      this.error = 'Event ID is missing - cannot update event';
+      return;
+    }
+
+    const updatedEvent = {
+      idEvent: this.eventId,
+      eventName: formData.eventName,
+      url: formData.url,
+      conferenceHallUrl: formData.conferenceHallUrl,
+      timeZone: formData.timeZone,
+      visibility: formData.visibility
+    };
+
+    this.isLoading = true;
+
+    this.eventService.updateEvent(updatedEvent)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => {
+          console.log("Event general information updated successfully", response);
+          this.handleEventUpdated(response);
+        },
+        error: (err) => {
+          console.error("Error updating event general information:", err);
+          this.handleEventUpdateError(err);
+        }
+      });
+  }
+
   private handleEventDataLoaded(event: any): void {
     this.eventId = event.idEvent || this.eventId;
     this.eventName = event.eventName || '';
@@ -304,15 +323,59 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
     this.teamUrl = event.teamUrl || '';
     this.teamId = event.teamId || '';
     this.currentUserRole = 'Owner';
+    this.visibility = event.visibility || 'private';
 
-    const urlSuffix: string = this.extractOrGenerateUrlSuffix(event);
+    this.eventGeneralData = {
+      eventName: event.eventName,
+      url: event.url,
+      conferenceHallUrl: event.conferenceHallUrl,
+      timeZone: event.timeZone || 'Europe/Paris'
+    };
 
-    this.eventForm.patchValue({
-      eventName: event.eventName || '',
-      eventURL: '${environment.baseUrl}/event/' + urlSuffix
-    });
+    this.eventInformationData = {
+      startDate: event.startDate,
+      endDate: event.endDate,
+      isOnline: event.isOnline,
+      location: event.location,
+      description: event.description
+    };
 
-    this.setupNameChangeListener();
+    if (event.timeZone) {
+      this.timezoneSelector.setValue(event.timeZone);
+    }
+
     this.error = null;
   }
+
+  onInformationFormSubmitted(formData: any): void {
+    this.eventDataService.updateEventData({
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      location: formData.location,
+      description: formData.description,
+      isOnline: formData.isOnline
+    });
+
+    const updatedEvent = this.eventDataService.getCurrentEvent();
+
+    if (!updatedEvent.idEvent) {
+      this.error = 'Event ID is missing - cannot update event';
+      return;
+    }
+
+    this.eventService.updateEvent(updatedEvent).subscribe({
+      next: (response) => {
+        console.log("Event information updated successfully", response);
+
+        if (this.teamUrl) {
+          this.router.navigate(['/team', this.teamUrl]);
+        }
+      },
+      error: (err) => {
+        console.error("Error updating event information:", err);
+        this.error = 'Failed to update event information. Please try again.';
+      }
+    });
+  }
 }
+

@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CreateNewEventComponent } from './create-new-event.component';
+import { GeneralInfoEventComponent } from './general-info-event.component';
 
 describe('CreateEventPageComponent', () => {
-  let component: CreateNewEventComponent;
-  let fixture: ComponentFixture<CreateNewEventComponent>;
+  let component: GeneralInfoEventComponent;
+  let fixture: ComponentFixture<GeneralInfoEventComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CreateNewEventComponent]
+      imports: [GeneralInfoEventComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CreateNewEventComponent);
+    fixture = TestBed.createComponent(GeneralInfoEventComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
