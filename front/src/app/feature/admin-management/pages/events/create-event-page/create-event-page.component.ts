@@ -1,11 +1,11 @@
 import {Component, OnInit} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
-import {EventDataService} from '../../../../services/event/event-data.service';
-import {EventService} from '../../../../services/event/event.service';
-import {InformationEventComponent} from '../../../../components/event/information-event/information-event.component';
-import {EventDTO} from '../../../../type/event/eventDTO';
-import {GeneralInfoEventComponent} from '../components/general-info-event/general-info-event.component';
+import {InformationEventComponent} from '../../../components/event/information-event/information-event.component';
+import {GeneralInfoEventComponent} from '../../../components/event/general-info-event/general-info-event.component';
+import {EventDataService} from '../../../services/event/event-data.service';
+import {EventService} from '../../../services/event/event.service';
+import {EventDTO} from '../../../type/event/eventDTO';
 
 @Component({
   selector: 'app-create-event-page',

@@ -12,9 +12,6 @@ import {
   ListEventPageComponent
 } from './feature/admin-management/pages/events/list-event-page/list-event-page.component';
 import {
-  CreateEventPageComponent
-} from './feature/admin-management/pages/events/create-event/create-event-page/create-event-page.component';
-import {
   SettingTeamGeneralPageComponent
 } from './feature/admin-management/pages/team/setting-team-general-page/setting-team-general-page.component';
 import {
@@ -26,6 +23,9 @@ import {
 import {
   CustomizeEventComponent
 } from './feature/admin-management/pages/events/customize-event/customize-event.component';
+import {
+  CreateEventPageComponent
+} from './feature/admin-management/pages/events/create-event-page/create-event-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},

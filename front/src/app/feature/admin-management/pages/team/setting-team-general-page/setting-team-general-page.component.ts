@@ -12,6 +12,12 @@ import {TeamMemberService} from '../../../services/team/team-member.service';
 import {AuthService} from '../../../../../core/login/services/auth.service';
 import {TeamMember} from '../../../type/team/team-member';
 import {environment} from '../../../../../../environments/environment.development';
+import {DangerZoneConfig} from '../../../type/components/danger-zone';
+import {DangerZoneComponent} from '../../../components/danger-zone/danger-zone.component';
+import {DeleteConfirmationConfig} from '../../../type/components/delete-confirmation';
+import {
+  DeleteConfirmationPopupComponent
+} from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -21,7 +27,9 @@ import {environment} from '../../../../../../environments/environment.developmen
     NavbarTeamPageComponent,
     FormsModule,
     DeleteTeamPopupComponent,
-    SidebarTeamComponent
+    SidebarTeamComponent,
+    DangerZoneComponent,
+    DeleteConfirmationPopupComponent
   ],
   templateUrl: './setting-team-general-page.component.html',
   styleUrl: './setting-team-general-page.component.scss'
@@ -296,5 +304,38 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     if (this.routeSubscription) {
       this.routeSubscription.unsubscribe();
     }
+  }
+
+  get dangerZoneConfig(): DangerZoneConfig {
+    return {
+      title: 'Danger zone',
+      entityName: this.teamName,
+      entityType: 'team',
+      showArchiveSection: false,
+      isDeleting: this.isDeleting,
+      currentUserRole: this.currentUserRole
+    };
+  }
+
+  onDangerZoneDelete(): void {
+    this.confirmDeleteTeam();
+  }
+
+  get deleteConfirmationConfig(): DeleteConfirmationConfig {
+    return {
+      entityType: 'team',
+      entityName: this.teamName,
+      title: 'Confirm Team Deletion',
+      confirmButtonText: 'Delete permanently',
+      loadingText: 'Deleting...'
+    };
+  }
+
+  onDeleteConfirmed(): void {
+    this.deleteTeam();
+  }
+
+  onDeleteCancelled(): void {
+    this.cancelDeleteTeam();
   }
 }

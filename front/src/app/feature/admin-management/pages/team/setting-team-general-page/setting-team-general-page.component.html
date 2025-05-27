@@ -52,38 +52,22 @@
           </article>
 
           @if (currentUserRole === 'Owner') {
-            <article class="w-full items-center bg-white shadow-md border-2 border-red-300 rounded-lg mt-5">
-              <header class="p-4">
-                <h1 class="text-xl font-medium">Danger zone</h1>
-              </header>
-              <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
-              <section class="p-4">
-                <h2 class="text-lg font-medium">Delete this team</h2>
-                <div class="flex items-center justify-between mt-2">
-                  <p class="text-sm text-gray-800 flex-1 mr-4">
-                    This will <strong class="font-medium text-black">permanently delete the "{{ teamName }}"</strong> team, events, speakers proposals, reviews, comments, schedule, and settings. This action cannot be undone.
-                  </p>
-                  <button
-                    type="button"
-                    [disabled]="isDeleting"
-                    (click)="confirmDeleteTeam()"
-                    class="bg-white hover:bg-gray-100 text-red-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
-                    <span class="material-symbols-outlined mr-2">delete</span>
-                    <span>Delete team</span>
-                  </button>
-                </div>
-              </section>
-            </article>
+            <app-danger-zone
+              [config]="dangerZoneConfig"
+              [isDeleting]="isDeleting"
+              [currentUserRole]="currentUserRole"
+              (deleteAction)="onDangerZoneDelete()">
+            </app-danger-zone>
           }
         </form>
       }
-      <app-delete-team-popup
-        [teamName]="teamName"
+      <app-delete-confirmation-popup
+        [config]="deleteConfirmationConfig"
         [isOpen]="showDeleteConfirmation"
         [isDeleting]="isDeleting"
-        (confirm)="deleteTeam()"
-        (cancel)="cancelDeleteTeam()">
-      </app-delete-team-popup>
+        (confirm)="onDeleteConfirmed()"
+        (cancel)="onDeleteCancelled()">
+      </app-delete-confirmation-popup>
     </section>
   </main>
 </div>

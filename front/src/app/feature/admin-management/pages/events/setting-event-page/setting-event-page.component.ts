@@ -12,7 +12,14 @@ import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {InformationEventComponent} from '../../../components/event/information-event/information-event.component';
-import {GeneralInfoEventComponent} from '../create-event/components/general-info-event/general-info-event.component';
+import {GeneralInfoEventComponent} from '../../../components/event/general-info-event/general-info-event.component';
+import {DangerZoneConfig} from '../../../type/components/danger-zone';
+import {DangerZoneComponent} from '../../../components/danger-zone/danger-zone.component';
+import {ArchiveEventPopupComponent} from '../../../components/event/archive-event-popup/archive-event-popup.component';
+import {DeleteConfirmationConfig} from '../../../type/components/delete-confirmation';
+import {
+  DeleteConfirmationPopupComponent
+} from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
 
 @Component({
   selector: 'app-setting-event-page',
@@ -25,6 +32,9 @@ import {GeneralInfoEventComponent} from '../create-event/components/general-info
     InformationEventComponent,
     SidebarEventComponent,
     GeneralInfoEventComponent,
+    DangerZoneComponent,
+    ArchiveEventPopupComponent,
+    DeleteConfirmationPopupComponent,
   ],
   templateUrl: './setting-event-page.component.html',
   styleUrl: './setting-event-page.component.scss'
@@ -50,6 +60,8 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
   private routeSubscription?: Subscription;
   eventInformationData: Partial<EventDTO> | null = null;
   eventGeneralData: Partial<EventDTO> | null = null
+  showArchiveConfirmation: boolean = false;
+  isArchiving: boolean = false;
 
   formFields: FormField[] = [
     {
@@ -122,25 +134,6 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
         modal.classList.remove('hidden');
       }
     }
-  }
-
-  private extractOrGenerateUrlSuffix(event: any): string {
-    if (event.url) {
-      if (event.url.startsWith('${environment.baseUrl}/event/')) {
-        return event.url.substring('${environment.baseUrl}/event/'.length);
-      }
-      return event.url;
-    }
-
-    return this.formatUrlFromName(event.eventName || '');
-  }
-
-  private formatUrlFromName(name: string): string {
-    return name.trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/-+/g, '-');
   }
 
   private handleEventDataError(err: any): void {
@@ -223,10 +216,6 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
       });
   }
 
-  getFormControl(name: string): FormControl {
-    return this.eventForm.get(name) as FormControl;
-  }
-
   private unsubscribeAll(): void {
     if (this.nameChangeSubscription) {
       this.nameChangeSubscription.unsubscribe();
@@ -265,11 +254,6 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
 
   updateLocalTime(timezone: string): void {
     this.dateTimeLocal = this.dateTimeUtc.clone().tz(timezone);
-  }
-
-  formatTimezoneOption(tz: TimezoneOption): string {
-    const offsetFormatted = moment.tz(tz.name).format('Z');
-    return `(GMT${offsetFormatted}) ${tz.name}`;
   }
 
   private subscribeToRouteParams(): void {
@@ -376,6 +360,60 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
         this.error = 'Failed to update event information. Please try again.';
       }
     });
+  }
+
+  get dangerZoneConfig(): DangerZoneConfig {
+    return {
+      title: 'Danger zone',
+      entityName: this.eventName,
+      entityType: 'event',
+      showArchiveSection: true,
+      isDeleting: this.isDeleting || this.isArchiving,
+      currentUserRole: this.currentUserRole
+    };
+  }
+
+  onDangerZoneArchive(): void {
+    this.confirmArchiveEvent();
+  }
+
+  onDangerZoneDelete(): void {
+    this.confirmDeleteEvent();
+  }
+
+  confirmArchiveEvent(): void {
+    this.showArchiveConfirmation = true;
+  }
+
+  cancelArchiveEvent(): void {
+    this.showArchiveConfirmation = false;
+  }
+
+  archiveEvent(): void {
+    if (!this.eventId) {
+      this.error = 'Event ID is missing - cannot archive event';
+      return;
+    }
+
+    this.isArchiving = true;
+  }
+
+  get deleteConfirmationConfig(): DeleteConfirmationConfig {
+    return {
+      entityType: 'event',
+      entityName: this.eventName,
+      title: 'Confirm Event Deletion',
+      confirmButtonText: 'Delete permanently',
+      loadingText: 'Deleting...'
+    };
+  }
+
+  onDeleteConfirmed(): void {
+    this.deleteEvent();
+  }
+
+  onDeleteCancelled(): void {
+    this.cancelDeleteEvent();
   }
 }
 

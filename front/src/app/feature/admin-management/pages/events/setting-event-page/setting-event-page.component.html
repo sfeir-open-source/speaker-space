@@ -48,44 +48,31 @@
         </app-information-event>
 
         @if (currentUserRole === 'Owner') {
-          <article class="w-full items-center bg-white shadow-md border-2 border-red-300 rounded-lg mt-5">
-            <header class="p-4">
-              <h2 class="text-xl font-medium text-red-600">Danger Zone</h2>
-              <p class="mt-2 text-sm text-gray-600">
-                Irreversible and destructive actions
-              </p>
-            </header>
-
-            <hr class="border-red-200">
-
-            <footer class="p-4">
-              <div class="flex justify-between items-center">
-                <div>
-                  <h3 class="text-lg font-medium text-gray-900">Delete this event</h3>
-                  <p class="text-sm text-gray-600">
-                    Once you delete an event, there is no going back. Please be certain.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  (click)="confirmDeleteEvent()"
-                  class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md cursor-pointer transition-colors"
-                  [attr.aria-label]="'Delete event: ' + eventName">
-                  Delete event
-                </button>
-              </div>
-            </footer>
-          </article>
+          <app-danger-zone
+            [config]="dangerZoneConfig"
+            [isDeleting]="isDeleting || isArchiving"
+            [currentUserRole]="currentUserRole"
+            (archiveAction)="onDangerZoneArchive()"
+            (deleteAction)="onDangerZoneDelete()">
+          </app-danger-zone>
         }
       }
 
-      <app-delete-event-popup
+      <app-archive-event-popup
         [eventName]="eventName"
+        [isOpen]="showArchiveConfirmation"
+        [isArchiving]="isArchiving"
+        (confirm)="archiveEvent()"
+        (cancel)="cancelArchiveEvent()">
+      </app-archive-event-popup>
+
+      <app-delete-confirmation-popup
+        [config]="deleteConfirmationConfig"
         [isOpen]="showDeleteConfirmation"
         [isDeleting]="isDeleting"
-        (confirm)="deleteEvent()"
-        (cancel)="cancelDeleteEvent()">
-      </app-delete-event-popup>
+        (confirm)="onDeleteConfirmed()"
+        (cancel)="onDeleteCancelled()">
+      </app-delete-confirmation-popup>
     </section>
   </main>
 </div>
