@@ -4,7 +4,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Subscription } from 'rxjs';
 import {InputComponent} from '../../../../../shared/input/input.component';
 import {NavbarTeamPageComponent} from '../../../components/team/navbar-team-page/navbar-team-page.component';
-import {DeleteTeamPopupComponent} from '../../../components/team/delete-team-popup/delete-team-popup.component';
 import {SidebarTeamComponent} from '../../../components/team/sidebar-team/sidebar-team.component';
 import {FormField} from '../../../../../shared/input/interface/form-field';
 import {TeamService} from '../../../services/team/team.service';
@@ -26,7 +25,6 @@ import {
     InputComponent,
     NavbarTeamPageComponent,
     FormsModule,
-    DeleteTeamPopupComponent,
     SidebarTeamComponent,
     DangerZoneComponent,
     DeleteConfirmationPopupComponent

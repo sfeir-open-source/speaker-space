@@ -4,9 +4,7 @@ import {finalize, Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import moment from 'moment';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {DeleteEventPopupComponent} from '../../../components/event/delete-event-popup/delete-event-popup.component';
 import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
-import {TimezoneOption} from '../../../type/event/time-zone-option';
 import {FormField} from '../../../../../shared/input/interface/form-field';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
@@ -28,7 +26,6 @@ import {
     NavbarEventPageComponent,
     FormsModule,
     ReactiveFormsModule,
-    DeleteEventPopupComponent,
     InformationEventComponent,
     SidebarEventComponent,
     GeneralInfoEventComponent,
