@@ -13,7 +13,6 @@ public class EventMapper {
 
     private static final Logger logger = LoggerFactory.getLogger(EventMapper.class);
 
-
     public EventDTO convertToDTO(Event event) {
         if(event == null){
             return null;
@@ -31,7 +30,7 @@ public class EventMapper {
             eventDTO.setEndDate(event.getEndDate().toDate().toInstant().toString());
         }
 
-        eventDTO.setOnline(event.isOnline());
+        eventDTO.setIsOnline(event.getIsOnline());
         eventDTO.setLocation(event.getLocation());
         eventDTO.setPrivate(event.isPrivate());
         eventDTO.setWebLinkUrl(event.getWebLinkUrl());
@@ -75,7 +74,7 @@ public class EventMapper {
             }
         }
 
-        event.setOnline(eventDTO.isOnline());
+        event.setIsOnline(eventDTO.getIsOnline());
         event.setLocation(eventDTO.getLocation());
         event.setPrivate(eventDTO.isPrivate());
         event.setWebLinkUrl(eventDTO.getWebLinkUrl());
@@ -89,4 +88,3 @@ public class EventMapper {
         return event;
     }
 }
-

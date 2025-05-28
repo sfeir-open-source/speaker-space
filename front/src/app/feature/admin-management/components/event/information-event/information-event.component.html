@@ -67,12 +67,20 @@
       [name]="additionalFields[0].name">
     </app-input>
 
+    <app-input
+      [label]="additionalFields[1].label"
+      [placeholder]="additionalFields[1].placeholder"
+      [type]="additionalFields[1].type"
+      [control]="getFormControl(additionalFields[1].name)"
+      [name]="additionalFields[1].name">
+    </app-input>
+
     <div class="input-markdown-container">
       <app-input
-        [label]="additionalFields[1].label"
-        [type]="additionalFields[1].type"
-        [control]="getFormControl(additionalFields[1].name)"
-        [name]="additionalFields[1].name"
+        [label]="additionalFields[2].label"
+        [type]="additionalFields[2].type"
+        [control]="getFormControl(additionalFields[2].name)"
+        [name]="additionalFields[2].name"
         [rows]="7"
         [customClass]="'!resize-none rounded-b-none border-b-0'">
       </app-input>

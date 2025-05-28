@@ -247,10 +247,6 @@ export class InformationEventComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  get showSaveButton(): boolean {
-    return this.mode === 'edit';
-  }
-
   formFields: FormField[] = [
     {
       name: 'startDate',
@@ -267,6 +263,7 @@ export class InformationEventComponent implements OnInit, OnDestroy {
   ];
 
   additionalFields: FormField[] = [
+    {name: 'webLinkUrl', label: 'Event web link', type: 'text'},
     {name: 'venueLocation', label: 'Venue location (address, city, country)', type: 'text'},
     {name: 'description', label: 'Description', type: 'textarea'}
   ];

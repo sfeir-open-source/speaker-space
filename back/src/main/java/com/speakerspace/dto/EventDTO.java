@@ -80,12 +80,12 @@ public class EventDTO {
         this.endDate = endDate;
     }
 
-    public boolean isOnline() {
+    public boolean getIsOnline() {
         return isOnline;
     }
 
-    public void setOnline(boolean online) {
-        isOnline = online;
+    public void setIsOnline(boolean isOnline) {
+        this.isOnline = isOnline;
     }
 
     public String getLocation() {
@@ -100,16 +100,8 @@ public class EventDTO {
         return isPrivate;
     }
 
-    public void setPrivate(boolean aPrivate) {
-        isPrivate = aPrivate;
-    }
-
-    public String getWebLinkUrl() {
-        return webLinkUrl;
-    }
-
-    public void setWebLinkUrl(String webLinkUrl) {
-        this.webLinkUrl = webLinkUrl;
+    public void setPrivate(boolean isPrivate) {
+        this.isPrivate = isPrivate;
     }
 
     public boolean isFinish() {
@@ -118,6 +110,14 @@ public class EventDTO {
 
     public void setFinish(boolean finish) {
         isFinish = finish;
+    }
+
+    public String getWebLinkUrl() {
+        return webLinkUrl;
+    }
+
+    public void setWebLinkUrl(String webLinkUrl) {
+        this.webLinkUrl = webLinkUrl;
     }
 
     public String getUrl() {

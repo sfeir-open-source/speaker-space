@@ -246,6 +246,7 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
     const newEvent: EventDTO = {
       eventName: formValue.name,
       url: formValue.url,
+      isOnline: formValue.isOnline,
       conferenceHallUrl: formValue.urlConferenceHall,
       timeZone: formValue.timeZone,
       teamId: formValue.teamId || this.teamId,

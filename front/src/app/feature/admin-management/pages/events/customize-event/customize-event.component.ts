@@ -1,11 +1,9 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
 import { finalize, Subscription } from 'rxjs';
-import { FormField } from '../../../../../shared/input/interface/form-field';
 import { ActivatedRoute } from '@angular/router';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
-import {InputComponent} from '../../../../../shared/input/input.component';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
 
@@ -14,7 +12,6 @@ import {SidebarEventComponent} from '../../../components/event/sidebar-event/sid
   standalone: true,
   imports: [
     FormsModule,
-    InputComponent,
     NavbarEventPageComponent,
     SidebarEventComponent,
     ReactiveFormsModule,
@@ -49,13 +46,6 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
 
   private readonly MAX_FILE_SIZE = 300 * 1024;
   private readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
-
-  otherLinkField: FormField = {
-    name: 'weblink',
-    label: 'Web Link',
-    icon: 'link',
-    type: 'text',
-  };
 
   constructor(
     private route: ActivatedRoute,
@@ -353,10 +343,6 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
 
   private handleEventUpdateError(err: any): void {
     this.error = 'Failed to update event. Please try again.';
-  }
-
-  getFormControl(name: string): FormControl {
-    return this.eventForm.get(name) as FormControl;
   }
 
   private unsubscribeAll(): void {
