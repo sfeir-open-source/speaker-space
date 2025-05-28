@@ -8,6 +8,7 @@
 <div class="px-10 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
   <main class="flex">
     <app-sidebar-event [eventId]="eventId"></app-sidebar-event>
+
     <section class="flex-1 p-4">
       @if (isLoading) {
         <div class="flex justify-center items-center h-40" role="status" aria-label="Loading event data">
@@ -24,25 +25,31 @@
 
       @if (!isLoading && !error) {
         <article class="w-full items-center bg-white shadow-md rounded-lg mb-5">
-          <header class="p-4">
-            <h1 class="text-xl font-medium">General</h1>
+          <header class="p-4 flex items-center justify-between">
+              <h1 class="text-xl font-medium">General Information</h1>
+              <p class="mt-1 sm:mt-0 text-xs text-gray-600">
+                Please note that if the data is modified, it is automatically saved!
+              </p>
           </header>
 
-          <div class="px-4 pb-4">
+          <div class="">
             <app-general-info-event
               mode="edit"
               [initialData]="eventGeneralData"
-              [initialVisibility]="visibility"
-              (formSubmitted)="onGeneralFormSubmitted($event)">
+              [initialVisibility]="visibility">
             </app-general-info-event>
           </div>
         </article>
 
-        <app-information-event
-          mode="edit"
-          [initialData]="eventInformationData"
-          (formSubmitted)="onInformationFormSubmitted($event)">
-        </app-information-event>
+        <article class="w-full items-center bg-white shadow-md rounded-lg">
+          <header class="flex items-center justify-between p-4">
+              <h1 class="text-xl font-medium">Event Details</h1>
+          </header>
+            <app-information-event
+              mode="edit"
+              [initialData]="eventInformationData">
+            </app-information-event>
+      </article>
 
         @if (currentUserRole === 'Owner') {
           <app-danger-zone

@@ -1,6 +1,6 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Subscription} from 'rxjs';
+import {BehaviorSubject, Subject, Subscription} from 'rxjs';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {InputComponent} from '../../../../../shared/input/input.component';
@@ -8,6 +8,12 @@ import {EventDTO} from '../../../type/event/eventDTO';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {TeamService} from '../../../services/team/team.service';
 import {FormField} from '../../../../../shared/input/interface/form-field';
+import {SaveStatus} from '../../../../../core/types/save-status.types';
+import {AutoSaveService} from '../../services/auto-save.service';
+import {EventService} from '../../../services/event/event.service';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-indicator.component';
+import {AsyncPipe} from '@angular/common';
 
 @Component({
   selector: 'app-information-event',
@@ -17,12 +23,14 @@ import {FormField} from '../../../../../shared/input/interface/form-field';
     ButtonGreyComponent,
     ReactiveFormsModule,
     FormsModule,
-    InputComponent
+    InputComponent,
+    SaveIndicatorComponent,
+    AsyncPipe
   ],
   templateUrl: './information-event.component.html',
   styleUrl: './information-event.component.scss'
 })
-export class InformationEventComponent implements OnInit {
+export class InformationEventComponent implements OnInit, OnDestroy {
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() initialData: Partial<EventDTO> | null = null;
 
@@ -37,11 +45,17 @@ export class InformationEventComponent implements OnInit {
   eventName: string = '';
   currentEvent: EventDTO = {} as EventDTO;
 
-  private subscriptions: Subscription = new Subscription();
+  saveStatus$ = new BehaviorSubject<SaveStatus>('idle');
+
+  private autoSaveDestroy$ = new Subject<void>();
+  private subscriptions = new Subscription();
 
   constructor(
     private fb: FormBuilder,
+    private autoSaveService: AutoSaveService,
+    private eventService: EventService,
     private eventDataService: EventDataService,
+    private snackBar: MatSnackBar,
     private teamService: TeamService
   ) {
     this.initializeForm();
@@ -52,11 +66,14 @@ export class InformationEventComponent implements OnInit {
 
     if (this.initialData && this.mode === 'edit') {
       this.loadInitialData(this.initialData);
+      this.setupAutoSave();
     }
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.autoSaveDestroy$.next();
+    this.autoSaveDestroy$.complete();
   }
 
   private initializeForm(): void {
@@ -135,14 +152,58 @@ export class InformationEventComponent implements OnInit {
     return d.toISOString().split('T')[0];
   }
 
-  async onSubmit(): Promise<void> {
-    this.isSubmitted = true;
-
-    if (this.form.invalid) {
+  private setupAutoSave(): void {
+    if (this.mode !== 'edit' || !this.initialData?.idEvent) {
       return;
     }
 
-    if (!this.validateDates()) {
+    const { saveStatus$, destroy$ } = this.autoSaveService.setupAutoSave<EventDTO>(
+      this.form,
+      (data: EventDTO) => this.eventService.updateEvent(data),
+      {
+        extractValidFields: () => this.extractValidEventData(),
+        onSaveStart: () => {
+          this.form.markAsPristine();
+        },
+        onSaveSuccess: (result: EventDTO) => {
+          console.log('Event information auto-saved successfully:', result);
+        },
+        onSaveError: (error: any) => {
+          console.error('Auto-save failed:', error);
+          this.snackBar.open('Erreur lors de la sauvegarde automatique', 'Fermer', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+          this.form.markAsDirty();
+        }
+      }
+    );
+
+    this.saveStatus$ = saveStatus$ as BehaviorSubject<SaveStatus>;
+    this.autoSaveDestroy$ = destroy$;
+  }
+
+  private extractValidEventData(): EventDTO {
+    const formValue = this.form.value;
+
+    return {
+      idEvent: this.initialData?.idEvent,
+      startDate: formValue.startDate ? new Date(formValue.startDate).toISOString() : undefined,
+      endDate: formValue.endDate ? new Date(formValue.endDate).toISOString() : undefined,
+      location: formValue.venueLocation,
+      description: formValue.description,
+      isOnline: formValue.isOnline
+    } as EventDTO;
+  }
+
+  async onSubmit(): Promise<void> {
+    if (this.mode === 'edit') {
+      return;
+    }
+
+    this.isSubmitted = true;
+
+    if (this.form.invalid || !this.validateDates()) {
       return;
     }
 
@@ -156,6 +217,14 @@ export class InformationEventComponent implements OnInit {
     };
 
     this.formSubmitted.emit(formData);
+  }
+
+  get showNavigationButtons(): boolean {
+    return this.mode === 'create';
+  }
+
+  get showAutoSaveIndicator(): boolean {
+    return this.mode === 'edit';
   }
 
   onDoItLater(): void {
@@ -176,10 +245,6 @@ export class InformationEventComponent implements OnInit {
     }
 
     return true;
-  }
-
-  get showNavigationButtons(): boolean {
-    return this.mode === 'create';
   }
 
   get showSaveButton(): boolean {

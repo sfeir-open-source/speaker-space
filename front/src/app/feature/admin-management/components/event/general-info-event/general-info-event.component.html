@@ -1,4 +1,11 @@
-<article class="w-full max-w-5xl flex-grow bg-white shadow-xs rounded-lg">
+<article class="w-full max-w-5xl flex-grow bg-white shadow-xs rounded-lg p-5">
+  @if (showAutoSaveIndicator) {
+    <app-save-indicator
+      [status]="saveStatus$ | async"
+      position="bottom-right">
+    </app-save-indicator>
+  }
+
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
     @for(field of formFields; track field.name) {
@@ -115,7 +122,7 @@
       </section>
     }
 
-    <div class="mt-20">
+    <div class="mt-20 mb-6">
       <label for="timezone-selector" class="block text-start text-md font-medium text-gray-700">
         Event timezone
       </label>
@@ -137,26 +144,25 @@
       </div>
     </div>
 
-    <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+    @if (showGoBackButton) {
+      <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
 
-    <div class="flex justify-end p-4">
-      @if (showGoBackButton) {
-        <app-button-grey
-          type="button"
-          (click)="onGoBack()"
-          customTextClass="text-gray-600 hover:text-gray-600"
-          class="rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm"
-          [attr.aria-label]="'Go back to previous step'">
-          Go back
-        </app-button-grey>
-      }
+      <div class="flex justify-end p-4">
+          <app-button-grey
+            type="button"
+            (click)="onGoBack()"
+            customTextClass="text-gray-600 hover:text-gray-600"
+            class="rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+            Go back
+          </app-button-grey>
 
-      <app-button-green-actions
-        [type]="'submit'"
-        [materialIcon]="submitButtonIcon"
-        [attr.aria-label]="mode === 'create' ? 'Continue to next step' : 'Update event information'">
-        {{ submitButtonText }}
-      </app-button-green-actions>
-    </div>
+          <app-button-green-actions
+            [type]="'submit'"
+            [materialIcon]="submitButtonIcon">
+            {{ submitButtonText }}
+          </app-button-green-actions>
+
+      </div>
+    }
   </form>
 </article>

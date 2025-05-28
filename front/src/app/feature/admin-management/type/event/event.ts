@@ -1,4 +1,5 @@
 export type Event = {
+  teamUrl: string;
   idEvent?: string;
   eventName: string;
   description?: string;

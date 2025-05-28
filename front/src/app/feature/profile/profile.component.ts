@@ -1,5 +1,5 @@
 import { Component, ElementRef, inject, OnInit, AfterViewInit, signal, OnDestroy } from '@angular/core';
-import {FormGroup, ReactiveFormsModule} from '@angular/forms';
+import { ReactiveFormsModule} from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ProfileSidebarComponent } from './components/profile-sidebar/profile-sidebar.component';
@@ -8,11 +8,11 @@ import { BiographyComponent } from './components/biography/biography.component';
 import { SocialNetworksComponent } from './components/social-networks/social-networks.component';
 import { NavbarProfileComponent } from './components/navbar-profile/navbar-profile.component';
 import {CommonModule} from '@angular/common';
-import {SaveIndicatorComponent} from './components/save-indicator/save-indicator.component';
-import {SaveStatus} from './types/save-status.types';
 import {ProfileService} from './services/profile.service';
 import {UserStateService} from '../../core/services/user-services/user-state.service';
 import {User} from '../../core/models/user.model';
+import {SaveIndicatorComponent} from '../../core/save-indicator/save-indicator.component';
+import {SaveStatus} from '../../core/types/save-status.types';
 
 @Component({
   selector: 'app-profile',

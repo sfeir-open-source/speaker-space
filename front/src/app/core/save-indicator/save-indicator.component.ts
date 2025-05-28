@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {SaveStatus} from '../../types/save-status.types';
+import {SaveStatus} from '../types/save-status.types';
 
 @Component({
   selector: 'app-save-indicator',

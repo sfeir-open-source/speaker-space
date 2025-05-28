@@ -114,6 +114,7 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
             eventName: event.eventName || '',
             teamId: event.teamId || '',
             url: event.url || '',
+            teamUrl: event.teamUrl,
           });
         },
         error: (err) => {
@@ -248,7 +249,8 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
       eventName: formValues.eventName,
       timeZone: formValues.timeZone,
       url: formValues.eventURL.replace(this.BASE_URL, ''),
-      weblink: formValues.weblink
+      weblink: formValues.weblink,
+      teamUrl: formValues.teamUrln,
     };
 
     this.isLoading = true;

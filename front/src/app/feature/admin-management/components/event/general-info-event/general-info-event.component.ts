@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import moment from 'moment';
 import 'moment-timezone';
-import {Subscription} from 'rxjs';
+import {BehaviorSubject, Subject, Subscription} from 'rxjs';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {InputComponent} from '../../../../../shared/input/input.component';
@@ -15,11 +15,16 @@ import {TeamService} from '../../../services/team/team.service';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {environment} from '../../../../../../environments/environment.development';
 import {FormField} from '../../../../../shared/input/interface/form-field';
+import {SaveStatus} from '../../../../../core/types/save-status.types';
+import {AutoSaveService} from '../../services/auto-save.service';
+import {EventService} from '../../../services/event/event.service';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-indicator.component';
 
 @Component({
   selector: 'app-general-info-event',
   standalone: true,
-  imports: [CommonModule, ButtonGreenActionsComponent, InputComponent, ReactiveFormsModule, ButtonGreyComponent, FormsModule],
+  imports: [CommonModule, ButtonGreenActionsComponent, InputComponent, ReactiveFormsModule, ButtonGreyComponent, FormsModule, SaveIndicatorComponent],
   templateUrl: './general-info-event.component.html',
   styleUrl: './general-info-event.component.scss'
 })
@@ -41,14 +46,20 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
   timezoneSelector = new FormControl('Europe/Paris');
   timezoneOptions: TimezoneOption[] = [];
   teams: Team[] = [];
+  saveStatus$ = new BehaviorSubject<SaveStatus>('idle');
 
   private _teamService = inject(TeamService);
   private _eventDataService = inject(EventDataService);
   private _route = inject(ActivatedRoute);
-
+  private autoSaveDestroy$ = new Subject<void>();
   private subscriptions: Subscription = new Subscription();
 
-  constructor(private fb: FormBuilder) {
+  constructor(
+    private fb: FormBuilder,
+    private autoSaveService: AutoSaveService,
+    private eventService: EventService,
+    private snackBar: MatSnackBar
+  ) {
     this.prepareTimezoneOptions();
   }
 
@@ -59,6 +70,7 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
 
     if (this.initialData && this.mode === 'edit') {
       this.loadInitialData(this.initialData);
+      this.setupAutoSave();
     }
 
     this.updateLocalTime(this.timezoneSelector.value || 'Europe/Paris');
@@ -66,6 +78,53 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.autoSaveDestroy$.next();
+    this.autoSaveDestroy$.complete();
+  }
+
+  private setupAutoSave(): void {
+    if (this.mode !== 'edit' || !this.initialData?.idEvent) {
+      return;
+    }
+
+    const { saveStatus$, destroy$ } = this.autoSaveService.setupAutoSave<EventDTO>(
+      this.form,
+      (data: EventDTO) => this.eventService.updateEvent(data),
+      {
+        extractValidFields: () => this.extractValidEventData(),
+        onSaveStart: () => {
+          this.form.markAsPristine();
+        },
+        onSaveSuccess: (result: EventDTO) => {
+          console.log('Event auto-saved successfully:', result);
+        },
+        onSaveError: (error: any) => {
+          console.error('Auto-save failed:', error);
+          this.snackBar.open('Erreur lors de la sauvegarde automatique', 'Fermer', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+          this.form.markAsDirty();
+        },
+        debounceTime: 2000
+      }
+    );
+
+    this.saveStatus$ = saveStatus$ as BehaviorSubject<SaveStatus>;
+    this.autoSaveDestroy$ = destroy$;
+  }
+
+  private extractValidEventData(): EventDTO {
+    const formValue = this.form.getRawValue();
+
+    return {
+      idEvent: this.initialData?.idEvent,
+      eventName: formValue.eventName,
+      url: formValue.eventURL?.replace(`${environment.baseUrl}/event/`, '') || '',
+      conferenceHallUrl: formValue.urlConferenceHall,
+      timeZone: formValue.timeZone,
+      isPrivate: formValue.visibility === 'private'
+    } as EventDTO;
   }
 
   private initializeForm(): void {
@@ -172,6 +231,10 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(): void {
+    if (this.mode === 'edit') {
+      return;
+    }
+
     this.isSubmitted = true;
 
     if (this.form.invalid) {
@@ -180,28 +243,21 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
     }
 
     const formValue = this.form.getRawValue();
+    const newEvent: EventDTO = {
+      eventName: formValue.name,
+      url: formValue.url,
+      conferenceHallUrl: formValue.urlConferenceHall,
+      timeZone: formValue.timeZone,
+      teamId: formValue.teamId || this.teamId,
+      teamUrl: formValue.teamUrl,
+    };
 
-    if (this.mode === 'create') {
-      const newEvent: EventDTO = {
-        eventName: formValue.name,
-        url: formValue.url,
-        conferenceHallUrl: formValue.urlConferenceHall,
-        timeZone: formValue.timeZone,
-        teamId: formValue.teamId || this.teamId
-      };
+    this.formSubmitted.emit(newEvent);
+  }
 
-      this.formSubmitted.emit(newEvent);
-    } else {
-      const updatedEvent = {
-        eventName: formValue.eventName,
-        url: formValue.eventURL?.replace(`${environment.baseUrl}/event/`, '') || '',
-        conferenceHallUrl: formValue.urlConferenceHall,
-        timeZone: formValue.timeZone,
-        visibility: formValue.visibility
-      };
 
-      this.formSubmitted.emit(updatedEvent);
-    }
+  get showAutoSaveIndicator(): boolean {
+    return this.mode === 'edit';
   }
 
   onGoBack(): void {
