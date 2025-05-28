@@ -10,13 +10,12 @@ import {TeamService} from '../../../services/team/team.service';
 import {TeamMemberService} from '../../../services/team/team-member.service';
 import {AuthService} from '../../../../../core/login/services/auth.service';
 import {TeamMember} from '../../../type/team/team-member';
-import {environment} from '../../../../../../environments/environment.development';
-import {DangerZoneConfig} from '../../../type/components/danger-zone';
 import {DangerZoneComponent} from '../../../components/danger-zone/danger-zone.component';
-import {DeleteConfirmationConfig} from '../../../type/components/delete-confirmation';
 import {
   DeleteConfirmationPopupComponent
 } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
+import {DeleteConfirmationConfig} from '../../../type/components/delete-confirmation';
+import {DangerZoneConfig} from '../../../type/components/danger-zone';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -33,15 +32,16 @@ import {
   styleUrl: './setting-team-general-page.component.scss'
 })
 export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
+  readonly BASE_URL = 'https://speaker-space.io/team/';
 
   activeSection: string = 'settings-general';
-  teamUrl : string = '';
-  teamId : string = '';
-  teamName: string  = '';
-  isLoading : boolean = true;
+  teamUrl: string = '';
+  teamId: string = '';
+  teamName: string = '';
+  isLoading: boolean = true;
   error: string | null = null;
-  isDeleting : boolean = false;
-  showDeleteConfirmation : boolean = false;
+  isDeleting: boolean = false;
+  showDeleteConfirmation: boolean = false;
   currentUserRole: string = '';
 
   teamForm: FormGroup;
@@ -168,7 +168,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
     this.teamForm.patchValue({
       teamName: team.name,
-      teamURL: `${environment.baseUrl}/team/` + urlSuffix
+      teamURL: this.BASE_URL + urlSuffix
     });
 
     this.setupNameChangeListener();
@@ -184,8 +184,8 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
   private extractOrGenerateUrlSuffix(team: any): string {
     if (team.url) {
-      if (team.url.startsWith(`${environment.baseUrl}/team/`)) {
-        return team.url.substring(`${environment.baseUrl}/team/`.length);
+      if (team.url.startsWith(this.BASE_URL)) {
+        return team.url.substring(this.BASE_URL.length);
       }
       return team.url;
     }
@@ -215,9 +215,9 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
       this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
         if (value) {
           const urlSuffix = this.formatUrlFromName(value);
-          this.teamForm.get('teamURL')?.setValue(`${environment.baseUrl}/team/` + urlSuffix);
+          this.teamForm.get('teamURL')?.setValue(this.BASE_URL + urlSuffix);
         } else {
-          this.teamForm.get('teamURL')?.setValue(`${environment.baseUrl}/team/`);
+          this.teamForm.get('teamURL')?.setValue(this.BASE_URL);
         }
       });
     }

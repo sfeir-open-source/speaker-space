@@ -8,7 +8,6 @@ import { EventDataService } from '../../../services/event/event-data.service';
 import {InputComponent} from '../../../../../shared/input/input.component';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
-import {environment} from '../../../../../../environments/environment.development';
 
 @Component({
   selector: 'app-customize-event',
@@ -40,6 +39,7 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   eventForm: FormGroup;
   private nameChangeSubscription?: Subscription;
   private routeSubscription?: Subscription;
+  readonly BASE_URL = 'https://speaker-space.io/event/';
 
   selectedImageUrl: string | null = null;
   selectedFile: File | null = null;
@@ -247,7 +247,7 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
       idEvent: this.eventId,
       eventName: formValues.eventName,
       timeZone: formValues.timeZone,
-      url: formValues.eventURL.replace(`${environment.baseUrl}/event/`),
+      url: formValues.eventURL.replace(this.BASE_URL, ''),
       weblink: formValues.weblink
     };
 
@@ -289,7 +289,7 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
 
     this.eventForm.patchValue({
       eventName: event.eventName || '',
-      eventURL: `${environment.baseUrl}/event/` + urlSuffix,
+      eventURL: this.BASE_URL + urlSuffix,
       weblink: event.weblink || ''
     });
 
@@ -303,8 +303,8 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
 
   private extractOrGenerateUrlSuffix(event: any): string {
     if (event.url) {
-      if (event.url.startsWith(`${environment.baseUrl}/event/`)) {
-        return event.url.substring(`${environment.baseUrl}/event/`.length);
+      if (event.url.startsWith(this.BASE_URL)) {
+        return event.url.substring(this.BASE_URL.length);
       }
       return event.url;
     }
@@ -336,9 +336,9 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
       this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
         if (value) {
           const urlSuffix = this.formatUrlFromName(value);
-          this.eventForm.get('eventURL')?.setValue(`${environment.baseUrl}/event/` + urlSuffix);
+          this.eventForm.get('eventURL')?.setValue(this.BASE_URL + urlSuffix);
         } else {
-          this.eventForm.get('eventURL')?.setValue(`${environment.baseUrl}/event/`);
+          this.eventForm.get('eventURL')?.setValue(this.BASE_URL);
         }
       });
     }

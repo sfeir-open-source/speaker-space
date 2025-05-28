@@ -95,7 +95,10 @@ export class TeamService {
   }
 
   extractUrlId(url: string): string {
-    return url.includes('/') ? url.split('/').pop() || url : url;
+    if (url.includes('/team/')) {
+      return url.split('/team/').pop() || url;
+    }
+    return url;
   }
 
   private updateTeamInList(updatedTeam: Team): void {

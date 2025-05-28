@@ -9,9 +9,6 @@ import {
   CreateTeamPageComponent
 } from './feature/admin-management/pages/team/create-team-page/create-team-page.component';
 import {
-  ListEventPageComponent
-} from './feature/admin-management/pages/events/list-event-page/list-event-page.component';
-import {
   SettingTeamGeneralPageComponent
 } from './feature/admin-management/pages/team/setting-team-general-page/setting-team-general-page.component';
 import {
@@ -26,6 +23,7 @@ import {
 import {
   CreateEventPageComponent
 } from './feature/admin-management/pages/events/create-event-page/create-event-page.component';
+import {ListEventPageComponent} from './feature/admin-management/pages/team/list-event-page/list-event-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},

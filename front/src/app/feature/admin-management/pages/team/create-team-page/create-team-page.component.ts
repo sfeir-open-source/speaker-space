@@ -24,6 +24,7 @@ export class CreateTeamPageComponent {
   form: FormGroup;
   private _router : Router = inject(Router);
   private _teamService : TeamService = inject(TeamService);
+  private _baseUrl: string = 'https://speaker-space.io/team/';
 
   isSubmitted: boolean = false;
 
@@ -48,7 +49,7 @@ export class CreateTeamPageComponent {
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      url: [{value: '${environment.baseUrl}/team/', disabled: true}]
+      url: [{value: this._baseUrl, disabled: true}]
     });
   }
 
@@ -61,9 +62,9 @@ export class CreateTeamPageComponent {
           .replace(/[^a-z0-9-]/g, '')
           .replace(/-+/g, '-');
 
-        this.form.get('url')?.setValue('${environment.baseUrl}/team/' + urlSuffix);
+        this.form.get('url')?.setValue(this._baseUrl + urlSuffix);
       } else {
-        this.form.get('url')?.setValue('${environment.baseUrl}/team/');
+        this.form.get('url')?.setValue(this._baseUrl);
       }
     });
   }

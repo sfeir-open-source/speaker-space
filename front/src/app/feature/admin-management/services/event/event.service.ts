@@ -72,8 +72,8 @@ export class EventService {
     );
   }
 
-  getEventById(eventId: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/event/${eventId}`)
+  getEventById(id: string): Observable<any> {
+    return this.http.get<Event>(`${environment.apiUrl}/event/${id}`, { withCredentials: true })
       .pipe(
         catchError(error => {
           return throwError(() => ({

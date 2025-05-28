@@ -253,7 +253,7 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
       return [
         {
           name: 'name',
-          label: 'Event Name',
+          label: 'Name',
           type: 'text',
           required: true,
           placeholder: 'Enter your event name'
@@ -279,7 +279,7 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
       return [
         {
           name: 'eventName',
-          label: 'Event Name',
+          label: 'Name',
           placeholder: 'Enter your event name',
           type: 'text',
           required: true,

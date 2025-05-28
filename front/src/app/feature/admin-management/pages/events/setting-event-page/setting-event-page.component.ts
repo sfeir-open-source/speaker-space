@@ -59,11 +59,12 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
   eventGeneralData: Partial<EventDTO> | null = null
   showArchiveConfirmation: boolean = false;
   isArchiving: boolean = false;
+  readonly BASE_URL = 'https://speaker-space.io/event/';
 
   formFields: FormField[] = [
     {
       name: 'eventName',
-      label: 'Event name',
+      label: 'Name',
       placeholder: '',
       type: 'text',
       required: true,
@@ -153,7 +154,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
       idEvent: this.eventId,
       eventName: formValues.eventName,
       timeZone: formValues.timeZone,
-      url: formValues.eventURL.replace('${environment.baseUrl}/event/', '')
+      url: formValues.eventURL.replace(this.BASE_URL, '')
     };
 
     this.isLoading = true;
