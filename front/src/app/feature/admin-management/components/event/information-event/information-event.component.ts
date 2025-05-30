@@ -82,7 +82,8 @@ export class InformationEventComponent implements OnInit, OnDestroy {
       endDate: ['', Validators.required],
       isOnline: [false],
       venueLocation: [''],
-      description: ['']
+      description: [''],
+      webLinkUrl: ['']
     });
 
     this.form.get('isOnline')?.valueChanges.subscribe(isOnline => {
@@ -124,8 +125,9 @@ export class InformationEventComponent implements OnInit, OnDestroy {
     if (data.endDate) {
       this.form.get('endDate')?.setValue(this.formatDateForInput(data.endDate));
     }
-    if (data.isOnline !== undefined) {
-      this.form.get('isOnline')?.setValue(data.isOnline);
+    this.form.get('isOnline')?.setValue(data.isOnline === true);
+    if (data.webLinkUrl) {
+      this.form.get('webLinkUrl')?.setValue(data.webLinkUrl);
     }
     if (data.location) {
       this.form.get('venueLocation')?.setValue(data.location);
@@ -147,11 +149,6 @@ export class InformationEventComponent implements OnInit, OnDestroy {
     this.loadInitialData(event);
   }
 
-  private formatDateForInput(date: Date | string): string {
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
-  }
-
   private setupAutoSave(): void {
     if (this.mode !== 'edit' || !this.initialData?.idEvent) {
       return;
@@ -159,7 +156,7 @@ export class InformationEventComponent implements OnInit, OnDestroy {
 
     const { saveStatus$, destroy$ } = this.autoSaveService.setupAutoSave<EventDTO>(
       this.form,
-      (data: EventDTO) => this.eventService.updateEvent(data),
+      (data: Partial<EventDTO>) => this.eventService.updateEvent(data),
       {
         extractValidFields: () => this.extractValidEventData(),
         onSaveStart: () => {
@@ -183,17 +180,58 @@ export class InformationEventComponent implements OnInit, OnDestroy {
     this.autoSaveDestroy$ = destroy$;
   }
 
-  private extractValidEventData(): EventDTO {
+  private extractValidEventData(): Partial<EventDTO> {
     const formValue = this.form.value;
+    const data: Partial<EventDTO> = {
+      idEvent: this.initialData?.idEvent
+    };
 
-    return {
-      idEvent: this.initialData?.idEvent,
-      startDate: formValue.startDate ? new Date(formValue.startDate).toISOString() : undefined,
-      endDate: formValue.endDate ? new Date(formValue.endDate).toISOString() : undefined,
-      location: formValue.venueLocation,
-      description: formValue.description,
-      isOnline: formValue.isOnline
-    } as EventDTO;
+    if (formValue.startDate !== undefined && formValue.startDate !== this.formatDateForInput(this.initialData?.startDate)) {
+      data.startDate = formValue.startDate ? new Date(formValue.startDate).toISOString() : undefined;
+    }
+
+    if (formValue.endDate !== undefined && formValue.endDate !== this.formatDateForInput(this.initialData?.endDate)) {
+      data.endDate = formValue.endDate ? new Date(formValue.endDate).toISOString() : undefined;
+    }
+
+    if (formValue.venueLocation !== this.initialData?.location) {
+      data.location = formValue.venueLocation;
+    }
+
+    if (formValue.description !== this.initialData?.description) {
+      data.description = formValue.description;
+    }
+
+    if (formValue.isOnline !== this.initialData?.isOnline) {
+      data.isOnline = formValue.isOnline;
+    }
+
+    if (formValue.webLinkUrl !== this.initialData?.webLinkUrl) {
+      data.webLinkUrl = formValue.webLinkUrl;
+    }
+
+    return data;
+  }
+
+
+  validateDates(): boolean {
+    const startDate = this.form.value.startDate ? new Date(this.form.value.startDate) : null;
+    const endDate = this.form.value.endDate ? new Date(this.form.value.endDate) : null;
+
+    this.form.get('endDate')?.setErrors(null);
+
+    if (startDate && endDate && endDate <= startDate) {
+      this.form.get('endDate')?.setErrors({'endBeforeStart': true});
+      return false;
+    }
+
+    return true;
+  }
+
+  private formatDateForInput(date: Date | string | undefined): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toISOString().split('T')[0];
   }
 
   async onSubmit(): Promise<void> {
@@ -213,7 +251,8 @@ export class InformationEventComponent implements OnInit, OnDestroy {
       endDate: formValues.endDate ? new Date(formValues.endDate).toISOString() : undefined,
       location: formValues.venueLocation,
       description: formValues.description,
-      isOnline: formValues.isOnline
+      isOnline: formValues.isOnline,
+      webLinkUrl: formValues.webLinkUrl,
     };
 
     this.formSubmitted.emit(formData);
@@ -233,18 +272,6 @@ export class InformationEventComponent implements OnInit, OnDestroy {
 
   getFormControl(name: string): FormControl {
     return this.form.get(name) as FormControl;
-  }
-
-  validateDates(): boolean {
-    const startDate = this.form.value.startDate ? new Date(this.form.value.startDate) : null;
-    const endDate = this.form.value.endDate ? new Date(this.form.value.endDate) : null;
-
-    if (startDate && endDate && startDate > endDate) {
-      this.form.get('endDate')?.setErrors({'endBeforeStart': true});
-      return false;
-    }
-
-    return true;
   }
 
   formFields: FormField[] = [

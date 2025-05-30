@@ -40,6 +40,7 @@ public class EventMapper {
         eventDTO.setConferenceHallUrl(event.getConferenceHallUrl());
         eventDTO.setTeamId(event.getTeamId());
         eventDTO.setTimeZone(event.getTimeZone());
+        eventDTO.setLogoBase64(event.getLogoBase64());
 
         return eventDTO;
     }
@@ -55,28 +56,20 @@ public class EventMapper {
         event.setDescription(eventDTO.getDescription());
 
         if (eventDTO.getStartDate() != null && !eventDTO.getStartDate().isEmpty()) {
-            try {
-                Instant instant = Instant.parse(eventDTO.getStartDate());
-                event.setStartDate(com.google.cloud.Timestamp.ofTimeSecondsAndNanos(
-                        instant.getEpochSecond(), instant.getNano()));
-            } catch (Exception e) {
-                logger.error("Failed to parse start date: {}", eventDTO.getStartDate(), e);
-            }
+            event.setStartDate(parseStringToTimestamp(eventDTO.getStartDate()));
         }
 
         if (eventDTO.getEndDate() != null && !eventDTO.getEndDate().isEmpty()) {
-            try {
-                Instant instant = Instant.parse(eventDTO.getEndDate());
-                event.setEndDate(com.google.cloud.Timestamp.ofTimeSecondsAndNanos(
-                        instant.getEpochSecond(), instant.getNano()));
-            } catch (Exception e) {
-                logger.error("Failed to parse end date: {}", eventDTO.getEndDate(), e);
-            }
+            event.setEndDate(parseStringToTimestamp(eventDTO.getEndDate()));
         }
 
         event.setIsOnline(eventDTO.getIsOnline());
         event.setLocation(eventDTO.getLocation());
-        event.setPrivate(eventDTO.isPrivate());
+        Boolean isPrivate = eventDTO.getIsPrivate();
+        if (isPrivate == null) {
+            isPrivate = true;
+        }
+        event.setPrivate(isPrivate);
         event.setWebLinkUrl(eventDTO.getWebLinkUrl());
         event.setFinish(eventDTO.isFinish());
         event.setUrl(eventDTO.getUrl());
@@ -84,7 +77,19 @@ public class EventMapper {
         event.setConferenceHallUrl(eventDTO.getConferenceHallUrl());
         event.setTeamId(eventDTO.getTeamId());
         event.setTimeZone(eventDTO.getTimeZone());
+        event.setLogoBase64(eventDTO.getLogoBase64());
 
         return event;
+    }
+
+    private com.google.cloud.Timestamp parseStringToTimestamp(String dateString) {
+        try {
+            Instant instant = Instant.parse(dateString);
+            return com.google.cloud.Timestamp.ofTimeSecondsAndNanos(
+                    instant.getEpochSecond(), instant.getNano());
+        } catch (Exception e) {
+            logger.error("Failed to parse date: {}", dateString, e);
+            throw new IllegalArgumentException("Invalid date format: " + dateString, e);
+        }
     }
 }

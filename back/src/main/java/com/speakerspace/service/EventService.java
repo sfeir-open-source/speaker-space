@@ -4,10 +4,9 @@ import com.speakerspace.dto.EventDTO;
 import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.repository.EventRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -34,6 +33,10 @@ public class EventService {
         if (event.getUrl() == null || event.getUrl().isEmpty()) {
             String urlSuffix = generateUrlSuffix(event.getEventName());
             event.setUrl(BASE_URL + urlSuffix);
+        }
+
+        if (eventDTO.getIsPrivate() == null) {
+            eventDTO.setPrivate(true);
         }
 
         event.setUserCreateId(currentUserId);
@@ -75,13 +78,116 @@ public class EventService {
             throw new RuntimeException("Event not found");
         }
 
-        Event eventToUpdate = eventMapper.convertToEntity(eventDTO);
-
-        eventToUpdate.setUserCreateId(existingEvent.getUserCreateId());
+        Event eventToUpdate = mergeEventDataCorrectly(existingEvent, eventDTO);
+        updateFinishStatus(eventToUpdate);
+        validateEventDates(eventToUpdate);
 
         Event updatedEvent = eventRepository.save(eventToUpdate);
-
         return eventMapper.convertToDTO(updatedEvent);
+    }
+
+    private Event mergeEventDataCorrectly(Event existing, EventDTO updates) {
+        Event merged = existing;
+        if (updates.getEventName() != null) {
+            merged.setEventName(updates.getEventName());
+            String newUrl = generateFullUrl(updates.getEventName());
+            merged.setUrl(newUrl);
+        }
+
+        if (updates.getDescription() != null) {
+            merged.setDescription(updates.getDescription());
+        }
+
+        if (updates.getLocation() != null) {
+            merged.setLocation(updates.getLocation());
+        }
+
+        if (updates.getWebLinkUrl() != null) {
+            merged.setWebLinkUrl(updates.getWebLinkUrl());
+        }
+
+        if (updates.getConferenceHallUrl() != null) {
+            merged.setConferenceHallUrl(updates.getConferenceHallUrl());
+        }
+
+        if (updates.getIsOnline() != null) {
+            merged.setIsOnline(updates.getIsOnline());
+        }
+
+        if (updates.getIsPrivate() != null) {
+            merged.setPrivate(updates.getIsPrivate());
+        }
+
+        if (updates.getStartDate() != null && !updates.getStartDate().isEmpty()) {
+            merged.setStartDate(parseStringToTimestamp(updates.getStartDate()));
+        }
+
+        if (updates.getEndDate() != null && !updates.getEndDate().isEmpty()) {
+            merged.setEndDate(parseStringToTimestamp(updates.getEndDate()));
+        }
+
+        if (updates.getTimeZone() != null) {
+            merged.setTimeZone(updates.getTimeZone());
+        }
+
+        if (updates.isFinish() != null) {
+            merged.setFinish(updates.isFinish());
+        }
+
+        if (updates.getLogoBase64() != null) {
+            merged.setLogoBase64(updates.getLogoBase64());
+        }
+
+        return merged;
+    }
+
+    private String generateFullUrl(String eventName) {
+        String urlSuffix = eventName.trim()
+                .toLowerCase()
+                .replaceAll("\\s+", "-")
+                .replaceAll("[^a-z0-9-]", "")
+                .replaceAll("-+", "-");
+
+        return "http://localhost:4200/event/" + urlSuffix;
+    }
+
+    private void updateFinishStatus(Event event) {
+        if (event.getEndDate() != null) {
+            Instant endInstant = Instant.ofEpochSecond(
+                    event.getEndDate().getSeconds(),
+                    event.getEndDate().getNanos()
+            );
+            Instant now = Instant.now();
+
+            event.setFinish(endInstant.isBefore(now));
+        }
+    }
+
+    private void validateEventDates(Event event) {
+        if (event.getStartDate() != null && event.getEndDate() != null) {
+            Instant startInstant = Instant.ofEpochSecond(
+                    event.getStartDate().getSeconds(),
+                    event.getStartDate().getNanos()
+            );
+            Instant endInstant = Instant.ofEpochSecond(
+                    event.getEndDate().getSeconds(),
+                    event.getEndDate().getNanos()
+            );
+
+            if (endInstant.isBefore(startInstant)) {
+                throw new IllegalArgumentException("End date must be after start date");
+            }
+        }
+    }
+
+    private com.google.cloud.Timestamp parseStringToTimestamp(String dateString) {
+        try {
+            Instant instant = Instant.parse(dateString);
+            return com.google.cloud.Timestamp.ofTimeSecondsAndNanos(
+                    instant.getEpochSecond(), instant.getNano());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid date format: " + dateString, e);
+        }
     }
 
     public boolean deleteEvent(String id) {

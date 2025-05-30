@@ -7,7 +7,7 @@ public class EventDTO {
     private String endDate;
     private String url;
     private String startDate;
-    private boolean isOnline;
+    private Boolean isOnline;
     private String location;
     private boolean isPrivate;
     private String webLinkUrl;
@@ -16,9 +16,10 @@ public class EventDTO {
     private String conferenceHallUrl;
     private String teamId;
     private String timeZone;
+    private String logoBase64;
 
 
-    public EventDTO(String idEvent, String eventName, String description, String startDate, String endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone) {
+    public EventDTO(String idEvent, String eventName, String description, String startDate, String endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone, String logoBase64) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
@@ -34,6 +35,7 @@ public class EventDTO {
         this.userCreateId = userCreateId;
         this.teamId = teamId;
         this.timeZone = timeZone;
+        this.logoBase64 = logoBase64;
     }
 
     public EventDTO() {
@@ -80,11 +82,11 @@ public class EventDTO {
         this.endDate = endDate;
     }
 
-    public boolean getIsOnline() {
+    public Boolean getIsOnline() {
         return isOnline;
     }
 
-    public void setIsOnline(boolean isOnline) {
+    public void setIsOnline(Boolean isOnline) {
         this.isOnline = isOnline;
     }
 
@@ -96,20 +98,20 @@ public class EventDTO {
         this.location = location;
     }
 
-    public boolean isPrivate() {
+    public Boolean getIsPrivate() {
         return isPrivate;
     }
 
-    public void setPrivate(boolean isPrivate) {
+    public void setPrivate(Boolean isPrivate) {
         this.isPrivate = isPrivate;
     }
 
-    public boolean isFinish() {
+    public Boolean isFinish() {
         return isFinish;
     }
 
-    public void setFinish(boolean finish) {
-        isFinish = finish;
+    public void setFinish(Boolean isFinish) {
+        this.isFinish = isFinish;
     }
 
     public String getWebLinkUrl() {
@@ -158,5 +160,13 @@ public class EventDTO {
 
     public void setTimeZone(String timeZone) {
         this.timeZone = timeZone;
+    }
+
+    public String getLogoBase64() {
+        return logoBase64;
+    }
+
+    public void setLogoBase64(String logoBase64) {
+        this.logoBase64 = logoBase64;
     }
 }

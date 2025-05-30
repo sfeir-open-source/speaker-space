@@ -20,14 +20,16 @@ export class EventService {
     this.loadUserEvents();
   }
 
-  updateEvent(event: EventDTO): Observable<EventDTO> {
+  updateEvent(event: Partial<EventDTO>): Observable<EventDTO> {
     if (!event.idEvent) {
       return throwError(() => new Error('Event ID is missing'));
     }
 
+    const cleanEvent = this.removeUndefinedFields(event);
+
     return this.http.put<EventDTO>(
       `${environment.apiUrl}/event/${event.idEvent}`,
-      event,
+      cleanEvent,
       {
         headers: new HttpHeaders({
           'Content-Type': 'application/json'
@@ -44,6 +46,16 @@ export class EventService {
         return this.handleError('Error updating event')(error);
       })
     );
+  }
+
+  private removeUndefinedFields(obj: any): any {
+    const cleaned: any = {};
+    Object.keys(obj).forEach(key => {
+      if (obj[key] !== undefined && obj[key] !== null) {
+        cleaned[key] = obj[key];
+      }
+    });
+    return cleaned;
   }
 
   getEventById(id: string): Observable<EventDTO> {
@@ -118,9 +130,5 @@ export class EventService {
         }),
         catchError(this.handleError('Error deleting event'))
       );
-  }
-
-  uploadEventLogo(eventId: string, formData: FormData): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/events/${eventId}/logo`, formData);
   }
 }

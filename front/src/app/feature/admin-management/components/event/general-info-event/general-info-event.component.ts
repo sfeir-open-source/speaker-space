@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import moment from 'moment';
 import 'moment-timezone';
-import {BehaviorSubject, Subject, Subscription} from 'rxjs';
+import {BehaviorSubject, debounceTime, Subject, Subscription} from 'rxjs';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {InputComponent} from '../../../../../shared/input/input.component';
@@ -89,7 +89,7 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
 
     const { saveStatus$, destroy$ } = this.autoSaveService.setupAutoSave<EventDTO>(
       this.form,
-      (data: EventDTO) => this.eventService.updateEvent(data),
+      (data: Partial<EventDTO>) => this.eventService.updateEvent(data),
       {
         extractValidFields: () => this.extractValidEventData(),
         onSaveStart: () => {
@@ -112,19 +112,18 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
 
     this.saveStatus$ = saveStatus$ as BehaviorSubject<SaveStatus>;
     this.autoSaveDestroy$ = destroy$;
-  }
+    this.subscriptions.add(
+      this.timezoneSelector.valueChanges.pipe(
+        debounceTime(500)
+      ).subscribe(timezone => {
+        this.updateLocalTime(timezone || 'Europe/Paris');
+        this.form.get('timeZone')?.setValue(timezone);
 
-  private extractValidEventData(): EventDTO {
-    const formValue = this.form.getRawValue();
-
-    return {
-      idEvent: this.initialData?.idEvent,
-      eventName: formValue.eventName,
-      url: formValue.eventURL?.replace(`${environment.baseUrl}/event/`, '') || '',
-      conferenceHallUrl: formValue.urlConferenceHall,
-      timeZone: formValue.timeZone,
-      isPrivate: formValue.visibility === 'private'
-    } as EventDTO;
+        if (this.mode === 'edit' && timezone !== this.initialData?.timeZone) {
+          this.form.markAsDirty();
+        }
+      })
+    );
   }
 
   private initializeForm(): void {
@@ -193,7 +192,6 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
         }) || new Subscription()
       );
     }
-
     this.subscriptions.add(
       this.timezoneSelector.valueChanges.subscribe(timezone => {
         this.updateLocalTime(timezone || 'Europe/Paris');
@@ -202,18 +200,49 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
     );
   }
 
+  private extractValidEventData(): Partial<EventDTO> {
+    const formValue = this.form.getRawValue();
+
+    const data: Partial<EventDTO> = {
+      idEvent: this.initialData?.idEvent
+    };
+
+    if (formValue.eventName !== undefined && formValue.eventName !== this.initialData?.eventName) {
+      data.eventName = formValue.eventName;
+    }
+
+    if (formValue.urlConferenceHall !== undefined && formValue.urlConferenceHall !== this.initialData?.conferenceHallUrl) {
+      data.conferenceHallUrl = formValue.urlConferenceHall;
+    }
+
+    if (formValue.timeZone !== undefined && formValue.timeZone !== this.initialData?.timeZone) {
+      data.timeZone = formValue.timeZone;
+    }
+
+    const currentIsPrivate = formValue.visibility === 'private';
+    const initialIsPrivate = this.initialData?.isPrivate;
+
+    if (currentIsPrivate !== initialIsPrivate) {
+      data.isPrivate = currentIsPrivate;
+    }
+
+    return data;
+  }
+
   private loadInitialData(data: Partial<EventDTO>): void {
     if (this.mode === 'edit') {
       const fullUrl: string = data.url ?
         (data.url.startsWith('http') ? data.url : `${environment.baseUrl}/event/${data.url}`)
         : '';
 
+      const visibility = data.isPrivate ? 'private' : 'public';
+
       this.form.patchValue({
         eventName: data.eventName || '',
         eventURL: fullUrl,
         urlConferenceHall: data.conferenceHallUrl || '',
         timeZone: data.timeZone || 'Europe/Paris',
-        visibility: data.isPrivate || this.initialVisibility
+        visibility: visibility
       });
 
       if (data.timeZone) {
@@ -251,6 +280,7 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
       timeZone: formValue.timeZone,
       teamId: formValue.teamId || this.teamId,
       teamUrl: formValue.teamUrl,
+      isPrivate: true,
     };
 
     this.formSubmitted.emit(newEvent);

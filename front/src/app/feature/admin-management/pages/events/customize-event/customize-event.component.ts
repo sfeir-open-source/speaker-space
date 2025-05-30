@@ -71,6 +71,184 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     }
   }
 
+  private compressImage(file: File): Promise<File> {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d')!;
+      const img = new Image();
+
+      img.onload = () => {
+        const maxSize = 500;
+        let { width, height } = img;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height = height * (maxSize / width);
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width = width * (maxSize / height);
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+          } else {
+            resolve(file);
+          }
+        }, 'image/jpeg', 0.8);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  private async uploadImage(): Promise<void> {
+    if (!this.selectedFile || !this.eventId) {
+      return;
+    }
+
+    this.isUploading = true;
+    this.uploadError = null;
+
+    try {
+      const compressedFile = await this.compressImage(this.selectedFile);
+
+      if (compressedFile.size > this.MAX_FILE_SIZE) {
+        this.uploadError = 'L\'image est encore trop volumineuse après compression. Essayez une image plus petite.';
+        return;
+      }
+
+      const base64Image = await this.convertToBase64(compressedFile);
+
+      const updateData = {
+        idEvent: this.eventId,
+        logoBase64: base64Image
+      };
+
+      this.eventService.updateEvent(updateData).subscribe({
+        next: (response) => {
+          console.log('Logo saved successfully:', response);
+          this.selectedImageUrl = base64Image;
+          if (this.selectedImageUrl && this.selectedImageUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(this.selectedImageUrl);
+          }
+        },
+        error: (err) => {
+          console.error('Upload error:', err);
+          this.uploadError = 'Erreur lors de la sauvegarde. Veuillez réessayer.';
+        }
+      });
+
+    } catch (error) {
+      console.error('Error processing image:', error);
+      this.uploadError = 'Erreur lors du traitement de l\'image.';
+    } finally {
+      this.isUploading = false;
+    }
+  }
+
+  removeImage(event: Event): void {
+    event.stopPropagation();
+
+    if (this.selectedImageUrl && this.selectedImageUrl.startsWith('data:image')) {
+      const updateData = {
+        idEvent: this.eventId,
+        logoBase64: undefined
+      };
+
+      this.eventService.updateEvent(updateData).subscribe({
+        next: () => {
+          console.log('Logo deleted successfully');
+        },
+        error: (err) => {
+          console.error('Error deleting logo:', err);
+          this.uploadError = 'Erreur lors de la suppression du logo.';
+        }
+      });
+    }
+
+    if (this.selectedImageUrl && this.selectedImageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(this.selectedImageUrl);
+    }
+
+    this.selectedImageUrl = null;
+    this.selectedFile = null;
+    this.uploadError = null;
+
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+  private handleEventDataLoaded(event: any): void {
+    this.eventId = event.idEvent || this.eventId;
+    this.eventName = event.eventName || '';
+    this.eventUrl = event.url || '';
+    this.teamUrl = event.teamUrl || '';
+    this.teamId = event.teamId || '';
+    this.currentUserRole = 'Owner';
+
+    const urlSuffix: string = this.extractOrGenerateUrlSuffix(event);
+
+    this.eventForm.patchValue({
+      eventName: event.eventName || '',
+      eventURL: this.BASE_URL + urlSuffix,
+      weblink: event.weblink || ''
+    });
+
+    if (event.logoBase64) {
+      this.selectedImageUrl = event.logoBase64;
+    }
+
+    this.setupNameChangeListener();
+    this.error = null;
+  }
+
+  onSubmit(): void {
+    if (this.eventForm.invalid) {
+      return;
+    }
+
+    if (!this.eventId) {
+      this.error = 'Event ID is missing - cannot update event';
+      return;
+    }
+
+    if (this.selectedFile) {
+      this.uploadImage();
+      return;
+    }
+
+    const formValues = this.eventForm.getRawValue();
+    const updatedEvent = {
+      idEvent: this.eventId,
+      eventName: formValues.eventName,
+      url: formValues.eventURL.replace(this.BASE_URL, ''),
+      webLinkUrl: formValues.weblink,
+    };
+
+    this.isLoading = true;
+
+    this.eventService.updateEvent(updatedEvent)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => {
+          this.handleEventUpdated(response);
+        },
+        error: (err) => {
+          this.handleEventUpdateError(err);
+        }
+      });
+  }
 
   private subscribeToRouteParams(): void {
     this.routeSubscription = this.route.paramMap.subscribe(params => {
@@ -170,91 +348,12 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     this.selectedImageUrl = URL.createObjectURL(file);
   }
 
-  removeImage(event: Event): void {
-    event.stopPropagation();
-
-    if (this.selectedImageUrl) {
-      URL.revokeObjectURL(this.selectedImageUrl);
-    }
-
-    this.selectedImageUrl = null;
-    this.selectedFile = null;
-    this.uploadError = null;
-
-    if (this.fileInput) {
-      this.fileInput.nativeElement.value = '';
-    }
-  }
-
-  private uploadImage(): void {
-    if (!this.selectedFile || !this.eventId) {
-      return;
-    }
-
-    this.isUploading = true;
-    this.uploadError = null;
-
-    const formData = new FormData();
-    formData.append('logo', this.selectedFile);
-    formData.append('eventId', this.eventId);
-
-    this.eventService.uploadEventLogo(this.eventId, formData)
-      .pipe(finalize(() => this.isUploading = false))
-      .subscribe({
-        next: (response) => {
-          console.log('Logo uploaded successfully:', response);
-        },
-        error: (err) => {
-          console.error('Upload error:', err);
-          this.uploadError = 'Erreur lors de l\'upload. Veuillez réessayer.';
-        }
-      });
-  }
-
   private initializeForm(): FormGroup {
     return this.fb.group({
       eventName: [{value: '', disabled: false}, Validators.required],
       eventURL: {value: '', disabled: true},
       weblink: ['']
     });
-  }
-
-  onSubmit(): void {
-    if (this.eventForm.invalid) {
-      return;
-    }
-
-    if (!this.eventId) {
-      this.error = 'Event ID is missing - cannot update event';
-      return;
-    }
-
-    if (this.selectedFile) {
-      this.uploadImage();
-    }
-
-    const formValues = this.eventForm.getRawValue();
-    const updatedEvent = {
-      idEvent: this.eventId,
-      eventName: formValues.eventName,
-      timeZone: formValues.timeZone,
-      url: formValues.eventURL.replace(this.BASE_URL, ''),
-      weblink: formValues.weblink,
-      teamUrl: formValues.teamUrln,
-    };
-
-    this.isLoading = true;
-
-    this.eventService.updateEvent(updatedEvent)
-      .pipe(finalize(() => this.isLoading = false))
-      .subscribe({
-        next: (response) => {
-          this.handleEventUpdated(response);
-        },
-        error: (err) => {
-          this.handleEventUpdateError(err);
-        }
-      });
   }
 
   private checkForEmailModal(): void {
@@ -267,30 +366,6 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
         modal.classList.remove('hidden');
       }
     }
-  }
-
-  private handleEventDataLoaded(event: any): void {
-    this.eventId = event.idEvent || this.eventId;
-    this.eventName = event.eventName || '';
-    this.eventUrl = event.url || '';
-    this.teamUrl = event.teamUrl || '';
-    this.teamId = event.teamId || '';
-    this.currentUserRole = 'Owner';
-
-    const urlSuffix: string = this.extractOrGenerateUrlSuffix(event);
-
-    this.eventForm.patchValue({
-      eventName: event.eventName || '',
-      eventURL: this.BASE_URL + urlSuffix,
-      weblink: event.weblink || ''
-    });
-
-    if (event.logoUrl) {
-      this.selectedImageUrl = event.logoUrl;
-    }
-
-    this.setupNameChangeListener();
-    this.error = null;
   }
 
   private extractOrGenerateUrlSuffix(event: any): string {
@@ -353,4 +428,23 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
       this.routeSubscription.unsubscribe();
     }
   }
+
+  private convertToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  onImageError(event: Event): void {
+    console.error('Error loading image:', event);
+    this.uploadError = 'Erreur lors du chargement de l\'image.';
+    this.selectedImageUrl = null;
+  }
+
 }

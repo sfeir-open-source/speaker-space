@@ -15,4 +15,5 @@ export type Event = {
   conferenceHallUrl?: string;
   teamId?: string;
   timeZone?: string;
+  logoBase64?: string;
 }

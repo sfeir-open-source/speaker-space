@@ -2,6 +2,8 @@ package com.speakerspace.controller;
 
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.service.EventService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,7 +16,7 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
-
+    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
     public EventController(EventService eventService) {
         this.eventService = eventService;
     }
@@ -39,7 +41,10 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EventDTO> updateEvent(@PathVariable String id, @RequestBody EventDTO eventDTO, Authentication authentication) {
+    public ResponseEntity<EventDTO> updateEvent(
+            @PathVariable String id,
+            @RequestBody EventDTO eventDTO,
+            Authentication authentication) {
 
         if (authentication == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -66,9 +71,12 @@ public class EventController {
 
             eventDTO.setUserCreateId(existingEvent.getUserCreateId());
             EventDTO updatedEvent = eventService.updateEvent(eventDTO);
-
             return ResponseEntity.ok(updatedEvent);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
+            logger.error("Error updating event: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

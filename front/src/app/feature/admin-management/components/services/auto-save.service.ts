@@ -21,9 +21,9 @@ export class AutoSaveService {
 
   setupAutoSave<T>(
     form: FormGroup,
-    saveFunction: (data: T) => Observable<T>,
+    saveFunction: (data: Partial<T>) => Observable<T>,
     options: {
-      extractValidFields: () => T;
+      extractValidFields: () => Partial<T>;
       onSaveStart?: () => void;
       onSaveSuccess?: (result: T) => void;
       onSaveError?: (error: any) => void;
@@ -41,7 +41,13 @@ export class AutoSaveService {
         takeUntil(destroy$),
         debounceTime(options.debounceTime || this.DEBOUNCE_TIME),
         distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
-        filter(() => form.valid && form.dirty) // Ne sauvegarde que si le form est valide et modifié
+        filter(() => {
+          const isValid = form.valid;
+          const isDirty = form.dirty;
+          const hasChanges = this.hasSignificantChanges(options.extractValidFields());
+
+          return isValid && isDirty && hasChanges;
+        })
       )
       .subscribe(() => {
         this.performSave(
@@ -58,9 +64,22 @@ export class AutoSaveService {
     };
   }
 
+  private hasSignificantChanges(data: any): boolean {
+    if (!data) return false;
+
+    const significantFields = Object.keys(data).filter(key => {
+      if (key === 'idEvent') return false;
+
+      const value = data[key];
+      return value !== undefined && value !== null && value !== '';
+    });
+
+    return significantFields.length > 0;
+  }
+
   private performSave<T>(
-    saveFunction: (data: T) => Observable<T>,
-    data: T,
+    saveFunction: (data: Partial<T>) => Observable<T>,
+    data: Partial<T>,
     saveStatusSubject: BehaviorSubject<SaveStatus>,
     options: {
       onSaveStart?: () => void;

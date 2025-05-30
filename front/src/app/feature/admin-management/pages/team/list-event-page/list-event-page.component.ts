@@ -73,10 +73,11 @@ export class ListEventPageComponent implements OnInit {
         idEvent: event.idEvent || '',
         title: event.eventName,
         type: 'event',
-        img: '',
+        img: event.logoBase64 || '',
         link: event.webLinkUrl || '',
         statusText: event.isFinish ? 'Closed' : 'Open',
-        publicUrl: event.url || ''
+        publicUrl: event.url || '',
+        logoBase64: event.logoBase64
       }));
   }
 

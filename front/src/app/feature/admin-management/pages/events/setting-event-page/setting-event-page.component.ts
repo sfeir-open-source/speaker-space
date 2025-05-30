@@ -16,7 +16,6 @@ import {DeleteConfirmationConfig} from '../../../type/components/delete-confirma
 import {
   DeleteConfirmationPopupComponent
 } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
-import {MatSnackBar} from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-setting-event-page',
@@ -62,7 +61,6 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
     private router: Router,
     private eventService: EventService,
     private eventDataService: EventDataService,
-    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -113,41 +111,13 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
             teamId: event.teamId || '',
             url: event.url || '',
             teamUrl: event.teamUrl,
+            webLinkUrl: event.webLinkUrl,
           });
         },
         error: (err) => {
           this.handleEventDataError(err);
         }
       });
-  }
-
-  private handleEventDataLoaded(event: any): void {
-    this.eventId = event.idEvent || this.eventId;
-    this.eventName = event.eventName || '';
-    this.eventUrl = event.url || '';
-    this.teamUrl = event.teamUrl || '';
-    this.teamId = event.teamId || '';
-    this.currentUserRole = 'Owner';
-    this.visibility = event.visibility || 'private';
-
-    this.eventGeneralData = {
-      idEvent: this.eventId,
-      eventName: event.eventName,
-      url: event.url,
-      conferenceHallUrl: event.conferenceHallUrl,
-      timeZone: event.timeZone || 'Europe/Paris'
-    };
-
-    this.eventInformationData = {
-      idEvent: this.eventId,
-      startDate: event.startDate,
-      endDate: event.endDate,
-      isOnline: event.isOnline,
-      location: event.location,
-      description: event.description
-    };
-
-    this.error = null;
   }
 
   private handleEventDataError(err: any): void {
@@ -169,16 +139,6 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
 
   cancelArchiveEvent(): void {
     this.showArchiveConfirmation = false;
-  }
-
-  archiveEvent(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID is missing - cannot archive event';
-      return;
-    }
-
-    this.isArchiving = true;
-
   }
 
   confirmDeleteEvent(): void {
@@ -243,5 +203,68 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
 
   onDeleteCancelled(): void {
     this.cancelDeleteEvent();
+  }
+
+  private handleEventDataLoaded(event: any): void {
+    this.eventId = event.idEvent || this.eventId;
+    this.eventName = event.eventName || '';
+    this.eventUrl = event.url || '';
+    this.teamUrl = event.teamUrl || '';
+    this.teamId = event.teamId || '';
+    this.currentUserRole = 'Owner';
+    this.visibility = event.isPrivate === true ? 'private' : 'public';
+
+    this.eventGeneralData = {
+      idEvent: this.eventId,
+      eventName: event.eventName,
+      url: event.url,
+      conferenceHallUrl: event.conferenceHallUrl,
+      timeZone: event.timeZone || 'Europe/Paris',
+      isPrivate: event.isPrivate === true
+    };
+
+    this.eventInformationData = {
+      idEvent: this.eventId,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      isOnline: event.isOnline,
+      location: event.location,
+      description: event.description,
+      webLinkUrl: event.webLinkUrl
+    };
+
+    this.error = null;
+  }
+
+  archiveEvent(): void {
+    if (!this.eventId) {
+      this.error = 'Event ID is missing - cannot archive event';
+      return;
+    }
+
+    this.isArchiving = true;
+
+    const archiveData: Partial<EventDTO> = {
+      idEvent: this.eventId,
+      isFinish: true
+    };
+
+    this.eventService.updateEvent(archiveData)
+      .pipe(
+        finalize(() => {
+          this.isArchiving = false;
+          this.showArchiveConfirmation = false;
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: () => {
+          this.router.navigate(['/']);
+        },
+        error: (err) => {
+          console.error('Error archiving event:', err);
+          this.error = 'Failed to archive event. Please try again.';
+        }
+      });
   }
 }

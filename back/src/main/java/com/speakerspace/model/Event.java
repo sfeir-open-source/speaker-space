@@ -9,7 +9,7 @@ public class Event {
     private String description;
     private Timestamp startDate;
     private Timestamp endDate;
-    private boolean isOnline;
+    private Boolean isOnline;
     private String url;
     private String location;
     private boolean isPrivate;
@@ -19,11 +19,12 @@ public class Event {
     private String conferenceHallUrl;
     private String teamId;
     private String timeZone;
+    private String logoBase64;
 
     public Event() {
     }
 
-    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone) {
+    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone, String logoBase64) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
@@ -39,6 +40,7 @@ public class Event {
         this.conferenceHallUrl = conferenceHallUrl;
         this.teamId = teamId;
         this.timeZone = timeZone;
+        this.logoBase64 = logoBase64;
     }
 
     public String getIdEvent() {
@@ -81,11 +83,11 @@ public class Event {
         this.endDate = endDate;
     }
 
-    public boolean getIsOnline() {
+    public Boolean getIsOnline() {
         return isOnline;
     }
 
-    public void setIsOnline(boolean isOnline) {
+    public void setIsOnline(Boolean isOnline) {
         this.isOnline = isOnline;
     }
 
@@ -159,5 +161,13 @@ public class Event {
 
     public void setTimeZone(String timeZone) {
         this.timeZone = timeZone;
+    }
+
+    public String getLogoBase64() {
+        return logoBase64;
+    }
+
+    public void setLogoBase64(String logoBase64) {
+        this.logoBase64 = logoBase64;
     }
 }

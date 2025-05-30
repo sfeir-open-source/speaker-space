@@ -56,7 +56,9 @@ export class CreateEventPageComponent implements OnInit {
           url: response.url,
           teamId: response.teamId,
           eventName: response.eventName,
-          timeZone: response.timeZone
+          timeZone: response.timeZone,
+          webLinkUrl: response.webLinkUrl,
+          isPrivate: true,
         });
 
         this.eventDataService.goToNextStep();
@@ -84,7 +86,8 @@ export class CreateEventPageComponent implements OnInit {
       endDate: formData.endDate,
       location: formData.location,
       description: formData.description,
-      isOnline: formData.isOnline
+      isOnline: formData.isOnline,
+      webLinkUrl: formData.webLinkUrl,
     });
 
     const updatedEvent: EventDTO = this.eventDataService.getCurrentEvent();

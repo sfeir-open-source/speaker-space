@@ -15,4 +15,5 @@ export type EventDTO = {
   conferenceHallUrl?: string;
   teamId?: string;
   timeZone?: string;
+  logoBase64?: string;
 }
