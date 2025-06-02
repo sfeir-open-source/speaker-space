@@ -6,8 +6,6 @@ import com.speakerspace.mapper.TeamMapper;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
 import com.speakerspace.repository.TeamRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -17,8 +15,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class TeamService {
-
-    private static final String BASE_URL = "https://speaker-space.io/team/";
 
     private final TeamMapper teamMapper;
     private final TeamRepository teamRepository;
@@ -78,9 +74,9 @@ public class TeamService {
         return allTeams;
     }
 
-    public TeamDTO getTeamByUrl(String urlId) {
-        String url = BASE_URL + urlId;
-        Team team = teamRepository.findByUrl(url);
+    public TeamDTO getTeamById(String urlId) {
+        String id = urlId;
+        Team team = teamRepository.findByIdUrl(id);
         return team != null ? teamMapper.convertToDTO(team) : null;
     }
 

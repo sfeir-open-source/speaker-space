@@ -115,12 +115,12 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
   private subscribeToRouteParams(): void {
     this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.teamUrl = params.get('teamUrl') || '';
+      this.teamId = params.get('teamId') || '';
 
-      if (this.teamUrl) {
+      if (this.teamId) {
         this.loadTeamData();
       } else {
-        this.error = 'Team URL is missing';
+        this.error = 'Team ID 2 is missing';
         this.isLoading = false;
       }
     });
@@ -128,7 +128,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
   loadTeamData(): void {
 
-    this.teamService.getTeamByUrl(this.teamUrl)
+    this.teamService.getTeamByUrl(this.teamId)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: this.handleTeamDataLoaded.bind(this),
@@ -168,7 +168,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
     this.teamForm.patchValue({
       teamName: team.name,
-      teamURL: this.BASE_URL + urlSuffix
+      teamURL: team.id
     });
 
     this.setupNameChangeListener();
@@ -183,11 +183,11 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   }
 
   private extractOrGenerateUrlSuffix(team: any): string {
-    if (team.url) {
-      if (team.url.startsWith(this.BASE_URL)) {
-        return team.url.substring(this.BASE_URL.length);
+    if (team.id) {
+      if (team.id.startsWith(this.teamId)) {
+        return team.id.substring(this.teamId.length);
       }
-      return team.url;
+      return team.id;
     }
 
     return this.formatUrlFromName(team.name);
@@ -215,9 +215,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
       this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
         if (value) {
           const urlSuffix = this.formatUrlFromName(value);
-          this.teamForm.get('teamURL')?.setValue(this.BASE_URL + urlSuffix);
-        } else {
-          this.teamForm.get('teamURL')?.setValue(this.BASE_URL);
+          this.teamForm.get('teamId')?.setValue(urlSuffix);
         }
       });
     }

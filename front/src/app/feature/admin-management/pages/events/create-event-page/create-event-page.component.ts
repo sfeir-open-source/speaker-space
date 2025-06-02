@@ -72,12 +72,12 @@ export class CreateEventPageComponent implements OnInit {
   }
 
   onGoBack(): void {
-    const currentEvent = this.eventDataService.getCurrentEvent();
+    const currentEvent: EventDTO = this.eventDataService.getCurrentEvent();
 
     if (currentEvent.teamId) {
       this.router.navigate(['/team', currentEvent.teamId]);
     } else {
-      this.router.navigate(['/events']);
+      this.router.navigate(['/']);
     }
   }
 
@@ -109,18 +109,8 @@ export class CreateEventPageComponent implements OnInit {
     });
   }
 
-  onDoItLater(): void {
-    const currentEvent: EventDTO = this.eventDataService.getCurrentEvent();
-
-    if (currentEvent.teamId) {
-      this.router.navigate(['/team', currentEvent.teamId]);
-    } else {
-      this.router.navigate(['/']);
-    }
-  }
-
   private proceedToNextStep(): void {
-    const currentEvent = this.eventDataService.getCurrentEvent();
+    const currentEvent : EventDTO = this.eventDataService.getCurrentEvent();
 
     if (currentEvent.teamId) {
       this.router.navigate(['/team', currentEvent.teamId]);

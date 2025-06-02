@@ -77,24 +77,24 @@ public class TeamRepositoryImpl implements TeamRepository {
     }
 
     @Override
-    public Team findByUrl(String url) {
+    public Team findByIdUrl(String id) {
         try {
-            logger.info("Searching for team with URL: {}", url);
+            logger.info("Searching for team with Id: {}", id);
 
             List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("url", url)
+                    .whereEqualTo("id", id)
                     .get().get().getDocuments();
 
             if (documents.isEmpty()) {
-                logger.info("No team found with URL: {}", url);
+                logger.info("No team found with ID: {}", id);
                 return null;
             }
 
-            logger.info("Team found with URL: {}", url);
+            logger.info("Team found with ID: {}", id);
             return documents.get(0).toObject(Team.class);
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding team by URL: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find team by URL", e);
+            logger.error("Error finding team by ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find team by ID", e);
         }
     }
 

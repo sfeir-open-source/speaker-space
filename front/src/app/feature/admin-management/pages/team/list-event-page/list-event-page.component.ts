@@ -41,9 +41,9 @@ export class ListEventPageComponent implements OnInit {
   ngOnInit(): void {
     this.route.paramMap.pipe(
       switchMap(params => {
-        this.teamUrl = params.get('teamUrl') || '';
+        this.teamId = params.get('teamId') || '';
         this.isLoading = true;
-        return this.teamService.getTeamByUrl(this.teamUrl);
+        return this.teamService.getTeamByUrl(this.teamId);
       }),
       switchMap(team => {
         this.teamName = team.name;

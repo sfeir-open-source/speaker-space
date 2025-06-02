@@ -12,7 +12,7 @@ import {SidebarConfig} from '../../../type/components/sidebar-config';
   styleUrl: './sidebar-team.component.scss'
 })
 export class SidebarTeamComponent {
-  @Input() teamUrl: string = '';
+  @Input() teamId: string = '';
 
   readonly sidebarConfig: SidebarConfig = {
     buttons: [

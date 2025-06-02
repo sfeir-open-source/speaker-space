@@ -92,9 +92,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.closeSidebar();
   }
 
-  navigateToTeam(teamUrl: string | undefined): void {
-    if (teamUrl) {
-      this.router.navigate(['/team', teamUrl]);
+  navigateToTeam(teamId: string | undefined): void {
+    if (teamId) {
+      this.router.navigate(['/team', teamId]);
       this.closeSidebar();
     }
   }

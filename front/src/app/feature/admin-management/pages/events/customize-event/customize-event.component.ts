@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
 import { finalize, Subscription } from 'rxjs';
-import { ActivatedRoute } from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
@@ -44,14 +44,15 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   uploadError: string | null = null;
   isDragOver: boolean = false;
 
-  private readonly MAX_FILE_SIZE = 300 * 1024;
-  private readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+  private readonly MAX_FILE_SIZE : number = 300 * 1024;
+  private readonly ALLOWED_TYPES : string[] = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
 
   constructor(
     private route: ActivatedRoute,
     private eventService: EventService,
     private eventDataService: EventDataService,
     private fb: FormBuilder,
+    private router: Router,
   ) {
     this.eventForm = this.initializeForm();
   }
@@ -248,6 +249,8 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
           this.handleEventUpdateError(err);
         }
       });
+
+    this.router.navigate(['/team', this.teamId]);
   }
 
   private subscribeToRouteParams(): void {
@@ -447,5 +450,4 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     this.uploadError = 'Erreur lors du chargement de l\'image.';
     this.selectedImageUrl = null;
   }
-
 }

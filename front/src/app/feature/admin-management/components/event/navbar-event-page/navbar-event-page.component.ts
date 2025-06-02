@@ -23,7 +23,7 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
   @Input() eventUrl: string = '';
   @Input() eventName: string = '';
   @Input() userRole: string = '';
-  @Input() teamUrl: string = '';
+  @Input() teamId: string = '';
 
   activePage: string = '';
   currentUserRole: string = 'Member';
@@ -154,8 +154,8 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private goToEventPage(): void {
-    if (this.teamUrl) {
-      this.router.navigate(['/team', this.teamUrl]);
+    if (this.teamId) {
+      this.router.navigate(['/team', this.teamId]);
     } else if (this.eventId) {
       this.eventService.getEventById(this.eventId).subscribe({
         next: (event) => {
@@ -163,12 +163,8 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
             return;
           }
 
-          if (event.teamUrl && typeof event.teamUrl === 'string' && event.teamUrl.trim() !== '') {
-            this.router.navigate(['/team', event.teamUrl]);
-          } else {
-            if (event.teamId && typeof event.teamId === 'string' && event.teamId.trim() !== '') {
-              this.navigateToTeamById(event.teamId);
-            }
+          if (event.teamId && typeof event.teamId === 'string' && event.teamId.trim() !== '') {
+            this.router.navigate(['/team', event.teamId]);
           }
         },
         error: (err) => {
@@ -190,8 +186,8 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
           return;
         }
 
-        if (team.url && typeof team.url === 'string' && team.url.trim() !== '') {
-          this.router.navigate(['/team', team.url]);
+        if (team.id && typeof team.id === 'string' && team.id.trim() !== '') {
+          this.router.navigate(['/team', team.id]);
         } else {
           console.warn('Team URL not found in team data for teamId:', teamId);
         }

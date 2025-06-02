@@ -73,8 +73,8 @@
             @for(team of teams; track team.id ?? $index) {
               <app-button-with-icon
                 materialIcon="group"
-                [route]="'/team/' + (team.url || team.id)"
-                (itemClick)="navigateToTeam(team.url || team.id)">
+                [route]="'/team/' + (team.id)"
+                (itemClick)="navigateToTeam(team.id)">
                 {{ team.name }}
               </app-button-with-icon>
             }

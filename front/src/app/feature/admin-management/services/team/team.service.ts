@@ -47,8 +47,8 @@ export class TeamService {
       );
   }
 
-  getTeamByUrl(teamUrl: string): Observable<Team> {
-    const urlId: string = this.extractUrlId(teamUrl);
+  getTeamByUrl(teamId: string): Observable<Team> {
+    const urlId: string = this.extractUrlId(teamId);
 
     return this.http.get<Team>(`${environment.apiUrl}/team/by-url/${urlId}`, { withCredentials: true })
       .pipe(

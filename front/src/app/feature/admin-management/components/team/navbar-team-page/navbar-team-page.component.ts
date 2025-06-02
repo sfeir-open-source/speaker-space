@@ -69,7 +69,7 @@ export class NavbarTeamPageComponent implements OnInit, OnChanges, OnDestroy {
       this.loadUserRole(this.currentUser.uid);
     }
 
-    if (changes['teamUrl'] || changes['teamId']) {
+    if (changes['teamId']) {
       this.setupNavbarConfig();
     }
   }
@@ -87,7 +87,7 @@ export class NavbarTeamPageComponent implements OnInit, OnChanges, OnDestroy {
           id: 'team-page',
           label: 'Events',
           materialIcon: 'star',
-          route: `/team/${this.teamUrl || this.teamId}`,
+          route: `/team/${this.teamId}`,
           handler: this.events.bind(this)
         },
         {
@@ -129,25 +129,19 @@ export class NavbarTeamPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private events(): void {
-    if (this.teamUrl) {
-      this.router.navigate(['/team', this.teamUrl]);
-    } else if (this.teamId) {
+    if (this.teamId) {
       this.router.navigate(['/team', this.teamId]);
     }
   }
 
   private settings(): void {
-    if (this.teamUrl) {
-      this.router.navigate(['/settings-general', this.teamUrl]);
-    } else if (this.teamId) {
+    if (this.teamId) {
       this.router.navigate(['/settings-general', this.teamId]);
     }
   }
 
   private members(): void {
-    if (this.teamUrl) {
-      this.router.navigate(['/settings-members', this.teamUrl]);
-    } else if (this.teamId) {
+    if (this.teamId) {
       this.router.navigate(['/settings-members', this.teamId]);
     }
   }

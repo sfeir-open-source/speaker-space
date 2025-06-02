@@ -83,7 +83,7 @@ export class CreateTeamPageComponent {
 
     this._teamService.createTeam(team).subscribe({
       next: response => {
-        const navigationTarget = response.url ?? response.id ?? '';
+        const navigationTarget = response.id ?? '';
         this._router.navigate(['/team', navigationTarget]);
       },
       error: error => {

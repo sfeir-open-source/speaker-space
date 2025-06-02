@@ -141,8 +141,8 @@ export class InformationEventComponent implements OnInit, OnDestroy {
     if (event.teamId) {
       this.teamId = event.teamId;
       this.teamService.getTeamById(event.teamId).subscribe(team => {
-        if (team?.url) {
-          this.teamUrl = team.url.split('/').pop() || null;
+        if (team?.id) {
+          this.teamId = team.id.split('/').pop() || null;
         }
       });
     }
@@ -266,7 +266,7 @@ export class InformationEventComponent implements OnInit, OnDestroy {
     return this.mode === 'edit';
   }
 
-  onDoItLater(): void {
+  onGoBack(): void {
     this.doItLater.emit();
   }
 

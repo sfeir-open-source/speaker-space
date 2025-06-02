@@ -89,14 +89,14 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
         return this.route.paramMap.pipe(
           switchMap(params => {
-            this.teamUrl = params.get('teamUrl') || '';
-            if (!this.teamUrl) {
-              this.error = 'Team URL is missing';
+            this.teamId = params.get('teamId') || '';
+            if (!this.teamId) {
+              this.error = 'Team ID 1 is missing';
               this.isLoading = false;
               return [];
             }
 
-            return this.teamService.getTeamByUrl(this.teamUrl).pipe(
+            return this.teamService.getTeamByUrl(this.teamId).pipe(
               switchMap(team => {
                 this.teamId = team.id || '';
                 this.teamName = team.name;
