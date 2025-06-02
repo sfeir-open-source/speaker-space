@@ -138,6 +138,10 @@ public class EventService {
             merged.setLogoBase64(updates.getLogoBase64());
         }
 
+        if (updates.getType() != null) {
+            merged.setType(updates.getType());
+        }
+
         return merged;
     }
 

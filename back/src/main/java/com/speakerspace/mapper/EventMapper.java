@@ -41,6 +41,7 @@ public class EventMapper {
         eventDTO.setTeamId(event.getTeamId());
         eventDTO.setTimeZone(event.getTimeZone());
         eventDTO.setLogoBase64(event.getLogoBase64());
+        eventDTO.setType(event.getType());
 
         return eventDTO;
     }
@@ -78,6 +79,7 @@ public class EventMapper {
         event.setTeamId(eventDTO.getTeamId());
         event.setTimeZone(eventDTO.getTimeZone());
         event.setLogoBase64(eventDTO.getLogoBase64());
+        event.setType(eventDTO.getType());
 
         return event;
     }

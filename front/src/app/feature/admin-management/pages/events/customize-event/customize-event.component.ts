@@ -283,6 +283,7 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
             teamId: event.teamId || '',
             url: event.url || '',
             teamUrl: event.teamUrl,
+            type: event.type,
           });
         },
         error: (err) => {

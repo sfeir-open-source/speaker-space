@@ -36,6 +36,8 @@
           [control]="getFormControl(field.name)"
           [name]="field.name"
           [required]="field.required"
+          [options]="field.options || []"
+          [disabled]="field.disabled"
           [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted">
         </app-input>
       </div>

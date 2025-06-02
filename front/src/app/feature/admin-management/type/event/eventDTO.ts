@@ -16,4 +16,5 @@ export type EventDTO = {
   teamId?: string;
   timeZone?: string;
   logoBase64?: string;
+  type: string;
 }

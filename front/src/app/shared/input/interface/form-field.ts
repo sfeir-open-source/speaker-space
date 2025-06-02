@@ -15,4 +15,5 @@ export interface FormField {
   icon?: string;
   iconPath?: string;
   staticPlaceholder?: string;
+  options?: { value: string; label: string }[];
 }

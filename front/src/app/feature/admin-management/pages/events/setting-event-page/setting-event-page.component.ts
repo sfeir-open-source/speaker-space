@@ -112,6 +112,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
             url: event.url || '',
             teamUrl: event.teamUrl,
             webLinkUrl: event.webLinkUrl,
+            type: event.type,
           });
         },
         error: (err) => {
@@ -220,7 +221,8 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
       url: event.url,
       conferenceHallUrl: event.conferenceHallUrl,
       timeZone: event.timeZone || 'Europe/Paris',
-      isPrivate: event.isPrivate === true
+      isPrivate: event.isPrivate === true,
+      type: event.type,
     };
 
     this.eventInformationData = {

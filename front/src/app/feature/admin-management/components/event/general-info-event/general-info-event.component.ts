@@ -133,7 +133,8 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
         eventURL: [{ value: '', disabled: true }],
         urlConferenceHall: [''],
         timeZone: [this.timezoneSelector.value, Validators.required],
-        visibility: [this.initialVisibility]
+        visibility: [this.initialVisibility],
+        type: ['', [Validators.required]]
       });
     } else {
       this.form = this.fb.group({
@@ -141,7 +142,8 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
         url: [{ value: `${environment.baseUrl}/event/`, disabled: true }],
         urlConferenceHall: [''],
         teamId: [''],
-        timeZone: [this.timezoneSelector.value, Validators.required]
+        timeZone: [this.timezoneSelector.value, Validators.required],
+        type: ['', [Validators.required]]
       });
     }
   }
@@ -215,6 +217,10 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
       data.conferenceHallUrl = formValue.urlConferenceHall;
     }
 
+    if (formValue.type !== undefined && formValue.type !== this.initialData?.type) {
+      data.type = formValue.type;
+    }
+
     if (formValue.timeZone !== undefined && formValue.timeZone !== this.initialData?.timeZone) {
       data.timeZone = formValue.timeZone;
     }
@@ -242,7 +248,8 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
         eventURL: fullUrl,
         urlConferenceHall: data.conferenceHallUrl || '',
         timeZone: data.timeZone || 'Europe/Paris',
-        visibility: visibility
+        visibility: visibility,
+        type : data.type,
       });
 
       if (data.timeZone) {
@@ -281,6 +288,7 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
       teamId: formValue.teamId || this.teamId,
       teamUrl: formValue.teamUrl,
       isPrivate: true,
+      type: formValue.type,
     };
 
     this.formSubmitted.emit(newEvent);
@@ -336,6 +344,11 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
   }
 
   get formFields(): FormField[] {
+    const eventTypeOptions = [
+      { value: 'conference', label: 'Conference' },
+      { value: 'meetup', label: 'Meetup' }
+    ];
+
     if (this.mode === 'create') {
       return [
         {
@@ -360,6 +373,13 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
           type: 'text',
           required: false,
           placeholder: 'https://conference-hall.io/...'
+        },
+        {
+          name: 'type',
+          label: 'Event type',
+          type: 'select',
+          required: true,
+          options: eventTypeOptions
         }
       ];
     } else {
@@ -386,6 +406,13 @@ export class GeneralInfoEventComponent implements OnInit, OnDestroy {
           type: 'text',
           required: false,
           placeholder: 'https://conference-hall.io/...'
+        },
+        {
+          name: 'type',
+          label: 'Event type',
+          type: 'select',
+          required: true,
+          options: eventTypeOptions
         }
       ];
     }

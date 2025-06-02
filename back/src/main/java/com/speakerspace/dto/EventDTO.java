@@ -17,9 +17,10 @@ public class EventDTO {
     private String teamId;
     private String timeZone;
     private String logoBase64;
+    private String type;
 
 
-    public EventDTO(String idEvent, String eventName, String description, String startDate, String endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone, String logoBase64) {
+    public EventDTO(String idEvent, String eventName, String description, String startDate, String endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone, String logoBase64, String type) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
@@ -36,6 +37,7 @@ public class EventDTO {
         this.teamId = teamId;
         this.timeZone = timeZone;
         this.logoBase64 = logoBase64;
+        this.type = type;
     }
 
     public EventDTO() {
@@ -168,5 +170,13 @@ public class EventDTO {
 
     public void setLogoBase64(String logoBase64) {
         this.logoBase64 = logoBase64;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

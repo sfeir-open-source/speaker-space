@@ -59,6 +59,7 @@ export class CreateEventPageComponent implements OnInit {
           timeZone: response.timeZone,
           webLinkUrl: response.webLinkUrl,
           isPrivate: true,
+          type : response.type,
         });
 
         this.eventDataService.goToNextStep();

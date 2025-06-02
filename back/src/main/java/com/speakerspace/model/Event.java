@@ -20,11 +20,12 @@ public class Event {
     private String teamId;
     private String timeZone;
     private String logoBase64;
+    private String type;
 
     public Event() {
     }
 
-    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone, String logoBase64) {
+    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone, String logoBase64, String type) {
         this.idEvent = idEvent;
         this.eventName = eventName;
         this.description = description;
@@ -41,6 +42,7 @@ public class Event {
         this.teamId = teamId;
         this.timeZone = timeZone;
         this.logoBase64 = logoBase64;
+        this.type = type;
     }
 
     public String getIdEvent() {
@@ -169,5 +171,13 @@ public class Event {
 
     public void setLogoBase64(String logoBase64) {
         this.logoBase64 = logoBase64;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }

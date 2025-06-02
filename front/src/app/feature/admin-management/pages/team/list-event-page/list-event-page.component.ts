@@ -72,7 +72,7 @@ export class ListEventPageComponent implements OnInit {
       .map(event => ({
         idEvent: event.idEvent || '',
         title: event.eventName,
-        type: 'event',
+        type: event.type,
         img: event.logoBase64 || '',
         link: event.webLinkUrl || '',
         statusText: event.isFinish ? 'Closed' : 'Open',

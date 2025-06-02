@@ -43,6 +43,8 @@ export class InputComponent implements OnInit, OnChanges {
   @Input() isRequired: boolean = false;
   @Input() minLength: number = 2;
   @Input() serverErrors: Record<string, string> | null = null;
+  @Input() options: { value: string; label: string }[] = [];
+
   @Output() blur : EventEmitter<void> = new EventEmitter<void>();
 
   private isInitialized : boolean = false;
@@ -200,5 +202,9 @@ export class InputComponent implements OnInit, OnChanges {
     }
 
     return messages;
+  }
+
+  get isSelect(): boolean {
+    return this.type === 'select';
   }
 }

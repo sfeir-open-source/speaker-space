@@ -11,17 +11,41 @@
   </div>
 
   <div class="relative">
-    @if(iconPath) {
+    @if(iconPath && !isSelect) {
       <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-      <span [innerHTML]="sanitizedIconPath"></span>
-    </span>
-    }@else if(hasIcon) {
+        <span [innerHTML]="sanitizedIconPath"></span>
+      </span>
+    }@else if(hasIcon && !isSelect) {
       <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-      <span class="material-icons text-gray-500">{{ icon }}</span>
-    </span>
+        <span class="material-icons text-gray-500">{{ icon }}</span>
+      </span>
     }
 
-    @if(isTextarea) {
+    @if(isSelect) {
+      <select
+        [id]="name"
+        [name]="name"
+        [formControl]="control"
+        [disabled]="disabled"
+        [attr.aria-required]="required"
+        [attr.aria-invalid]="hasError"
+        (blur)="onInputBlur()"
+        class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6 resize-none"
+        [class.border-red-300]="hasError"
+        [class.outline-red-500]="hasError"
+        [class.bg-gray-100]="disabled"
+        >
+      <option value="" disabled [selected]="!control.value">
+        {{ effectivePlaceholder || 'Select an option' }}
+      </option>
+
+      @for(option of options; track option.value) {
+        <option [value]="option.value">
+          {{ option.label }}
+        </option>
+      }
+      </select>
+    } @else if(isTextarea) {
       <textarea
         [id]="name"
         [name]="name"
