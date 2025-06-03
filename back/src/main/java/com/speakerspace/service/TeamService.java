@@ -5,23 +5,31 @@ import com.speakerspace.dto.UserDTO;
 import com.speakerspace.mapper.TeamMapper;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
+import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.TeamRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class TeamService {
 
+    private static final Logger logger = LoggerFactory.getLogger(TeamService.class);
+
     private final TeamMapper teamMapper;
+    private final EventRepository eventRepository;
     private final TeamRepository teamRepository;
     private final UserService userService;
 
-    public TeamService(TeamMapper teamMapper, TeamRepository teamRepository, UserService userService) {
+    public TeamService(TeamMapper teamMapper, EventRepository eventRepository, TeamRepository teamRepository, UserService userService) {
         this.teamMapper = teamMapper;
+        this.eventRepository = eventRepository;
         this.teamRepository = teamRepository;
         this.userService = userService;
     }
@@ -118,26 +126,33 @@ public class TeamService {
     }
 
     public boolean deleteTeam(String teamId) throws AccessDeniedException {
-        Team existingTeam = teamRepository.findById(teamId).orElse(null);
-        if (existingTeam == null) {
+        String currentUserId = userService.getCurrentUserId();
+
+        Optional<Team> teamOptional = teamRepository.findById(teamId);
+        if (teamOptional.isEmpty()) {
+            logger.warn("Attempt to delete non-existent team: {}", teamId);
             return false;
         }
 
-        String currentUserId = userService.getCurrentUserId();
+        Team team = teamOptional.get();
 
-        boolean isOwner = false;
-        for (TeamMember member : existingTeam.getMembers()) {
-            if (member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole())) {
-                isOwner = true;
-                break;
-            }
+        if (!team.getUserCreateId().equals(currentUserId)) {
+            logger.warn("User {} attempted to delete team {} without permission", currentUserId, teamId);
+            throw new AccessDeniedException("You don't have permission to delete this team");
         }
 
-        if (!isOwner) {
-            throw new AccessDeniedException("Only Owners can delete the team");
-        }
+        try {
+            int deletedEventsCount = eventRepository.deleteByTeamId(teamId);
+            logger.info("Deleted {} events associated with team {}", deletedEventsCount, teamId);
 
-        teamRepository.delete(teamId);
-        return true;
+            teamRepository.delete(teamId);
+            logger.info("Team deleted successfully: {} (with {} associated events)", teamId, deletedEventsCount);
+
+            return true;
+
+        } catch (Exception e) {
+            logger.error("Error deleting team {} and its events: {}", teamId, e.getMessage(), e);
+            throw new RuntimeException("Failed to delete team and associated events", e);
+        }
     }
 }

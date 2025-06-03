@@ -15,4 +15,5 @@ public interface EventRepository {
     boolean delete(String id);
     boolean existsByEventNameAndTeamId(String eventName, String teamId);
     boolean existsByEventNameAndTeamIdAndIdEventNot(String eventName, String teamId, String excludeEventId);
+    int deleteByTeamId(String teamId);
 }

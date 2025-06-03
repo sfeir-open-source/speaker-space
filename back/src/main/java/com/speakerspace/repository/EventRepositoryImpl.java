@@ -158,4 +158,35 @@ public class EventRepositoryImpl implements EventRepository {
             throw new RuntimeException("Failed to check event name uniqueness for update", e);
         }
     }
+
+    @Override
+    public int deleteByTeamId(String teamId) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("teamId", teamId);
+            QuerySnapshot querySnapshot = query.get().get();
+
+            List<QueryDocumentSnapshot> documents = querySnapshot.getDocuments();
+
+            if (documents.isEmpty()) {
+                logger.info("No events found for team ID: {}", teamId);
+                return 0;
+            }
+
+            WriteBatch batch = firestore.batch();
+
+            for (QueryDocumentSnapshot document : documents) {
+                batch.delete(document.getReference());
+            }
+
+            batch.commit().get();
+
+            int deletedCount = documents.size();
+            logger.info("Batch deleted {} events for team ID: {}", deletedCount, teamId);
+            return deletedCount;
+
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error batch deleting events by team ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to batch delete events by team ID", e);
+        }
+    }
 }

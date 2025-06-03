@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {BehaviorSubject, Observable, throwError} from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import {environment} from '../../../../../environments/environment.development';
@@ -77,19 +77,17 @@ export class TeamService {
       );
   }
 
-  deleteTeam(teamId: string): Observable<void> {
-    return this.http.delete<void>(`${environment.apiUrl}/team/${teamId}`, { withCredentials: true })
+  deleteTeam(teamId: string): Observable<{message: string, teamId: string}> {
+    return this.http.delete<{message: string, teamId: string}>(`${environment.apiUrl}/team/${teamId}`)
       .pipe(
-        tap(() => this.removeTeamFromList(teamId)),
-        catchError(error => {
+        catchError((error: HttpErrorResponse) => {
           if (error.status === 403) {
-            return throwError(() => ({
-              error: error.error || {},
-              status: error.status,
-              message: 'You do not have permission to delete this team. Only Owners can delete teams.',
-            }));
+            throw new Error('You don\'t have permission to delete this team');
+          } else if (error.status === 404) {
+            throw new Error('Team not found');
+          } else {
+            throw new Error('Failed to delete team');
           }
-          return this.handleError('Error deleting team')(error);
         })
       );
   }
