@@ -24,6 +24,7 @@ import {
   CreateEventPageComponent
 } from './feature/admin-management/pages/events/create-event-page/create-event-page.component';
 import {ListEventPageComponent} from './feature/admin-management/pages/team/list-event-page/list-event-page.component';
+import {SessionPageComponent} from './feature/admin-management/pages/events/session-page/session-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -37,6 +38,7 @@ export const routes: Routes = [
   { path: 'settings-members/:teamId', component: SettingTeamMembersPageComponent },
   { path: 'event-detail/:eventId', component: SettingEventPageComponent },
   { path: 'event-customize/:eventId', component: CustomizeEventComponent },
+  { path: 'session/:eventId', component: SessionPageComponent },
   { path: 'profile', component: ProfileComponent},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }

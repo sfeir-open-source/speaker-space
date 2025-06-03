@@ -112,51 +112,6 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     });
   }
 
-  private async uploadImage(): Promise<void> {
-    if (!this.selectedFile || !this.eventId) {
-      return;
-    }
-
-    this.isUploading = true;
-    this.uploadError = null;
-
-    try {
-      const compressedFile = await this.compressImage(this.selectedFile);
-
-      if (compressedFile.size > this.MAX_FILE_SIZE) {
-        this.uploadError = 'L\'image est encore trop volumineuse après compression. Essayez une image plus petite.';
-        return;
-      }
-
-      const base64Image = await this.convertToBase64(compressedFile);
-
-      const updateData = {
-        idEvent: this.eventId,
-        logoBase64: base64Image
-      };
-
-      this.eventService.updateEvent(updateData).subscribe({
-        next: (response) => {
-          console.log('Logo saved successfully:', response);
-          this.selectedImageUrl = base64Image;
-          if (this.selectedImageUrl && this.selectedImageUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(this.selectedImageUrl);
-          }
-        },
-        error: (err) => {
-          console.error('Upload error:', err);
-          this.uploadError = 'Erreur lors de la sauvegarde. Veuillez réessayer.';
-        }
-      });
-
-    } catch (error) {
-      console.error('Error processing image:', error);
-      this.uploadError = 'Erreur lors du traitement de l\'image.';
-    } finally {
-      this.isUploading = false;
-    }
-  }
-
   private handleEventDataLoaded(event: any): void {
     this.eventId = event.idEvent || this.eventId;
     this.eventName = event.eventName || '';
@@ -208,14 +163,14 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     this.uploadError = null;
 
     try {
-      const compressedFile = await this.compressImage(this.selectedFile);
+      const compressedFile : File = await this.compressImage(this.selectedFile);
 
       if (compressedFile.size > this.MAX_FILE_SIZE) {
         this.uploadError = 'L\'image est encore trop volumineuse après compression. Essayez une image plus petite.';
         return;
       }
 
-      const base64Image = await this.convertToBase64(compressedFile);
+      const base64Image : string = await this.convertToBase64(compressedFile);
 
       const updateData = {
         idEvent: this.eventId,

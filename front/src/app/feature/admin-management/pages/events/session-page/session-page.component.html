@@ -1,0 +1,74 @@
+<app-navbar-event-page
+  [eventUrl]="eventUrl"
+  [eventId]="eventId"
+  [eventName]="eventName"
+  [teamId]="teamId">
+</app-navbar-event-page>
+
+<div class="px-0 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
+  <main class="flex">
+    <section class="flex-1 p-4">
+      @if (isLoading) {
+        <div class="flex justify-center items-center h-40">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      }
+
+      @if (error) {
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <p>{{ error }}</p>
+        </div>
+      }
+
+      @if (!isLoading && !error) {
+        <form class="mx-auto" (ngSubmit)="onSubmit($event)">
+          <article class="w-full items-center bg-white shadow-md rounded-lg pb-4">
+            <section class="p-4">
+            </section>
+
+            <section class="px-4 pb-4">
+              <div class="flex items-center gap-3">
+
+                <div class="relative flex-1">
+                  <input
+                    type="text"
+                    name="searchInput"
+                    placeholder="Search for proposals..."
+                    class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <i class="material-icons text-lg">search</i>
+                  </span>
+                </div>
+
+                <app-button-grey
+                  type="button"
+                  [materialIcon]="'tune'"
+                  customTextClass="text-gray-600 hover:text-gray-600"
+                  class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+                  Filters
+                </app-button-grey>
+
+                <app-button-grey
+                  type="button"
+                  [materialIcon]="'swap_vert'"
+                  customTextClass="text-gray-600 hover:text-gray-600"
+                  class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+                  Sort
+                </app-button-grey>
+
+                <app-button-grey
+                  type="button"
+                  [materialIcon]="'download'"
+                  customTextClass="text-gray-600 hover:text-gray-600"
+                  class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+                  Export
+                </app-button-grey>
+              </div>
+            </section>
+          </article>
+        </form>
+      }
+    </section>
+  </main>
+</div>

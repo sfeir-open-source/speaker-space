@@ -87,18 +87,24 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     this.navbarConfig = {
       leftButtons: [
         {
-          id: 'customize',
-          label: 'Customize',
-          materialIcon: 'brush',
-          route: `/event-customize/${this.eventId}`,
-          handler: this.customize.bind(this)
+          id: 'session',
+          label: 'Sessions',
+          materialIcon: 'lists',
+          route: `/session/${this.eventId}`,
+          handler: this.session.bind(this)
         },
         {
           id: 'settings',
           label: 'Settings',
           materialIcon: 'settings',
-          route: `/event-detail/${this.eventId}`,
           handler: this.settings.bind(this)
+        },
+        {
+          id: 'customize',
+          label: 'Customize',
+          materialIcon: 'brush',
+          cssClass: 'lg:hidden',
+          handler: this.customize.bind(this)
         }
       ],
       rightContent: 'custom-button',
@@ -119,13 +125,17 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
 
   private setActivePage(): void {
     const currentRoute: string = this.router.url;
+    const isMobile: boolean = window.innerWidth < 1024;
 
     switch (true) {
-      case currentRoute.includes('event-customize'):
-        this.activePage = 'customize';
+      case currentRoute.includes('session'):
+        this.activePage = 'session';
         break;
       case currentRoute.includes('event-detail'):
         this.activePage = 'settings';
+        break;
+      case currentRoute.includes('event-customize'):
+        this.activePage = isMobile ? 'customize' : 'settings';
         break;
       default:
         this.activePage = '';
@@ -133,12 +143,12 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     }
   }
 
-  private customize(): void {
+  private session(): void {
     if (!this.eventId) {
       return;
     }
 
-    this.router.navigate(['/event-customize', this.eventId]);
+    this.router.navigate(['/session', this.eventId]);
   }
 
   private settings(): void {
@@ -147,6 +157,14 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     this.router.navigate(['/event-detail', this.eventId]);
+  }
+
+  private customize(): void {
+    if (!this.eventId) {
+      return;
+    }
+
+    this.router.navigate(['/event-customize', this.eventId]);
   }
 
   private goToEventPage(): void {

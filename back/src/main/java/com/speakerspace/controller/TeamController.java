@@ -39,6 +39,16 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getCreateTeamsForCurrentUser());
     }
 
+    @GetMapping("/{teamId}")
+    public ResponseEntity<TeamDTO> getTeamById(@PathVariable String teamId) {
+        try {
+            TeamDTO team = teamService.getTeamById(teamId);
+            return team != null ? ResponseEntity.ok(team) : ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/user-teams")
     public ResponseEntity<List<TeamDTO>> getAllUserTeams() {
         return ResponseEntity.ok(teamService.getAllUserTeams());
