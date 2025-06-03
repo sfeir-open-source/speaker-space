@@ -120,4 +120,42 @@ public class EventRepositoryImpl implements EventRepository {
             throw new RuntimeException("Failed to delete event", e);
         }
     }
+
+    @Override
+    public boolean existsByEventNameAndTeamId(String eventName, String teamId) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("eventName", eventName)
+                    .whereEqualTo("teamId", teamId);
+
+            QuerySnapshot querySnapshot = query.get().get();
+            return !querySnapshot.isEmpty();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error checking event name uniqueness: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to check event name uniqueness", e);
+        }
+    }
+
+    @Override
+    public boolean existsByEventNameAndTeamIdAndIdEventNot(String eventName, String teamId, String excludeEventId) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("eventName", eventName)
+                    .whereEqualTo("teamId", teamId);
+
+            QuerySnapshot querySnapshot = query.get().get();
+
+            for (QueryDocumentSnapshot document : querySnapshot.getDocuments()) {
+                String documentId = document.getId();
+                if (!documentId.equals(excludeEventId)) {
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error checking event name uniqueness for update: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to check event name uniqueness for update", e);
+        }
+    }
 }

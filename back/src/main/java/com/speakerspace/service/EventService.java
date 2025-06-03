@@ -30,6 +30,11 @@ public class EventService {
         String currentUserId = userService.getCurrentUserId();
         Event event = eventMapper.convertToEntity(eventDTO);
 
+        if (event.getTeamId() != null &&
+                eventRepository.existsByEventNameAndTeamId(event.getEventName(), event.getTeamId())) {
+            throw new IllegalArgumentException("An event with this name already exists in this team");
+        }
+
         if (event.getUrl() == null || event.getUrl().isEmpty()) {
             String urlSuffix = generateUrlSuffix(event.getEventName());
             event.setUrl(BASE_URL + urlSuffix);
@@ -72,10 +77,25 @@ public class EventService {
     }
 
     public EventDTO updateEvent(EventDTO eventDTO) {
+        if (eventDTO.getIdEvent() == null || eventDTO.getIdEvent().isEmpty()) {
+            throw new IllegalArgumentException("Event ID is required for update");
+        }
+
         Event existingEvent = eventRepository.findById(eventDTO.getIdEvent());
 
         if (existingEvent == null) {
             throw new RuntimeException("Event not found");
+        }
+
+        if (eventDTO.getEventName() != null &&
+                !eventDTO.getEventName().equals(existingEvent.getEventName()) &&
+                existingEvent.getTeamId() != null &&
+                eventRepository.existsByEventNameAndTeamIdAndIdEventNot(
+                        eventDTO.getEventName(),
+                        existingEvent.getTeamId(),
+                        eventDTO.getIdEvent()
+                )) {
+            throw new IllegalArgumentException("An event with this name already exists in this team");
         }
 
         Event eventToUpdate = mergeEventDataCorrectly(existingEvent, eventDTO);

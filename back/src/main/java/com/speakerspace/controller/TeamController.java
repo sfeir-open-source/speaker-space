@@ -25,8 +25,14 @@ public class TeamController {
             return ResponseEntity.badRequest().build();
         }
 
-        TeamDTO createdTeam = teamService.createTeam(teamDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdTeam);
+        try {
+            TeamDTO createdTeam = teamService.createTeam(teamDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdTeam);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/my-other-teams")

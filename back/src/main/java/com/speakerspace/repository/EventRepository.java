@@ -13,4 +13,6 @@ public interface EventRepository {
     List<Event> findByTeamId(String teamId);
     List<Event> findByUserCreateId(String userId);
     boolean delete(String id);
+    boolean existsByEventNameAndTeamId(String eventName, String teamId);
+    boolean existsByEventNameAndTeamIdAndIdEventNot(String eventName, String teamId, String excludeEventId);
 }

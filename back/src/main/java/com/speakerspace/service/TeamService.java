@@ -29,6 +29,10 @@ public class TeamService {
     public TeamDTO createTeam(TeamDTO teamDTO) {
         String currentUserId = userService.getCurrentUserId();
 
+        if (teamRepository.existsByName(teamDTO.getName())) {
+            throw new IllegalArgumentException("A team with this name already exists");
+        }
+
         UserDTO currentUser = userService.getUserByUid(currentUserId);
         Team team = teamMapper.convertToEntity(teamDTO);
         team.setUserCreateId(currentUserId);
@@ -84,6 +88,10 @@ public class TeamService {
         Team existingTeam = teamRepository.findById(teamId).orElse(null);
         if (existingTeam == null) {
             return null;
+        }
+
+        if (teamRepository.existsByName(teamDTO.getName())) {
+            throw new IllegalArgumentException("A team with this name already exists");
         }
 
         String currentUserId = userService.getCurrentUserId();

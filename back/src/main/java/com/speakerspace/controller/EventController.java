@@ -23,18 +23,18 @@ public class EventController {
 
     @PostMapping("/create")
     public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO, Authentication authentication) {
-
         if (authentication == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         String userId = authentication.getName();
-
         eventDTO.setUserCreateId(userId);
 
         try {
             EventDTO createdEvent = eventService.createEvent(eventDTO);
             return ResponseEntity.ok(createdEvent);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

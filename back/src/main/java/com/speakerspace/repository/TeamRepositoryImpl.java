@@ -144,4 +144,18 @@ public class TeamRepositoryImpl implements TeamRepository {
             throw new RuntimeException("Failed to find teams by invited email", e);
         }
     }
+
+    @Override
+    public boolean existsByName(String name) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("name", name);
+
+            QuerySnapshot querySnapshot = query.get().get();
+            return !querySnapshot.isEmpty();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error checking team name uniqueness: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to check team name uniqueness", e);
+        }
+    }
 }

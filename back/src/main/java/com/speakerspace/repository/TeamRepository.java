@@ -15,4 +15,5 @@ public interface TeamRepository {
     Team findByIdUrl(String url);
     void delete(String id);
     List<Team> findTeamsByInvitedEmail(String email);
+    boolean existsByName(String name);
 }
