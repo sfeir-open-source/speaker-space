@@ -78,12 +78,10 @@ export class InputComponent implements OnInit, OnChanges {
 
   private applyValidators(): void {
     if (!this.control) {
-      console.warn(`FormControl manquant pour le champ '${this.name}'. Les validateurs ne peuvent pas être appliqués.`);
       return;
     }
 
     if (this.control === null || this.control === undefined) {
-      console.warn(`FormControl null ou undefined pour le champ '${this.name}'.`);
       return;
     }
 
@@ -147,10 +145,6 @@ export class InputComponent implements OnInit, OnChanges {
     }
 
     const shouldShowError: boolean = this.control.invalid && (this.control.touched || this.control.dirty);
-
-    if (shouldShowError) {
-      console.debug(`Field ${this.name} has errors:`, this.control.errors);
-    }
 
     return shouldShowError;
   }

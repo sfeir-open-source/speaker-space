@@ -135,21 +135,17 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
 
   private customize(): void {
     if (!this.eventId) {
-      console.error('Cannot navigate: Event ID is missing');
       return;
     }
 
-    console.log('Navigating to customize with eventId:', this.eventId);
     this.router.navigate(['/event-customize', this.eventId]);
   }
 
   private settings(): void {
     if (!this.eventId) {
-      console.error('Cannot navigate: Event ID is missing');
       return;
     }
 
-    console.log('Navigating to settings with eventId:', this.eventId);
     this.router.navigate(['/event-detail', this.eventId]);
   }
 

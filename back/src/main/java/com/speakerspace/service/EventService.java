@@ -135,7 +135,11 @@ public class EventService {
         }
 
         if (updates.getLogoBase64() != null) {
-            merged.setLogoBase64(updates.getLogoBase64());
+            if (updates.getLogoBase64().isEmpty()) {
+                merged.setLogoBase64(null);
+            } else {
+                merged.setLogoBase64(updates.getLogoBase64());
+            }
         }
 
         if (updates.getType() != null) {

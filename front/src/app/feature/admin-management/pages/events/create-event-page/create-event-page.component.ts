@@ -94,7 +94,6 @@ export class CreateEventPageComponent implements OnInit {
     const updatedEvent: EventDTO = this.eventDataService.getCurrentEvent();
 
     if (!updatedEvent.idEvent) {
-      console.error('Event ID is missing - cannot save event');
       return;
     }
 

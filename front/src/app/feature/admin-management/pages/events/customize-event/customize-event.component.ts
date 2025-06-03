@@ -157,39 +157,6 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     }
   }
 
-  removeImage(event: Event): void {
-    event.stopPropagation();
-
-    if (this.selectedImageUrl && this.selectedImageUrl.startsWith('data:image')) {
-      const updateData = {
-        idEvent: this.eventId,
-        logoBase64: undefined
-      };
-
-      this.eventService.updateEvent(updateData).subscribe({
-        next: () => {
-          console.log('Logo deleted successfully');
-        },
-        error: (err) => {
-          console.error('Error deleting logo:', err);
-          this.uploadError = 'Erreur lors de la suppression du logo.';
-        }
-      });
-    }
-
-    if (this.selectedImageUrl && this.selectedImageUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(this.selectedImageUrl);
-    }
-
-    this.selectedImageUrl = null;
-    this.selectedFile = null;
-    this.uploadError = null;
-
-    if (this.fileInput) {
-      this.fileInput.nativeElement.value = '';
-    }
-  }
-
   private handleEventDataLoaded(event: any): void {
     this.eventId = event.idEvent || this.eventId;
     this.eventName = event.eventName || '';
@@ -225,10 +192,64 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     }
 
     if (this.selectedFile) {
-      this.uploadImage();
+      this.uploadImageAndNavigate();
       return;
     }
 
+    this.updateEventAndNavigate();
+  }
+
+  private async uploadImageAndNavigate(): Promise<void> {
+    if (!this.selectedFile || !this.eventId) {
+      return;
+    }
+
+    this.isUploading = true;
+    this.uploadError = null;
+
+    try {
+      const compressedFile = await this.compressImage(this.selectedFile);
+
+      if (compressedFile.size > this.MAX_FILE_SIZE) {
+        this.uploadError = 'L\'image est encore trop volumineuse après compression. Essayez une image plus petite.';
+        return;
+      }
+
+      const base64Image = await this.convertToBase64(compressedFile);
+
+      const updateData = {
+        idEvent: this.eventId,
+        logoBase64: base64Image
+      };
+
+      this.eventService.updateEvent(updateData).subscribe({
+        next: (response) => {
+          console.log('Logo saved successfully:', response);
+          this.selectedImageUrl = base64Image;
+
+          if (this.selectedImageUrl && this.selectedImageUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(this.selectedImageUrl);
+          }
+
+          this.navigateToTeam();
+        },
+        error: (err) => {
+          console.error('Upload error:', err);
+          this.uploadError = 'Erreur lors de la sauvegarde. Veuillez réessayer.';
+        },
+        complete: () => {
+          this.isUploading = false;
+        }
+      });
+
+    } catch (error) {
+      console.error('Error processing image:', error);
+      this.uploadError = 'Erreur lors du traitement de l\'image.';
+      this.isUploading = false;
+    }
+  }
+
+  private updateEventAndNavigate(): void {
     const formValues = this.eventForm.getRawValue();
     const updatedEvent = {
       idEvent: this.eventId,
@@ -244,13 +265,20 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.handleEventUpdated(response);
+          this.navigateToTeam();
         },
         error: (err) => {
           this.handleEventUpdateError(err);
         }
       });
+  }
 
-    this.router.navigate(['/team', this.teamId]);
+  private navigateToTeam(): void {
+    if (this.teamId) {
+      this.router.navigate(['/team', this.teamId]);
+    } else {
+      this.error = 'Team ID is missing, cannot navigate back to team page';
+    }
   }
 
   private subscribeToRouteParams(): void {
@@ -449,5 +477,57 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     console.error('Error loading image:', event);
     this.uploadError = 'Erreur lors du chargement de l\'image.';
     this.selectedImageUrl = null;
+  }
+
+  removeImage(event: Event): void {
+    event.stopPropagation();
+
+    const isExistingImage = this.selectedImageUrl && this.selectedImageUrl.startsWith('data:image');
+
+    if (isExistingImage) {
+      const updateData = {
+        idEvent: this.eventId,
+        logoBase64: ''
+      };
+
+      this.isUploading = true;
+      this.eventService.updateEvent(updateData).subscribe({
+        next: (response) => {
+          console.log('Logo deleted successfully', response);
+          if (!response.logoBase64 || response.logoBase64.trim() === '') {
+            this.resetImageState();
+          } else {
+            this.uploadError = 'Erreur: le logo n\'a pas été supprimé côté serveur.';
+          }
+        },
+        error: (err) => {
+          console.error('Error deleting logo:', err);
+          this.uploadError = 'Erreur lors de la suppression du logo.';
+        },
+        complete: () => {
+          this.isUploading = false;
+        }
+      });
+    } else {
+      this.resetImageState();
+    }
+  }
+
+  private resetImageState(): void {
+    if (this.selectedImageUrl && this.selectedImageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(this.selectedImageUrl);
+    }
+
+    this.selectedImageUrl = null;
+    this.selectedFile = null;
+    this.uploadError = null;
+
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+  get isProcessing(): boolean {
+    return this.isUploading || this.isLoading;
   }
 }
