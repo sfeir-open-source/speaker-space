@@ -1,5 +1,5 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
-import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
+import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
 import { finalize, Subscription } from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import { EventService } from '../../../services/event/event.service';
@@ -318,12 +318,12 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     this.uploadError = null;
 
     if (!this.ALLOWED_TYPES.includes(file.type)) {
-      this.uploadError = 'Format de fichier non supporté. Utilisez JPEG, PNG, WEBP ou AVIF.';
+      this.uploadError = 'Unsupported file format. Use JPEG, PNG, WEBP, or AVIF.';
       return;
     }
 
     if (file.size > this.MAX_FILE_SIZE) {
-      this.uploadError = 'Le fichier est trop volumineux. Taille maximum : 300KB.';
+      this.uploadError = 'The file is too large. Maximum size: 300KB.';
       return;
     }
 

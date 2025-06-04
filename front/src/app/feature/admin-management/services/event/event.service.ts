@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
-import {BehaviorSubject, Observable, of, throwError} from 'rxjs';
+import {BehaviorSubject, from, Observable, of, switchMap, throwError} from 'rxjs';
 import {catchError, tap} from 'rxjs/operators';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import { environment } from '../../../../../environments/environment.development';
 import { Event } from '../../type/event/event';
 import {EventDTO} from '../../type/event/eventDTO';
+import {ImportResult, SessionImportData, SessionImportRequest} from '../../type/session/session';
+import {AuthService} from '../../../../core/login/services/auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +18,7 @@ export class EventService {
 
   constructor(
     private http: HttpClient,
+    private authService: AuthService
   ) {
     this.loadUserEvents();
   }
@@ -130,5 +133,62 @@ export class EventService {
         }),
         catchError(this.handleError('Error deleting event'))
       );
+  }
+
+  importSessions(eventId: string, sessionsData: SessionImportData[]): Observable<ImportResult> {
+    const importRequest: SessionImportRequest = {
+      eventId: eventId,
+      sessions: sessionsData
+    };
+
+    return from(this.getAuthToken()).pipe(
+      switchMap(token => {
+        const headers = this.buildHeaders(token);
+
+        return this.http.post<ImportResult>(
+          `${environment.apiUrl}/event/${eventId}/sessions/import`,
+          importRequest,
+          {
+            headers: headers,
+            withCredentials: true
+          }
+        );
+      }),
+      tap(response => {
+        console.log('Sessions import response:', response);
+      }),
+      catchError(error => {
+        console.error('Error importing sessions:', error);
+        if (error.status === 401) {
+          console.error('Authentication failed - token may be expired');
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      return await this.authService.getCurrentUserToken();
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
+    }
+  }
+
+  private buildHeaders(token: string | null): HttpHeaders {
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+      console.log('Authorization header set with token');
+    } else {
+      console.warn('No token available for request');
+    }
+
+    return headers;
   }
 }

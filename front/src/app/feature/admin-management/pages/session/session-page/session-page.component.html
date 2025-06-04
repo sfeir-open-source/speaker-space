@@ -21,6 +21,7 @@
       }
 
       @if (!isLoading && !error) {
+
         <form class="mx-auto" (ngSubmit)="onSubmit($event)">
           <article class="w-full items-center bg-white shadow-md rounded-lg pb-4">
             <section class="p-4">
@@ -28,7 +29,6 @@
 
             <section class="px-4 pb-4">
               <div class="flex items-center gap-3">
-
                 <div class="relative flex-1">
                   <input
                     type="text"
@@ -65,6 +65,9 @@
                   Export
                 </app-button-grey>
               </div>
+            </section>
+
+            <section class="px-4 pb-4">
             </section>
           </article>
         </form>

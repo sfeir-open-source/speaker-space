@@ -25,26 +25,6 @@ public class Event {
     public Event() {
     }
 
-    public Event(String idEvent, String eventName, String description, Timestamp startDate, Timestamp endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone, String logoBase64, String type) {
-        this.idEvent = idEvent;
-        this.eventName = eventName;
-        this.description = description;
-        this.startDate = startDate;
-        this.url = url;
-        this.endDate = endDate;
-        this.isOnline = isOnline;
-        this.location = location;
-        this.isPrivate = isPrivate;
-        this.webLinkUrl = webLinkUrl;
-        this.isFinish = isFinish;
-        this.userCreateId = userCreateId;
-        this.conferenceHallUrl = conferenceHallUrl;
-        this.teamId = teamId;
-        this.timeZone = timeZone;
-        this.logoBase64 = logoBase64;
-        this.type = type;
-    }
-
     public String getIdEvent() {
         return idEvent;
     }

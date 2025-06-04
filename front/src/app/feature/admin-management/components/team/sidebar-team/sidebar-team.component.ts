@@ -18,7 +18,7 @@ export class SidebarTeamComponent {
     buttons: [
       {
         id: 'settings-general',
-        label: 'General',
+        label: 'Setting',
         materialIcon: 'settings',
         route: 'settings-general'
       },

@@ -24,6 +24,13 @@
       }
 
       @if (!isLoading && !error) {
+
+        <app-session-import
+          [eventId]="eventId"
+          (importCompleted)="onImportCompleted($event)"
+          class="mb-6">
+        </app-session-import>
+
         <article class="w-full items-center bg-white shadow-md rounded-lg mb-5">
           <header class="p-4 flex items-center justify-between">
               <h1 class="text-xl font-medium">General Information</h1>
@@ -32,13 +39,12 @@
               </p>
           </header>
 
-          <div class="">
-            <app-general-info-event
-              mode="edit"
-              [initialData]="eventGeneralData"
-              [initialVisibility]="visibility">
-            </app-general-info-event>
-          </div>
+          <app-general-info-event
+            mode="edit"
+            [initialData]="eventGeneralData"
+            [initialVisibility]="visibility">
+          </app-general-info-event>
+
         </article>
 
         <article class="w-full items-center bg-white shadow-md rounded-lg">

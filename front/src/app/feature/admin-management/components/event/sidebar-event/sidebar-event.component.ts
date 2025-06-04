@@ -18,7 +18,7 @@ export class SidebarEventComponent {
     buttons: [
       {
         id: 'event-detail',
-        label: 'General',
+        label: 'Setting',
         materialIcon: 'settings',
         route: 'event-detail'
       },

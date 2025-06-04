@@ -16,6 +16,8 @@ import {DeleteConfirmationConfig} from '../../../type/components/delete-confirma
 import {
   DeleteConfirmationPopupComponent
 } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
+import {SessionImportComponent} from '../../../components/session/session-import/session-import.component';
+import {ImportResult} from '../../../type/session/session';
 
 @Component({
   selector: 'app-setting-event-page',
@@ -30,6 +32,7 @@ import {
     DangerZoneComponent,
     ArchiveEventPopupComponent,
     DeleteConfirmationPopupComponent,
+    SessionImportComponent,
   ],
   templateUrl: './setting-event-page.component.html',
   styleUrl: './setting-event-page.component.scss'
@@ -204,6 +207,16 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
 
   onDeleteCancelled(): void {
     this.cancelDeleteEvent();
+  }
+
+  onImportCompleted(result: ImportResult): void {
+
+    if (result.successCount > 0) {
+      this.loadSessions();
+    }
+  }
+
+  private loadSessions(): void {
   }
 
   private handleEventDataLoaded(event: any): void {

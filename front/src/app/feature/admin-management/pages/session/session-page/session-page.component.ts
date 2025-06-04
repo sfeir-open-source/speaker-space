@@ -14,7 +14,7 @@ import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey
     NavbarEventPageComponent,
     FormsModule,
     ReactiveFormsModule,
-    ButtonGreyComponent
+    ButtonGreyComponent,
   ],
   templateUrl: './session-page.component.html',
   styleUrl: './session-page.component.scss'

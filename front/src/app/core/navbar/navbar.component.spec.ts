@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NavbarComponent } from './navbar.component';
 import { AuthService } from '../login/services/auth.service';
-import { SidebarService } from '../sidebar/service/sidebar.service';
 import { BehaviorSubject } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { RouterModule } from '@angular/router';
@@ -31,14 +30,14 @@ describe('NavbarComponent', () => {
       imports: [NavbarComponent, RouterTestingModule],
       providers: [
         { provide: AuthService, useClass: MockAuthService },
-        { provide: SidebarService, useClass: MockSidebarService }
+        { provide: MockSidebarService, useClass: MockSidebarService }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(NavbarComponent);
     component = fixture.componentInstance;
     authService = TestBed.inject(AuthService) as unknown as MockAuthService;
-    sidebarService = TestBed.inject(SidebarService) as unknown as MockSidebarService;
+    sidebarService = TestBed.inject(MockSidebarService) as unknown as MockSidebarService;
   });
 
   it('should create', () => {

@@ -15,14 +15,6 @@ public class TeamMember {
         this.role = role;
     }
 
-    public TeamMember(String userId, String role, String email, String status, boolean isCreator) {
-        this.userId = userId;
-        this.role = role;
-        this.email = email;
-        this.status = status;
-        this.isCreator = isCreator;
-    }
-
     public String getUserId() {
         return userId;
     }

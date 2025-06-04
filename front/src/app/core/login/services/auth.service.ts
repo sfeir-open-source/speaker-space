@@ -16,7 +16,7 @@ import {
   fetchSignInMethodsForEmail,
   setPersistence,
   browserLocalPersistence,
-  signOut
+  signOut, authState
 } from '@angular/fire/auth';
 import {UserStateService} from '../../services/user-services/user-state.service';
 import {User} from '../../models/user.model';
@@ -50,6 +50,10 @@ export class AuthService {
 
     this.userState.loadFromStorage();
     this.checkEmailLink();
+
+    authState(this.auth).subscribe(user => {
+      this.currentUserSubject.next(user);
+    });
   }
 
   private async fetchAndMergeUserData(firebaseUser: FirebaseUser): Promise<void> {
@@ -384,6 +388,22 @@ export class AuthService {
 
     const token = localStorage.getItem('token');
     return of(token);
+  }
+
+  async getCurrentUserToken(): Promise<string | null> {
+    try {
+      const currentUser = this.auth.currentUser;
+      if (currentUser) {
+        const token = await currentUser.getIdToken(true);
+        console.log('Token retrieved successfully');
+        return token;
+      }
+      console.warn('No authenticated user found');
+      return null;
+    } catch (error) {
+      console.error('Error getting user token:', error);
+      return null;
+    }
   }
 
 }
