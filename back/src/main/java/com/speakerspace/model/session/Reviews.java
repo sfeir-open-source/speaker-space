@@ -6,11 +6,7 @@ public class Reviews {
     private int positives;
     private int negatives;
 
-    public Reviews(double average, int positives, int negatives) {
-        this.average = average;
-        this.positives = positives;
-        this.negatives = negatives;
-    }
+    public Reviews() {}
 
     public double getAverage() {
         return average;

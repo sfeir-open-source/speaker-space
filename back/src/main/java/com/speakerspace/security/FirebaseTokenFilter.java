@@ -16,13 +16,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class FirebaseTokenFilter extends OncePerRequestFilter {
@@ -95,10 +96,14 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     uid, null, authorities);
 
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            Map<String, Object> details = new HashMap<>();
+            details.put("email", email);
+            details.put("uid", uid);
+            authentication.setDetails(details);
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            logger.debug("Authentication set for user: {}", uid);
+            logger.debug("Authentication set for user: {} ({})", uid, email);
 
             filterChain.doFilter(request, response);
 
@@ -106,9 +111,6 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             logger.error("Firebase token verification failed: {}", e.getMessage());
             SecurityContextHolder.clearContext();
             sendUnauthorizedResponse(response, "Invalid token: " + e.getErrorCode());
-        } catch (ServletException e) {
-            logger.error("Servlet exception during request processing: {}", e.getMessage());
-            throw e;
         } catch (Exception e) {
             logger.error("Unexpected error during token verification: {}", e.getMessage(), e);
             SecurityContextHolder.clearContext();
@@ -120,6 +122,9 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
+        response.addHeader("Access-Control-Allow-Origin", "*");
+        response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        response.addHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
 
         String jsonResponse = String.format("{\"error\":\"%s\",\"status\":401,\"timestamp\":\"%s\"}",
                 message,

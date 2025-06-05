@@ -1,8 +1,9 @@
-package com.speakerspace.model.session;
+package com.speakerspace.dto.session;
 
 import java.util.List;
 
-public class Session {
+public class SessionDTO {
+
     private String id;
     private String title;
     private String abstractText;
@@ -10,15 +11,15 @@ public class Session {
     private String confirmationStatus;
     private String level;
     private String references;
-    private List<Format> formats;
-    private List<Category> categories;
+    private List<FormatDTO> formats;
+    private List<CategoryDTO> categories;
     private List<String> tags;
     private List<String> languages;
-    private List<Speaker> speakers;
-    private Reviews reviews;
+    private List<SpeakerDTO> speakers;
+    private ReviewDTO reviews;
     private String eventId;
 
-    public Session() {}
+    public SessionDTO() {}
 
     public String getId() {
         return id;
@@ -76,19 +77,19 @@ public class Session {
         this.references = references;
     }
 
-    public List<Format> getFormats() {
+    public List<FormatDTO> getFormats() {
         return formats;
     }
 
-    public void setFormats(List<Format> formats) {
+    public void setFormats(List<FormatDTO> formats) {
         this.formats = formats;
     }
 
-    public List<Category> getCategories() {
+    public List<CategoryDTO> getCategories() {
         return categories;
     }
 
-    public void setCategories(List<Category> categories) {
+    public void setCategories(List<CategoryDTO> categories) {
         this.categories = categories;
     }
 
@@ -108,19 +109,19 @@ public class Session {
         this.languages = languages;
     }
 
-    public List<Speaker> getSpeakers() {
+    public List<SpeakerDTO> getSpeakers() {
         return speakers;
     }
 
-    public void setSpeakers(List<Speaker> speakers) {
+    public void setSpeakers(List<SpeakerDTO> speakers) {
         this.speakers = speakers;
     }
 
-    public Reviews getReviews() {
+    public ReviewDTO getReviews() {
         return reviews;
     }
 
-    public void setReviews(Reviews reviews) {
+    public void setReviews(ReviewDTO reviews) {
         this.reviews = reviews;
     }
 

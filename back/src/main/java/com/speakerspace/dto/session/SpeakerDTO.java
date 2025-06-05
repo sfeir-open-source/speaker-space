@@ -1,41 +1,81 @@
 package com.speakerspace.dto.session;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.List;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class SpeakerDTO {
-    @JsonProperty("id")
-    private String id;
 
-    @JsonProperty("name")
     private String name;
-
-    @JsonProperty("email")
-    private String email;
-
-    @JsonProperty("bio")
     private String bio;
-
-    @JsonProperty("company")
     private String company;
+    private String references;
+    private String picture;
+    private String location;
+    private String email;
+    private List<String> socialLinks;
 
     public SpeakerDTO() {}
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getName() {
+        return name;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getBio() {
+        return bio;
+    }
 
-    public String getBio() { return bio; }
-    public void setBio(String bio) { this.bio = bio; }
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
 
-    public String getCompany() { return company; }
-    public void setCompany(String company) { this.company = company; }
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public String getReferences() {
+        return references;
+    }
+
+    public void setReferences(String references) {
+        this.references = references;
+    }
+
+    public String getPicture() {
+        return picture;
+    }
+
+    public void setPicture(String picture) {
+        this.picture = picture;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public List<String> getSocialLinks() {
+        return socialLinks;
+    }
+
+    public void setSocialLinks(List<String> socialLinks) {
+        this.socialLinks = socialLinks;
+    }
 }
-
-

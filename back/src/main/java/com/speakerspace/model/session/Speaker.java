@@ -13,16 +13,7 @@ public class Speaker {
     private String email;
     private List<String> socialLinks;
 
-    public Speaker(String name, String bio, String company, String references, String picture, String location, String email, List<String> socialLinks) {
-        this.name = name;
-        this.bio = bio;
-        this.company = company;
-        this.references = references;
-        this.picture = picture;
-        this.location = location;
-        this.email = email;
-        this.socialLinks = socialLinks;
-    }
+    public Speaker() {}
 
     public String getName() {
         return name;

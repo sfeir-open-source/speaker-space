@@ -191,4 +191,19 @@ export class EventService {
 
     return headers;
   }
+
+  getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {
+    return this.http.get<SessionImportData[]>(
+      `${environment.apiUrl}/event/${eventId}/sessions`,
+      { withCredentials: true }
+    ).pipe(
+      tap(sessions => {
+        console.log('Sessions loaded from API:', sessions);
+      }),
+      catchError(error => {
+        console.error('Error loading sessions:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

@@ -1,15 +1,21 @@
-package com.speakerspace.model.session;
+package com.speakerspace.dto.session;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ImportResult {
+public class ImportResultDTO {
     private int successCount;
     private int totalCount;
     private List<String> errors;
 
-    public ImportResult() {
+    public ImportResultDTO() {
         this.errors = new ArrayList<>();
+    }
+
+    public ImportResultDTO(int successCount, int totalCount, List<String> errors) {
+        this.successCount = successCount;
+        this.totalCount = totalCount;
+        this.errors = errors != null ? errors : new ArrayList<>();
     }
 
     public int getSuccessCount() { return successCount; }
@@ -20,7 +26,4 @@ public class ImportResult {
 
     public List<String> getErrors() { return errors; }
     public void setErrors(List<String> errors) { this.errors = errors; }
-
-    public boolean hasErrors() { return !errors.isEmpty(); }
-    public int getErrorCount() { return errors.size(); }
 }

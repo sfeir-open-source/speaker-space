@@ -1,131 +1,108 @@
 package com.speakerspace.service;
 
-import com.speakerspace.dto.session.SessionImportDTO;
-import com.speakerspace.mapper.SessionMapper;
-import com.speakerspace.model.Event;
-import com.speakerspace.model.session.ImportResult;
+import com.speakerspace.dto.session.ImportResultDTO;
+import com.speakerspace.dto.session.SessionDTO;
+import com.speakerspace.dto.session.SessionImportDataDTO;
+import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.model.session.Session;
-import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.SessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class SessionService {
 
     private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
 
-    @Autowired
-    private SessionRepository sessionRepository;
+    private final SessionRepository sessionRepository;
+    private final SessionMapper sessionMapper;
 
-    @Autowired
-    private EventRepository eventRepository;
+    public SessionService(SessionRepository sessionRepository, SessionMapper sessionMapper) {
+        this.sessionRepository = sessionRepository;
+        this.sessionMapper = sessionMapper;
+    }
 
-    @Autowired
-    private SessionMapper sessionMapper;
+    public ImportResultDTO importSessions(String eventId, List<SessionImportDataDTO> sessionsData) {
+        logger.info("Starting import of {} sessions for event {}", sessionsData.size(), eventId);
 
-    @Transactional
-    public ImportResult importSessionsFromJson(String eventId, List<SessionImportDTO> sessionImports) {
-        Event event = eventRepository.findById(eventId);
-        if (event == null) {
-            throw new IllegalArgumentException("Event not found with ID: " + eventId);
-        }
+        ImportResultDTO result = new ImportResultDTO();
+        result.setTotalCount(sessionsData.size());
+        result.setSuccessCount(0);
+        result.setErrors(new ArrayList<>());
 
-        ImportResult result = new ImportResult();
-        List<String> errors = new ArrayList<>();
-        int successCount = 0;
-
-        for (SessionImportDTO sessionImport : sessionImports) {
+        for (int i = 0; i < sessionsData.size(); i++) {
+            SessionImportDataDTO sessionData = sessionsData.get(i);
             try {
-                validateSessionData(sessionImport);
+                validateSessionDataForImport(sessionData);
 
-                Session session = sessionMapper.convertImportDTOToEntity(sessionImport);
-                session.setEventId(eventId);
+                SessionDTO sessionDTO = convertImportDataToSessionDTO(sessionData, eventId);
 
-                if (session.getId() == null || session.getId().isEmpty()) {
-                    session.setId(generateSessionId());
+                if (sessionMapper == null) {
+                    throw new IllegalStateException("SessionMapper is not injected");
                 }
 
+                Session session = sessionMapper.convertToEntity(sessionDTO);
                 sessionRepository.save(session);
-                successCount++;
 
-                logger.info("Session imported successfully: {} for event: {}",
-                        session.getTitle(), eventId);
+                result.setSuccessCount(result.getSuccessCount() + 1);
 
             } catch (Exception e) {
-                String errorMsg = String.format("Failed to import session '%s': %s",
-                        sessionImport.getTitle(), e.getMessage());
-                errors.add(errorMsg);
-                logger.error(errorMsg, e);
+                String errorMessage = String.format("Session %d (%s): %s",
+                        i + 1,
+                        sessionData.getTitle() != null ? sessionData.getTitle() : "No title",
+                        e.getMessage());
+
+                logger.warn("Failed to import session {}: {}", i + 1, e.getMessage());
+                result.getErrors().add(errorMessage);
             }
         }
-
-        result.setSuccessCount(successCount);
-        result.setTotalCount(sessionImports.size());
-        result.setErrors(errors);
 
         return result;
     }
 
-    private void validateSessionData(SessionImportDTO session) {
-        if (session.getTitle() == null || session.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("Session title is required");
+    private void validateSessionDataForImport(SessionImportDataDTO sessionData) {
+        List<String> errors = new ArrayList<>();
+
+        if (sessionData.getId() == null || sessionData.getId().trim().isEmpty()) {
+            errors.add("ID is required");
         }
 
-        if (session.getSessionAbstract() == null || session.getSessionAbstract().trim().isEmpty()) {
-            throw new IllegalArgumentException("Session abstract is required");
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join(", ", errors));
         }
+    }
 
-        if (session.getDeliberationStatus()) {
-            throw new IllegalArgumentException("Session title is required");
+    private SessionDTO convertImportDataToSessionDTO(SessionImportDataDTO importData, String eventId) {
+        SessionDTO sessionDTO = new SessionDTO();
+
+        sessionDTO.setId(importData.getId() != null ? importData.getId() : generateSessionId());
+        sessionDTO.setTitle(importData.getTitle());
+
+        String abstractText = importData.getAbstractText();
+        if (abstractText == null || abstractText.trim().isEmpty()) {
+            abstractText = "Description à compléter";
         }
+        sessionDTO.setAbstractText(abstractText);
+        sessionDTO.setDeliberationStatus(importData.getDeliberationStatus());
+        sessionDTO.setConfirmationStatus(importData.getConfirmationStatus());
+        sessionDTO.setLevel(importData.getLevel());
+        sessionDTO.setReferences(importData.getReferences());
+        sessionDTO.setEventId(eventId);
+        sessionDTO.setFormats(importData.getFormats() != null ? importData.getFormats() : new ArrayList<>());
+        sessionDTO.setCategories(importData.getCategories() != null ? importData.getCategories() : new ArrayList<>());
+        sessionDTO.setTags(importData.getTags() != null ? importData.getTags() : new ArrayList<>());
+        sessionDTO.setLanguages(importData.getLanguages() != null ? importData.getLanguages() : new ArrayList<>());
+        sessionDTO.setSpeakers(importData.getSpeakers() != null ? importData.getSpeakers() : new ArrayList<>());
+        sessionDTO.setReviews(importData.getReviews());
 
-        if (session.getConfirmationStatus()) {
-            throw new IllegalArgumentException("Session abstract is required");
-        }
-
-        if (session.getLevel() == null || session.getLevel().trim().isEmpty()) {
-            throw new IllegalArgumentException("Session Level is required");
-        }
-
-        if (session.getReferences() == null || session.getReferences().trim().isEmpty()) {
-            throw new IllegalArgumentException("Session references is required");
-        }
-
-        if (session.getFormats() == null || session.getFormats().toString().isEmpty()) {
-            throw new IllegalArgumentException("Session formats is required");
-        }
-
-        if (session.getCategories() == null || session.getCategories().toString().isEmpty()) {
-            throw new IllegalArgumentException("Session categories is required");
-        }
-
-        if (session.getTags() == null || session.getTags().toString().isEmpty()) {
-            throw new IllegalArgumentException("Session tags is required");
-        }
-
-        if (session.getLanguages() == null || session.getLanguages().toString().isEmpty()) {
-            throw new IllegalArgumentException("Session languages is required");
-        }
-
-        if (session.getSpeakers() == null || session.getSpeakers().toString().isEmpty()) {
-            throw new IllegalArgumentException("Session speakers is required");
-        }
-
-        if (session.getReviews() == null || session.getReviews().toString().isEmpty()) {
-            throw new IllegalArgumentException("Session reviews is required");
-        }
-
+        return sessionDTO;
     }
 
     private String generateSessionId() {
-        return UUID.randomUUID().toString();
+        return "session_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 1000);
     }
 }

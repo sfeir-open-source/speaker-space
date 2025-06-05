@@ -1,8 +1,8 @@
 package com.speakerspace.controller;
 
 import com.speakerspace.dto.EventDTO;
+import com.speakerspace.dto.session.ImportResultDTO;
 import com.speakerspace.dto.session.SessionImportRequestDTO;
-import com.speakerspace.model.session.ImportResult;
 import com.speakerspace.service.EventService;
 import com.speakerspace.service.SessionService;
 import org.slf4j.Logger;
@@ -120,50 +120,51 @@ public class EventController {
     }
 
     @PostMapping("/{eventId}/sessions/import")
-    public ResponseEntity<ImportResult> importSessions(
+    public ResponseEntity<ImportResultDTO> importSessions(
             @PathVariable String eventId,
             @RequestBody SessionImportRequestDTO importRequest,
             Authentication authentication) {
 
         if (authentication == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         String userId = authentication.getName();
 
         try {
             EventDTO existingEvent = eventService.getEventById(eventId);
-
             if (existingEvent == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            if (!userId.equals(existingEvent.getUserCreateId()) &&
-                    !authentication.getAuthorities().stream()
-                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            boolean isOwner = userId.equals(existingEvent.getUserCreateId());
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Permission check - isOwner: {}, isAdmin: {}, eventOwner: {}",
+                    isOwner, isAdmin, existingEvent.getUserCreateId());
+
+            if (!isOwner && !isAdmin) {
+                logger.warn("User {} does not have permission to import sessions for event {}", userId, eventId);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
             if (!eventId.equals(importRequest.getEventId())) {
-                importRequest.setEventId(eventId);
+                logger.warn("Event ID mismatch: path={}, body={}", eventId, importRequest.getEventId());
+                return ResponseEntity.badRequest().build();
             }
 
-            ImportResult result = sessionService.importSessionsFromJson(
-                    eventId, importRequest.getSessions());
+            ImportResultDTO result = sessionService.importSessions(eventId, importRequest.getSessions());
+            logger.info("Import completed: {}/{} sessions imported successfully",
+                    result.getSuccessCount(), result.getTotalCount());
 
-            if (result.hasErrors() && result.getSuccessCount() == 0) {
-                return ResponseEntity.badRequest().body(result);
-            } else if (result.hasErrors()) {
-                return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(result);
-            } else {
-                return ResponseEntity.ok(result);
-            }
+            return ResponseEntity.ok(result);
 
         } catch (IllegalArgumentException e) {
-            logger.error("Invalid request for session import: {}", e.getMessage());
+            logger.error("Invalid import request: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            logger.error("Error importing sessions for event {}: {}", eventId, e.getMessage(), e);
+            logger.error("Error importing sessions: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
