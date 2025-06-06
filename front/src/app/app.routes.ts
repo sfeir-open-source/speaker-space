@@ -24,7 +24,10 @@ import {
   CreateEventPageComponent
 } from './feature/admin-management/pages/events/create-event-page/create-event-page.component';
 import {ListEventPageComponent} from './feature/admin-management/pages/team/list-event-page/list-event-page.component';
-import {SessionPageComponent} from './feature/admin-management/pages/session/session-page/session-page.component';
+import {SessionListPageComponent} from './feature/admin-management/pages/session/session-list-page/session-list-page.component';
+import {
+  SessionDetailPageComponent
+} from './feature/admin-management/pages/session/session-detail-page/session-detail-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -38,7 +41,8 @@ export const routes: Routes = [
   { path: 'settings-members/:teamId', component: SettingTeamMembersPageComponent, canActivate: [AuthGuard] },
   { path: 'event-detail/:eventId', component: SettingEventPageComponent, canActivate: [AuthGuard] },
   { path: 'event-customize/:eventId', component: CustomizeEventComponent, canActivate: [AuthGuard] },
-  { path: 'session/:eventId', component: SessionPageComponent, canActivate: [AuthGuard] },
+  { path: 'session/:eventId', component: SessionListPageComponent, canActivate: [AuthGuard] },
+  { path: 'session-detail/:sessionId', component: SessionDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }

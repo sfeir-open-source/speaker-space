@@ -10,17 +10,17 @@ import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey
 import {SessionImportData, Speaker} from '../../../type/session/session';
 
 @Component({
-  selector: 'app-session-page',
+  selector: 'app-session-list-page',
   imports: [
     NavbarEventPageComponent,
     FormsModule,
     ReactiveFormsModule,
     ButtonGreyComponent,
   ],
-  templateUrl: './session-page.component.html',
-  styleUrl: './session-page.component.scss'
+  templateUrl: './session-list-page.component.html',
+  styleUrl: './session-list-page.component.scss'
 })
-export class SessionPageComponent implements OnInit, OnDestroy {
+export class SessionListPageComponent implements OnInit, OnDestroy {
   eventId: string = '';
   eventUrl: string = '';
   eventName: string = '';
@@ -42,7 +42,7 @@ export class SessionPageComponent implements OnInit, OnDestroy {
   currentUserRole: string = '';
 
   @Input() icon: string = 'search';
-  @ViewChild(SessionPageComponent) sessionPageComponent?: SessionPageComponent;
+  @ViewChild(SessionListPageComponent) sessionPageComponent?: SessionListPageComponent;
 
   private destroy$ = new Subject<void>();
   private routeSubscription?: Subscription;
@@ -115,7 +115,6 @@ export class SessionPageComponent implements OnInit, OnDestroy {
 
   loadSessions(): void {
     if (!this.eventId) {
-      console.warn('Event ID is missing, cannot load sessions');
       return;
     }
 
@@ -178,15 +177,6 @@ export class SessionPageComponent implements OnInit, OnDestroy {
     if (!speakers || speakers.length === 0) return 'Aucun speaker';
 
     return speakers.map(speaker => speaker.name).filter(name => name).join(', ');
-  }
-
-  toggleSessionSelection(sessionId: string): void {
-    if (this.selectedSessions.has(sessionId)) {
-      this.selectedSessions.delete(sessionId);
-    } else {
-      this.selectedSessions.add(sessionId);
-    }
-    this.updateSelectAllState();
   }
 
   toggleSelectAll(): void {
@@ -255,21 +245,27 @@ export class SessionPageComponent implements OnInit, OnDestroy {
     this.teamUrl = event.teamUrl || '';
     this.teamId = event.teamId || '';
     this.currentUserRole = 'Owner';
-
     this.error = null;
-
-    console.log('Session page initialized with:', {
-      eventId: this.eventId,
-      eventName: this.eventName,
-      eventUrl: this.eventUrl,
-      teamId: this.teamId,
-      teamUrl: this.teamUrl
-    });
   }
 
   private handleEventDataError(err: any): void {
     this.error = 'Failed to load event details. Please try again.';
     console.error('Error loading event data:', err);
+  }
+
+  onRowClick(sessionId: string, event: Event): void {
+    event.preventDefault();
+
+    this.toggleSessionSelection(sessionId);
+  }
+
+  toggleSessionSelection(sessionId: string): void {
+    if (this.selectedSessions.has(sessionId)) {
+      this.selectedSessions.delete(sessionId);
+    } else {
+      this.selectedSessions.add(sessionId);
+    }
+    this.updateSelectAllState();
   }
 
   onSubmit(event: Event) {

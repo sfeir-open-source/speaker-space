@@ -3,8 +3,11 @@ package com.speakerspace.controller;
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.ImportResultDTO;
 import com.speakerspace.dto.session.SessionImportRequestDTO;
+import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.service.EventService;
 import com.speakerspace.service.SessionService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -165,6 +169,42 @@ public class EventController {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             logger.error("Error importing sessions: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/{eventId}/sessions")
+    public ResponseEntity<List<SessionImportData>> getSessionsByEventId(
+            @PathVariable String eventId,
+            HttpServletRequest request,
+            Authentication authentication) {
+
+        HttpSession session = request.getSession(false);
+
+        try {
+            String userEmail = (String) request.getAttribute("userEmail");
+
+            if (userEmail == null && authentication != null) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof String) {
+                    userEmail = (String) principal;
+                }
+            }
+
+            if (userEmail == null && session != null) {
+                userEmail = (String) session.getAttribute("userEmail");
+            }
+
+            if (userEmail == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            List<SessionImportData> sessions = sessionService.getSessionsAsImportData(eventId);
+
+            return ResponseEntity.ok(sessions);
+
+        } catch (Exception e) {
+            logger.error("Error retrieving sessions for event {}: {}", eventId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

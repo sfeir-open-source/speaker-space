@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SessionPageComponent } from './session-page.component';
+import { SessionListPageComponent } from './session-list-page.component';
 
 describe('SessionPageComponent', () => {
-  let component: SessionPageComponent;
-  let fixture: ComponentFixture<SessionPageComponent>;
+  let component: SessionListPageComponent;
+  let fixture: ComponentFixture<SessionListPageComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SessionPageComponent]
+      imports: [SessionListPageComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(SessionPageComponent);
+    fixture = TestBed.createComponent(SessionListPageComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

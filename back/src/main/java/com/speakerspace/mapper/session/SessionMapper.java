@@ -5,10 +5,7 @@ import com.speakerspace.dto.session.CategoryDTO;
 import com.speakerspace.dto.session.FormatDTO;
 import com.speakerspace.dto.session.SessionDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
-import com.speakerspace.model.session.Category;
-import com.speakerspace.model.session.Format;
-import com.speakerspace.model.session.Session;
-import com.speakerspace.model.session.Speaker;
+import com.speakerspace.model.session.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -119,5 +116,57 @@ public class SessionMapper {
         return speakerDTOs.stream()
                 .map(speakerMapper::convertToEntity)
                 .collect(Collectors.toList());
+    }
+
+    public SessionImportData toSessionImportData(Session session) {
+        if (session == null) {
+            return null;
+        }
+
+        SessionImportData importData = new SessionImportData();
+        importData.setId(session.getId());
+        importData.setTitle(session.getTitle());
+        importData.setAbstractText(session.getAbstractText());
+        importData.setDeliberationStatus(session.getDeliberationStatus());
+        importData.setConfirmationStatus(session.getConfirmationStatus());
+        importData.setLevel(session.getLevel());
+        importData.setReferences(session.getReferences());
+        importData.setEventId(session.getEventId());
+
+        if (session.getFormats() != null) {
+            importData.setFormats(session.getFormats());
+        } else {
+            importData.setFormats(new ArrayList<>());
+        }
+
+        if (session.getCategories() != null) {
+            importData.setCategories(session.getCategories());
+        } else {
+            importData.setCategories(new ArrayList<>());
+        }
+
+        if (session.getTags() != null) {
+            importData.setTags(session.getTags());
+        } else {
+            importData.setTags(new ArrayList<>());
+        }
+
+        if (session.getLanguages() != null) {
+            importData.setLanguages(session.getLanguages());
+        } else {
+            importData.setLanguages(new ArrayList<>());
+        }
+
+        if (session.getSpeakers() != null) {
+            importData.setSpeakers(session.getSpeakers());
+        } else {
+            importData.setSpeakers(new ArrayList<>());
+        }
+
+        if (session.getReviews() != null) {
+            importData.setReviews(session.getReviews());
+        }
+
+        return importData;
     }
 }

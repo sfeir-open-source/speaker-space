@@ -5,6 +5,7 @@ import com.speakerspace.dto.session.SessionDTO;
 import com.speakerspace.dto.session.SessionImportDataDTO;
 import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.model.session.Session;
+import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.repository.SessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class SessionService {
@@ -105,4 +108,33 @@ public class SessionService {
     private String generateSessionId() {
         return "session_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 1000);
     }
+
+    public List<SessionImportData> getSessionsAsImportData(String eventId) {
+        try {
+            List<Session> sessions = sessionRepository.findByEventId(eventId);
+
+            List<SessionImportData> importDataList = sessions.stream()
+                    .map(sessionMapper::toSessionImportData)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            return importDataList;
+
+        } catch (Exception e) {
+            logger.error("Error retrieving sessions for event {}: {}", eventId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve sessions", e);
+        }
+    }
+//
+//    public List<Session> getSessionsByEventId(String eventId) {
+//        try {
+//            List<Session> sessions = sessionRepository.findByEventId(eventId);
+//            return sessions.stream()
+//                    .map(sessionMapper::toImportData)
+//                    .collect(Collectors.toList());
+//        } catch (Exception e) {
+//            logger.error("Error retrieving sessions for event {}: {}", eventId, e.getMessage());
+//            throw new RuntimeException("Failed to retrieve sessions", e);
+//        }
+//    }
 }
