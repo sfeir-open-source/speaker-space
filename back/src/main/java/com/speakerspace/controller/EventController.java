@@ -208,4 +208,45 @@ public class EventController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/{eventId}/sessions/{sessionId}")
+    public ResponseEntity<SessionImportData> getSessionById(
+            @PathVariable String eventId,
+            @PathVariable String sessionId,
+            HttpServletRequest request,
+            Authentication authentication) {
+
+        HttpSession session = request.getSession(false);
+
+        try {
+            String userEmail = (String) request.getAttribute("userEmail");
+
+            if (userEmail == null && authentication != null) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof String) {
+                    userEmail = (String) principal;
+                }
+            }
+
+            if (userEmail == null && session != null) {
+                userEmail = (String) session.getAttribute("userEmail");
+            }
+
+            if (userEmail == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            SessionImportData sessionData = sessionService.getSessionById(eventId, sessionId);
+
+            if (sessionData == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(sessionData);
+
+        } catch (Exception e) {
+            logger.error("Error retrieving session {} for event {}: {}", sessionId, eventId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

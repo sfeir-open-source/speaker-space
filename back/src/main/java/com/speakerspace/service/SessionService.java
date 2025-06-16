@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -125,16 +126,26 @@ public class SessionService {
             throw new RuntimeException("Failed to retrieve sessions", e);
         }
     }
-//
-//    public List<Session> getSessionsByEventId(String eventId) {
-//        try {
-//            List<Session> sessions = sessionRepository.findByEventId(eventId);
-//            return sessions.stream()
-//                    .map(sessionMapper::toImportData)
-//                    .collect(Collectors.toList());
-//        } catch (Exception e) {
-//            logger.error("Error retrieving sessions for event {}: {}", eventId, e.getMessage());
-//            throw new RuntimeException("Failed to retrieve sessions", e);
-//        }
-//    }
+
+    public SessionImportData getSessionById(String eventId, String sessionId) {
+        try {
+            Optional<Session> sessionOpt = Optional.ofNullable(sessionRepository.findById(eventId));
+
+            if (sessionOpt.isEmpty()) {
+                logger.warn("Session with ID {} not found for event {}", sessionId, eventId);
+                return null;
+            }
+
+            Session session = sessionOpt.get();
+
+            SessionImportData importData = sessionMapper.toSessionImportData(session);
+
+            logger.info("Successfully retrieved session {} for event {}", sessionId, eventId);
+            return importData;
+
+        } catch (Exception e) {
+            logger.error("Error retrieving session {} for event {}: {}", sessionId, eventId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve session", e);
+        }
+    }
 }

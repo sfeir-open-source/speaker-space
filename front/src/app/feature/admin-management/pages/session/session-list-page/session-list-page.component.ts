@@ -1,14 +1,13 @@
 import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import {finalize, Subject, Subscription, takeUntil} from 'rxjs';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
-import {SessionDetailPageComponent} from '../session-detail-page/session-detail-page.component';
 
 @Component({
   selector: 'app-session-list-page',
@@ -17,7 +16,6 @@ import {SessionDetailPageComponent} from '../session-detail-page/session-detail-
     FormsModule,
     ReactiveFormsModule,
     ButtonGreyComponent,
-    SessionDetailPageComponent,
   ],
   templateUrl: './session-list-page.component.html',
   styleUrl: './session-list-page.component.scss'
@@ -42,10 +40,6 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
   selectedSessions: Set<string> = new Set();
   selectAll: boolean = false;
   currentUserRole: string = '';
-  isModalOpen: boolean = false;
-  selectedSessionForDetail: SessionImportData | null = null;
-  selectedFormat: Format | null = null;
-  selectedCategory: Category | null = null;
 
   @Input() icon: string = 'search';
   @ViewChild(SessionListPageComponent) sessionPageComponent?: SessionListPageComponent;
@@ -56,6 +50,7 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private eventService: EventService,
     private eventDataService: EventDataService,
   ) {}
@@ -278,33 +273,6 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
   }
 
   openSessionDetail(sessionId: string): void {
-    const session = this.sessions.find(s => s.id === sessionId);
-    if (session) {
-      this.selectedSessionForDetail = session;
-
-      this.selectedFormat = session.formats && session.formats.length > 0
-        ? session.formats[0]
-        : null;
-
-      this.selectedCategory = session.categories && session.categories.length > 0
-        ? session.categories[0]
-        : null;
-
-      this.isModalOpen = true;
-      document.body.style.overflow = 'hidden';
-    }
-  }
-
-  closeSessionDetail(): void {
-    this.isModalOpen = false;
-    this.selectedSessionForDetail = null;
-    this.selectedFormat = null;
-    this.selectedCategory = null;
-
-    document.body.style.overflow = 'auto';
-  }
-
-  onEditSession(session: SessionImportData): void {
-    this.closeSessionDetail();
+    this.router.navigate(['/event', this.eventId, '/session-detail', sessionId]);
   }
 }

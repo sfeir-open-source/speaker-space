@@ -1,8 +1,7 @@
-// types/session.ts - Mise à jour pour correspondre au backend
 export type SessionImportData = {
   id?: string;
   title: string;
-  abstract: string; // ✅ Correspond au backend "abstractText"
+  abstract: string;
   deliberationStatus: boolean;
   confirmationStatus: boolean;
   level: string;

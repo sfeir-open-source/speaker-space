@@ -1,5 +1,6 @@
 package com.speakerspace.repository;
 
+import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.session.Session;
 import org.slf4j.Logger;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Repository

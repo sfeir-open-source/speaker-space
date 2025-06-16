@@ -17,7 +17,7 @@ export class EventTeamCardComponent {
 
   navigateToEvent(eventUrl: string): void {
     if (eventUrl) {
-      this.router.navigate(['/session', eventUrl]);
+      this.router.navigate(['/session-list', eventUrl]);
     }
   }
 

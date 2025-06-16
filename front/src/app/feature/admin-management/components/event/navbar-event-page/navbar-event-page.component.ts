@@ -90,7 +90,7 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
           id: 'session',
           label: 'Sessions',
           materialIcon: 'lists',
-          route: `/session/${this.eventId}`,
+          route: `/session-list/${this.eventId}`,
           handler: this.session.bind(this)
         },
         {

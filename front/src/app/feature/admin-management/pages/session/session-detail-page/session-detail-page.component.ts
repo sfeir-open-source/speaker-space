@@ -1,67 +1,148 @@
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, OnDestroy, OnInit } from '@angular/core';
 import {Category, Format, SessionImportData} from '../../../type/session/session';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
+import {NavbarEventPageComponent} from "../../../components/event/navbar-event-page/navbar-event-page.component";
+import {Subject, Subscription, takeUntil} from 'rxjs';
+import {ActivatedRoute, Router} from '@angular/router';
+import {EventService} from '../../../services/event/event.service';
+import {SessionService} from '../../../services/sessions/session.service';
 
 @Component({
-  selector: 'app-session-detail-page',
-  imports: [
-    ButtonGreyComponent
-  ],
-  templateUrl: './session-detail-page.component.html',
-  styleUrl: './session-detail-page.component.scss'
+    selector: 'app-session-detail-page',
+    imports: [
+        ButtonGreyComponent,
+        NavbarEventPageComponent
+    ],
+    templateUrl: './session-detail-page.component.html',
+    styleUrl: './session-detail-page.component.scss'
 })
-export class SessionDetailPageComponent  implements OnInit, OnDestroy {
-  @Input() session: SessionImportData | null = null;
-  @Input() format: Format | null = null;
-  @Input() category: Category | null = null;
-  @Input() isOpen: boolean = false;
+export class SessionDetailPageComponent implements OnInit, OnDestroy {
+  eventId: string = '';
+  sessionId: string = '';
+  eventUrl: string = '';
+  eventName: string = '';
+  teamId: string = '';
+  session: SessionImportData | null = null;
+  format: Format | null = null;
+  category: Category | null = null;
+  isLoading: boolean = true;
+  error: string | null = null;
 
-  @Output() closeEvent = new EventEmitter<void>();
-  @Output() editEvent = new EventEmitter<SessionImportData>();
+  private destroy$ = new Subject<void>();
+  private routeSubscription?: Subscription;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private eventService: EventService,
+    private sessionService: SessionService
+  ) {}
 
   ngOnInit(): void {
-    // ✅ Gestion de la touche Escape
-    document.addEventListener('keydown', this.handleEscapeKey.bind(this));
+    this.subscribeToRouteParams();
   }
 
   ngOnDestroy(): void {
-    document.removeEventListener('keydown', this.handleEscapeKey.bind(this));
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.routeSubscription?.unsubscribe();
   }
 
-  /**
-   * ✅ Ferme la modal
-   */
-  closeModal(): void {
-    this.closeEvent.emit();
+  private subscribeToRouteParams(): void {
+    this.routeSubscription = this.route.paramMap.subscribe(params => {
+      this.eventId = params.get('eventId') || '';
+      this.sessionId = params.get('sessionId') || '';
+
+      if (this.eventId && this.sessionId) {
+        this.loadEventAndSessionData();
+      } else {
+        this.error = 'Event ID or Session ID is missing from route parameters';
+        this.isLoading = false;
+      }
+    });
   }
 
-  /**
-   * ✅ Gère le clic sur le backdrop - CORRIGÉ pour bien fermer
-   */
-  onBackdropClick(event: Event): void {
-    // Vérifier si le clic est directement sur le backdrop
-    const target = event.target as HTMLElement;
-    if (target.classList.contains('bg-gray-300/90') ||
-      event.target === event.currentTarget) {
-      this.closeModal();
-    }
+  private loadEventAndSessionData(): void {
+    this.isLoading = true;
+
+    Promise.all([
+      this.loadEventData(),
+      this.loadSessionData()
+    ]).finally(() => {
+      this.isLoading = false;
+    });
   }
 
-  /**
-   * ✅ Gère la touche Escape
-   */
-  private handleEscapeKey(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && this.isOpen) {
-      this.closeModal();
-    }
+  private loadEventData(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.eventService.getEventById(this.eventId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (event) => {
+            this.eventUrl = event.url || '';
+            this.eventName = event.eventName || '';
+            this.teamId = event.teamId || '';
+            resolve();
+          },
+          error: (err) => {
+            console.error('Error loading event:', err);
+            this.error = 'Failed to load event data';
+            reject(err);
+          }
+        });
+    });
   }
 
-  /**
-   * ✅ Émet l'événement d'édition
-   */
+  private loadSessionData(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.sessionService.getSessionById(this.eventId, this.sessionId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (session: SessionImportData) => {
+            console.log('Session loaded:', session);
+            this.session = session;
+
+            this.format = session.formats && session.formats.length > 0
+              ? session.formats[0]
+              : null;
+
+            this.category = session.categories && session.categories.length > 0
+              ? session.categories[0]
+              : null;
+
+            resolve();
+          },
+          error: (err) => {
+            console.error('Error loading session:', err);
+            this.error = 'Failed to load session data';
+            reject(err);
+          }
+        });
+    });
+  }
+
+  private readonly languageMap: Record<string, string> = {
+    'en': 'English',
+    'fr': 'French',
+    'es': 'Spanish'
+  };
+
+  formatLevel(level: string): string {
+    if (!level) return '';
+    return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
+  }
+
+  formatLanguage(languageCode: string): string {
+    if (!languageCode) return '';
+    const code: string = languageCode.toLowerCase();
+    return this.languageMap[code] || languageCode;
+  }
+
+  goBackToSessionList(): void {
+    this.router.navigate(['/session-list', this.eventId]);
+  }
+
   onEditSession(): void {
-    if (this.session) {
-      this.editEvent.emit(this.session);
-    }
+
   }
 }
