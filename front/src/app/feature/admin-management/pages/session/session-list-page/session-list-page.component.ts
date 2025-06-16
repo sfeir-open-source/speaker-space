@@ -7,7 +7,8 @@ import {EventDataService} from '../../../services/event/event-data.service';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {SessionImportData, Speaker} from '../../../type/session/session';
+import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
+import {SessionDetailPageComponent} from '../session-detail-page/session-detail-page.component';
 
 @Component({
   selector: 'app-session-list-page',
@@ -16,6 +17,7 @@ import {SessionImportData, Speaker} from '../../../type/session/session';
     FormsModule,
     ReactiveFormsModule,
     ButtonGreyComponent,
+    SessionDetailPageComponent,
   ],
   templateUrl: './session-list-page.component.html',
   styleUrl: './session-list-page.component.scss'
@@ -33,13 +35,17 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
   searchTerm: string = '';
   totalSessions: number = 0;
   isLoadingSessions: boolean = false;
-  Math = Math;
+  Math : Math = Math;
   currentPage: number = 1;
   itemsPerPage: number = 10;
   totalPages: number = 0;
   selectedSessions: Set<string> = new Set();
   selectAll: boolean = false;
   currentUserRole: string = '';
+  isModalOpen: boolean = false;
+  selectedSessionForDetail: SessionImportData | null = null;
+  selectedFormat: Format | null = null;
+  selectedCategory: Category | null = null;
 
   @Input() icon: string = 'search';
   @ViewChild(SessionListPageComponent) sessionPageComponent?: SessionListPageComponent;
@@ -106,9 +112,6 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
           });
 
           this.loadSessions();
-        },
-        error: (err) => {
-          this.handleEventDataError(err);
         }
       });
   }
@@ -248,17 +251,6 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
     this.error = null;
   }
 
-  private handleEventDataError(err: any): void {
-    this.error = 'Failed to load event details. Please try again.';
-    console.error('Error loading event data:', err);
-  }
-
-  onRowClick(sessionId: string, event: Event): void {
-    event.preventDefault();
-
-    this.toggleSessionSelection(sessionId);
-  }
-
   toggleSessionSelection(sessionId: string): void {
     if (this.selectedSessions.has(sessionId)) {
       this.selectedSessions.delete(sessionId);
@@ -270,5 +262,49 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
 
   onSubmit(event: Event) {
     event.preventDefault();
+  }
+
+  onRowClick(sessionId: string, event: Event): void {
+    event.preventDefault();
+
+    const target = event.target as HTMLElement;
+    const isCheckboxArea = target.closest('.checkbox-area');
+
+    if (isCheckboxArea) {
+      this.toggleSessionSelection(sessionId);
+    } else {
+      this.openSessionDetail(sessionId);
+    }
+  }
+
+  openSessionDetail(sessionId: string): void {
+    const session = this.sessions.find(s => s.id === sessionId);
+    if (session) {
+      this.selectedSessionForDetail = session;
+
+      this.selectedFormat = session.formats && session.formats.length > 0
+        ? session.formats[0]
+        : null;
+
+      this.selectedCategory = session.categories && session.categories.length > 0
+        ? session.categories[0]
+        : null;
+
+      this.isModalOpen = true;
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  closeSessionDetail(): void {
+    this.isModalOpen = false;
+    this.selectedSessionForDetail = null;
+    this.selectedFormat = null;
+    this.selectedCategory = null;
+
+    document.body.style.overflow = 'auto';
+  }
+
+  onEditSession(session: SessionImportData): void {
+    this.closeSessionDetail();
   }
 }

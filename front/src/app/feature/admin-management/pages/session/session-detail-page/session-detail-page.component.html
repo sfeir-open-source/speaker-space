@@ -1,1 +1,105 @@
-<p>session-detail-page works!</p>
+@if (isOpen && session) {
+  <div class="fixed inset-0 z-50 overflow-y-auto"
+       (click)="onBackdropClick($event)"
+       role="dialog"
+       aria-modal="true"
+       [attr.aria-labelledby]="'modal-title-' + session?.id">
+
+    <div class="fixed inset-0 bg-gray-300/90 flex items-center justify-center p-4"
+         (click)="onBackdropClick($event)">
+
+      <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 [id]="'modal-title-' + session?.id"
+              class="text-lg font-medium text-gray-900 flex-1 mr-4">
+            {{ session.title || 'Titre non défini' }}
+          </h2>
+          <app-button-grey
+            type="button"
+            [materialIcon]="'edit_square'"
+            customTextClass="text-gray-600 hover:text-gray-600"
+            class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm"
+            (click)="onEditSession()">
+            Edit
+          </app-button-grey>
+        </div>
+
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)] space-y-6">
+
+          @if (session.speakers && session.speakers.length > 0) {
+            <div class="space-y-3">
+              @for (speaker of session.speakers; track speaker.name) {
+                <div class="flex items-start gap-4 border border-gray-300 rounded-full px-1 py-1">
+                  <div class="flex-shrink-0">
+                    <img
+                      [src]="speaker.picture || 'img/profil-picture.svg'"
+                      class="h-10 w-10 rounded-full object-cover"
+                      [alt]="'Photo de ' + speaker.name"
+                      referrerpolicy="no-referrer">
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-medium text-gray-900 text-sm">
+                      {{ speaker.name }}
+                    </h4>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="text-gray-700 p-3 rounded-md">
+            @if (session.abstract) {
+              <p class="whitespace-pre-wrap">{{ session.abstract }}</p>
+            } @else {
+              <p class="text-gray-500 italic">Aucune description disponible</p>
+            }
+          </div>
+
+          @if (format || (session.formats && session.formats.length > 0)) {
+            <div>
+              <h4 class="font-base font-medium text-gray-900 mb-2">Formats</h4>
+              <div class="flex flex-wrap gap-2">
+                @if (format) {
+                  <div class="inline-flex items-center text-gray-700 text-sm py-1 px-3">
+                    {{ format.name }}
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (category || (session.categories && session.categories.length > 0)) {
+            <div>
+              <h4 class="font-base font-medium text-gray-900 mb-2">Categories</h4>
+              <div class="flex flex-wrap gap-2">
+                @if (category) {
+                  <div class="inline-flex items-center text-gray-700 text-sm py-1 px-3">
+                    {{ category.name }}
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="flex flex-wrap gap-3">
+            @if (session.level) {
+              <div class="inline-flex items-center bg-blue-50 text-blue-700 border border-blue-200 text-sm px-1 rounded-lg">
+                {{ session.level }}
+              </div>
+            }
+
+            @if (session.languages && session.languages.length > 0) {
+              @for (language of session.languages; track language) {
+                <div class="inline-flex items-center bg-gray-100 text-gray-700 border border-gray-200 text-sm py-1 px-3 rounded-lg">
+                  {{ language }}
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -200,3 +200,11 @@
     </section>
   </main>
 </div>
+<app-session-detail-page
+  [session]="selectedSessionForDetail"
+  [format]="selectedFormat"
+  [category]="selectedCategory"
+  [isOpen]="isModalOpen"
+  (closeEvent)="closeSessionDetail()"
+  (editEvent)="onEditSession($event)">
+</app-session-detail-page>
