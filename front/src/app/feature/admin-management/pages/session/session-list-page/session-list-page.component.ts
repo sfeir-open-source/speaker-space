@@ -273,6 +273,6 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
   }
 
   openSessionDetail(sessionId: string): void {
-    this.router.navigate(['/event', this.eventId, '/session-detail', sessionId]);
+    this.router.navigate(['/event', this.eventId, 'session', sessionId]);
   }
 }

@@ -90,7 +90,7 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
           id: 'session',
           label: 'Sessions',
           materialIcon: 'lists',
-          route: `/session-list/${this.eventId}`,
+          route: `/event-sessions/${this.eventId}`,
           handler: this.session.bind(this)
         },
         {
@@ -148,7 +148,7 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/session', this.eventId]);
+    this.router.navigate(['/event-sessions', this.eventId]);
   }
 
   private settings(): void {

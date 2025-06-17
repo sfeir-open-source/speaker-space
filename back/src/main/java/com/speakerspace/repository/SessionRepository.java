@@ -12,4 +12,5 @@ public interface SessionRepository {
     List<Session> findByEventId(String eventId);
     void deleteById(String id);
     boolean existsByIdAndEventId(String id, String eventId);
+    Session findByIdAndEventId(String sessionId, String eventId);
 }

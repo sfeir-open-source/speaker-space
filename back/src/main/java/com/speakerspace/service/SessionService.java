@@ -129,18 +129,14 @@ public class SessionService {
 
     public SessionImportData getSessionById(String eventId, String sessionId) {
         try {
-            Optional<Session> sessionOpt = Optional.ofNullable(sessionRepository.findById(eventId));
+            Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
 
-            if (sessionOpt.isEmpty()) {
+            if (session == null) {
                 logger.warn("Session with ID {} not found for event {}", sessionId, eventId);
                 return null;
             }
 
-            Session session = sessionOpt.get();
-
             SessionImportData importData = sessionMapper.toSessionImportData(session);
-
-            logger.info("Successfully retrieved session {} for event {}", sessionId, eventId);
             return importData;
 
         } catch (Exception e) {

@@ -139,7 +139,7 @@ export class SessionDetailPageComponent implements OnInit, OnDestroy {
   }
 
   goBackToSessionList(): void {
-    this.router.navigate(['/session-list', this.eventId]);
+    this.router.navigate(['/event-sessions', this.eventId]);
   }
 
   onEditSession(): void {

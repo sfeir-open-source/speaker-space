@@ -99,4 +99,23 @@ public class SessionRepositoryImpl implements SessionRepository {
             throw new RuntimeException("Failed to check session existence", e);
         }
     }
+
+    @Override
+    public Session findByIdAndEventId(String sessionId, String eventId) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("id", sessionId)
+                    .whereEqualTo("eventId", eventId);
+            QuerySnapshot querySnapshot = query.get().get();
+
+            if (querySnapshot.isEmpty()) {
+                return null;
+            }
+
+            return querySnapshot.getDocuments().get(0).toObject(Session.class);
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error finding session by ID and event ID: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to find session", e);
+        }
+    }
 }
