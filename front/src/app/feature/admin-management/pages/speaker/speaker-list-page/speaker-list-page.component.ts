@@ -1,7 +1,7 @@
 import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import {finalize, Subject, Subscription, takeUntil} from 'rxjs';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {EventDTO} from '../../../type/event/eventDTO';
@@ -50,6 +50,7 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private eventService: EventService,
     private eventDataService: EventDataService,
   ) {}
@@ -281,6 +282,10 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
 
   openSpeakerDetail(speakerName: string): void {
     console.log('Open speaker detail for:', speakerName);
+
+    const encodedSpeakerName : string = encodeURIComponent(speakerName);
+
+    this.router.navigate(['event', this.eventId, 'speaker', encodedSpeakerName]);
   }
 
   onImageError(event: Event): void {

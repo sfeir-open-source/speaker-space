@@ -125,8 +125,6 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (sessions: SessionImportData[]) => {
-          console.log('Sessions loaded successfully:', sessions);
-
           const sortedSessions: SessionImportData[] = sessions.sort((a, b) => {
             const titleA: string = a.title?.toLowerCase() || '';
             const titleB: string = b.title?.toLowerCase() || '';
@@ -149,8 +147,8 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
   }
 
   get paginatedSessions(): SessionImportData[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
+    const startIndex : number = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex : number = startIndex + this.itemsPerPage;
     return this.filteredSessions.slice(startIndex, endIndex);
   }
 

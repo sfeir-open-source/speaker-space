@@ -31,6 +31,9 @@ import {
 import {
   SpeakerListPageComponent
 } from './feature/admin-management/pages/speaker/speaker-list-page/speaker-list-page.component';
+import {
+  SpeakerDetailPageComponent
+} from './feature/admin-management/pages/speaker/speaker-detail-page/speaker-detail-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -47,6 +50,7 @@ export const routes: Routes = [
   { path: 'event-sessions/:eventId', component: SessionListPageComponent, canActivate: [AuthGuard] },
   { path: 'event-speakers/:eventId', component: SpeakerListPageComponent, canActivate: [AuthGuard] },
   { path: 'event/:eventId/session/:sessionId', component: SessionDetailPageComponent, canActivate: [AuthGuard] },
+  { path: 'event/:eventId/speaker/:speakerName', component: SpeakerDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }
