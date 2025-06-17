@@ -5,7 +5,7 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import { environment } from '../../../../../environments/environment.development';
 import { Event } from '../../type/event/event';
 import {EventDTO} from '../../type/event/eventDTO';
-import {ImportResult, SessionImportData, SessionImportRequest} from '../../type/session/session';
+import {ImportResult, SessionImportData, SessionImportRequest, Speaker} from '../../type/session/session';
 import {AuthService} from '../../../../core/login/services/auth.service';
 
 @Injectable({
@@ -146,7 +146,7 @@ export class EventService {
         const headers = this.buildHeaders(token);
 
         return this.http.post<ImportResult>(
-          `${environment.apiUrl}/event/${eventId}/sessions/import`,
+          `${environment.apiUrl}/session/event/${eventId}/import`,
           importRequest,
           {
             headers: headers,
@@ -159,9 +159,6 @@ export class EventService {
       }),
       catchError(error => {
         console.error('Error importing sessions:', error);
-        if (error.status === 401) {
-          console.error('Authentication failed - token may be expired');
-        }
         return throwError(() => error);
       })
     );
@@ -184,17 +181,13 @@ export class EventService {
 
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
-      console.log('Authorization header set with token');
-    } else {
-      console.warn('No token available for request');
     }
-
     return headers;
   }
 
   getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {
     return this.http.get<SessionImportData[]>(
-      `${environment.apiUrl}/event/${eventId}/sessions`,
+      `${environment.apiUrl}/session/event/${eventId}`,
       { withCredentials: true }
     ).pipe(
       tap(sessions => {
@@ -205,5 +198,26 @@ export class EventService {
         return throwError(() => error);
       })
     );
+  }
+
+  getSpeakersByEventId(eventId: string): Observable<Speaker[]> {
+    const url = `${environment.apiUrl}/session/event/${eventId}/speakers`;
+
+    return this.http.get<Speaker[]>(url, {
+      withCredentials: true,
+      headers: this.getHeaders()
+    }).pipe(
+      catchError(error => {
+        console.error('Error fetching speakers:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  private getHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
   }
 }

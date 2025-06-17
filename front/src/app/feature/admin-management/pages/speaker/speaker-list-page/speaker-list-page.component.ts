@@ -1,26 +1,26 @@
 import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import {finalize, Subject, Subscription, takeUntil} from 'rxjs';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {SessionImportData, Speaker} from '../../../type/session/session';
+import {Speaker} from '../../../type/session/session';
 
 @Component({
-  selector: 'app-session-list-page',
+  selector: 'app-speaker-list-page',
   imports: [
     NavbarEventPageComponent,
     FormsModule,
     ReactiveFormsModule,
     ButtonGreyComponent,
   ],
-  templateUrl: './session-list-page.component.html',
-  styleUrl: './session-list-page.component.scss'
+  templateUrl: './speaker-list-page.component.html',
+  styleUrl: './speaker-list-page.component.scss'
 })
-export class SessionListPageComponent implements OnInit, OnDestroy {
+export class SpeakerListPageComponent implements OnInit, OnDestroy {
   eventId: string = '';
   eventUrl: string = '';
   eventName: string = '';
@@ -28,29 +28,28 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
   teamId: string = '';
   isLoading: boolean = true;
   error: string | null = null;
-  sessions: SessionImportData[] = [];
-  filteredSessions: SessionImportData[] = [];
+
+  speakers: Speaker[] = [];
+  filteredSpeakers: Speaker[] = [];
+
   searchTerm: string = '';
-  totalSessions: number = 0;
-  isLoadingSessions: boolean = false;
-  Math : Math = Math;
+  totalSpeakers: number = 0;
+  isLoadingSpeakers: boolean = false;
+  Math: Math = Math;
   currentPage: number = 1;
   itemsPerPage: number = 10;
   totalPages: number = 0;
-  selectedSessions: Set<string> = new Set();
+  selectedSpeakers: Set<string> = new Set();
   selectAll: boolean = false;
   currentUserRole: string = '';
 
-  @Input() icon: string = 'search';
-  @ViewChild(SessionListPageComponent) sessionPageComponent?: SessionListPageComponent;
+  @Input() icon: string = 'person';
 
   private destroy$ = new Subject<void>();
   private routeSubscription?: Subscription;
 
-
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
     private eventService: EventService,
     private eventDataService: EventDataService,
   ) {}
@@ -106,117 +105,118 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
             type: event.type,
           });
 
-          this.loadSessions();
+          this.loadSpeakers();
+        },
+        error: (err) => {
+          console.error('Error loading event:', err);
+          this.error = 'Failed to load event data. Please try again.';
         }
       });
   }
 
-  loadSessions(): void {
+  loadSpeakers(): void {
     if (!this.eventId) {
       return;
     }
 
-    this.isLoadingSessions = true;
+    this.isLoadingSpeakers = true;
 
-    this.eventService.getSessionsByEventId(this.eventId)
+    this.eventService.getSpeakersByEventId(this.eventId)
       .pipe(
-        finalize(() => this.isLoadingSessions = false),
+        finalize(() => this.isLoadingSpeakers = false),
         takeUntil(this.destroy$)
       )
       .subscribe({
-        next: (sessions: SessionImportData[]) => {
-          console.log('Sessions loaded successfully:', sessions);
+        next: (speakers: Speaker[]) => {
+          console.log('Speakers loaded successfully:', speakers);
 
-          const sortedSessions: SessionImportData[] = sessions.sort((a, b) => {
-            const titleA: string = a.title?.toLowerCase() || '';
-            const titleB: string = b.title?.toLowerCase() || '';
-            return titleA.localeCompare(titleB);
+          const sortedSpeakers : Speaker[] = speakers.sort((a, b) => {
+            const nameA : string = a.name?.toLowerCase() || '';
+            const nameB : string = b.name?.toLowerCase() || '';
+            return nameA.localeCompare(nameB);
           });
 
-          this.sessions = sortedSessions;
-          this.filteredSessions = [...sortedSessions];
-          this.totalSessions = sortedSessions.length;
+          this.speakers = sortedSpeakers;
+          this.filteredSpeakers = [...sortedSpeakers];
+          this.totalSpeakers = sortedSpeakers.length;
           this.calculatePagination();
         },
         error: (err) => {
-          console.error('Error loading sessions:', err);
-          this.error = 'Failed to load sessions. Please try again.';
-          this.sessions = [];
-          this.filteredSessions = [];
-          this.totalSessions = 0;
+          console.error('Error loading speakers:', err);
+          this.speakers = [];
+          this.filteredSpeakers = [];
+          this.totalSpeakers = 0;
         }
       });
   }
 
-  get paginatedSessions(): SessionImportData[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    return this.filteredSessions.slice(startIndex, endIndex);
+  get paginatedSpeakers(): Speaker[] {
+    const startIndex : number = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex : number = startIndex + this.itemsPerPage;
+    return this.filteredSpeakers.slice(startIndex, endIndex);
   }
 
   onSearch(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.searchTerm = target.value.toLowerCase();
-    this.filterSessions();
+    this.filterSpeakers();
   }
 
-  private filterSessions(): void {
+  private filterSpeakers(): void {
     if (!this.searchTerm.trim()) {
-      this.filteredSessions = [...this.sessions];
+      this.filteredSpeakers = [...this.speakers];
     } else {
-      this.filteredSessions = this.sessions.filter(session =>
-        session.title?.toLowerCase().includes(this.searchTerm) ||
-        session.abstract?.toLowerCase().includes(this.searchTerm) ||
-        session.speakers?.some(speaker =>
-          speaker.name?.toLowerCase().includes(this.searchTerm)
-        )
+      this.filteredSpeakers = this.speakers.filter(speaker =>
+        speaker.name?.toLowerCase().includes(this.searchTerm) ||
+        speaker.bio?.toLowerCase().includes(this.searchTerm) ||
+        speaker.company?.toLowerCase().includes(this.searchTerm)
       );
     }
 
-    this.totalSessions = this.filteredSessions.length;
+    this.filteredSpeakers.sort((a, b) => {
+      const nameA : string = a.name?.toLowerCase() || '';
+      const nameB : string = b.name?.toLowerCase() || '';
+      return nameA.localeCompare(nameB);
+    });
+
+    this.totalSpeakers = this.filteredSpeakers.length;
     this.currentPage = 1;
     this.calculatePagination();
-  }
-
-  formatSpeakers(speakers: Speaker[] | undefined): string {
-    if (!speakers || speakers.length === 0) return 'Aucun speaker';
-
-    return speakers.map(speaker => speaker.name).filter(name => name).join(', ');
   }
 
   toggleSelectAll(): void {
     this.selectAll = !this.selectAll;
 
     if (this.selectAll) {
-      this.paginatedSessions.forEach(session => {
-        if (session.id) {
-          this.selectedSessions.add(session.id);
+      this.paginatedSpeakers.forEach(speaker => {
+        if (speaker.name) {
+          this.selectedSpeakers.add(speaker.name);
         }
       });
     } else {
-      this.paginatedSessions.forEach(session => {
-        if (session.id) {
-          this.selectedSessions.delete(session.id);
+      this.paginatedSpeakers.forEach(speaker => {
+        if (speaker.name) {
+          this.selectedSpeakers.delete(speaker.name);
         }
       });
     }
   }
 
   private updateSelectAllState(): void {
-    const visibleSessionIds : string[] = this.paginatedSessions
-      .map(session => session.id)
-      .filter(id => id !== undefined);
+    const visibleSpeakerNames: string[] = this.paginatedSpeakers
+      .map(speaker => speaker.name)
+      .filter(name => name !== undefined) as string[];
 
-    this.selectAll = visibleSessionIds.length > 0 &&
-      visibleSessionIds.every(id => this.selectedSessions.has(id!));
+    this.selectAll = visibleSpeakerNames.length > 0 &&
+      visibleSpeakerNames.every(name => this.selectedSpeakers.has(name));
   }
 
-  isSessionSelected(sessionId: string | undefined): boolean {
-    return sessionId ? this.selectedSessions.has(sessionId) : false;
+  isSpeakerSelected(speakerName: string | undefined): boolean {
+    return speakerName ? this.selectedSpeakers.has(speakerName) : false;
   }
 
   private calculatePagination(): void {
-    this.totalPages = Math.ceil(this.totalSessions / this.itemsPerPage);
+    this.totalPages = Math.ceil(this.totalSpeakers / this.itemsPerPage);
   }
 
   goToPage(page: number): void {
@@ -229,14 +229,14 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
     const pages: number[] = [];
     const maxVisiblePages = 5;
 
-    let startPage : number = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
+    let startPage: number = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
     let endPage: number = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
 
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
 
-    for (let i : number = startPage; i <= endPage; i++) {
+    for (let i: number = startPage; i <= endPage; i++) {
       pages.push(i);
     }
 
@@ -253,33 +253,38 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
     this.error = null;
   }
 
-  toggleSessionSelection(sessionId: string): void {
-    if (this.selectedSessions.has(sessionId)) {
-      this.selectedSessions.delete(sessionId);
+  toggleSpeakerSelection(speakerName: string): void {
+    if (this.selectedSpeakers.has(speakerName)) {
+      this.selectedSpeakers.delete(speakerName);
     } else {
-      this.selectedSessions.add(sessionId);
+      this.selectedSpeakers.add(speakerName);
     }
     this.updateSelectAllState();
   }
 
-  onSubmit(event: Event) {
+  onSubmit(event: Event): void {
     event.preventDefault();
   }
 
-  onRowClick(sessionId: string, event: Event): void {
+  onRowClick(speakerName: string, event: Event): void {
     event.preventDefault();
 
     const target = event.target as HTMLElement;
     const isCheckboxArea = target.closest('.checkbox-area');
 
     if (isCheckboxArea) {
-      this.toggleSessionSelection(sessionId);
+      this.toggleSpeakerSelection(speakerName);
     } else {
-      this.openSessionDetail(sessionId);
+      this.openSpeakerDetail(speakerName);
     }
   }
 
-  openSessionDetail(sessionId: string): void {
-    this.router.navigate(['/event', this.eventId, 'session', sessionId]);
+  openSpeakerDetail(speakerName: string): void {
+    console.log('Open speaker detail for:', speakerName);
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = 'img/profil-picture.svg';
   }
 }

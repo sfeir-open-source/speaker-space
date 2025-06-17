@@ -395,7 +395,6 @@ export class AuthService {
       const currentUser = this.auth.currentUser;
       if (currentUser) {
         const token = await currentUser.getIdToken(true);
-        console.log('Token retrieved successfully');
         return token;
       }
       console.warn('No authenticated user found');

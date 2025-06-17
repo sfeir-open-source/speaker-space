@@ -1,18 +1,20 @@
 import {Component, OnDestroy, OnInit } from '@angular/core';
 import {Category, Format, SessionImportData} from '../../../type/session/session';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {NavbarEventPageComponent} from "../../../components/event/navbar-event-page/navbar-event-page.component";
 import {Subject, Subscription, takeUntil} from 'rxjs';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute } from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {SessionService} from '../../../services/sessions/session.service';
+import {
+  NavbarSessionPageComponent
+} from '../../../components/session/navbar-session-page/navbar-session-page.component';
 
 @Component({
     selector: 'app-session-detail-page',
-    imports: [
-        ButtonGreyComponent,
-        NavbarEventPageComponent
-    ],
+  imports: [
+    ButtonGreyComponent,
+    NavbarSessionPageComponent
+  ],
     templateUrl: './session-detail-page.component.html',
     styleUrl: './session-detail-page.component.scss'
 })
@@ -33,7 +35,6 @@ export class SessionDetailPageComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
     private eventService: EventService,
     private sessionService: SessionService
   ) {}
@@ -138,11 +139,11 @@ export class SessionDetailPageComponent implements OnInit, OnDestroy {
     return this.languageMap[code] || languageCode;
   }
 
-  goBackToSessionList(): void {
-    this.router.navigate(['/event-sessions', this.eventId]);
+  onEditSession(): void {
   }
 
-  onEditSession(): void {
-
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = 'img/profil-picture.svg';
   }
 }

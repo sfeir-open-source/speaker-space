@@ -28,6 +28,9 @@ import {SessionListPageComponent} from './feature/admin-management/pages/session
 import {
   SessionDetailPageComponent
 } from './feature/admin-management/pages/session/session-detail-page/session-detail-page.component';
+import {
+  SpeakerListPageComponent
+} from './feature/admin-management/pages/speaker/speaker-list-page/speaker-list-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -42,6 +45,7 @@ export const routes: Routes = [
   { path: 'event-detail/:eventId', component: SettingEventPageComponent, canActivate: [AuthGuard] },
   { path: 'event-customize/:eventId', component: CustomizeEventComponent, canActivate: [AuthGuard] },
   { path: 'event-sessions/:eventId', component: SessionListPageComponent, canActivate: [AuthGuard] },
+  { path: 'event-speakers/:eventId', component: SpeakerListPageComponent, canActivate: [AuthGuard] },
   { path: 'event/:eventId/session/:sessionId', component: SessionDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
   { path: 'not-found', component: NotFoundPageComponent },

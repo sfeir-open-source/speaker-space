@@ -11,11 +11,7 @@ export class SessionService {
 
   constructor(private http: HttpClient) {}
 
-  getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {
-    return this.http.get<SessionImportData[]>(`${environment.apiUrl}/event/${eventId}/sessions`);
-  }
-
   getSessionById(eventId: string, sessionId: string): Observable<SessionImportData> {
-    return this.http.get<SessionImportData>(`${environment.apiUrl}/event/${eventId}/sessions/${sessionId}`);
+    return this.http.get<SessionImportData>(`${environment.apiUrl}/session/event/${eventId}/session/${sessionId}`);
   }
 }

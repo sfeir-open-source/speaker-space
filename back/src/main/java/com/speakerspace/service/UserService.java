@@ -1,13 +1,11 @@
 package com.speakerspace.service;
 
 import com.google.cloud.firestore.*;
-import com.google.firebase.cloud.FirestoreClient;
 import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.exception.ValidationException;
 import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.model.Team;
-import com.speakerspace.model.TeamMember;
 import com.speakerspace.model.User;
 import com.speakerspace.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;

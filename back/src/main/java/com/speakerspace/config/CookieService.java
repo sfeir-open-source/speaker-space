@@ -29,7 +29,6 @@ public class CookieService {
                 .sameSite("Lax")
                 .build();
 
-        logger.info("Setting auth cookie for user");
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
@@ -42,7 +41,6 @@ public class CookieService {
                 .sameSite("Lax")
                 .build();
 
-        logger.info("Clearing auth cookie");
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 

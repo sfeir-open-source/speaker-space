@@ -94,6 +94,13 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
           handler: this.session.bind(this)
         },
         {
+          id: 'speakers',
+          label: 'Speakers',
+          materialIcon: 'group',
+          route: `/event-speakers/${this.eventId}`,
+          handler: this.speaker.bind(this)
+        },
+        {
           id: 'settings',
           label: 'Settings',
           materialIcon: 'settings',
@@ -131,6 +138,9 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
       case currentRoute.includes('session'):
         this.activePage = 'session';
         break;
+      case currentRoute.includes('speakers'):
+        this.activePage = 'speakers';
+        break;
       case currentRoute.includes('event-detail'):
         this.activePage = 'settings';
         break;
@@ -149,6 +159,14 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     this.router.navigate(['/event-sessions', this.eventId]);
+  }
+
+  private speaker(): void {
+    if (!this.eventId) {
+      return;
+    }
+
+    this.router.navigate(['/event-speakers', this.eventId]);
   }
 
   private settings(): void {
@@ -186,29 +204,5 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
         }
       });
     }
-  }
-
-  private navigateToTeamById(teamId: string): void {
-    if (!teamId || typeof teamId !== 'string' || teamId.trim() === '') {
-      return;
-    }
-
-    this.teamService.getTeamById(teamId).subscribe({
-      next: (team) => {
-        if (!team) {
-          console.error('Team data is null or undefined for teamId:', teamId);
-          return;
-        }
-
-        if (team.id && typeof team.id === 'string' && team.id.trim() !== '') {
-          this.router.navigate(['/team', team.id]);
-        } else {
-          console.warn('Team URL not found in team data for teamId:', teamId);
-        }
-      },
-      error: (err) => {
-        console.error('Error fetching team details for teamId:', teamId, err);
-      }
-    });
   }
 }

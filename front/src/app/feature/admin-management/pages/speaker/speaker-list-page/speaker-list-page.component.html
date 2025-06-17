@@ -23,14 +23,14 @@
       @if (!isLoading && !error) {
         <form class="mx-auto" (ngSubmit)="onSubmit($event)">
           <article class="w-full items-center bg-white shadow-md rounded-lg py-4">
-            @if (totalSessions !== 0) {
+            @if (totalSpeakers !== 0) {
               <section class="px-4 pb-4">
                 <div class="flex items-center gap-3">
                   <div class="relative flex-1">
                     <input
                       type="text"
                       name="searchInput"
-                      placeholder="Search for proposals..."
+                      placeholder="Search for speakers..."
                       class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       (input)="onSearch($event)"
                       [value]="searchTerm"
@@ -66,16 +66,17 @@
                 </div>
               </section>
             }
-            @if (isLoadingSessions) {
+
+            @if (isLoadingSpeakers) {
               <div class="flex justify-center items-center h-32 px-4">
                 <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                <span class="ml-2 text-gray-600">Loading sessions...</span>
+                <span class="ml-2 text-gray-600">Loading speakers...</span>
               </div>
             } @else {
               <div class="relative overflow-x-auto sm:rounded-lg">
-                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                  @if (totalSessions !== 0) {
-                    <thead class="text-xs text-gray-700 bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <table class="w-full text-sm text-left rtl:text-right text-gray-500">
+                  @if (totalSpeakers !== 0) {
+                    <thead class="text-xs text-gray-700 bg-gray-50">
                     <tr>
                       <th scope="col" class="p-4">
                         <div class="flex items-center">
@@ -84,60 +85,65 @@
                             type="checkbox"
                             [checked]="selectAll"
                             (change)="toggleSelectAll()"
-                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500">
                           <label for="checkbox-all-search" class="sr-only">checkbox</label>
                         </div>
                       </th>
                       <th scope="col" class="px-2 py-3 font-normal">
-                        {{ totalSessions }} proposal{{ totalSessions > 1 ? 's' : '' }}
+                        {{ totalSpeakers }} speaker{{ totalSpeakers > 1 ? 's' : '' }}
                       </th>
                     </tr>
                     </thead>
                   }
                   <tbody>
-                    @if (paginatedSessions.length === 0) {
+                    @if (paginatedSpeakers.length === 0) {
                       <tr class="bg-white">
                         <td colspan="2" class="px-4 py-8 text-center text-gray-500">
                           @if (searchTerm) {
                             <div class="flex flex-col items-center">
                               <i class="material-icons text-4xl text-gray-300 mb-2">search_off</i>
-                              <p class="text-lg font-medium text-gray-600">No sessions found</p>
+                              <p class="text-lg font-medium text-gray-600">No speakers found</p>
                               <p class="text-sm text-gray-500">for "{{ searchTerm }}"</p>
                             </div>
                           } @else {
                             <div class="flex flex-col items-center">
-                              <i class="material-icons text-4xl text-gray-300 mb-2">event_note</i>
-                              <p class="text-lg font-medium text-gray-600">No session available</p>
-                              <p class="text-sm text-gray-500">Import sessions to get started</p>
+                              <i class="material-icons text-4xl text-gray-300 mb-2">people_outline</i>
+                              <p class="text-lg font-medium text-gray-600">No speakers available</p>
+                              <p class="text-sm text-gray-500">Import speakers to get speakers</p>
                             </div>
                           }
                         </td>
                       </tr>
                     } @else {
-                      @for (session of paginatedSessions; track session.id) {
-                        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
-                            (click)="onRowClick(session.id!, $event)">
+                      @for (speaker of paginatedSpeakers; track speaker.name) {
+                        <tr class="bg-white border-b hover:bg-gray-50 cursor-pointer"
+                            (click)="onRowClick(speaker.name!, $event)">
                           <td class="w-4 p-4" (click)="$event.stopPropagation()">
                             <div class="flex items-center">
                               <input
-                                [id]="'checkbox-table-search-' + session.id"
+                                [id]="'checkbox-speaker-' + speaker.name"
                                 type="checkbox"
-                                [checked]="isSessionSelected(session.id)"
-                                (change)="toggleSessionSelection(session.id!)"
+                                [checked]="isSpeakerSelected(speaker.name)"
+                                (change)="toggleSpeakerSelection(speaker.name!)"
                                 (click)="$event.stopPropagation()"
                                 class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500">
-                              <label [for]="'checkbox-table-search-' + session.id" class="sr-only">checkbox</label>
+                              <label [for]="'checkbox-speaker-' + speaker.name" class="sr-only">checkbox</label>
                             </div>
                           </td>
-                          <th scope="row" class="px-2 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                            <div class="flex min-w-0 gap-x-2">
-                              <div class="min-w-0 flex-auto">
-                                <p class="text-sm/6 text-gray-900 font-medium">
-                                  {{ session.title || 'Titre non défini' }}
-                                </p>
-                                <p class="truncate text-xs/5 text-gray-500">
-                                  by {{ formatSpeakers(session.speakers) }}
-                                </p>
+                          <th scope="row" class="px-2 py-2 font-medium text-gray-900">
+                            <div class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-1 pr-3 py-1 bg-white shadow-sm">
+                              <div class="flex-shrink-0">
+                                <img
+                                  [src]="speaker.picture"
+                                  class="h-10 w-10 rounded-full object-cover border-2 border-gray-100"
+                                  [alt]="'Photo de ' + speaker.name"
+                                  referrerpolicy="no-referrer"
+                                  (error)="onImageError($event)">
+                              </div>
+                              <div class="flex-1 min-w-0">
+                                <h4 class="font-medium text-gray-900 text-sm truncate">
+                                  {{ speaker.name }}
+                                </h4>
                               </div>
                             </div>
                           </th>
@@ -149,8 +155,8 @@
 
                 @if (totalPages > 1) {
                   <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4" aria-label="Table navigation">
-                    <span class="text-sm font-normal text-gray-600 dark:text-gray-400 mb-4 md:mb-0 block w-full md:inline md:w-auto">
-                      Showing {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalSessions) }} of {{ totalSessions }} results
+                    <span class="text-sm font-normal text-gray-600 mb-4 md:mb-0 block w-full md:inline md:w-auto">
+                      Showing {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalSpeakers) }} of {{ totalSpeakers }} speakers
                     </span>
                     <ul class="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
                       <li>
@@ -160,7 +166,7 @@
                           [disabled]="currentPage === 1"
                           [class]="currentPage === 1 ?
                             'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-s-lg cursor-not-allowed' :
-                            'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer'">
+                            'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer'">
                           Previous
                         </button>
                       </li>
@@ -171,8 +177,8 @@
                             type="button"
                             (click)="goToPage(pageNum)"
                             [class]="pageNum === currentPage ?
-                              'flex items-center justify-center px-3 h-8 text-blue-600 border border-gray-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white' :
-                              'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer'">
+                              'flex items-center justify-center px-3 h-8 text-blue-600 border border-gray-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700' :
+                              'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 cursor-pointer'">
                             {{ pageNum }}
                           </button>
                         </li>
@@ -185,7 +191,7 @@
                           [disabled]="currentPage === totalPages"
                           [class]="currentPage === totalPages ?
                             'flex items-center justify-center px-3 h-8 leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-e-lg cursor-not-allowed' :
-                            'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer'">
+                            'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer'">
                           Next
                         </button>
                       </li>
