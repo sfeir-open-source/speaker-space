@@ -1,13 +1,13 @@
-import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {finalize, Subject, Subscription, takeUntil} from 'rxjs';
+import {finalize, takeUntil} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
-import {EventDTO} from '../../../type/event/eventDTO';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {SessionImportData, Speaker} from '../../../type/session/session';
+import {BaseListComponent} from '../../../components/class/base-list-component';
 
 @Component({
   selector: 'app-session-list-page',
@@ -20,149 +20,73 @@ import {SessionImportData, Speaker} from '../../../type/session/session';
   templateUrl: './session-list-page.component.html',
   styleUrl: './session-list-page.component.scss'
 })
-export class SessionListPageComponent implements OnInit, OnDestroy {
-  eventId: string = '';
-  eventUrl: string = '';
-  eventName: string = '';
-  teamUrl: string = '';
-  teamId: string = '';
-  isLoading: boolean = true;
-  error: string | null = null;
-  sessions: SessionImportData[] = [];
-  filteredSessions: SessionImportData[] = [];
-  searchTerm: string = '';
-  totalSessions: number = 0;
-  isLoadingSessions: boolean = false;
-  Math : Math = Math;
-  currentPage: number = 1;
-  itemsPerPage: number = 10;
-  totalPages: number = 0;
-  selectedSessions: Set<string> = new Set();
-  selectAll: boolean = false;
-  currentUserRole: string = '';
-
+export class SessionListPageComponent extends BaseListComponent<SessionImportData> {
   @Input() icon: string = 'search';
-  @ViewChild(SessionListPageComponent) sessionPageComponent?: SessionListPageComponent;
 
-  private destroy$ = new Subject<void>();
-  private routeSubscription?: Subscription;
+  get totalSessions(): number {
+    return this.totalItems;
+  }
 
+  get isLoadingSessions(): boolean {
+    return this.isLoadingItems;
+  }
+
+  get paginatedSessions(): SessionImportData[] {
+    return this.paginatedItems;
+  }
+
+  Math = Math;
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventService: EventService,
-    private eventDataService: EventDataService,
-  ) {}
-
-  ngOnInit(): void {
-    this.isLoading = true;
-    this.currentUserRole = 'Owner';
-    this.subscribeToRouteParams();
+    route: ActivatedRoute,
+    router: Router,
+    eventService: EventService,
+    eventDataService: EventDataService
+  ) {
+    super(route, router, eventService, eventDataService);
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.routeSubscription?.unsubscribe();
-  }
+  loadItems(): void {
+    if (!this.eventId) return;
 
-  private subscribeToRouteParams(): void {
-    this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.eventId = params.get('eventId') || '';
-
-      if (this.eventId) {
-        this.loadEventData();
-      } else {
-        this.error = 'Event ID is missing from route parameters';
-        this.isLoading = false;
-      }
-    });
-  }
-
-  loadEventData(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID is required to load event data';
-      this.isLoading = false;
-      return;
-    }
-
-    this.eventService.getEventById(this.eventId)
-      .pipe(
-        finalize(() => this.isLoading = false),
-        takeUntil(this.destroy$)
-      )
-      .subscribe({
-        next: (event: EventDTO) => {
-          this.handleEventDataLoaded(event);
-          this.eventUrl = event.url || '';
-
-          this.eventDataService.loadEvent({
-            idEvent: event.idEvent || this.eventId,
-            eventName: event.eventName || '',
-            teamId: event.teamId || '',
-            url: event.url || '',
-            teamUrl: event.teamUrl,
-            type: event.type,
-          });
-
-          this.loadSessions();
-        }
-      });
-  }
-
-  loadSessions(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.isLoadingSessions = true;
+    this.isLoadingItems = true;
 
     this.eventService.getSessionsByEventId(this.eventId)
       .pipe(
-        finalize(() => this.isLoadingSessions = false),
+        finalize(() => this.isLoadingItems = false),
         takeUntil(this.destroy$)
       )
       .subscribe({
         next: (sessions: SessionImportData[]) => {
-          const sortedSessions: SessionImportData[] = sessions.sort((a, b) => {
-            const titleA: string = a.title?.toLowerCase() || '';
-            const titleB: string = b.title?.toLowerCase() || '';
+          const sortedSessions = sessions.sort((a, b) => {
+            const titleA = a.title?.toLowerCase() || '';
+            const titleB = b.title?.toLowerCase() || '';
             return titleA.localeCompare(titleB);
           });
 
-          this.sessions = sortedSessions;
-          this.filteredSessions = [...sortedSessions];
-          this.totalSessions = sortedSessions.length;
+          this.items = sortedSessions;
+          this.filteredItems = [...sortedSessions];
+          this.totalItems = sortedSessions.length;
           this.calculatePagination();
         },
-        error: (err) => {
-          console.error('Error loading sessions:', err);
+        error: () => {
           this.error = 'Failed to load sessions. Please try again.';
-          this.sessions = [];
-          this.filteredSessions = [];
-          this.totalSessions = 0;
+          this.items = [];
+          this.filteredItems = [];
+          this.totalItems = 0;
         }
       });
   }
 
-  get paginatedSessions(): SessionImportData[] {
-    const startIndex : number = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex : number = startIndex + this.itemsPerPage;
-    return this.filteredSessions.slice(startIndex, endIndex);
+  getItemId(session: SessionImportData): string {
+    return session.id || '';
   }
 
-  onSearch(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchTerm = target.value.toLowerCase();
-    this.filterSessions();
-  }
-
-  private filterSessions(): void {
+  filterItems(): void {
     if (!this.searchTerm.trim()) {
-      this.filteredSessions = [...this.sessions];
+      this.filteredItems = [...this.items];
     } else {
-      this.filteredSessions = this.sessions.filter(session =>
+      this.filteredItems = this.items.filter(session =>
         session.title?.toLowerCase().includes(this.searchTerm) ||
         session.abstract?.toLowerCase().includes(this.searchTerm) ||
         session.speakers?.some(speaker =>
@@ -171,113 +95,26 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
       );
     }
 
-    this.totalSessions = this.filteredSessions.length;
-    this.currentPage = 1;
-    this.calculatePagination();
+    this.updateItemsAfterFilter();
+  }
+
+  openItemDetail(sessionId: string): void {
+    if (sessionId) {
+      this.router.navigate(['/event', this.eventId, 'session', sessionId]);
+    }
   }
 
   formatSpeakers(speakers: Speaker[] | undefined): string {
     if (!speakers || speakers.length === 0) return 'Aucun speaker';
-
     return speakers.map(speaker => speaker.name).filter(name => name).join(', ');
   }
 
-  toggleSelectAll(): void {
-    this.selectAll = !this.selectAll;
-
-    if (this.selectAll) {
-      this.paginatedSessions.forEach(session => {
-        if (session.id) {
-          this.selectedSessions.add(session.id);
-        }
-      });
-    } else {
-      this.paginatedSessions.forEach(session => {
-        if (session.id) {
-          this.selectedSessions.delete(session.id);
-        }
-      });
-    }
-  }
-
-  private updateSelectAllState(): void {
-    const visibleSessionIds : string[] = this.paginatedSessions
-      .map(session => session.id)
-      .filter(id => id !== undefined);
-
-    this.selectAll = visibleSessionIds.length > 0 &&
-      visibleSessionIds.every(id => this.selectedSessions.has(id!));
-  }
-
   isSessionSelected(sessionId: string | undefined): boolean {
-    return sessionId ? this.selectedSessions.has(sessionId) : false;
-  }
-
-  private calculatePagination(): void {
-    this.totalPages = Math.ceil(this.totalSessions / this.itemsPerPage);
-  }
-
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-    }
-  }
-
-  get pageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisiblePages = 5;
-
-    let startPage : number = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage: number = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i : number = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  }
-
-  private handleEventDataLoaded(event: any): void {
-    this.eventId = event.idEvent || this.eventId;
-    this.eventName = event.eventName || '';
-    this.eventUrl = event.url || '';
-    this.teamUrl = event.teamUrl || '';
-    this.teamId = event.teamId || '';
-    this.currentUserRole = 'Owner';
-    this.error = null;
+    if (!sessionId) return false;
+    return this.selectedItems.includes(sessionId);
   }
 
   toggleSessionSelection(sessionId: string): void {
-    if (this.selectedSessions.has(sessionId)) {
-      this.selectedSessions.delete(sessionId);
-    } else {
-      this.selectedSessions.add(sessionId);
-    }
-    this.updateSelectAllState();
-  }
-
-  onSubmit(event: Event) {
-    event.preventDefault();
-  }
-
-  onRowClick(sessionId: string, event: Event): void {
-    event.preventDefault();
-
-    const target = event.target as HTMLElement;
-    const isCheckboxArea = target.closest('.checkbox-area');
-
-    if (isCheckboxArea) {
-      this.toggleSessionSelection(sessionId);
-    } else {
-      this.openSessionDetail(sessionId);
-    }
-  }
-
-  openSessionDetail(sessionId: string): void {
-    this.router.navigate(['/event', this.eventId, 'session', sessionId]);
+    this.toggleItemSelection(sessionId);
   }
 }

@@ -1,13 +1,14 @@
-import {Component, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {finalize, Subject, Subscription, takeUntil} from 'rxjs';
+import {finalize, takeUntil} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
-import {EventDTO} from '../../../type/event/eventDTO';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {Speaker} from '../../../type/session/session';
+import {BaseListComponent} from '../../../components/class/base-list-component';
+import {EmailEncoderService} from '../../../components/services/email-encoder.service';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -20,294 +21,103 @@ import {Speaker} from '../../../type/session/session';
   templateUrl: './speaker-list-page.component.html',
   styleUrl: './speaker-list-page.component.scss'
 })
-export class SpeakerListPageComponent implements OnInit, OnDestroy {
-  eventId: string = '';
-  eventUrl: string = '';
-  eventName: string = '';
-  teamUrl: string = '';
-  teamId: string = '';
-  isLoading: boolean = true;
-  error: string | null = null;
-
-  speakers: Speaker[] = [];
-  filteredSpeakers: Speaker[] = [];
-
-  searchTerm: string = '';
-  totalSpeakers: number = 0;
-  isLoadingSpeakers: boolean = false;
-  Math: Math = Math;
-  currentPage: number = 1;
-  itemsPerPage: number = 10;
-  totalPages: number = 0;
-  selectedSpeakers: Set<string> = new Set();
-  selectAll: boolean = false;
-  currentUserRole: string = '';
-
+export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
   @Input() icon: string = 'person';
 
-  private destroy$ = new Subject<void>();
-  private routeSubscription?: Subscription;
+  get totalSpeakers(): number {
+    return this.totalItems;
+  }
+
+  get isLoadingSpeakers(): boolean {
+    return this.isLoadingItems;
+  }
+
+  get paginatedSpeakers(): Speaker[] {
+    return this.paginatedItems;
+  }
+
+  Math = Math;
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventService: EventService,
-    private eventDataService: EventDataService,
-  ) {}
-
-  ngOnInit(): void {
-    this.isLoading = true;
-    this.currentUserRole = 'Owner';
-    this.subscribeToRouteParams();
+    route: ActivatedRoute,
+    router: Router,
+    eventService: EventService,
+    eventDataService: EventDataService,
+    private emailEncoderService: EmailEncoderService
+  ) {
+    super(route, router, eventService, eventDataService);
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.routeSubscription?.unsubscribe();
-  }
+  loadItems(): void {
+    if (!this.eventId) return;
 
-  private subscribeToRouteParams(): void {
-    this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.eventId = params.get('eventId') || '';
-
-      if (this.eventId) {
-        this.loadEventData();
-      } else {
-        this.error = 'Event ID is missing from route parameters';
-        this.isLoading = false;
-      }
-    });
-  }
-
-  loadEventData(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID is required to load event data';
-      this.isLoading = false;
-      return;
-    }
-
-    this.eventService.getEventById(this.eventId)
-      .pipe(
-        finalize(() => this.isLoading = false),
-        takeUntil(this.destroy$)
-      )
-      .subscribe({
-        next: (event: EventDTO) => {
-          this.handleEventDataLoaded(event);
-          this.eventUrl = event.url || '';
-
-          this.eventDataService.loadEvent({
-            idEvent: event.idEvent || this.eventId,
-            eventName: event.eventName || '',
-            teamId: event.teamId || '',
-            url: event.url || '',
-            teamUrl: event.teamUrl,
-            type: event.type,
-          });
-
-          this.loadSpeakers();
-        },
-        error: (err) => {
-          console.error('Error loading event:', err);
-          this.error = 'Failed to load event data. Please try again.';
-        }
-      });
-  }
-
-  loadSpeakers(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.isLoadingSpeakers = true;
+    this.isLoadingItems = true;
 
     this.eventService.getSpeakersByEventId(this.eventId)
       .pipe(
-        finalize(() => this.isLoadingSpeakers = false),
+        finalize(() => this.isLoadingItems = false),
         takeUntil(this.destroy$)
       )
       .subscribe({
         next: (speakers: Speaker[]) => {
-          console.log('Speakers loaded successfully:', speakers);
-
-          const sortedSpeakers : Speaker[] = speakers.sort((a, b) => {
-            const nameA : string = a.name?.toLowerCase() || '';
-            const nameB : string = b.name?.toLowerCase() || '';
+          const sortedSpeakers = speakers.sort((a, b) => {
+            const nameA = a.name?.toLowerCase() || '';
+            const nameB = b.name?.toLowerCase() || '';
             return nameA.localeCompare(nameB);
           });
 
-          this.speakers = sortedSpeakers;
-          this.filteredSpeakers = [...sortedSpeakers];
-          this.totalSpeakers = sortedSpeakers.length;
+          this.items = sortedSpeakers;
+          this.filteredItems = [...sortedSpeakers];
+          this.totalItems = sortedSpeakers.length;
           this.calculatePagination();
         },
-        error: (err) => {
-          console.error('Error loading speakers:', err);
-          this.speakers = [];
-          this.filteredSpeakers = [];
-          this.totalSpeakers = 0;
+        error: () => {
+          this.items = [];
+          this.filteredItems = [];
+          this.totalItems = 0;
         }
       });
   }
 
-  get paginatedSpeakers(): Speaker[] {
-    const startIndex : number = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex : number = startIndex + this.itemsPerPage;
-    return this.filteredSpeakers.slice(startIndex, endIndex);
+  getItemId(speaker: Speaker): string {
+    return speaker.email || '';
   }
 
-  onSearch(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.searchTerm = target.value.toLowerCase();
-    this.filterSpeakers();
-  }
-
-  private filterSpeakers(): void {
+  filterItems(): void {
     if (!this.searchTerm.trim()) {
-      this.filteredSpeakers = [...this.speakers];
+      this.filteredItems = [...this.items];
     } else {
-      this.filteredSpeakers = this.speakers.filter(speaker =>
+      this.filteredItems = this.items.filter(speaker =>
         speaker.name?.toLowerCase().includes(this.searchTerm) ||
         speaker.bio?.toLowerCase().includes(this.searchTerm) ||
         speaker.company?.toLowerCase().includes(this.searchTerm)
       );
     }
 
-    this.filteredSpeakers.sort((a, b) => {
-      const nameA : string = a.name?.toLowerCase() || '';
-      const nameB : string = b.name?.toLowerCase() || '';
+    this.filteredItems.sort((a, b) => {
+      const nameA = a.name?.toLowerCase() || '';
+      const nameB = b.name?.toLowerCase() || '';
       return nameA.localeCompare(nameB);
     });
 
-    this.totalSpeakers = this.filteredSpeakers.length;
-    this.currentPage = 1;
-    this.calculatePagination();
+    this.updateItemsAfterFilter();
   }
 
-  toggleSelectAll(): void {
-    this.selectAll = !this.selectAll;
-
-    if (this.selectAll) {
-      this.paginatedSpeakers.forEach(speaker => {
-        if (speaker.email) {
-          this.selectedSpeakers.add(speaker.email);
-        }
-      });
-    } else {
-      this.paginatedSpeakers.forEach(speaker => {
-        if (speaker.email) {
-          this.selectedSpeakers.delete(speaker.email);
-        }
-      });
-    }
-  }
-
-  private updateSelectAllState(): void {
-    const visibleSpeakerEmails: string[] = this.paginatedSpeakers
-      .map(speaker => speaker.email)
-      .filter(email => email !== undefined) as string[];
-
-    this.selectAll = visibleSpeakerEmails.length > 0 &&
-      visibleSpeakerEmails.every(email => this.selectedSpeakers.has(email));
-  }
-
-  isSpeakerSelected(speakerEmail: string | undefined): boolean {
-    return speakerEmail ? this.selectedSpeakers.has(speakerEmail) : false;
-  }
-
-  private calculatePagination(): void {
-    this.totalPages = Math.ceil(this.totalSpeakers / this.itemsPerPage);
-  }
-
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-    }
-  }
-
-  get pageNumbers(): number[] {
-    const pages: number[] = [];
-    const maxVisiblePages = 5;
-
-    let startPage: number = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage: number = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i: number = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  }
-
-  private handleEventDataLoaded(event: any): void {
-    this.eventId = event.idEvent || this.eventId;
-    this.eventName = event.eventName || '';
-    this.eventUrl = event.url || '';
-    this.teamUrl = event.teamUrl || '';
-    this.teamId = event.teamId || '';
-    this.currentUserRole = 'Owner';
-    this.error = null;
-  }
-
-  toggleSpeakerSelection(speakerEmail: string): void {
-    if (this.selectedSpeakers.has(speakerEmail)) {
-      this.selectedSpeakers.delete(speakerEmail);
-    } else {
-      this.selectedSpeakers.add(speakerEmail);
-    }
-    this.updateSelectAllState();
-  }
-
-  onSubmit(event: Event): void {
-    event.preventDefault();
-  }
-
-  onRowClick(speaker: Speaker, event: Event): void {
-    event.preventDefault();
-
-    const target = event.target as HTMLElement;
-    const isCheckboxArea = target.closest('.checkbox-area');
-
-    if (isCheckboxArea) {
-      if (speaker.email) {
-        this.toggleSpeakerSelection(speaker.email);
-      }
-    } else {
-      if (speaker.email) {
-        this.openSpeakerDetail(speaker.email);
-      }
-    }
-  }
-
-  openSpeakerDetail(speakerEmail: string): void {
+  openItemDetail(speakerEmail: string): void {
     try {
-      const encodedSpeakerEmail: string = this.encodeEmailToBase64(speakerEmail);
+      const encodedSpeakerEmail = this.emailEncoderService.encodeToBase64(speakerEmail);
       this.router.navigate(['event', this.eventId, 'speaker', encodedSpeakerEmail]);
     } catch (error) {
       console.error('Error encoding email for navigation:', error);
     }
   }
 
-  private encodeEmailToBase64(email: string): string {
-    if (!email || email.trim() === '') {
-      throw new Error('Email cannot be null or empty');
-    }
-
-    const encoded = btoa(email)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-
-    return encoded;
+  isSpeakerSelected(speakerName: string | undefined): boolean {
+    if (!speakerName) return false;
+    return this.selectedItems.includes(speakerName);
   }
 
-  onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.src = 'img/profil-picture.svg';
+  toggleSpeakerSelection(speakerName: string): void {
+    this.toggleItemSelection(speakerName);
   }
 }

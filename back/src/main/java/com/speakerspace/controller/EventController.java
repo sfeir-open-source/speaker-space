@@ -1,9 +1,8 @@
 package com.speakerspace.controller;
 
 import com.speakerspace.dto.EventDTO;
+import com.speakerspace.security.AuthenticationHelper;
 import com.speakerspace.service.EventService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,10 +15,11 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
-    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
+    private final AuthenticationHelper authHelper;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, AuthenticationHelper authHelper) {
         this.eventService = eventService;
+        this.authHelper = authHelper;
     }
 
     @PostMapping("/create")
@@ -28,8 +28,7 @@ public class EventController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        String userId = authentication.getName();
-        eventDTO.setUserCreateId(userId);
+        eventDTO.setUserCreateId(authHelper.getUserId(authentication));
 
         try {
             EventDTO createdEvent = eventService.createEvent(eventDTO);
@@ -47,26 +46,17 @@ public class EventController {
             @RequestBody EventDTO eventDTO,
             Authentication authentication) {
 
-        if (authentication == null) {
+        if (authentication == null || !id.equals(eventDTO.getIdEvent())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        String userId = authentication.getName();
-
-        if (!id.equals(eventDTO.getIdEvent())) {
-            return ResponseEntity.badRequest().build();
         }
 
         try {
             EventDTO existingEvent = eventService.getEventById(id);
-
             if (existingEvent == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            if (!userId.equals(existingEvent.getUserCreateId()) &&
-                    !authentication.getAuthorities().stream()
-                            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            if (!authHelper.isUserAuthorized(authentication, existingEvent.getUserCreateId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
@@ -77,11 +67,9 @@ public class EventController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            logger.error("Error updating event: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<EventDTO> getEvent(@PathVariable String id) {
@@ -97,14 +85,12 @@ public class EventController {
 
     @GetMapping("/by-team/{teamId}")
     public ResponseEntity<List<EventDTO>> getEventsByTeam(@PathVariable String teamId) {
-        List<EventDTO> events = eventService.getEventsByTeamId(teamId);
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.getEventsByTeamId(teamId));
     }
 
     @GetMapping("/my-events")
     public ResponseEntity<List<EventDTO>> getMyEvents() {
-        List<EventDTO> events = eventService.getEventsForCurrentUser();
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.getEventsForCurrentUser());
     }
 
     @DeleteMapping("/{id}")

@@ -116,7 +116,7 @@
                     } @else {
                       @for (session of paginatedSessions; track session.id) {
                         <tr class="bg-white border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-                            (click)="onRowClick(session.id!, $event)">
+                            (click)="onRowClick(session, $event)">
                           <td class="w-4 p-4" (click)="$event.stopPropagation()">
                             <div class="flex items-center">
                               <input

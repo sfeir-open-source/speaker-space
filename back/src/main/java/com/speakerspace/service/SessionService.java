@@ -6,15 +6,13 @@ import com.speakerspace.dto.session.SessionImportDataDTO;
 import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.SessionImportData;
+import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.SessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -143,5 +141,35 @@ public class SessionService {
             logger.error("Error retrieving session {} for event {}: {}", sessionId, eventId, e.getMessage(), e);
             throw new RuntimeException("Failed to retrieve session", e);
         }
+    }
+
+    public List<Speaker> getUniqueSpeekersByEventId(String eventId) {
+        List<SessionImportData> sessions = getSessionsAsImportData(eventId);
+
+        Map<String, Speaker> uniqueSpeakers = sessions.stream()
+                .filter(session -> session.getSpeakers() != null)
+                .flatMap(session -> session.getSpeakers().stream())
+                .filter(speaker -> speaker.getName() != null && !speaker.getName().trim().isEmpty())
+                .collect(Collectors.toMap(
+                        speaker -> speaker.getName().toLowerCase().trim(),
+                        speaker -> speaker,
+                        (existing, replacement) -> existing
+                ));
+
+        return uniqueSpeakers.values().stream()
+                .sorted(Comparator.comparing(speaker -> speaker.getName().toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
+    public Speaker getSpeakerByEmail(String eventId, String email) {
+        List<SessionImportData> sessions = getSessionsAsImportData(eventId);
+
+        return sessions.stream()
+                .filter(session -> session.getSpeakers() != null)
+                .flatMap(session -> session.getSpeakers().stream())
+                .filter(speaker -> speaker.getEmail() != null &&
+                        speaker.getEmail().equalsIgnoreCase(email))
+                .findFirst()
+                .orElse(null);
     }
 }

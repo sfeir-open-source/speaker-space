@@ -1,13 +1,14 @@
-import {Component, OnDestroy, OnInit } from '@angular/core';
+import {Component} from '@angular/core';
 import {Category, Format, SessionImportData} from '../../../type/session/session';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {Subject, Subscription, takeUntil} from 'rxjs';
+import {takeUntil} from 'rxjs';
 import {ActivatedRoute } from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {SessionService} from '../../../services/sessions/session.service';
 import {
   NavbarSessionPageComponent
 } from '../../../components/session/navbar-session-page/navbar-session-page.component';
+import {BaseDetailComponent} from '../../../components/class/bade-detail-component';
 
 @Component({
     selector: 'app-session-detail-page',
@@ -18,44 +19,27 @@ import {
     templateUrl: './session-detail-page.component.html',
     styleUrl: './session-detail-page.component.scss'
 })
-export class SessionDetailPageComponent implements OnInit, OnDestroy {
-  eventId: string = '';
+export class SessionDetailPageComponent extends BaseDetailComponent {
   sessionId: string = '';
-  eventUrl: string = '';
-  eventName: string = '';
-  teamId: string = '';
   session: SessionImportData | null = null;
   format: Format | null = null;
   category: Category | null = null;
-  isLoading: boolean = true;
-  error: string | null = null;
-
-  private destroy$ = new Subject<void>();
-  private routeSubscription?: Subscription;
 
   constructor(
-    private route: ActivatedRoute,
-    private eventService: EventService,
+    route: ActivatedRoute,
+    eventService: EventService,
     private sessionService: SessionService
-  ) {}
-
-  ngOnInit(): void {
-    this.subscribeToRouteParams();
+  ) {
+    super(route, eventService);
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.routeSubscription?.unsubscribe();
-  }
-
-  private subscribeToRouteParams(): void {
+  protected subscribeToRouteParams(): void {
     this.routeSubscription = this.route.paramMap.subscribe(params => {
       this.eventId = params.get('eventId') || '';
       this.sessionId = params.get('sessionId') || '';
 
       if (this.eventId && this.sessionId) {
-        this.loadEventAndSessionData();
+        this.loadEventAndDetailData();
       } else {
         this.error = 'Event ID or Session ID is missing from route parameters';
         this.isLoading = false;
@@ -63,70 +47,24 @@ export class SessionDetailPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadEventAndSessionData(): void {
-    this.isLoading = true;
-
-    Promise.all([
-      this.loadEventData(),
-      this.loadSessionData()
-    ]).finally(() => {
-      this.isLoading = false;
-    });
-  }
-
-  private loadEventData(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.eventService.getEventById(this.eventId)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (event) => {
-            this.eventUrl = event.url || '';
-            this.eventName = event.eventName || '';
-            this.teamId = event.teamId || '';
-            resolve();
-          },
-          error: (err) => {
-            console.error('Error loading event:', err);
-            this.error = 'Failed to load event data';
-            reject(err);
-          }
-        });
-    });
-  }
-
-  private loadSessionData(): Promise<void> {
+  protected loadDetailData(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.sessionService.getSessionById(this.eventId, this.sessionId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (session: SessionImportData) => {
-            console.log('Session loaded:', session);
             this.session = session;
-
-            this.format = session.formats && session.formats.length > 0
-              ? session.formats[0]
-              : null;
-
-            this.category = session.categories && session.categories.length > 0
-              ? session.categories[0]
-              : null;
-
+            this.format = session.formats?.[0] || null;
+            this.category = session.categories?.[0] || null;
             resolve();
           },
           error: (err) => {
-            console.error('Error loading session:', err);
             this.error = 'Failed to load session data';
             reject(err);
           }
         });
     });
   }
-
-  private readonly languageMap: Record<string, string> = {
-    'en': 'English',
-    'fr': 'French',
-    'es': 'Spanish'
-  };
 
   formatLevel(level: string): string {
     if (!level) return '';
@@ -135,15 +73,22 @@ export class SessionDetailPageComponent implements OnInit, OnDestroy {
 
   formatLanguage(languageCode: string): string {
     if (!languageCode) return '';
-    const code: string = languageCode.toLowerCase();
-    return this.languageMap[code] || languageCode;
+
+    try {
+      const displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
+      const languageName : string | undefined = displayNames.of(languageCode.toLowerCase());
+
+      return languageName ?
+        languageName.charAt(0).toUpperCase() + languageName.slice(1) :
+        languageCode.toUpperCase();
+
+    } catch (error) {
+      console.warn(`Unable to format language code: ${languageCode}`, error);
+      return languageCode.toUpperCase();
+    }
   }
 
   onEditSession(): void {
-  }
-
-  onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.src = 'img/profil-picture.svg';
+    // TODO
   }
 }
