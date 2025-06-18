@@ -190,30 +190,30 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
 
     if (this.selectAll) {
       this.paginatedSpeakers.forEach(speaker => {
-        if (speaker.name) {
-          this.selectedSpeakers.add(speaker.name);
+        if (speaker.email) {
+          this.selectedSpeakers.add(speaker.email);
         }
       });
     } else {
       this.paginatedSpeakers.forEach(speaker => {
-        if (speaker.name) {
-          this.selectedSpeakers.delete(speaker.name);
+        if (speaker.email) {
+          this.selectedSpeakers.delete(speaker.email);
         }
       });
     }
   }
 
   private updateSelectAllState(): void {
-    const visibleSpeakerNames: string[] = this.paginatedSpeakers
-      .map(speaker => speaker.name)
-      .filter(name => name !== undefined) as string[];
+    const visibleSpeakerEmails: string[] = this.paginatedSpeakers
+      .map(speaker => speaker.email)
+      .filter(email => email !== undefined) as string[];
 
-    this.selectAll = visibleSpeakerNames.length > 0 &&
-      visibleSpeakerNames.every(name => this.selectedSpeakers.has(name));
+    this.selectAll = visibleSpeakerEmails.length > 0 &&
+      visibleSpeakerEmails.every(email => this.selectedSpeakers.has(email));
   }
 
-  isSpeakerSelected(speakerName: string | undefined): boolean {
-    return speakerName ? this.selectedSpeakers.has(speakerName) : false;
+  isSpeakerSelected(speakerEmail: string | undefined): boolean {
+    return speakerEmail ? this.selectedSpeakers.has(speakerEmail) : false;
   }
 
   private calculatePagination(): void {
@@ -254,11 +254,11 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
     this.error = null;
   }
 
-  toggleSpeakerSelection(speakerName: string): void {
-    if (this.selectedSpeakers.has(speakerName)) {
-      this.selectedSpeakers.delete(speakerName);
+  toggleSpeakerSelection(speakerEmail: string): void {
+    if (this.selectedSpeakers.has(speakerEmail)) {
+      this.selectedSpeakers.delete(speakerEmail);
     } else {
-      this.selectedSpeakers.add(speakerName);
+      this.selectedSpeakers.add(speakerEmail);
     }
     this.updateSelectAllState();
   }
@@ -267,25 +267,43 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
     event.preventDefault();
   }
 
-  onRowClick(speakerName: string, event: Event): void {
+  onRowClick(speaker: Speaker, event: Event): void {
     event.preventDefault();
 
     const target = event.target as HTMLElement;
     const isCheckboxArea = target.closest('.checkbox-area');
 
     if (isCheckboxArea) {
-      this.toggleSpeakerSelection(speakerName);
+      if (speaker.email) {
+        this.toggleSpeakerSelection(speaker.email);
+      }
     } else {
-      this.openSpeakerDetail(speakerName);
+      if (speaker.email) {
+        this.openSpeakerDetail(speaker.email);
+      }
     }
   }
 
-  openSpeakerDetail(speakerName: string): void {
-    console.log('Open speaker detail for:', speakerName);
+  openSpeakerDetail(speakerEmail: string): void {
+    try {
+      const encodedSpeakerEmail: string = this.encodeEmailToBase64(speakerEmail);
+      this.router.navigate(['event', this.eventId, 'speaker', encodedSpeakerEmail]);
+    } catch (error) {
+      console.error('Error encoding email for navigation:', error);
+    }
+  }
 
-    const encodedSpeakerName : string = encodeURIComponent(speakerName);
+  private encodeEmailToBase64(email: string): string {
+    if (!email || email.trim() === '') {
+      throw new Error('Email cannot be null or empty');
+    }
 
-    this.router.navigate(['event', this.eventId, 'speaker', encodedSpeakerName]);
+    const encoded = btoa(email)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+
+    return encoded;
   }
 
   onImageError(event: Event): void {

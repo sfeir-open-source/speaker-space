@@ -11,11 +11,25 @@ export class SpeakerService {
 
   constructor(private http: HttpClient) {}
 
-  getSpeakerByName(eventId: string, speakerName: string): Observable<Speaker> {
-    const encodedSpeakerName = encodeURIComponent(speakerName);
+  getSpeakerByEmail(eventId: string, email: string): Observable<Speaker> {
+    const encodedEmail: string = this.encodeEmailToBase64(email);
+
     return this.http.get<Speaker>(
-      `${environment.apiUrl}/session/event/${eventId}/speaker/${encodedSpeakerName}`,
+      `${environment.apiUrl}/session/event/${eventId}/speaker/${encodedEmail}`,
       { withCredentials: true }
     );
+  }
+
+  private encodeEmailToBase64(email: string): string {
+    if (!email || email.trim() === '') {
+      throw new Error('Email cannot be null or empty');
+    }
+
+    const encoded = btoa(email)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+
+    return encoded;
   }
 }

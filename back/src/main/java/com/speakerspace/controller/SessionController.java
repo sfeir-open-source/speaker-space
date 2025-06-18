@@ -16,10 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @RestController
 @RequestMapping("/session")
@@ -222,5 +220,94 @@ public class SessionController {
             logger.error("Error retrieving speakers for event {}: {}", eventId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @GetMapping("/event/{eventId}/speaker/{encodedEmail}")
+    public ResponseEntity<Speaker> getSpeakerByEmail(
+            @PathVariable String eventId,
+            @PathVariable String encodedEmail,
+            HttpServletRequest request,
+            Authentication authentication) {
+
+        HttpSession httpSession = request.getSession(false);
+
+        try {
+            String userEmail = (String) request.getAttribute("userEmail");
+
+            if (userEmail == null && authentication != null) {
+                Object principal = authentication.getPrincipal();
+                if (principal instanceof String) {
+                    userEmail = (String) principal;
+                }
+            }
+
+            if (userEmail == null && httpSession != null) {
+                userEmail = (String) httpSession.getAttribute("userEmail");
+            }
+
+            if (userEmail == null) {
+                logger.warn("Unauthorized access attempt for speaker with encoded email {} in event {}",
+                        encodedEmail, eventId);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            String decodedEmail;
+            try {
+                decodedEmail = decodeEmailFromBase64(encodedEmail);
+                logger.debug("Decoded email from Base64: {}", decodedEmail);
+            } catch (IllegalArgumentException e) {
+                logger.warn("Invalid Base64 encoded email: {}", encodedEmail);
+                return ResponseEntity.badRequest().build();
+            }
+
+            if (!isValidEmail(decodedEmail)) {
+                logger.warn("Invalid email format after decoding: {}", decodedEmail);
+                return ResponseEntity.badRequest().build();
+            }
+
+            List<SessionImportData> sessions = sessionService.getSessionsAsImportData(eventId);
+
+            Optional<Speaker> foundSpeaker = sessions.stream()
+                    .filter(session -> session.getSpeakers() != null)
+                    .flatMap(session -> session.getSpeakers().stream())
+                    .filter(speaker -> speaker.getEmail() != null &&
+                            speaker.getEmail().equalsIgnoreCase(decodedEmail))
+                    .findFirst();
+
+            if (foundSpeaker.isPresent()) {
+                logger.debug("Speaker found successfully: {}", foundSpeaker.get().getName());
+                return ResponseEntity.ok(foundSpeaker.get());
+            } else {
+                logger.warn("Speaker not found with email {} for event {}", decodedEmail, eventId);
+                return ResponseEntity.notFound().build();
+            }
+
+        } catch (Exception e) {
+            logger.error("Error retrieving speaker with encoded email {} for event {}: {}",
+                    encodedEmail, eventId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    private String decodeEmailFromBase64(String encodedEmail) {
+        if (encodedEmail == null || encodedEmail.trim().isEmpty()) {
+            throw new IllegalArgumentException("Encoded email cannot be null or empty");
+        }
+
+        try {
+            byte[] decodedBytes = Base64.getUrlDecoder().decode(encodedEmail);
+            return new String(decodedBytes, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid Base64 encoding: " + e.getMessage());
+        }
+    }
+
+    private boolean isValidEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        String emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        return email.matches(emailPattern) && email.length() <= 254;
     }
 }

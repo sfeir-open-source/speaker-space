@@ -21,7 +21,7 @@ export class NavbarSpeakerPageComponent implements OnInit, OnChanges, OnDestroy 
   @Input() eventUrl: string = '';
   @Input() eventName: string = '';
   @Input() userRole: string = '';
-  @Input() speakerName: string = '';
+  @Input() speakerEmail: string = '';
 
   activePage: string = '';
   currentUserRole: string = 'Member';
