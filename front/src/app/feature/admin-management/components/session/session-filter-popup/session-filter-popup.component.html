@@ -1,0 +1,178 @@
+<div
+  class="fixed inset-0 bg-gray-300/90 z-50 flex items-center justify-center"
+  (click)="onOverlayClick($event)"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="filter-title">
+
+  <section
+    class="bg-white shadow-xl max-w-md w-full max-h-[85vh] min-h-[500px] flex flex-col"
+    (click)="$event.stopPropagation()">
+
+    <header class="flex items-center bg-gray-100 justify-between px-3 py-2 border-b border-gray-200 flex-shrink-0">
+      <h2 id="filter-title" class="text-lg font-medium text-gray-600">
+        Filters
+      </h2>
+    </header>
+
+    <main class="p-6 space-y-8 flex-1 min-h-0">
+
+      <article>
+        <label class="block text-sm font-medium text-gray-900 mb-3">
+          Actions
+        </label>
+        <div class="flex justify-center gap-4">
+          <app-button-grey
+            type="button"
+            customTextClass="text-gray-600 hover:text-gray-600"
+            class="rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+            Complete Tasks
+          </app-button-grey>
+          <app-button-grey
+            type="button"
+            customTextClass="text-gray-600 hover:text-gray-600"
+            class="rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+            Missing Tasks
+          </app-button-grey>
+        </div>
+      </article>
+
+      <article>
+        <label for="format-select" class="block text-sm font-medium text-gray-900 mb-3">
+          Formats
+        </label>
+        <div class="relative">
+          <button
+            type="button"
+            id="format-select"
+            #formatSelectButton
+            (click)="toggleFormatDropdown()"
+            class="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            [class.border-blue-500]="showFormatDropdown"
+            aria-haspopup="listbox"
+            [attr.aria-expanded]="showFormatDropdown">
+              <span class="block truncate text-gray-600">
+                @if (workingFilters.selectedFormats.length === 0) {
+                  Select formats
+                } @else if (workingFilters.selectedFormats.length === 1) {
+                  {{ getFormatName(workingFilters.selectedFormats[0]) }}
+                } @else {
+                  {{ workingFilters.selectedFormats.length }} formats selected
+                }
+              </span>
+            <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <i class="material-icons text-gray-400 transform transition-transform duration-200"
+                   [class.rotate-180]="showFormatDropdown">expand_more</i>
+              </span>
+          </button>
+
+          @if (showFormatDropdown) {
+            <div class="fixed z-[60] border border-gray-200 mt-1 bg-white shadow-xl max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none"
+                 [style.width.px]="getDropdownWidth('format')"
+                 [style.top.px]="getDropdownTop('format')"
+                 [style.left.px]="getDropdownLeft('format')">
+              @if (availableFormats.length === 0) {
+                <div class="px-3 py-2 text-sm text-gray-500 italic">
+                  No formats available
+                </div>
+              } @else {
+                @for (format of availableFormats; track format.id) {
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      [value]="format.id"
+                      [checked]="isFormatSelected(format.id)"
+                      (change)="onFormatChange(format.id, $event)"
+                      (keydown)="onCheckboxKeyDown($event, format.id, 'format')"
+                      data-dropdown="format"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-3"
+                      [attr.aria-describedby]="format.description ? 'format-desc-' + format.id : null">
+                    <span class="text-sm font-medium text-gray-900">{{ format.name }}</span>
+                  </label>
+                }
+              }
+            </div>
+          }
+        </div>
+      </article>
+
+      <article>
+        <label for="category-select" class="block text-sm font-medium text-gray-900 mb-3">
+          Categories
+        </label>
+        <div class="relative">
+          <button
+            type="button"
+            id="category-select"
+            #categorySelectButton
+            (click)="toggleCategoryDropdown()"
+            class="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            [class.border-blue-500]="showCategoryDropdown"
+            aria-haspopup="listbox"
+            [attr.aria-expanded]="showCategoryDropdown">
+                <span class="block truncate text-gray-600">
+                  @if (workingFilters.selectedCategories.length === 0) {
+                    Select categories
+                  } @else if (workingFilters.selectedCategories.length === 1) {
+                    {{ getCategoryName(workingFilters.selectedCategories[0]) }}
+                  } @else {
+                    {{ workingFilters.selectedCategories.length }} categories selected
+                  }
+                </span>
+            <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <i class="material-icons text-gray-400 transform transition-transform duration-200"
+                     [class.rotate-180]="showCategoryDropdown">expand_more</i>
+                </span>
+          </button>
+
+          @if (showCategoryDropdown) {
+            <div class="fixed z-[60] border border-gray-200 mt-1 bg-white shadow-xl max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none"
+                 [style.width.px]="getDropdownWidth('category')"
+                 [style.top.px]="getDropdownTop('category')"
+                 [style.left.px]="getDropdownLeft('category')">
+              @if (availableCategories.length === 0) {
+                <div class="px-3 py-2 text-sm text-gray-500 italic">
+                  No categories available
+                </div>
+              } @else {
+                @for (category of availableCategories; track category.id) {
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      [value]="category.id"
+                      [checked]="isCategorySelected(category.id)"
+                      (change)="onCategoryChange(category.id, $event)"
+                      (keydown)="onCheckboxKeyDown($event, category.id, 'category')"
+                      data-dropdown="category"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-3"
+                      [attr.aria-describedby]="category.description ? 'category-desc-' + category.id : null">
+                    <div class="flex-1 min-w-0">
+                      <span class="text-sm font-medium text-gray-900">{{ category.name }}</span>
+                    </div>
+                  </label>
+                }
+              }
+            </div>
+          }
+        </div>
+      </article>
+    </main>
+
+    <footer class="flex items-center justify-between px-4 py-1.5 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+      <app-button-grey
+        type="button"
+        (click)="onReset()"
+        customTextClass="text-gray-600 hover:text-gray-600"
+        class="rounded-md px-3 mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+        Reset
+      </app-button-grey>
+
+      <app-button-green-actions
+        type="button"
+        (click)="onApply()"
+        class="px-3 py-1 text-sm border border-transparent rounded-md">
+        Apply Filters
+      </app-button-green-actions>
+    </footer>
+  </section>
+</div>

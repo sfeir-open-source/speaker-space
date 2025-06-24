@@ -1,0 +1,119 @@
+<div
+  class="fixed inset-0 bg-gray-300/90 z-50 flex items-center justify-center"
+  (click)="onOverlayClick($event)"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="filter-title">
+
+  <section
+    class="bg-white shadow-xl max-w-md w-full max-h-[85vh] min-h-[500px] flex flex-col"
+    (click)="$event.stopPropagation()">
+
+    <header class="flex items-center bg-gray-100 justify-between px-3 py-2 border-b border-gray-200 flex-shrink-0">
+      <h2 id="filter-title" class="text-lg font-medium text-gray-600">
+        Speaker Filters
+      </h2>
+    </header>
+
+    <main class="p-6 space-y-6 flex-1 min-h-0">
+
+      <article>
+        <label class="block text-sm font-medium text-gray-900 mb-3">
+          Task Status
+        </label>
+        <div class="flex justify-center gap-3">
+          <button
+            type="button"
+            (click)="setTaskStatus(true)"
+            [class]="workingFilters.hasCompleteTasks === true
+              ? 'px-4 py-2 text-sm font-medium text-white bg-green-600 border border-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 cursor-pointer'
+              : 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 cursor-pointer'">
+            Complete Tasks
+          </button>
+          <button
+            type="button"
+            (click)="setTaskStatus(false)"
+            [class]="workingFilters.hasCompleteTasks === false
+              ? 'px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-orange-600 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors duration-200 cursor-pointer'
+              : 'px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 cursor-pointer'">
+            Missing Tasks
+          </button>
+        </div>
+      </article>
+
+      <article>
+        <label for="company-select" class="block text-sm font-medium text-gray-900 mb-3">
+          Companies
+        </label>
+        <div class="relative">
+          <button
+            type="button"
+            id="company-select"
+            #companySelectButton
+            (click)="toggleCompanyDropdown()"
+            class="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            [class.border-blue-500]="showCompanyDropdown"
+            aria-haspopup="listbox"
+            [attr.aria-expanded]="showCompanyDropdown">
+              <span class="block truncate text-gray-600">
+                @if (workingFilters.selectedCompanies.length === 0) {
+                  Select companies
+                } @else if (workingFilters.selectedCompanies.length === 1) {
+                  {{ workingFilters.selectedCompanies[0] }}
+                } @else {
+                  {{ workingFilters.selectedCompanies.length }} companies selected
+                }
+              </span>
+            <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <i class="material-icons text-gray-400 transform transition-transform duration-200"
+                   [class.rotate-180]="showCompanyDropdown">expand_more</i>
+              </span>
+          </button>
+
+          @if (showCompanyDropdown) {
+            <div class="fixed z-[60] border border-gray-200 mt-1 bg-white shadow-xl max-h-60 rounded-md py-1 text-base overflow-auto focus:outline-none"
+                 [style.width.px]="getDropdownWidth('company')"
+                 [style.top.px]="getDropdownTop('company')"
+                 [style.left.px]="getDropdownLeft('company')">
+              @if (availableCompanies.length === 0) {
+                <div class="px-3 py-2 text-sm text-gray-500 italic">
+                  No companies available
+                </div>
+              } @else {
+                @for (company of availableCompanies; track company) {
+                  <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      [value]="company"
+                      [checked]="isCompanySelected(company)"
+                      (change)="onCompanyChange(company, $event)"
+                      (keydown)="onCheckboxKeyDown($event, company, 'company')"
+                      data-dropdown="company"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-3">
+                    <span class="text-sm font-medium text-gray-900">{{ company }}</span>
+                  </label>
+                }
+              }
+            </div>
+          }
+        </div>
+      </article>
+    </main>
+
+    <footer class="flex items-center justify-between px-4 py-1.5 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+      <button
+        type="button"
+        (click)="onReset()"
+        class="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer">
+        Reset
+      </button>
+
+      <app-button-green-actions
+        type="button"
+        (click)="onApply()"
+        class="px-3 py-1 text-sm border border-transparent rounded-md">
+        Apply Filters
+      </app-button-green-actions>
+    </footer>
+  </section>
+</div>

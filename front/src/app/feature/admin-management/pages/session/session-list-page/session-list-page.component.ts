@@ -6,8 +6,12 @@ import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {SessionImportData, Speaker} from '../../../type/session/session';
+import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
 import {BaseListComponent} from '../../../components/class/base-list-component';
+import {SessionFilters} from '../../../type/session/session-filters';
+import {
+  SessionFilterPopupComponent
+} from '../../../components/session/session-filter-popup/session-filter-popup.component';
 
 @Component({
   selector: 'app-session-list-page',
@@ -16,12 +20,21 @@ import {BaseListComponent} from '../../../components/class/base-list-component';
     FormsModule,
     ReactiveFormsModule,
     ButtonGreyComponent,
+    SessionFilterPopupComponent,
   ],
   templateUrl: './session-list-page.component.html',
   styleUrl: './session-list-page.component.scss'
 })
 export class SessionListPageComponent extends BaseListComponent<SessionImportData> {
   @Input() icon: string = 'search';
+
+  showFilterPopup : boolean = false;
+  availableFormats: Format[] = [];
+  availableCategories: Category[] = [];
+  currentFilters: SessionFilters = {
+    selectedFormats: [],
+    selectedCategories: []
+  };
 
   get totalSessions(): number {
     return this.totalItems;
@@ -58,15 +71,18 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
       )
       .subscribe({
         next: (sessions: SessionImportData[]) => {
-          const sortedSessions = sessions.sort((a, b) => {
-            const titleA = a.title?.toLowerCase() || '';
-            const titleB = b.title?.toLowerCase() || '';
+          const sortedSessions : SessionImportData[] = sessions.sort((a, b) => {
+            const titleA : string = a.title?.toLowerCase() || '';
+            const titleB : string = b.title?.toLowerCase() || '';
             return titleA.localeCompare(titleB);
           });
 
           this.items = sortedSessions;
           this.filteredItems = [...sortedSessions];
           this.totalItems = sortedSessions.length;
+
+          this.extractAvailableFilters(sessions);
+
           this.calculatePagination();
         },
         error: () => {
@@ -80,22 +96,6 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
 
   getItemId(session: SessionImportData): string {
     return session.id || '';
-  }
-
-  filterItems(): void {
-    if (!this.searchTerm.trim()) {
-      this.filteredItems = [...this.items];
-    } else {
-      this.filteredItems = this.items.filter(session =>
-        session.title?.toLowerCase().includes(this.searchTerm) ||
-        session.abstract?.toLowerCase().includes(this.searchTerm) ||
-        session.speakers?.some(speaker =>
-          speaker.name?.toLowerCase().includes(this.searchTerm)
-        )
-      );
-    }
-
-    this.updateItemsAfterFilter();
   }
 
   openItemDetail(sessionId: string): void {
@@ -116,5 +116,100 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
 
   toggleSessionSelection(sessionId: string): void {
     this.toggleItemSelection(sessionId);
+  }
+
+
+  private extractAvailableFilters(sessions: SessionImportData[]): void {
+    const formatMap = new Map<string, Format>();
+    sessions.forEach(session => {
+      session.formats?.forEach(format => {
+        if (format.id && !formatMap.has(format.id)) {
+          formatMap.set(format.id, format);
+        }
+      });
+    });
+    this.availableFormats = Array.from(formatMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const categoryMap = new Map<string, Category>();
+    sessions.forEach(session => {
+      session.categories?.forEach(category => {
+        if (category.id && !categoryMap.has(category.id)) {
+          categoryMap.set(category.id, category);
+        }
+      });
+    });
+    this.availableCategories = Array.from(categoryMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  openFilterPopup(): void {
+    this.showFilterPopup = true;
+  }
+
+  closeFilterPopup(): void {
+    this.showFilterPopup = false;
+  }
+
+  onFiltersApplied(filters: SessionFilters): void {
+    this.currentFilters = filters;
+    this.applyFilters();
+    this.closeFilterPopup();
+  }
+
+  onFiltersReset(): void {
+    this.currentFilters = {
+      selectedFormats: [],
+      selectedCategories: []
+    };
+    this.applyFilters();
+  }
+
+  private applyFilters(): void {
+    let filtered : SessionImportData[] = [...this.items];
+
+    if (this.currentFilters.selectedFormats.length > 0) {
+      filtered = filtered.filter(session =>
+        session.formats?.some(format =>
+          this.currentFilters.selectedFormats.includes(format.id)
+        )
+      );
+    }
+
+    if (this.currentFilters.selectedCategories.length > 0) {
+      filtered = filtered.filter(session =>
+        session.categories?.some(category =>
+          this.currentFilters.selectedCategories.includes(category.id)
+        )
+      );
+    }
+
+    if (this.searchTerm.trim()) {
+      const searchLower : string = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(session =>
+        session.title?.toLowerCase().includes(searchLower) ||
+        session.abstract?.toLowerCase().includes(searchLower) ||
+        session.speakers?.some(speaker =>
+          speaker.name?.toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    this.filteredItems = filtered;
+    this.updateItemsAfterFilter();
+  }
+
+  filterItems(): void {
+    this.applyFilters();
+  }
+
+  get hasActiveFilters(): boolean {
+    return this.currentFilters.selectedFormats.length > 0 ||
+      this.currentFilters.selectedCategories.length > 0;
+  }
+
+  get activeFiltersCount(): number {
+    return this.currentFilters.selectedFormats.length +
+      this.currentFilters.selectedCategories.length;
   }
 }

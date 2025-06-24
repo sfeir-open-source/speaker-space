@@ -44,9 +44,26 @@
                     type="button"
                     [materialIcon]="'tune'"
                     customTextClass="text-gray-600 hover:text-gray-600"
-                    class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+                    class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm relative"
+                    (click)="openFilterPopup()">
                     Filters
+                    @if (hasActiveFilters) {
+                      <span class="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {{ activeFiltersCount }}
+                    </span>
+                    }
                   </app-button-grey>
+
+                  @if (showFilterPopup) {
+                    <app-session-filter-popup
+                      [availableFormats]="availableFormats"
+                      [availableCategories]="availableCategories"
+                      [currentFilters]="currentFilters"
+                      (filtersApplied)="onFiltersApplied($event)"
+                      (filtersReset)="onFiltersReset()"
+                      (popupClosed)="closeFilterPopup()">
+                    </app-session-filter-popup>
+                  }
 
                   <app-button-grey
                     type="button"
