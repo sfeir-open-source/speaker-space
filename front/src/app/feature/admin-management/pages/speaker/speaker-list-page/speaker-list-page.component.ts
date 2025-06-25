@@ -10,7 +10,9 @@ import {Speaker} from '../../../type/session/session';
 import {BaseListComponent} from '../../../components/class/base-list-component';
 import {EmailEncoderService} from '../../../components/services/email-encoder.service';
 import {SpeakerFilters} from '../../../type/speaker/speaker-filters';
-import {SpeakerFilterPopupComponent} from '../speaker-filter-popup/speaker-filter-popup.component';
+import {
+  SpeakerFilterPopupComponent
+} from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -115,7 +117,7 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
 
     if (this.currentFilters.hasCompleteTasks !== null) {
       filtered = filtered.filter(speaker => {
-        const isComplete = !!(speaker.name && speaker.email && speaker.company && speaker.bio);
+        const isComplete : boolean = !!(speaker.name && speaker.email && speaker.company && speaker.bio);
         return this.currentFilters.hasCompleteTasks ? isComplete : !isComplete;
       });
     }
@@ -158,7 +160,7 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
   }
 
   get activeFiltersCount(): number {
-    let count = 0;
+    let count : number = 0;
     count += this.currentFilters.selectedCompanies.length;
     if (this.currentFilters.hasCompleteTasks !== null) count += 1;
     return count;
@@ -170,7 +172,7 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
 
   openItemDetail(speakerEmail: string): void {
     try {
-      const encodedSpeakerEmail = this.emailEncoderService.encodeToBase64(speakerEmail);
+      const encodedSpeakerEmail : string = this.emailEncoderService.encodeToBase64(speakerEmail);
       this.router.navigate(['event', this.eventId, 'speaker', encodedSpeakerEmail]);
     } catch (error) {
       console.error('Error encoding email for navigation:', error);

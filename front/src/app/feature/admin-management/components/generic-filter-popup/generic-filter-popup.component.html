@@ -1,0 +1,117 @@
+<div
+  class="fixed inset-0 bg-gray-300/90 z-50 flex items-center justify-center"
+  (click)="onOverlayClick($event)"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="filter-title">
+
+  <section
+    class="bg-white shadow-xl max-w-md w-full max-h-[85vh] min-h-[500px] flex flex-col rounded-lg overflow-hidden"
+    (click)="$event.stopPropagation()">
+
+    <header class="flex items-center bg-gray-100 justify-between px-3 py-2 border-b border-gray-200 flex-shrink-0 rounded-t-lg">
+      <h2 id="filter-title" class="text-lg font-medium text-gray-600">
+        {{ config.title }}
+      </h2>
+    </header>
+
+    <main class="p-6 space-y-8 flex-1 min-h-0">
+
+      @if (config.buttons && config.buttons.length > 0) {
+        @for (button of config.buttons; track button.id) {
+          <article>
+            <label class="block text-sm font-medium text-gray-900 mb-3">
+              {{ button.label }}
+            </label>
+            <div class="flex justify-center gap-4">
+              @for (option of button.options; track option.value) {
+                <button
+                  type="button"
+                  (click)="onButtonChange(button.id, option.value)"
+                  [class]="workingFilters[button.id] === option.value ? option.activeClass : option.inactiveClass">
+                  {{ option.label }}
+                </button>
+              }
+            </div>
+          </article>
+        }
+      }
+
+      @if (config.dropdowns && config.dropdowns.length > 0) {
+        @for (dropdown of config.dropdowns; track dropdown.id) {
+          <article>
+            <label [for]="dropdown.id + '-select'" class="block text-sm font-medium text-gray-900 mb-3">
+              {{ dropdown.label }}
+            </label>
+            <div class="relative">
+              <button
+                type="button"
+                [id]="dropdown.id + '-select'"
+                (click)="toggleDropdown(dropdown.id)"
+                class="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                [class.border-blue-500]="isDropdownOpen(dropdown.id)"
+                aria-haspopup="listbox"
+                [attr.aria-expanded]="isDropdownOpen(dropdown.id)">
+                <span class="block truncate text-gray-600">
+                  {{ getDropdownDisplayText(dropdown) }}
+                </span>
+                <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <i class="material-icons text-gray-400 transform transition-transform duration-200"
+                     [class.rotate-180]="isDropdownOpen(dropdown.id)">expand_more</i>
+                </span>
+              </button>
+
+              @if (isDropdownOpen(dropdown.id)) {
+                <div class="fixed z-[60] border border-gray-200 mt-1 bg-white shadow-xl max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none"
+                     [style.width.px]="getDropdownWidth(dropdown.id)"
+                     [style.top.px]="getDropdownTop(dropdown.id)"
+                     [style.left.px]="getDropdownLeft(dropdown.id)">
+                  @if (dropdown.options.length === 0) {
+                    <div class="px-3 py-2 text-sm text-gray-500 italic">
+                      {{ dropdown.emptyMessage }}
+                    </div>
+                  } @else {
+                    @if (dropdown.type === 'checkbox') {
+                      @for (option of dropdown.options; track $index) {
+                        <label class="flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer first:rounded-t-lg last:rounded-b-lg">
+                          <input
+                            type="checkbox"
+                            [value]="getOptionValue(option)"
+                            [checked]="isValueSelected(dropdown.id, getOptionValue(option))"
+                            (change)="onDropdownChange(dropdown.id, getOptionValue(option), $event)"
+                            (keydown)="onCheckboxKeyDown($event, dropdown.id, getOptionValue(option))"
+                            [attr.data-dropdown]="dropdown.id"
+                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 mr-3">
+                          <span class="text-sm font-medium text-gray-900">
+                            {{ getOptionDisplayName(option) }}
+                          </span>
+                        </label>
+                      }
+                    }
+                  }
+                </div>
+              }
+            </div>
+          </article>
+        }
+      }
+    </main>
+
+    <footer class="flex items-center justify-between px-4 py-1.5 border-t border-gray-200 bg-gray-50 flex-shrink-0 rounded-b-lg">
+      <app-button-grey
+        type="button"
+        (click)="onReset()"
+        customTextClass="text-gray-600 hover:text-gray-600"
+        class="rounded-md px-3 mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+        Reset
+      </app-button-grey>
+
+      <app-button-green-actions
+        type="button"
+        (click)="onApply()"
+        class="px-3 py-1 text-sm border border-transparent rounded-md">
+        Apply Filters
+      </app-button-green-actions>
+    </footer>
+  </section>
+</div>
