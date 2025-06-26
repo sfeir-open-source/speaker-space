@@ -40,6 +40,12 @@
                     </span>
                   </div>
 
+                  <app-button-green-actions
+                    type="button"
+                    [materialIcon]="'add'">
+                    Create speaker
+                  </app-button-green-actions>
+
                   <app-button-grey
                     type="button"
                     [materialIcon]="'tune'"
@@ -56,29 +62,14 @@
 
                   @if (showFilterPopup) {
                     <app-speaker-filter-popup
-                      [availableCompanies]="availableCompanies"
+                      [availableFormats]="availableFormats"
+                      [availableCategories]="availableCategories"
                       [currentFilters]="currentFilters"
                       (filtersApplied)="onFiltersApplied($event)"
                       (filtersReset)="onFiltersReset()"
                       (popupClosed)="closeFilterPopup()">
                     </app-speaker-filter-popup>
                   }
-
-                  <app-button-grey
-                    type="button"
-                    [materialIcon]="'swap_vert'"
-                    customTextClass="text-gray-600 hover:text-gray-600"
-                    class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
-                    Sort
-                  </app-button-grey>
-
-                  <app-button-grey
-                    type="button"
-                    [materialIcon]="'download'"
-                    customTextClass="text-gray-600 hover:text-gray-600"
-                    class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
-                    Export
-                  </app-button-grey>
                 </div>
               </section>
             }

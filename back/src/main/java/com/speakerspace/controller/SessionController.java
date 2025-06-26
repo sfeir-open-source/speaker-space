@@ -3,6 +3,7 @@ package com.speakerspace.controller;
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.ImportResultDTO;
 import com.speakerspace.dto.session.SessionImportRequestDTO;
+import com.speakerspace.dto.session.SpeakerWithSessionsDTO;
 import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.security.AuthenticationHelper;
@@ -12,6 +13,8 @@ import com.speakerspace.utils.email.UserEmailExtractor;
 import com.speakerspace.service.EventService;
 import com.speakerspace.service.SessionService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -27,6 +30,7 @@ public class SessionController {
     private final SessionService sessionService;
     private final AuthenticationHelper authHelper;
     private final UserEmailExtractor emailExtractor;
+    private static final Logger logger = LoggerFactory.getLogger(SessionController.class);
 
     public SessionController(EventService eventService, SessionService sessionService,
                              AuthenticationHelper authHelper, UserEmailExtractor emailExtractor) {
@@ -154,6 +158,27 @@ public class SessionController {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/event/{eventId}/speakers-with-sessions")
+    public ResponseEntity<List<SpeakerWithSessionsDTO>> getSpeakersWithSessionsByEventId(
+            @PathVariable String eventId,
+            HttpServletRequest request,
+            Authentication authentication) {
+
+        String userEmail = emailExtractor.extractUserEmail(request, authentication);
+        if (userEmail == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            List<SpeakerWithSessionsDTO> speakers = sessionService.getSpeakersWithSessionsByEventId(eventId);
+            return ResponseEntity.ok(speakers);
+        } catch (Exception e) {
+            logger.error("Error retrieving speakers with sessions for event {}: {}", eventId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
         }
     }
 }

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { SpeakerFilterPopupComponent } from './speaker-filter-popup.component';
 
-describe('SpeakerFilterPopupComponent', () => {
+describe('SpeakerUnifiedFilterPopupComponent', () => {
   let component: SpeakerFilterPopupComponent;
   let fixture: ComponentFixture<SpeakerFilterPopupComponent>;
 

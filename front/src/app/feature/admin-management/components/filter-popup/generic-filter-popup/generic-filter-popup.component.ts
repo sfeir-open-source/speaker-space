@@ -7,9 +7,9 @@ import {
   OnInit,
   Output,
 } from '@angular/core';
-import {DropdownConfig, FilterConfig, FilterOption} from '../../type/components/filter.type';
-import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
-import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
+import {DropdownConfig, FilterConfig, FilterOption} from '../../../type/components/filter.type';
+import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
+import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 
 @Component({
   selector: 'app-generic-filter-popup',
@@ -24,7 +24,7 @@ export class GenericFilterPopupComponent implements OnInit, OnDestroy {
   @Input() config!: FilterConfig;
   @Input() currentFilters: Record<string, any> = {};
 
-  @Output() filtersApplied = new EventEmitter<Record<string, any>>();
+  @Output() filtersApplied : EventEmitter<Record<string, any>> = new EventEmitter<Record<string, any>>();
   @Output() filtersReset : EventEmitter<void> = new EventEmitter<void>();
   @Output() popupClosed : EventEmitter<void> = new EventEmitter<void>();
 

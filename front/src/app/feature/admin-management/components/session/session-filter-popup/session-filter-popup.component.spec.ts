@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SessionFilterPopupComponent } from './session-filter-popup.component';
+import { UnifiedFilterPopupComponent } from './unified-filter-popup.component';
 
-describe('FilterPopupComponent', () => {
-  let component: SessionFilterPopupComponent;
-  let fixture: ComponentFixture<SessionFilterPopupComponent>;
+describe('UnifiedFilterPopupComponent', () => {
+  let component: UnifiedFilterPopupComponent;
+  let fixture: ComponentFixture<UnifiedFilterPopupComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SessionFilterPopupComponent]
+      imports: [UnifiedFilterPopupComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(SessionFilterPopupComponent);
+    fixture = TestBed.createComponent(UnifiedFilterPopupComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

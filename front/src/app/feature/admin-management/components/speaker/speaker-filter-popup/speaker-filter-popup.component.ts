@@ -1,35 +1,35 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  OnInit,
-  Output,
-} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {GenericFilterPopupComponent} from '../../filter-popup/generic-filter-popup/generic-filter-popup.component';
+import {Category, Format} from '../../../type/session/session';
 import {SpeakerFilters} from '../../../type/speaker/speaker-filters';
-import {GenericFilterPopupComponent} from '../../generic-filter-popup/generic-filter-popup.component';
-import {ButtonConfig, DropdownConfig, FilterConfig} from '../../../type/components/filter.type';
+import {FilterConfig} from '../../../type/components/filter.type';
+import {GenericFilterService} from '../../services/generic-filter.service';
 
 @Component({
   selector: 'app-speaker-filter-popup',
   imports: [
-    GenericFilterPopupComponent,
+    GenericFilterPopupComponent
   ],
   templateUrl: './speaker-filter-popup.component.html',
   styleUrl: './speaker-filter-popup.component.scss'
 })
 export class SpeakerFilterPopupComponent implements OnInit {
-  @Input() availableCompanies: string[] = [];
+  @Input() availableFormats: Format[] = [];
+  @Input() availableCategories: Category[] = [];
   @Input() currentFilters: SpeakerFilters = {
-    selectedCompanies: [],
+    selectedFormats: [],
+    selectedCategories: [],
     hasCompleteTasks: null
   };
 
-  @Output() filtersApplied : EventEmitter<SpeakerFilters> = new EventEmitter<SpeakerFilters>();
-  @Output() filtersReset:EventEmitter<void> = new EventEmitter<void>();
-  @Output() popupClosed: EventEmitter<void> = new EventEmitter<void>();
+  @Output() filtersApplied:EventEmitter<SpeakerFilters> = new EventEmitter<SpeakerFilters>();
+  @Output() filtersReset : EventEmitter<void> = new EventEmitter<void>();
+  @Output() popupClosed : EventEmitter<void> = new EventEmitter<void>();
 
   filterConfig!: FilterConfig;
   currentFiltersForGeneric: Record<string, any> = {};
+
+  constructor(private filterService: GenericFilterService) {}
 
   ngOnInit(): void {
     this.setupFilterConfig();
@@ -37,57 +37,26 @@ export class SpeakerFilterPopupComponent implements OnInit {
   }
 
   private setupFilterConfig(): void {
-    const companyDropdown: DropdownConfig = {
-      id: 'selectedCompanies',
-      label: 'Companies',
-      placeholder: 'Select companies',
-      emptyMessage: 'No companies available',
-      type: 'checkbox',
-      options: this.availableCompanies,
-      selectedValues: this.currentFilters.selectedCompanies
-    };
-
-    const taskStatusButton: ButtonConfig = {
-      id: 'hasCompleteTasks',
-      label: 'Task Status',
-      options: [
-        {
-          value: true,
-          label: 'Complete Tasks',
-          activeClass: 'rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-action hover:bg-action text-white border border-green-600 cursor-pointer shadow-sm px-4 py-2',
-          inactiveClass: 'rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm px-4 py-2 text-gray-600'
-        },
-        {
-          value: false,
-          label: 'Missing Tasks',
-          activeClass: 'rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-action hover:bg-action text-white border border-green-600 cursor-pointer shadow-sm px-4 py-2',
-          inactiveClass: 'rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm px-4 py-2 text-gray-600'
-        }
-      ],
-      selectedValue: this.currentFilters.hasCompleteTasks
-    };
-
-    this.filterConfig = {
-      title: 'Speaker Filters',
-      dropdowns: [companyDropdown],
-      buttons: [taskStatusButton]
-    };
+    this.filterConfig = this.filterService.createStandardFilterConfig(
+      this.availableFormats,
+      this.availableCategories,
+      'Speaker Filters',
+      true,
+      this.currentFilters
+    );
   }
 
   private setupCurrentFilters(): void {
     this.currentFiltersForGeneric = {
-      selectedCompanies: [...this.currentFilters.selectedCompanies],
+      selectedFormats: [...this.currentFilters.selectedFormats],
+      selectedCategories: [...this.currentFilters.selectedCategories],
       hasCompleteTasks: this.currentFilters.hasCompleteTasks
     };
   }
 
   onFiltersApplied(genericFilters: Record<string, any>): void {
-    const speakerFilters: SpeakerFilters = {
-      selectedCompanies: genericFilters['selectedCompanies'] || [],
-      hasCompleteTasks: genericFilters['hasCompleteTasks'] !== undefined ? genericFilters['hasCompleteTasks'] : null
-    };
-
-    this.filtersApplied.emit(speakerFilters);
+    const convertedFilters: SpeakerFilters = this.filterService.convertToSpeakerFilters(genericFilters);
+    this.filtersApplied.emit(convertedFilters);
   }
 
   onFiltersReset(): void {

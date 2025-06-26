@@ -40,6 +40,12 @@
                     </span>
                   </div>
 
+                  <app-button-green-actions
+                    type="button"
+                    [materialIcon]="'add'">
+                    Create session
+                  </app-button-green-actions>
+
                   <app-button-grey
                     type="button"
                     [materialIcon]="'tune'"
@@ -64,22 +70,6 @@
                       (popupClosed)="closeFilterPopup()">
                     </app-session-filter-popup>
                   }
-
-                  <app-button-grey
-                    type="button"
-                    [materialIcon]="'swap_vert'"
-                    customTextClass="text-gray-600 hover:text-gray-600"
-                    class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
-                    Sort
-                  </app-button-grey>
-
-                  <app-button-grey
-                    type="button"
-                    [materialIcon]="'download'"
-                    customTextClass="text-gray-600 hover:text-gray-600"
-                    class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
-                    Export
-                  </app-button-grey>
                 </div>
               </section>
             }

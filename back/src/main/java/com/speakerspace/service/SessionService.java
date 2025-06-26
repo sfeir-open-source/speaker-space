@@ -3,6 +3,7 @@ package com.speakerspace.service;
 import com.speakerspace.dto.session.ImportResultDTO;
 import com.speakerspace.dto.session.SessionDTO;
 import com.speakerspace.dto.session.SessionImportDataDTO;
+import com.speakerspace.dto.session.SpeakerWithSessionsDTO;
 import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.SessionImportData;
@@ -171,5 +172,65 @@ public class SessionService {
                         speaker.getEmail().equalsIgnoreCase(email))
                 .findFirst()
                 .orElse(null);
+    }
+
+    public List<SpeakerWithSessionsDTO> getSpeakersWithSessionsByEventId(String eventId) {
+        logger.info("Getting speakers with sessions for event: {}", eventId);
+
+        try {
+            List<SessionImportData> sessions = getSessionsAsImportData(eventId);
+            logger.info("Found {} sessions for event {}", sessions.size(), eventId);
+
+            if (sessions.isEmpty()) {
+                logger.info("No sessions found for event {}, returning empty speakers list", eventId);
+                return new ArrayList<>();
+            }
+
+            Map<String, List<SessionImportData>> sessionsBySpeaker = new HashMap<>();
+            Map<String, Speaker> speakerMap = new HashMap<>();
+
+            sessions.forEach(session -> {
+                if (session.getSpeakers() != null && !session.getSpeakers().isEmpty()) {
+                    session.getSpeakers().forEach(speaker -> {
+                        if (speaker != null) {
+                            String speakerKey = createSpeakerKey(speaker);
+
+                            speakerMap.put(speakerKey, speaker);
+
+                            sessionsBySpeaker.computeIfAbsent(speakerKey, k -> new ArrayList<>()).add(session);
+                        }
+                    });
+                }
+            });
+
+            logger.info("Found {} unique speakers for event {}", speakerMap.size(), eventId);
+
+            List<SpeakerWithSessionsDTO> result = speakerMap.entrySet().stream()
+                    .map(entry -> {
+                        Speaker speaker = entry.getValue();
+                        List<SessionImportData> speakerSessions = sessionsBySpeaker.get(entry.getKey());
+                        return new SpeakerWithSessionsDTO(speaker, speakerSessions);
+                    })
+                    .sorted(Comparator.comparing(dto ->
+                            dto.getSpeaker().getName() != null ?
+                                    dto.getSpeaker().getName().toLowerCase() : ""))
+                    .collect(Collectors.toList());
+
+            return result;
+
+        } catch (Exception e) {
+            logger.error("Error retrieving speakers with sessions for event {}: {}", eventId, e.getMessage(), e);
+            throw new RuntimeException("Failed to retrieve speakers with sessions for event: " + eventId, e);
+        }
+    }
+
+    private String createSpeakerKey(Speaker speaker) {
+        if (speaker.getEmail() != null && !speaker.getEmail().trim().isEmpty()) {
+            return speaker.getEmail().toLowerCase().trim();
+        } else if (speaker.getName() != null && !speaker.getName().trim().isEmpty()) {
+            return "name:" + speaker.getName().toLowerCase().trim();
+        } else {
+            return "unknown:" + System.currentTimeMillis() + ":" + speaker.hashCode();
+        }
     }
 }

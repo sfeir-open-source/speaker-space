@@ -4,6 +4,7 @@ import {EventService} from '../../services/event/event.service';
 import {EventDataService} from '../../services/event/event-data.service';
 import {OnDestroy, OnInit, Injectable} from '@angular/core';
 import {EventDTO} from '../../type/event/eventDTO';
+import {SpeakerService} from '../../services/speaker/speaker.service';
 
 @Injectable()
 export abstract class BaseListComponent<T> implements OnInit, OnDestroy {
@@ -35,6 +36,7 @@ export abstract class BaseListComponent<T> implements OnInit, OnDestroy {
     protected route: ActivatedRoute,
     protected router: Router,
     protected eventService: EventService,
+    protected speakerService : SpeakerService,
     protected eventDataService: EventDataService
   ) {}
 

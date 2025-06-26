@@ -9,8 +9,10 @@ import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey
 import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
 import {BaseListComponent} from '../../../components/class/base-list-component';
 import {SessionFilters} from '../../../type/session/session-filters';
+import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
+import {SpeakerService} from '../../../services/speaker/speaker.service';
 import {
-  SessionFilterPopupComponent
+  SessionUnifiedFilterPopupComponent
 } from '../../../components/session/session-filter-popup/session-filter-popup.component';
 
 @Component({
@@ -20,7 +22,8 @@ import {
     FormsModule,
     ReactiveFormsModule,
     ButtonGreyComponent,
-    SessionFilterPopupComponent,
+    ButtonGreenActionsComponent,
+    SessionUnifiedFilterPopupComponent,
   ],
   templateUrl: './session-list-page.component.html',
   styleUrl: './session-list-page.component.scss'
@@ -54,9 +57,10 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
     route: ActivatedRoute,
     router: Router,
     eventService: EventService,
+    speakerService : SpeakerService,
     eventDataService: EventDataService
   ) {
-    super(route, router, eventService, eventDataService);
+    super(route, router, eventService, speakerService, eventDataService);
   }
 
   loadItems(): void {

@@ -1,4 +1,5 @@
 export type SpeakerFilters = {
-  selectedCompanies: string[];
+  selectedFormats: string[];
+  selectedCategories: string[];
   hasCompleteTasks: boolean | null;
 };
