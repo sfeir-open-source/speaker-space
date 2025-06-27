@@ -1,0 +1,101 @@
+<div class="bg-white shadow-md rounded-lg p-4 mb-4">
+  <div class="flex items-center gap-4">
+    <div class="flex-1">
+      <label for="sessionFile" class="block text-sm font-medium text-gray-700 mb-2">
+        Import Sessions review from JSON
+      </label>
+      <p class="text-xs text-gray-500 mt-1">
+        Select a JSON file containing session review data
+      </p>
+      <div class="relative">
+          <input
+            #fileInput
+            type="file"
+            id="sessionFile"
+            accept=".json"
+            (change)="onFileSelected($event)"
+            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            [disabled]="isImporting"
+          />
+
+          <div class="flex items-center justify-between p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
+               [class.border-blue-500]="selectedFile"
+               [class.bg-blue-50]="selectedFile"
+               [class.opacity-50]="isImporting"
+               [class.cursor-not-allowed]="isImporting">
+
+            <div class="flex items-center">
+              <div class="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3"
+                   [class.bg-blue-100]="selectedFile">
+                <i class="material-icons text-gray-500"
+                   [class.text-blue-600]="selectedFile">
+                  {{ selectedFile ? 'description' : 'cloud_upload' }}
+                </i>
+              </div>
+
+              <div>
+                <p class="text-sm font-medium text-gray-900">
+                  {{ selectedFile ? selectedFile.name : 'Choose a JSON session REVIEW file' }}
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ selectedFile ? formatFileSize(selectedFile.size) : 'No file selected' }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+      <div class="mt-2 flex items-center text-xs text-gray-500">
+        <i class="material-icons mr-1 text-sm">info</i>
+        Supported format: JSON files containing session review data
+      </div>
+    </div>
+
+
+    <app-button-grey
+      type="button"
+      [materialIcon]="isImporting ? 'hourglass_empty' : 'upload'"
+      (click)="importSessions()"
+      customTextClass="text-gray-600 hover:text-gray-600"
+      class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+      {{ isImporting ? 'Importing...' : 'Import Sessions' }}
+    </app-button-grey>
+
+
+  </div>
+
+  @if (importResult) {
+    <div class="mt-4 p-3 rounded-md"
+         [class]="getResultClass()">
+      <div class="flex items-center">
+        <i class="material-icons mr-2" [class]="getIconClass()">
+          {{ getResultIcon() }}
+        </i>
+        <span class="font-medium">
+                Import completed: {{ importResult.successCount }}/{{ importResult.totalCount }} sessions imported
+              </span>
+      </div>
+
+      @if (importResult.errors && importResult.errors.length > 0) {
+        <div class="mt-2">
+          <p class="text-sm font-medium">Errors:</p>
+          <ul class="text-sm list-disc list-inside">
+            @for (error of importResult.errors; track error) {
+              <li>{{ error }}</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  }
+
+  @if (fileError) {
+    <div class="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+      <div class="flex items-center">
+        <i class="material-icons mr-2 text-red-600">error</i>
+        <span class="text-red-700 text-sm ">{{ fileError }}</span>
+      </div>
+    </div>
+  }
+</div>

@@ -2,10 +2,10 @@
   <div class="flex items-center gap-4">
     <div class="flex-1">
       <label for="sessionFile" class="block text-sm font-medium text-gray-700 mb-2">
-        Import Sessions from JSON
+        Import Sessions schedule from JSON
       </label>
       <p class="text-xs text-gray-500 mt-1">
-        Select a JSON file containing session data
+        Select a JSON file containing session schedule data
       </p>
       <div class="relative">
           <input
@@ -35,7 +35,7 @@
 
               <div>
                 <p class="text-sm font-medium text-gray-900">
-                  {{ selectedFile ? selectedFile.name : 'Choose a JSON file' }}
+                  {{ selectedFile ? selectedFile.name : 'Choose a JSON session SCHEDULE file' }}
                 </p>
                 <p class="text-xs text-gray-500">
                   {{ selectedFile ? formatFileSize(selectedFile.size) : 'No file selected' }}
@@ -48,7 +48,7 @@
 
       <div class="mt-2 flex items-center text-xs text-gray-500">
         <i class="material-icons mr-1 text-sm">info</i>
-        Supported format: JSON files containing session data
+        Supported format: JSON files containing session schedule data
       </div>
     </div>
 

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class SessionImportDataDTO {
+public class SessionReviewImportDataDTO {
     private String id;
     private String title;
     @JsonProperty("abstract")
@@ -20,7 +20,7 @@ public class SessionImportDataDTO {
     private List<SpeakerDTO> speakers;
     private ReviewDTO reviews;
 
-    public SessionImportDataDTO() {}
+    public SessionReviewImportDataDTO() {}
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

@@ -124,7 +124,7 @@
                     } @else {
                       @for (speaker of paginatedSpeakers; track speaker.email) {
                         <tr class="bg-white border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-                            (click)="onRowClick(speaker, $event)">
+                            (click)="openItemDetail(speaker.id)">
                           <td class="w-4 p-4" (click)="$event.stopPropagation()">
                             <div class="flex items-center">
                               <input

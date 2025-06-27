@@ -1,17 +1,21 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {ImportResult, SessionImportData} from '../../../type/session/session';
+import {ImportResult, Speaker} from '../../../type/session/session';
 import {EventService} from '../../../services/event/event.service';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
+import {
+  ScheduleJsonData,
+  ScheduleSessionData,
+} from '../../../type/session/schedule-json-data';
 
 @Component({
-  selector: 'app-session-import',
+  selector: 'app-session-schedule-import',
   imports: [
     ButtonGreyComponent
   ],
-  templateUrl: './session-import.component.html',
-  styleUrl: './session-import.component.scss'
+  templateUrl: './session-schedule-import.component.html',
+  styleUrl: './session-schedule-import.component.scss'
 })
-export class SessionImportComponent {
+export class SessionScheduleImportComponent {
   @Input() eventId!: string;
   @Output() importCompleted = new EventEmitter<ImportResult>();
 
@@ -34,11 +38,13 @@ export class SessionImportComponent {
     reader.onload = (e) => {
       try {
         const jsonContent = e.target?.result as string;
-        const sessionsData: SessionImportData[] = JSON.parse(jsonContent);
+        const scheduleData: ScheduleJsonData = JSON.parse(jsonContent);
 
-        this.validateSessionsData(sessionsData);
+        this.validateScheduleData(scheduleData);
 
-        this.eventService.importSessions(this.eventId, sessionsData)
+        const transformedSessions = this.transformScheduleToSessionData(scheduleData);
+
+        this.eventService.importSessionsSchedule(this.eventId, transformedSessions)
           .subscribe({
             next: (result: ImportResult) => {
               this.importResult = result;
@@ -54,7 +60,7 @@ export class SessionImportComponent {
               }
             },
             error: (error) => {
-              this.fileError = 'Failed to import sessions. Please try again.';
+              this.fileError = 'Failed to import schedule sessions. Please try again.';
               this.isImporting = false;
               console.error('Import error:', error);
             }
@@ -75,24 +81,64 @@ export class SessionImportComponent {
     reader.readAsText(this.selectedFile);
   }
 
-  private validateSessionsData(data: any): void {
-    if (!Array.isArray(data)) {
-      throw new Error('JSON must contain an array of sessions');
+  private validateScheduleData(data: ScheduleJsonData): string[] {
+    const errors: string[] = [];
+
+    if (!data.sessions || !Array.isArray(data.sessions)) {
+      errors.push('JSON must contain a sessions array.');
+    } else if (data.sessions.length === 0) {
+      errors.push('No sessions found in the schedule.');
+    } else {
+      data.sessions.forEach((session, index) => {
+        if (!session.id || typeof session.id !== 'string') {
+          errors.push(`Session ${index + 1}: missing valid ID.`);
+        }
+        if (!session.start) {
+          errors.push(`Session ${index + 1}: missing start time.`);
+        }
+        if (!session.end) {
+          errors.push(`Session ${index + 1}: missing end time.`);
+        }
+      });
     }
 
-    if (data.length === 0) {
-      throw new Error('No sessions found in the file');
-    }
+    return errors;
+  }
 
-    data.forEach((session: any, index: number) => {
-      if (!session.title || typeof session.title !== 'string') {
-        throw new Error(`Session at index ${index} is missing a valid title`);
-      }
-
-      if (!session.abstract || typeof session.abstract !== 'string') {
-        throw new Error(`Session at index ${index} is missing a valid abstract`);
-      }
-    });
+  private transformScheduleToSessionData(scheduleData: ScheduleJsonData): {
+    id: string;
+    start: Date;
+    end: Date;
+    track: string;
+    title: string;
+    languages: string;
+    proposal: {
+      id: string;
+      abstractText: string;
+      level: string;
+      formats: string[];
+      categories: string[];
+      speakers: Speaker[]
+    } | undefined;
+    eventId: string
+  }[] {
+    return scheduleData.sessions.map(session => ({
+      id: session.id,
+      start: new Date(session.start),
+      end: new Date(session.end),
+      track: session.track || '',
+      title: session.title || '',
+      languages: session.language || '',
+      proposal: session.proposal ? {
+        id: session.proposal.id,
+        abstractText: session.proposal.abstract,
+        level: session.proposal.level,
+        formats: session.proposal.formats || [],
+        categories: session.proposal.categories || [],
+        speakers: session.proposal.speakers || []
+      } : undefined,
+      eventId: this.eventId
+    }));
   }
 
   private resetState(): void {

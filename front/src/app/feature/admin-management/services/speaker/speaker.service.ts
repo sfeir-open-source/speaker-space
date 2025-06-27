@@ -3,7 +3,6 @@ import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {Speaker} from '../../type/session/session';
 import {environment} from '../../../../../environments/environment.development';
-import {EmailEncoderService} from '../../components/services/email-encoder.service';
 import {SpeakerWithSessionsDTO} from '../../type/speaker/speaker-with-sessions';
 
 @Injectable({
@@ -13,14 +12,11 @@ export class SpeakerService {
 
   constructor(
     private http: HttpClient,
-    private emailEncoderService: EmailEncoderService
   ) {}
 
-  getSpeakerByEmail(eventId: string, email: string): Observable<Speaker> {
-    const encodedEmail : string = this.emailEncoderService.encodeToBase64(email);
-
+  getSpeakerById(eventId: string, speakerId: string): Observable<Speaker> {
     return this.http.get<Speaker>(
-      `${environment.apiUrl}/session/event/${eventId}/speaker/${encodedEmail}`,
+      `${environment.apiUrl}/session/event/${eventId}/speaker/${speakerId}`,
       { withCredentials: true }
     );
   }

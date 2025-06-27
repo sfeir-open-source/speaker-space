@@ -2,7 +2,7 @@ package com.speakerspace.dto.session;
 
 import com.speakerspace.model.session.Category;
 import com.speakerspace.model.session.Format;
-import com.speakerspace.model.session.SessionImportData;
+import com.speakerspace.model.session.SessionReviewImportData;
 import com.speakerspace.model.session.Speaker;
 
 import java.util.*;
@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 
 public class SpeakerWithSessionsDTO {
     private Speaker speaker;
-    private List<SessionImportData> sessions;
+    private List<SessionReviewImportData> sessions;
     private Set<Format> formats;
     private Set<Category> categories;
 
-    public SpeakerWithSessionsDTO(Speaker speaker, List<SessionImportData> sessions) {
+    public SpeakerWithSessionsDTO(Speaker speaker, List<SessionReviewImportData> sessions) {
         this.speaker = speaker;
         this.sessions = sessions != null ? sessions : new ArrayList<>();
         this.extractFormatsAndCategories();
@@ -47,11 +47,11 @@ public class SpeakerWithSessionsDTO {
         this.speaker = speaker;
     }
 
-    public List<SessionImportData> getSessions() {
+    public List<SessionReviewImportData> getSessions() {
         return sessions;
     }
 
-    public void setSessions(List<SessionImportData> sessions) {
+    public void setSessions(List<SessionReviewImportData> sessions) {
         this.sessions = sessions != null ? sessions : new ArrayList<>();
         this.extractFormatsAndCategories();
     }

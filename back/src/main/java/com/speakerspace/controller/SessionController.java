@@ -1,14 +1,10 @@
 package com.speakerspace.controller;
 
 import com.speakerspace.dto.EventDTO;
-import com.speakerspace.dto.session.ImportResultDTO;
-import com.speakerspace.dto.session.SessionImportRequestDTO;
-import com.speakerspace.dto.session.SpeakerWithSessionsDTO;
-import com.speakerspace.model.session.SessionImportData;
+import com.speakerspace.dto.session.*;
+import com.speakerspace.model.session.SessionReviewImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.security.AuthenticationHelper;
-import com.speakerspace.utils.email.EmailEncoder;
-import com.speakerspace.utils.email.EmailValidator;
 import com.speakerspace.utils.email.UserEmailExtractor;
 import com.speakerspace.service.EventService;
 import com.speakerspace.service.SessionService;
@@ -41,9 +37,9 @@ public class SessionController {
     }
 
     @PostMapping("/event/{eventId}/import")
-    public ResponseEntity<ImportResultDTO> importSessions(
+    public ResponseEntity<ImportResultDTO> importSessionsReview(
             @PathVariable String eventId,
-            @RequestBody SessionImportRequestDTO importRequest,
+            @RequestBody SessionReviewImportRequestDTO importRequest,
             Authentication authentication) {
 
         if (authentication == null) {
@@ -64,7 +60,7 @@ public class SessionController {
                 return ResponseEntity.badRequest().build();
             }
 
-            ImportResultDTO result = sessionService.importSessions(eventId, importRequest.getSessions());
+            ImportResultDTO result = sessionService.importSessionsReview(eventId, importRequest.getSessions());
             return ResponseEntity.ok(result);
 
         } catch (IllegalArgumentException e) {
@@ -75,7 +71,7 @@ public class SessionController {
     }
 
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<SessionImportData>> getSessionsByEventId(
+    public ResponseEntity<List<SessionReviewImportData>> getSessionsByEventId(
             @PathVariable String eventId,
             HttpServletRequest request,
             Authentication authentication) {
@@ -86,7 +82,7 @@ public class SessionController {
         }
 
         try {
-            List<SessionImportData> sessions = sessionService.getSessionsAsImportData(eventId);
+            List<SessionReviewImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
             sessions.sort(Comparator.comparing(s -> s.getTitle() != null ? s.getTitle().toLowerCase() : ""));
             return ResponseEntity.ok(sessions);
         } catch (Exception e) {
@@ -95,7 +91,7 @@ public class SessionController {
     }
 
     @GetMapping("/event/{eventId}/session/{sessionId}")
-    public ResponseEntity<SessionImportData> getSessionById(
+    public ResponseEntity<SessionReviewImportData> getSessionById(
             @PathVariable String eventId,
             @PathVariable String sessionId,
             HttpServletRequest request,
@@ -107,7 +103,7 @@ public class SessionController {
         }
 
         try {
-            SessionImportData sessionData = sessionService.getSessionById(eventId, sessionId);
+            SessionReviewImportData sessionData = sessionService.getSessionById(eventId, sessionId);
             return sessionData != null ? ResponseEntity.ok(sessionData) : ResponseEntity.notFound().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -133,10 +129,10 @@ public class SessionController {
         }
     }
 
-    @GetMapping("/event/{eventId}/speaker/{encodedEmail}")
-    public ResponseEntity<Speaker> getSpeakerByEmail(
+    @GetMapping("/event/{eventId}/speaker/{speakerId}")
+    public ResponseEntity<Speaker> getSpeakerById(
             @PathVariable String eventId,
-            @PathVariable String encodedEmail,
+            @PathVariable String speakerId,
             HttpServletRequest request,
             Authentication authentication) {
 
@@ -146,16 +142,9 @@ public class SessionController {
         }
 
         try {
-            String decodedEmail = EmailEncoder.decodeFromBase64(encodedEmail);
-            if (!EmailValidator.isValid(decodedEmail)) {
-                return ResponseEntity.badRequest().build();
-            }
-
-            Speaker speaker = sessionService.getSpeakerByEmail(eventId, decodedEmail);
+            Speaker speaker = sessionService.getSpeakerById(eventId, speakerId);
             return speaker != null ? ResponseEntity.ok(speaker) : ResponseEntity.notFound().build();
 
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -181,4 +170,47 @@ public class SessionController {
                     .body(Collections.emptyList());
         }
     }
+
+    @PostMapping("/event/{eventId}/import-schedule")
+    public ResponseEntity<ImportResultDTO> importSessionsSchedule(
+            @PathVariable String eventId,
+            @RequestBody SessionScheduleImportRequestDTO importRequest,
+            Authentication authentication) {
+
+        if (authentication == null) {
+            logger.warn("Unauthorized access attempt: no authentication");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        logger.info("User " + authentication.getName() + " requests import for event " + eventId);
+
+        try {
+            EventDTO existingEvent = eventService.getEventById(eventId);
+            if (existingEvent == null) {
+                logger.warn("Event not found: " + eventId);
+                return ResponseEntity.notFound().build();
+            }
+
+            if (!authHelper.isUserAuthorized(authentication, existingEvent.getUserCreateId())) {
+                logger.warn("Forbidden: User " + authentication.getName() + " not authorized for event owner " + existingEvent.getUserCreateId());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            if (!eventId.equals(importRequest.getEventId())) {
+                logger.warn("Bad request: eventId in path and body do not match");
+                return ResponseEntity.badRequest().build();
+            }
+
+            ImportResultDTO result = sessionService.importSessionsSchedule(eventId, importRequest.getSessions());
+            return ResponseEntity.ok(result);
+
+        } catch (IllegalArgumentException e) {
+            logger.warn("Validation error during import: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Internal error during import", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

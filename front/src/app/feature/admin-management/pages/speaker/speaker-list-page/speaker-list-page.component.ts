@@ -163,13 +163,8 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
     return speaker.email || '';
   }
 
-  openItemDetail(speakerEmail: string): void {
-    try {
-      const encodedSpeakerEmail : string = this.emailEncoderService.encodeToBase64(speakerEmail);
-      this.router.navigate(['event', this.eventId, 'speaker', encodedSpeakerEmail]);
-    } catch (error) {
-      console.error('Error encoding email for navigation:', error);
-    }
+  openItemDetail(speakerId: string): void {
+    this.router.navigate(['event', this.eventId, 'speaker', speakerId]);
   }
 
   isSpeakerSelected(speakerName: string | undefined): boolean {

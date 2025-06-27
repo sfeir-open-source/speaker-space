@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SessionImportData {
+public class SessionReviewImportData {
 
     private String id;
     private String title;
@@ -25,7 +25,7 @@ public class SessionImportData {
     private List<Speaker> speakers = new ArrayList<>();
     private Reviews reviews;
 
-    public SessionImportData() {}
+    public SessionReviewImportData() {}
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }

@@ -4,6 +4,7 @@ import java.util.List;
 
 public class Speaker {
 
+    private String id;
     private String name;
     private String bio;
     private String company;
@@ -14,6 +15,14 @@ public class Speaker {
     private List<String> socialLinks;
 
     public Speaker() {}
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getName() {
         return name;

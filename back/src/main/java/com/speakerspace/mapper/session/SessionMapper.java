@@ -118,12 +118,12 @@ public class SessionMapper {
                 .collect(Collectors.toList());
     }
 
-    public SessionImportData toSessionImportData(Session session) {
+    public SessionReviewImportData toSessionImportData(Session session) {
         if (session == null) {
             return null;
         }
 
-        SessionImportData importData = new SessionImportData();
+        SessionReviewImportData importData = new SessionReviewImportData();
         importData.setId(session.getId());
         importData.setTitle(session.getTitle());
         importData.setAbstractText(session.getAbstractText());

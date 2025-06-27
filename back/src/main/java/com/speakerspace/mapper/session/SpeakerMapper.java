@@ -13,6 +13,7 @@ public class SpeakerMapper {
         }
 
         SpeakerDTO speakerDTO = new SpeakerDTO();
+        speakerDTO.setId(speaker.getId());
         speakerDTO.setName(speaker.getName());
         speakerDTO.setBio(speaker.getBio());
         speakerDTO.setCompany(speaker.getCompany());
@@ -30,6 +31,7 @@ public class SpeakerMapper {
         }
 
         Speaker speaker = new Speaker();
+        speaker.setId(speakerDTO.getId());
         speaker.setName(speakerDTO.getName());
         speaker.setBio(speakerDTO.getBio());
         speaker.setCompany(speakerDTO.getCompany());

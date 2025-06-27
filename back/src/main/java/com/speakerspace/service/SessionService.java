@@ -1,13 +1,8 @@
 package com.speakerspace.service;
 
-import com.speakerspace.dto.session.ImportResultDTO;
-import com.speakerspace.dto.session.SessionDTO;
-import com.speakerspace.dto.session.SessionImportDataDTO;
-import com.speakerspace.dto.session.SpeakerWithSessionsDTO;
+import com.speakerspace.dto.session.*;
 import com.speakerspace.mapper.session.SessionMapper;
-import com.speakerspace.model.session.Session;
-import com.speakerspace.model.session.SessionImportData;
-import com.speakerspace.model.session.Speaker;
+import com.speakerspace.model.session.*;
 import com.speakerspace.repository.SessionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +24,7 @@ public class SessionService {
         this.sessionMapper = sessionMapper;
     }
 
-    public ImportResultDTO importSessions(String eventId, List<SessionImportDataDTO> sessionsData) {
+    public ImportResultDTO importSessionsReview(String eventId, List<SessionReviewImportDataDTO> sessionsData) {
         logger.info("Starting import of {} sessions for event {}", sessionsData.size(), eventId);
 
         ImportResultDTO result = new ImportResultDTO();
@@ -38,11 +33,11 @@ public class SessionService {
         result.setErrors(new ArrayList<>());
 
         for (int i = 0; i < sessionsData.size(); i++) {
-            SessionImportDataDTO sessionData = sessionsData.get(i);
+            SessionReviewImportDataDTO sessionData = sessionsData.get(i);
             try {
-                validateSessionDataForImport(sessionData);
+                validateSessionReviewDataForImport(sessionData);
 
-                SessionDTO sessionDTO = convertImportDataToSessionDTO(sessionData, eventId);
+                SessionDTO sessionDTO = convertImportDataToSessionReviewDTO(sessionData, eventId);
 
                 if (sessionMapper == null) {
                     throw new IllegalStateException("SessionMapper is not injected");
@@ -67,7 +62,7 @@ public class SessionService {
         return result;
     }
 
-    private void validateSessionDataForImport(SessionImportDataDTO sessionData) {
+    private void validateSessionReviewDataForImport(SessionReviewImportDataDTO sessionData) {
         List<String> errors = new ArrayList<>();
 
         if (sessionData.getId() == null || sessionData.getId().trim().isEmpty()) {
@@ -79,7 +74,7 @@ public class SessionService {
         }
     }
 
-    private SessionDTO convertImportDataToSessionDTO(SessionImportDataDTO importData, String eventId) {
+    private SessionDTO convertImportDataToSessionReviewDTO(SessionReviewImportDataDTO importData, String eventId) {
         SessionDTO sessionDTO = new SessionDTO();
 
         sessionDTO.setId(importData.getId() != null ? importData.getId() : generateSessionId());
@@ -109,11 +104,11 @@ public class SessionService {
         return "session_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 1000);
     }
 
-    public List<SessionImportData> getSessionsAsImportData(String eventId) {
+    public List<SessionReviewImportData> getSessionsReviewAsImportData(String eventId) {
         try {
             List<Session> sessions = sessionRepository.findByEventId(eventId);
 
-            List<SessionImportData> importDataList = sessions.stream()
+            List<SessionReviewImportData> importDataList = sessions.stream()
                     .map(sessionMapper::toSessionImportData)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
@@ -126,7 +121,131 @@ public class SessionService {
         }
     }
 
-    public SessionImportData getSessionById(String eventId, String sessionId) {
+    public ImportResultDTO importSessionsSchedule(String eventId, List<SessionScheduleImportDataDTO> sessionsData) {
+        logger.info("Starting schedule import of {} sessions for event {}", sessionsData.size(), eventId);
+
+        ImportResultDTO result = new ImportResultDTO();
+        result.setTotalCount(sessionsData.size());
+        result.setSuccessCount(0);
+        result.setErrors(new ArrayList<>());
+
+        for (int i = 0; i < sessionsData.size(); i++) {
+            SessionScheduleImportDataDTO scheduleData = sessionsData.get(i);
+            try {
+                validateSessionScheduleDataForImport(scheduleData);
+
+                Session existingSession = findExistingSession(eventId, scheduleData);
+
+                if (existingSession != null) {
+                    updateSessionWithScheduleData(existingSession, scheduleData);
+                    sessionRepository.save(existingSession);
+                } else {
+                    Session newSession = createSessionFromScheduleData(scheduleData, eventId);
+                    sessionRepository.save(newSession);
+                }
+
+                result.setSuccessCount(result.getSuccessCount() + 1);
+
+            } catch (Exception e) {
+                String errorMessage = String.format("Session %d (%s): %s",
+                        i + 1,
+                        scheduleData.getTitle() != null ? scheduleData.getTitle() : "No title",
+                        e.getMessage());
+
+                logger.warn("Failed to import schedule session {}: {}", i + 1, e.getMessage());
+                result.getErrors().add(errorMessage);
+            }
+        }
+
+        return result;
+    }
+
+    private Session findExistingSession(String eventId, SessionScheduleImportDataDTO scheduleData) {
+        if (scheduleData.getId() != null) {
+            List<Session> sessions = sessionRepository.findByEventId(eventId);
+            return sessions.stream()
+                    .filter(s -> scheduleData.getId().equals(s.getId()) ||
+                            (scheduleData.getProposal() != null &&
+                                    scheduleData.getProposal().getId() != null &&
+                                    scheduleData.getProposal().getId().equals(s.getId())))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        if (scheduleData.getTitle() != null) {
+            List<Session> sessions = sessionRepository.findByEventId(eventId);
+            return sessions.stream()
+                    .filter(s -> scheduleData.getTitle().equals(s.getTitle()))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        return null;
+    }
+
+    private void updateSessionWithScheduleData(Session existingSession, SessionScheduleImportDataDTO scheduleData) {
+        existingSession.setStart(scheduleData.getStart());
+        existingSession.setEnd(scheduleData.getEnd());
+        existingSession.setTrack(scheduleData.getTrack());
+
+        if (existingSession.getLanguages() == null || existingSession.getLanguages().isEmpty()) {
+            if (scheduleData.getLanguages() != null) {
+                existingSession.setLanguages(Arrays.asList(scheduleData.getLanguages()));
+            }
+        }
+    }
+
+    private Session createSessionFromScheduleData(SessionScheduleImportDataDTO scheduleData, String eventId) {
+        Session session = new Session();
+
+        String sessionId = scheduleData.getProposal() != null && scheduleData.getProposal().getId() != null
+                ? scheduleData.getProposal().getId()
+                : scheduleData.getId();
+
+        session.setId(sessionId);
+        session.setTitle(scheduleData.getTitle());
+        session.setStart(scheduleData.getStart());
+        session.setEnd(scheduleData.getEnd());
+        session.setTrack(scheduleData.getTrack());
+        session.setEventId(eventId);
+
+        if (scheduleData.getLanguages() != null) {
+            session.setLanguages(Arrays.asList(scheduleData.getLanguages()));
+        }
+
+        if (scheduleData.getProposal() != null) {
+            Proposal proposal = scheduleData.getProposal();
+            session.setAbstractText(proposal.getAbstractText());
+            session.setLevel(proposal.getLevel());
+            session.setFormats(proposal.getFormats());
+            session.setCategories(proposal.getCategories());
+            session.setSpeakers(proposal.getSpeakers());
+        }
+
+        return session;
+    }
+
+    private void validateSessionScheduleDataForImport(SessionScheduleImportDataDTO scheduleData) {
+        List<String> errors = new ArrayList<>();
+
+        if (scheduleData.getId() == null || scheduleData.getId().trim().isEmpty()) {
+            errors.add("ID is required");
+        }
+
+        if (scheduleData.getStart() == null) {
+            errors.add("Start time is required");
+        }
+
+        if (scheduleData.getEnd() == null) {
+            errors.add("End time is required");
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join(", ", errors));
+        }
+    }
+
+    public SessionReviewImportData getSessionById(String eventId, String sessionId) {
         try {
             Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
 
@@ -135,7 +254,7 @@ public class SessionService {
                 return null;
             }
 
-            SessionImportData importData = sessionMapper.toSessionImportData(session);
+            SessionReviewImportData importData = sessionMapper.toSessionImportData(session);
             return importData;
 
         } catch (Exception e) {
@@ -145,7 +264,7 @@ public class SessionService {
     }
 
     public List<Speaker> getUniqueSpeekersByEventId(String eventId) {
-        List<SessionImportData> sessions = getSessionsAsImportData(eventId);
+        List<SessionReviewImportData> sessions = getSessionsReviewAsImportData(eventId);
 
         Map<String, Speaker> uniqueSpeakers = sessions.stream()
                 .filter(session -> session.getSpeakers() != null)
@@ -162,23 +281,11 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    public Speaker getSpeakerByEmail(String eventId, String email) {
-        List<SessionImportData> sessions = getSessionsAsImportData(eventId);
-
-        return sessions.stream()
-                .filter(session -> session.getSpeakers() != null)
-                .flatMap(session -> session.getSpeakers().stream())
-                .filter(speaker -> speaker.getEmail() != null &&
-                        speaker.getEmail().equalsIgnoreCase(email))
-                .findFirst()
-                .orElse(null);
-    }
-
     public List<SpeakerWithSessionsDTO> getSpeakersWithSessionsByEventId(String eventId) {
         logger.info("Getting speakers with sessions for event: {}", eventId);
 
         try {
-            List<SessionImportData> sessions = getSessionsAsImportData(eventId);
+            List<SessionReviewImportData> sessions = getSessionsReviewAsImportData(eventId);
             logger.info("Found {} sessions for event {}", sessions.size(), eventId);
 
             if (sessions.isEmpty()) {
@@ -186,18 +293,20 @@ public class SessionService {
                 return new ArrayList<>();
             }
 
-            Map<String, List<SessionImportData>> sessionsBySpeaker = new HashMap<>();
+            Map<String, List<SessionReviewImportData>> sessionsBySpeaker = new HashMap<>();
             Map<String, Speaker> speakerMap = new HashMap<>();
 
             sessions.forEach(session -> {
                 if (session.getSpeakers() != null && !session.getSpeakers().isEmpty()) {
                     session.getSpeakers().forEach(speaker -> {
-                        if (speaker != null) {
-                            String speakerKey = createSpeakerKey(speaker);
+                        if (speaker != null && speaker.getId() != null && !speaker.getId().trim().isEmpty()) {
+                            String speakerId = speaker.getId();
 
-                            speakerMap.put(speakerKey, speaker);
-
-                            sessionsBySpeaker.computeIfAbsent(speakerKey, k -> new ArrayList<>()).add(session);
+                            speakerMap.put(speakerId, speaker);
+                            sessionsBySpeaker.computeIfAbsent(speakerId, k -> new ArrayList<>()).add(session);
+                        } else {
+                            logger.warn("Speaker without ID found in session {}: {}",
+                                    session.getId(), speaker.getName());
                         }
                     });
                 }
@@ -208,7 +317,7 @@ public class SessionService {
             List<SpeakerWithSessionsDTO> result = speakerMap.entrySet().stream()
                     .map(entry -> {
                         Speaker speaker = entry.getValue();
-                        List<SessionImportData> speakerSessions = sessionsBySpeaker.get(entry.getKey());
+                        List<SessionReviewImportData> speakerSessions = sessionsBySpeaker.get(entry.getKey());
                         return new SpeakerWithSessionsDTO(speaker, speakerSessions);
                     })
                     .sorted(Comparator.comparing(dto ->
@@ -224,13 +333,15 @@ public class SessionService {
         }
     }
 
-    private String createSpeakerKey(Speaker speaker) {
-        if (speaker.getEmail() != null && !speaker.getEmail().trim().isEmpty()) {
-            return speaker.getEmail().toLowerCase().trim();
-        } else if (speaker.getName() != null && !speaker.getName().trim().isEmpty()) {
-            return "name:" + speaker.getName().toLowerCase().trim();
-        } else {
-            return "unknown:" + System.currentTimeMillis() + ":" + speaker.hashCode();
-        }
+    public Speaker getSpeakerById(String eventId, String speakerId) {
+        List<SessionReviewImportData> sessions = getSessionsReviewAsImportData(eventId);
+
+        return sessions.stream()
+                .filter(session -> session.getSpeakers() != null)
+                .flatMap(session -> session.getSpeakers().stream())
+                .filter(speaker -> speaker.getId() != null &&
+                        speaker.getId().equals(speakerId))
+                .findFirst()
+                .orElse(null);
     }
 }

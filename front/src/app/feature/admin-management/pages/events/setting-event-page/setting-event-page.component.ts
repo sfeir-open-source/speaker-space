@@ -16,8 +16,11 @@ import {DeleteConfirmationConfig} from '../../../type/components/delete-confirma
 import {
   DeleteConfirmationPopupComponent
 } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
-import {SessionImportComponent} from '../../../components/session/session-import/session-import.component';
+import {SessionReviewImportComponent} from '../../../components/session/session-review-import/session-review-import.component';
 import {ImportResult} from '../../../type/session/session';
+import {
+  SessionScheduleImportComponent
+} from '../../../components/session/session-schedule-import/session-schedule-import.component';
 
 @Component({
   selector: 'app-setting-event-page',
@@ -32,7 +35,8 @@ import {ImportResult} from '../../../type/session/session';
     DangerZoneComponent,
     ArchiveEventPopupComponent,
     DeleteConfirmationPopupComponent,
-    SessionImportComponent,
+    SessionReviewImportComponent,
+    SessionScheduleImportComponent,
   ],
   templateUrl: './setting-event-page.component.html',
   styleUrl: './setting-event-page.component.scss'

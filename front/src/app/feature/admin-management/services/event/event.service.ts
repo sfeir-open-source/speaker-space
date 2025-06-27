@@ -101,6 +101,41 @@ export class EventService {
     );
   }
 
+  importSessionsSchedule(eventId: string, sessionsData: {
+    id: string;
+    start: Date;
+    end: Date;
+    track: string;
+    title: string;
+    languages: string;
+    proposal: {
+      id: string;
+      abstractText: string;
+      level: string;
+      formats: string[];
+      categories: string[];
+      speakers: Speaker[]
+    } | undefined;
+    eventId: string
+  }[]): Observable<ImportResult> {
+    const importRequest = {
+      eventId: eventId,
+      sessions: sessionsData
+    };
+
+    return from(this.getAuthToken()).pipe(
+      switchMap(token => {
+        const headers = this.buildHeaders(token).set('Content-Type', 'application/json').set('Accept', 'application/json');
+        return this.http.post<ImportResult>(
+          `${environment.apiUrl}/session/event/${eventId}/import-schedule`,
+          importRequest,
+          { headers, withCredentials: true }
+        );
+      }),
+      catchError(error => throwError(() => error))
+    );
+  }
+
   getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {
     return this.http.get<SessionImportData[]>(
       `${environment.apiUrl}/session/event/${eventId}`,

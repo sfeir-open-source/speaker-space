@@ -41,6 +41,7 @@ export type Category = {
 }
 
 export type Speaker = {
+  id: string;
   name: string;
   bio: string;
   company: string;
@@ -55,4 +56,13 @@ export type Reviews = {
   average: number;
   positives: number;
   negatives: number;
+}
+
+export type Proposal = {
+  id: string;
+  abstract: string;
+  level: string;
+  formats: Format[];
+  categories: Category[];
+  speakers: Speaker[];
 }
