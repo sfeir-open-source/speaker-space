@@ -48,6 +48,9 @@ public class SessionMapper {
         sessionDTO.setSpeakers(convertSpeakersToDTO(session.getSpeakers()));
         sessionDTO.setReviews(reviewsMapper.convertToDTO(session.getReviews()));
         sessionDTO.setEventId(session.getEventId());
+        sessionDTO.setStart(session.getStart());
+        sessionDTO.setEnd(session.getEnd());
+        sessionDTO.setTrack(session.getTrack());
 
         return sessionDTO;
     }
@@ -72,6 +75,9 @@ public class SessionMapper {
         session.setSpeakers(convertSpeakersToEntity(sessionDTO.getSpeakers()));
         session.setReviews(reviewsMapper.convertToEntity(sessionDTO.getReviews()));
         session.setEventId(sessionDTO.getEventId());
+        session.setStart(sessionDTO.getStart());
+        session.setEnd(sessionDTO.getEnd());
+        session.setTrack(sessionDTO.getTrack());
 
         return session;
     }

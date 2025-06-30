@@ -90,8 +90,8 @@ public class SessionController {
         }
     }
 
-    @GetMapping("/event/{eventId}/session/{sessionId}")
-    public ResponseEntity<SessionReviewImportData> getSessionById(
+    @GetMapping("/event/{eventId}/session/{sessionId}/review")
+    public ResponseEntity<SessionReviewImportData> getSessionReviewById(
             @PathVariable String eventId,
             @PathVariable String sessionId,
             HttpServletRequest request,
@@ -106,6 +106,45 @@ public class SessionController {
             SessionReviewImportData sessionData = sessionService.getSessionById(eventId, sessionId);
             return sessionData != null ? ResponseEntity.ok(sessionData) : ResponseEntity.notFound().build();
         } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/event/{eventId}/session/{sessionId}")
+    public ResponseEntity<SessionDTO> getSessionDetailById(
+            @PathVariable String eventId,
+            @PathVariable String sessionId,
+            Authentication authentication) {
+
+        if (authentication == null) {
+            logger.warn("Unauthorized access attempt: no authentication");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            EventDTO existingEvent = eventService.getEventById(eventId);
+            if (existingEvent == null) {
+                logger.warn("Event not found: {}", eventId);
+                return ResponseEntity.notFound().build();
+            }
+
+            if (!authHelper.isUserAuthorized(authentication, existingEvent.getUserCreateId())) {
+                logger.warn("Forbidden: User {} not authorized for event owner {}",
+                        authentication.getName(), existingEvent.getUserCreateId());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            SessionDTO session = sessionService.getSessionByIdAndEventId(sessionId, eventId);
+            if (session == null) {
+                logger.warn("Session not found: {} for event: {}", sessionId, eventId);
+                return ResponseEntity.notFound().build();
+            }
+
+            logger.info("Session {} retrieved successfully for event {}", sessionId, eventId);
+            return ResponseEntity.ok(session);
+
+        } catch (Exception e) {
+            logger.error("Error retrieving session {} for event {}", sessionId, eventId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -176,41 +215,50 @@ public class SessionController {
             @PathVariable String eventId,
             @RequestBody SessionScheduleImportRequestDTO importRequest,
             Authentication authentication) {
-
         if (authentication == null) {
             logger.warn("Unauthorized access attempt: no authentication");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        logger.info("User " + authentication.getName() + " requests import for event " + eventId);
-
         try {
             EventDTO existingEvent = eventService.getEventById(eventId);
             if (existingEvent == null) {
-                logger.warn("Event not found: " + eventId);
+                logger.warn("Event not found: {}", eventId);
                 return ResponseEntity.notFound().build();
             }
 
             if (!authHelper.isUserAuthorized(authentication, existingEvent.getUserCreateId())) {
-                logger.warn("Forbidden: User " + authentication.getName() + " not authorized for event owner " + existingEvent.getUserCreateId());
+                logger.warn("Forbidden: User {} not authorized for event owner {}",
+                        authentication.getName(), existingEvent.getUserCreateId());
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
             if (!eventId.equals(importRequest.getEventId())) {
-                logger.warn("Bad request: eventId in path and body do not match");
+                logger.warn("Bad request: eventId in path ({}) and body ({}) do not match",
+                        eventId, importRequest.getEventId());
                 return ResponseEntity.badRequest().build();
             }
 
+            if (importRequest.getSessions() == null || importRequest.getSessions().isEmpty()) {
+                logger.warn("Bad request: no sessions data provided");
+                return ResponseEntity.badRequest().build();
+            }
+
+            logger.info("Starting import of {} schedule sessions", importRequest.getSessions().size());
+
             ImportResultDTO result = sessionService.importSessionsSchedule(eventId, importRequest.getSessions());
+
+            logger.info("Schedule import completed: {}/{} sessions imported successfully",
+                    result.getSuccessCount(), result.getTotalCount());
+
             return ResponseEntity.ok(result);
 
         } catch (IllegalArgumentException e) {
-            logger.warn("Validation error during import: " + e.getMessage());
+            logger.warn("Validation error during schedule import: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            logger.error("Internal error during import", e);
+            logger.error("Internal error during schedule import", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 }

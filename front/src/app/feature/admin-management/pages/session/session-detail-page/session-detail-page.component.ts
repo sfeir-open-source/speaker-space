@@ -59,11 +59,64 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
             resolve();
           },
           error: (err) => {
+            console.error('Error loading session:', err);
             this.error = 'Failed to load session data';
             reject(err);
           }
         });
     });
+  }
+
+  hasScheduleInfo(): boolean {
+    return !!(this.session?.start || this.session?.track);
+  }
+
+  formatCompleteSessionInfo(): string {
+    if (!this.session) return '';
+
+    const parts: string[] = [];
+
+    if (this.session.start) {
+      try {
+        const options: Intl.DateTimeFormatOptions = {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        };
+
+        const dateStr = this.session.start.toLocaleDateString('en-US', options);
+        const timeStr = this.session.start.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+
+        parts.push(`${dateStr} at <strong class="font-medium">${timeStr}</strong>`);
+      } catch (error) {
+        console.error('Error formatting date:', error);
+      }
+    }
+
+    if (this.session.track) {
+      parts.push(`in room <strong class="font-medium">${this.getTrackName()}</strong>`);
+    }
+
+    return parts.join(' ');
+  }
+
+  getTrackName(): string {
+    if (!this.session?.track) return '';
+
+    if (this.session.track.includes(' ')) {
+      return this.session.track;
+    }
+
+    return this.session.track
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   formatLevel(level: string): string {
@@ -76,7 +129,7 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
 
     try {
       const displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
-      const languageName : string | undefined = displayNames.of(languageCode.toLowerCase());
+      const languageName: string | undefined = displayNames.of(languageCode.toLowerCase());
 
       return languageName ?
         languageName.charAt(0).toUpperCase() + languageName.slice(1) :

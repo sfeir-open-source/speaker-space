@@ -1,9 +1,9 @@
 export type SessionImportData = {
   id?: string;
   title: string;
-  abstract: string;
-  deliberationStatus: boolean;
-  confirmationStatus: boolean;
+  abstractText: string;
+  deliberationStatus: string;
+  confirmationStatus: string;
   level: string;
   references?: string;
   formats: Format[];
@@ -11,10 +11,13 @@ export type SessionImportData = {
   tags: string[];
   languages: string[];
   speakers: Speaker[];
-  reviews: Reviews;
+  reviews: Reviews | null;
   eventId?: string;
   createdAt?: string;
   updatedAt?: string;
+  start?: Date;
+  end?: Date;
+  track?: string;
 }
 
 export type SessionImportRequest = {
@@ -56,13 +59,4 @@ export type Reviews = {
   average: number;
   positives: number;
   negatives: number;
-}
-
-export type Proposal = {
-  id: string;
-  abstract: string;
-  level: string;
-  formats: Format[];
-  categories: Category[];
-  speakers: Speaker[];
 }

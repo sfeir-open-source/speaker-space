@@ -57,8 +57,8 @@
           </section>
 
           <div class="text-gray-700 p-3 rounded-md">
-            @if (session.abstract) {
-              <p class="whitespace-pre-wrap">{{ session.abstract }}</p>
+            @if (session.abstractText) {
+              <p class="whitespace-pre-wrap">{{ session.abstractText }}</p>
             } @else {
               <p class="text-gray-500 italic">No description available</p>
             }
@@ -106,10 +106,22 @@
             }
           </div>
         </div>
-        <div class="p-6 space-y-6 border-b border-gray-200">
-          <h3 class="font-medium text-sm">Opening times</h3>
-          <p class="text-sm">Thursday <strong class="font-medium">16 October </strong> 2025 at <strong class="font-medium">10:00</strong> in room <strong class="font-medium">Titan</strong></p>
-        </div>
+
+        @if(hasScheduleInfo()) {
+          <div class="p-6 border-b border-gray-200">
+            <h3 class="font-medium text-sm text-gray-600 uppercase tracking-wide mb-4">Schedule Information</h3>
+
+            <p class="text-sm text-gray-700" [innerHTML]="formatCompleteSessionInfo()"></p>
+          </div>
+        } @else {
+          <div class="p-6 border-b border-gray-200">
+            <h3 class="font-medium text-sm text-gray-600 uppercase tracking-wide mb-4">Schedule Information</h3>
+            <p class="text-sm text-gray-500 italic">
+              Schedule information not yet available
+            </p>
+          </div>
+        }
+
       </div>
     }
   </main>

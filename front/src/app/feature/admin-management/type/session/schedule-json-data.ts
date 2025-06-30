@@ -1,25 +1,56 @@
-import {Speaker} from './session';
-
-export interface ScheduleJsonData {
+export type ScheduleJsonData = {
   name: string;
   days: string[];
   timeZone: string;
   sessions: ScheduleSessionData[];
 }
 
-export interface ScheduleSessionData {
+export type ScheduleSessionData = {
   id: string;
-  start: string;
-  end: string;
+  start: Date;
+  end: Date;
   track: string;
   title: string;
-  language: string;
+  languages: string;
   proposal?: {
     id: string;
-    abstract: string;
+    abstractText: string;
     level: string;
     formats: string[];
     categories: string[];
-    speakers: Speaker[];
+    speakers: {
+      id: string;
+      name: string;
+      bio: string;
+      company: string;
+      picture: string;
+      socialLinks: string[];
+    }[];
   };
+  eventId: string;
+}
+
+export type SessionScheduleImportDataDTO = {
+  id: string;
+  start: Date;
+  end: Date;
+  track: string;
+  title: string;
+  languages: string;
+  proposal?: {
+    id: string;
+    abstractText: string;
+    level: string;
+    formats: string[];
+    categories: string[];
+    speakers: {
+      id: string;
+      name: string;
+      bio: string;
+      company: string;
+      picture: string;
+      socialLinks: string[];
+    }[];
+  };
+  eventId: string;
 }

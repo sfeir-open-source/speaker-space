@@ -7,6 +7,7 @@ import { Event } from '../../type/event/event';
 import {EventDTO} from '../../type/event/eventDTO';
 import {ImportResult, SessionImportData, SessionImportRequest, Speaker} from '../../type/session/session';
 import {AuthService} from '../../../../core/login/services/auth.service';
+import {SessionScheduleImportDataDTO} from '../../type/session/schedule-json-data';
 
 @Injectable({
   providedIn: 'root'
@@ -101,23 +102,7 @@ export class EventService {
     );
   }
 
-  importSessionsSchedule(eventId: string, sessionsData: {
-    id: string;
-    start: Date;
-    end: Date;
-    track: string;
-    title: string;
-    languages: string;
-    proposal: {
-      id: string;
-      abstractText: string;
-      level: string;
-      formats: string[];
-      categories: string[];
-      speakers: Speaker[]
-    } | undefined;
-    eventId: string
-  }[]): Observable<ImportResult> {
+  importSessionsSchedule(eventId: string, sessionsData: SessionScheduleImportDataDTO[]): Observable<ImportResult> {
     const importRequest = {
       eventId: eventId,
       sessions: sessionsData

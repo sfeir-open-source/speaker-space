@@ -46,15 +46,15 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        logger.info("Processing request: {} {}", method, path);
-
         if ("OPTIONS".equals(method)) {
             response.setStatus(HttpServletResponse.SC_OK);
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (path.contains("/auth/login") || path.contains("/auth/logout") || path.contains("/public/")) {
+        if (path.contains("/auth/login") ||
+                path.contains("/auth/logout") ||
+                path.startsWith("/public/")) {
             filterChain.doFilter(request, response);
             return;
         }

@@ -4,7 +4,7 @@ import {EventService} from '../../../services/event/event.service';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {
   ScheduleJsonData,
-  ScheduleSessionData,
+  SessionScheduleImportDataDTO,
 } from '../../../type/session/schedule-json-data';
 
 @Component({
@@ -81,61 +81,63 @@ export class SessionScheduleImportComponent {
     reader.readAsText(this.selectedFile);
   }
 
-  private validateScheduleData(data: ScheduleJsonData): string[] {
+  private validateScheduleData(data: ScheduleJsonData): void {
     const errors: string[] = [];
 
     if (!data.sessions || !Array.isArray(data.sessions)) {
-      errors.push('JSON must contain a sessions array.');
-    } else if (data.sessions.length === 0) {
-      errors.push('No sessions found in the schedule.');
-    } else {
-      data.sessions.forEach((session, index) => {
-        if (!session.id || typeof session.id !== 'string') {
-          errors.push(`Session ${index + 1}: missing valid ID.`);
-        }
-        if (!session.start) {
-          errors.push(`Session ${index + 1}: missing start time.`);
-        }
-        if (!session.end) {
-          errors.push(`Session ${index + 1}: missing end time.`);
-        }
-      });
+      throw new Error('JSON must contain a sessions array.');
     }
 
-    return errors;
+    if (data.sessions.length === 0) {
+      throw new Error('No sessions found in the schedule.');
+    }
+
+    data.sessions.forEach((session, index) => {
+      if (!session.id || typeof session.id !== 'string') {
+        errors.push(`Session ${index + 1}: missing valid ID.`);
+      }
+      if (!session.start) {
+        errors.push(`Session ${index + 1}: missing start time.`);
+      }
+      if (!session.end) {
+        errors.push(`Session ${index + 1}: missing end time.`);
+      }
+      if (session.proposal && session.proposal.speakers) {
+        session.proposal.speakers.forEach((speaker, speakerIndex) => {
+          if (!speaker.id) {
+            errors.push(`Session ${index + 1}, Speaker ${speakerIndex + 1}: missing speaker ID.`);
+          }
+        });
+      }
+    });
+
+    if (errors.length > 0) {
+      throw new Error(errors.join('\n'));
+    }
   }
 
-  private transformScheduleToSessionData(scheduleData: ScheduleJsonData): {
-    id: string;
-    start: Date;
-    end: Date;
-    track: string;
-    title: string;
-    languages: string;
-    proposal: {
-      id: string;
-      abstractText: string;
-      level: string;
-      formats: string[];
-      categories: string[];
-      speakers: Speaker[]
-    } | undefined;
-    eventId: string
-  }[] {
+  private transformScheduleToSessionData(scheduleData: ScheduleJsonData): SessionScheduleImportDataDTO[] {
     return scheduleData.sessions.map(session => ({
       id: session.id,
       start: new Date(session.start),
       end: new Date(session.end),
       track: session.track || '',
       title: session.title || '',
-      languages: session.language || '',
+      languages: session.languages || '',
       proposal: session.proposal ? {
         id: session.proposal.id,
-        abstractText: session.proposal.abstract,
+        abstractText: session.proposal.abstractText,
         level: session.proposal.level,
         formats: session.proposal.formats || [],
         categories: session.proposal.categories || [],
-        speakers: session.proposal.speakers || []
+        speakers: session.proposal.speakers ? session.proposal.speakers.map(speaker => ({
+          id: speaker.id,
+          name: speaker.name,
+          bio: speaker.bio,
+          company: speaker.company,
+          picture: speaker.picture,
+          socialLinks: speaker.socialLinks || []
+        })) : []
       } : undefined,
       eventId: this.eventId
     }));

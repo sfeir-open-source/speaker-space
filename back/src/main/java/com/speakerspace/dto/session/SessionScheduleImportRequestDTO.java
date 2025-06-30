@@ -8,9 +8,19 @@ public class SessionScheduleImportRequestDTO {
 
     public SessionScheduleImportRequestDTO() {}
 
-    public String getEventId() { return eventId; }
-    public void setEventId(String eventId) { this.eventId = eventId; }
+    public String getEventId() {
+        return eventId;
+    }
 
-    public List<SessionScheduleImportDataDTO> getSessions() { return sessions; }
-    public void setSessions(List<SessionScheduleImportDataDTO> sessions) { this.sessions = sessions; }
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
+
+    public List<SessionScheduleImportDataDTO> getSessions() {
+        return sessions;
+    }
+
+    public void setSessions(List<SessionScheduleImportDataDTO> sessions) {
+        this.sessions = sessions;
+    }
 }

@@ -1,5 +1,6 @@
 package com.speakerspace.dto.session;
 
+import java.util.Date;
 import java.util.List;
 
 public class SessionDTO {
@@ -18,6 +19,9 @@ public class SessionDTO {
     private List<SpeakerDTO> speakers;
     private ReviewDTO reviews;
     private String eventId;
+    private Date start;
+    private Date end;
+    private String track;
 
     public SessionDTO() {}
 
@@ -131,5 +135,29 @@ public class SessionDTO {
 
     public void setEventId(String eventId) {
         this.eventId = eventId;
+    }
+
+    public Date getStart() {
+        return start;
+    }
+
+    public void setStart(Date start) {
+        this.start = start;
+    }
+
+    public Date getEnd() {
+        return end;
+    }
+
+    public void setEnd(Date end) {
+        this.end = end;
+    }
+
+    public String getTrack() {
+        return track;
+    }
+
+    public void setTrack(String track) {
+        this.track = track;
     }
 }
