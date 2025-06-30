@@ -32,4 +32,3 @@ public class FormatDTO {
         this.description = description;
     }
 }
-

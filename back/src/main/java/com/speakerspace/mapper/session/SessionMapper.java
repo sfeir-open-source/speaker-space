@@ -1,6 +1,5 @@
 package com.speakerspace.mapper.session;
 
-
 import com.speakerspace.dto.session.CategoryDTO;
 import com.speakerspace.dto.session.FormatDTO;
 import com.speakerspace.dto.session.SessionDTO;

@@ -86,13 +86,13 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
         };
 
         const dateStr = this.session.start.toLocaleDateString('en-US', options);
-        const timeStr = this.session.start.toLocaleTimeString('en-US', {
+        const timeStr : string = this.session.start.toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
           hour12: false
         });
 
-        parts.push(`${dateStr} at <strong class="font-medium">${timeStr}</strong>`);
+        parts.push(`<strong class="font-medium"> ${dateStr} </strong> at <strong class="font-medium">${timeStr}</strong>`);
       } catch (error) {
         console.error('Error formatting date:', error);
       }

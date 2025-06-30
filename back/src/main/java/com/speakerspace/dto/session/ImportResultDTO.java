@@ -12,12 +12,6 @@ public class ImportResultDTO {
         this.errors = new ArrayList<>();
     }
 
-    public ImportResultDTO(int successCount, int totalCount, List<String> errors) {
-        this.successCount = successCount;
-        this.totalCount = totalCount;
-        this.errors = errors != null ? errors : new ArrayList<>();
-    }
-
     public int getSuccessCount() { return successCount; }
     public void setSuccessCount(int successCount) { this.successCount = successCount; }
 

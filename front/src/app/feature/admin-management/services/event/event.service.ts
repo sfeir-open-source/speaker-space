@@ -24,6 +24,89 @@ export class EventService {
     this.loadUserEvents();
   }
 
+  private executeAuthenticatedRequest<T>(
+    requestFn: (headers: HttpHeaders) => Observable<T>
+  ): Observable<T> {
+    return from(this.getAuthToken()).pipe(
+      switchMap(token => requestFn(this.buildHeaders(token))),
+      catchError(error => throwError(() => error))
+    );
+  }
+
+  importSessions(eventId: string, sessionsData: SessionImportData[]): Observable<ImportResult> {
+    const importRequest: SessionImportRequest = { eventId, sessions: sessionsData };
+
+    return this.executeAuthenticatedRequest(headers =>
+      this.http.post<ImportResult>(
+        `${environment.apiUrl}/session/event/${eventId}/import`,
+        importRequest,
+        { headers, withCredentials: true }
+      )
+    );
+  }
+
+  importSessionsSchedule(eventId: string, sessionsData: SessionScheduleImportDataDTO[]): Observable<ImportResult> {
+    const importRequest = { eventId, sessions: sessionsData };
+
+    return this.executeAuthenticatedRequest(headers =>
+      this.http.post<ImportResult>(
+        `${environment.apiUrl}/session/event/${eventId}/import-schedule`,
+        importRequest,
+        { headers, withCredentials: true }
+      )
+    );
+  }
+
+  getEventById(id: string): Observable<EventDTO> {
+    const cached = this.eventCache.get(id);
+    if (cached && (Date.now() - cached.timestamp) < this.CACHE_DURATION) {
+      return of(cached.data);
+    }
+
+    return this.http.get<EventDTO>(`${environment.apiUrl}/event/${id}`, { withCredentials: true })
+      .pipe(
+        tap(event => this.updateEventCache(event)),
+        catchError(this.handleError('Failed to load event'))
+      );
+  }
+
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      return await this.authService.getCurrentUserToken();
+    } catch {
+      return null;
+    }
+  }
+
+  private buildHeaders(token: string | null): HttpHeaders {
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
+  }
+
+  private updateEventCache(event: EventDTO): void {
+    if (event.idEvent) {
+      this.eventCache.set(event.idEvent, {
+        data: event,
+        timestamp: Date.now()
+      });
+    }
+  }
+
+  private handleError(operation: string) {
+    return (error: any) => throwError(() => ({
+      error: error.error || {},
+      status: error.status,
+      message: error.error?.message || 'An unknown error occurred'
+    }));
+  }
+
   updateEvent(event: Partial<EventDTO>): Observable<EventDTO> {
     if (!event.idEvent) {
       return throwError(() => new Error('Event ID is missing'));
@@ -42,19 +125,6 @@ export class EventService {
       tap(response => this.updateEventCache(response)),
       catchError(this.handleError('Error updating event'))
     );
-  }
-
-  getEventById(id: string): Observable<EventDTO> {
-    const cached = this.eventCache.get(id);
-    if (cached && (Date.now() - cached.timestamp) < this.CACHE_DURATION) {
-      return of(cached.data);
-    }
-
-    return this.http.get<EventDTO>(`${environment.apiUrl}/event/${id}`, { withCredentials: true })
-      .pipe(
-        tap(event => this.updateEventCache(event)),
-        catchError(this.handleError('Failed to load event'))
-      );
   }
 
   createEvent(event: EventDTO): Observable<EventDTO> {
@@ -76,49 +146,11 @@ export class EventService {
     return this.http.delete<void>(`${environment.apiUrl}/event/${id}`, { withCredentials: true })
       .pipe(
         tap(() => {
-          const updated = this.eventsSubject.value.filter(event => event.idEvent !== id);
+          const updated : Event[] = this.eventsSubject.value.filter(event => event.idEvent !== id);
           this.eventsSubject.next(updated);
         }),
         catchError(this.handleError('Error deleting event'))
       );
-  }
-
-  importSessions(eventId: string, sessionsData: SessionImportData[]): Observable<ImportResult> {
-    const importRequest: SessionImportRequest = {
-      eventId: eventId,
-      sessions: sessionsData
-    };
-
-    return from(this.getAuthToken()).pipe(
-      switchMap(token => {
-        const headers = this.buildHeaders(token);
-        return this.http.post<ImportResult>(
-          `${environment.apiUrl}/session/event/${eventId}/import`,
-          importRequest,
-          { headers, withCredentials: true }
-        );
-      }),
-      catchError(error => throwError(() => error))
-    );
-  }
-
-  importSessionsSchedule(eventId: string, sessionsData: SessionScheduleImportDataDTO[]): Observable<ImportResult> {
-    const importRequest = {
-      eventId: eventId,
-      sessions: sessionsData
-    };
-
-    return from(this.getAuthToken()).pipe(
-      switchMap(token => {
-        const headers = this.buildHeaders(token).set('Content-Type', 'application/json').set('Accept', 'application/json');
-        return this.http.post<ImportResult>(
-          `${environment.apiUrl}/session/event/${eventId}/import-schedule`,
-          importRequest,
-          { headers, withCredentials: true }
-        );
-      }),
-      catchError(error => throwError(() => error))
-    );
   }
 
   getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {
@@ -152,49 +184,10 @@ export class EventService {
     return cleaned;
   }
 
-  private updateEventCache(event: EventDTO): void {
-    if (event.idEvent) {
-      this.eventCache.set(event.idEvent, {
-        data: event,
-        timestamp: Date.now()
-      });
-    }
-  }
-
-  private handleError(operation: string) {
-    return (error: any) => {
-      return throwError(() => ({
-        error: error.error || {},
-        status: error.status,
-        message: error.error?.message || 'An unknown error occurred'
-      }));
-    };
-  }
-
   private loadUserEvents(): void {
     this.http.get<Event[]>(`${environment.apiUrl}/event/my-events`, { withCredentials: true })
       .pipe(catchError(this.handleError('Error loading events')))
       .subscribe(events => this.eventsSubject.next(events));
-  }
-
-  private async getAuthToken(): Promise<string | null> {
-    try {
-      return await this.authService.getCurrentUserToken();
-    } catch (error) {
-      return null;
-    }
-  }
-
-  private buildHeaders(token: string | null): HttpHeaders {
-    let headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    });
-
-    if (token) {
-      headers = headers.set('Authorization', `Bearer ${token}`);
-    }
-    return headers;
   }
 
   private getHeaders(): HttpHeaders {

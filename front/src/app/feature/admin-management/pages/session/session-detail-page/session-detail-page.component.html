@@ -50,10 +50,6 @@
                 }
               }
             </div>
-
-            <div class="flex items-center text-sm text-gray-600 flex-shrink-0 px-3 py-1 rounded-lg">
-              <p>created on 2 June 2025, 08:56 am</p>
-            </div>
           </section>
 
           <div class="text-gray-700 p-3 rounded-md">
@@ -109,13 +105,13 @@
 
         @if(hasScheduleInfo()) {
           <div class="p-6 border-b border-gray-200">
-            <h3 class="font-medium text-sm text-gray-600 uppercase tracking-wide mb-4">Schedule Information</h3>
+            <h3 class="font-base font-medium text-gray-900 mb-2">Schedule</h3>
 
             <p class="text-sm text-gray-700" [innerHTML]="formatCompleteSessionInfo()"></p>
           </div>
         } @else {
           <div class="p-6 border-b border-gray-200">
-            <h3 class="font-medium text-sm text-gray-600 uppercase tracking-wide mb-4">Schedule Information</h3>
+            <h3 class="font-base font-medium text-gray-900 mb-2">Schedule</h3>
             <p class="text-sm text-gray-500 italic">
               Schedule information not yet available
             </p>

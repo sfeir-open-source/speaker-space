@@ -2,118 +2,131 @@ package com.speakerspace.repository;
 
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.session.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 @Repository
 public class SessionRepositoryImpl implements SessionRepository {
 
     private static final String COLLECTION_NAME = "sessions";
-    private static final Logger logger = LoggerFactory.getLogger(SessionRepositoryImpl.class);
 
     @Autowired
     private Firestore firestore;
 
     @Override
     public Session save(Session session) {
-        try {
-            DocumentReference docRef;
-
-            if (session.getId() == null || session.getId().isEmpty()) {
-                docRef = firestore.collection(COLLECTION_NAME).document();
-                session.setId(docRef.getId());
-            } else {
-                docRef = firestore.collection(COLLECTION_NAME).document(session.getId());
+        return executeFirestoreOperation(() -> {
+            DocumentReference docRef = getDocumentReference(session);
+            try {
+                docRef.set(session).get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
             }
-
-            docRef.set(session).get();
             return session;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error saving session: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to save session", e);
-        }
+        }, "Failed to save session");
     }
 
     @Override
     public List<Session> findByEventId(String eventId) {
-        try {
-            Query query = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("eventId", eventId);
-            QuerySnapshot querySnapshot = query.get().get();
+        return executeFirestoreOperation(() -> {
+            Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("eventId", eventId);
+            QuerySnapshot querySnapshot = null;
+            try {
+                querySnapshot = query.get().get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
 
-            List<Session> sessions = new ArrayList<>();
-            querySnapshot.getDocuments().forEach(doc -> {
-                sessions.add(doc.toObject(Session.class));
-            });
-
-            return sessions;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding sessions by event ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find sessions by event ID", e);
-        }
+            return querySnapshot.getDocuments().stream()
+                    .map(doc -> doc.toObject(Session.class))
+                    .collect(Collectors.toList());
+        }, "Failed to find sessions by event ID");
     }
 
     @Override
     public Session findById(String id) {
-        try {
-            DocumentSnapshot document = firestore.collection(COLLECTION_NAME).document(id).get().get();
-            if (document.exists()) {
-                return document.toObject(Session.class);
+        return executeFirestoreOperation(() -> {
+            DocumentSnapshot document = null;
+            try {
+                document = firestore.collection(COLLECTION_NAME).document(id).get().get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
             }
-            return null;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding session by ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find session", e);
-        }
+            return document.exists() ? document.toObject(Session.class) : null;
+        }, "Failed to find session");
     }
 
     @Override
     public void deleteById(String id) {
-        try {
-            firestore.collection(COLLECTION_NAME).document(id).delete().get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error deleting session: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to delete session", e);
-        }
+        executeFirestoreOperation(() -> {
+            try {
+                firestore.collection(COLLECTION_NAME).document(id).delete().get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+            return null;
+        }, "Failed to delete session");
     }
 
     @Override
     public boolean existsByIdAndEventId(String id, String eventId) {
-        try {
+        return executeFirestoreOperation(() -> {
             Query query = firestore.collection(COLLECTION_NAME)
                     .whereEqualTo("id", id)
                     .whereEqualTo("eventId", eventId);
-            QuerySnapshot querySnapshot = query.get().get();
-
-            return !querySnapshot.isEmpty();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error checking session existence: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to check session existence", e);
-        }
+            try {
+                return !query.get().get().isEmpty();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }, "Failed to check session existence");
     }
 
     @Override
     public Session findByIdAndEventId(String sessionId, String eventId) {
-        try {
+        return executeFirestoreOperation(() -> {
             Query query = firestore.collection(COLLECTION_NAME)
                     .whereEqualTo("id", sessionId)
                     .whereEqualTo("eventId", eventId);
-            QuerySnapshot querySnapshot = query.get().get();
-
-            if (querySnapshot.isEmpty()) {
-                return null;
+            QuerySnapshot querySnapshot = null;
+            try {
+                querySnapshot = query.get().get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
             }
 
-            return querySnapshot.getDocuments().get(0).toObject(Session.class);
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding session by ID and event ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find session", e);
+            return querySnapshot.isEmpty() ? null :
+                    querySnapshot.getDocuments().get(0).toObject(Session.class);
+        }, "Failed to find session");
+    }
+
+    private DocumentReference getDocumentReference(Session session) {
+        if (session.getId() == null || session.getId().isEmpty()) {
+            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document();
+            session.setId(docRef.getId());
+            return docRef;
         }
+        return firestore.collection(COLLECTION_NAME).document(session.getId());
+    }
+
+    private <T> T executeFirestoreOperation(Supplier<T> operation, String errorMessage) {
+        return operation.get();
     }
 }
