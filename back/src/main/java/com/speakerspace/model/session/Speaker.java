@@ -14,6 +14,8 @@ public class Speaker {
     private String email;
     private List<String> socialLinks;
 
+    private String eventId;
+
     public Speaker() {}
 
     public String getId() {
@@ -86,5 +88,13 @@ public class Speaker {
 
     public void setSocialLinks(List<String> socialLinks) {
         this.socialLinks = socialLinks;
+    }
+
+    public String getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
     }
 }

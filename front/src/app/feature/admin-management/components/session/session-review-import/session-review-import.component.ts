@@ -40,7 +40,7 @@ export class SessionReviewImportComponent extends BaseImportComponent {
       throw new Error('No sessions found in the file');
     }
 
-    data.forEach((session : any, index : number) => {
+    data.forEach((session: any, index: number) => {
       if (!session.title || typeof session.title !== 'string') {
         throw new Error(`Session at index ${index} is missing a valid title`);
       }
@@ -54,21 +54,25 @@ export class SessionReviewImportComponent extends BaseImportComponent {
   }
 
   private transformReviewData(reviewData: any[]): SessionImportData[] {
-    return reviewData.map(session => ({
-      id: session.id,
-      title: session.title,
-      abstractText: session.abstract,
-      deliberationStatus: session.deliberationStatus || '',
-      confirmationStatus: session.confirmationStatus || '',
-      level: session.level || '',
-      references: session.references || '',
-      formats: session.formats || [],
-      categories: session.categories || [],
-      tags: session.tags || [],
-      languages: session.languages || [],
-      speakers: session.speakers || [],
-      reviews: session.review || null,
-      eventId: this.eventId
-    }));
+    return reviewData.map(session => {
+      const transformed = {
+        id: session.id,
+        title: session.title,
+        abstractText: session.abstract,
+        deliberationStatus: session.deliberationStatus || '',
+        confirmationStatus: session.confirmationStatus || '',
+        level: session.level || '',
+        references: session.references || '',
+        formats: session.formats || [],
+        categories: session.categories || [],
+        tags: session.tags || [],
+        languages: session.languages || [],
+        speakers: session.speakers || [],
+        reviews: session.review || null,
+        eventId: this.eventId
+      };
+
+      return transformed;
+    });
   }
 }

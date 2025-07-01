@@ -1,13 +1,10 @@
 package com.speakerspace.dto.session;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 
 public class SessionReviewImportDataDTO {
     private String id;
     private String title;
-    @JsonProperty("abstract")
     private String abstractText;
     private String deliberationStatus;
     private String confirmationStatus;

@@ -5,11 +5,13 @@ import com.speakerspace.dto.session.FormatDTO;
 import com.speakerspace.dto.session.SessionDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
 import com.speakerspace.model.session.*;
+import com.speakerspace.service.SpeakerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -22,10 +24,10 @@ public class SessionMapper {
     private CategoryMapper categoryMapper;
 
     @Autowired
-    private SpeakerMapper speakerMapper;
+    private ReviewsMapper reviewsMapper;
 
     @Autowired
-    private ReviewsMapper reviewsMapper;
+    private SpeakerService speakerService;
 
     public SessionDTO convertToDTO(Session session) {
         if(session == null) {
@@ -44,7 +46,7 @@ public class SessionMapper {
         sessionDTO.setCategories(convertCategoriesToDTO(session.getCategories()));
         sessionDTO.setTags(session.getTags());
         sessionDTO.setLanguages(session.getLanguages());
-        sessionDTO.setSpeakers(convertSpeakersToDTO(session.getSpeakers()));
+        sessionDTO.setSpeakers(convertSpeakerIdsToDTO(session.getSpeakerIds()));
         sessionDTO.setReviews(reviewsMapper.convertToDTO(session.getReviews()));
         sessionDTO.setEventId(session.getEventId());
         sessionDTO.setStart(session.getStart());
@@ -71,7 +73,7 @@ public class SessionMapper {
         session.setCategories(convertCategoriesToEntity(sessionDTO.getCategories()));
         session.setTags(sessionDTO.getTags());
         session.setLanguages(sessionDTO.getLanguages());
-        session.setSpeakers(convertSpeakersToEntity(sessionDTO.getSpeakers()));
+        session.setSpeakerIds(extractSpeakerIds(sessionDTO.getSpeakers()));
         session.setReviews(reviewsMapper.convertToEntity(sessionDTO.getReviews()));
         session.setEventId(sessionDTO.getEventId());
         session.setStart(sessionDTO.getStart());
@@ -79,6 +81,81 @@ public class SessionMapper {
         session.setTrack(sessionDTO.getTrack());
 
         return session;
+    }
+
+    public SessionReviewImportData toSessionImportData(Session session) {
+        if (session == null) {
+            return null;
+        }
+
+        SessionReviewImportData importData = new SessionReviewImportData();
+        importData.setId(session.getId());
+        importData.setTitle(session.getTitle());
+        importData.setAbstractText(session.getAbstractText());
+        importData.setDeliberationStatus(session.getDeliberationStatus());
+        importData.setConfirmationStatus(session.getConfirmationStatus());
+        importData.setLevel(session.getLevel());
+        importData.setReferences(session.getReferences());
+        importData.setEventId(session.getEventId());
+
+        importData.setFormats(session.getFormats() != null ? session.getFormats() : new ArrayList<>());
+        importData.setCategories(session.getCategories() != null ? session.getCategories() : new ArrayList<>());
+        importData.setTags(session.getTags() != null ? session.getTags() : new ArrayList<>());
+        importData.setLanguages(session.getLanguages() != null ? session.getLanguages() : new ArrayList<>());
+
+        if (session.getSpeakerIds() != null && !session.getSpeakerIds().isEmpty()) {
+            List<Speaker> speakers = speakerService.findByIds(session.getSpeakerIds());
+            importData.setSpeakers(speakers != null ? speakers : new ArrayList<>());
+        } else {
+            importData.setSpeakers(new ArrayList<>());
+        }
+
+        if (session.getReviews() != null) {
+            importData.setReviews(session.getReviews());
+        }
+
+        return importData;
+    }
+
+    private List<SpeakerDTO> convertSpeakerIdsToDTO(List<String> speakerIds) {
+        if (speakerIds == null || speakerIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Speaker> speakers = speakerService.findByIds(speakerIds);
+        return speakers.stream()
+                .map(this::convertSpeakerToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private List<String> extractSpeakerIds(List<SpeakerDTO> speakerDTOs) {
+        if (speakerDTOs == null || speakerDTOs.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return speakerDTOs.stream()
+                .map(SpeakerDTO::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private SpeakerDTO convertSpeakerToDTO(Speaker speaker) {
+        if (speaker == null) {
+            return null;
+        }
+
+        SpeakerDTO speakerDTO = new SpeakerDTO();
+        speakerDTO.setId(speaker.getId());
+        speakerDTO.setName(speaker.getName());
+        speakerDTO.setBio(speaker.getBio());
+        speakerDTO.setCompany(speaker.getCompany());
+        speakerDTO.setReferences(speaker.getReferences());
+        speakerDTO.setPicture(speaker.getPicture());
+        speakerDTO.setLocation(speaker.getLocation());
+        speakerDTO.setEmail(speaker.getEmail());
+        speakerDTO.setSocialLinks(speaker.getSocialLinks());
+
+        return speakerDTO;
     }
 
     private List<FormatDTO> convertFormatsToDTO(List<Format> formats) {
@@ -107,71 +184,5 @@ public class SessionMapper {
         return categoryDTOs.stream()
                 .map(categoryMapper::convertToEntity)
                 .collect(Collectors.toList());
-    }
-
-    private List<SpeakerDTO> convertSpeakersToDTO(List<Speaker> speakers) {
-        if (speakers == null) return new ArrayList<>();
-        return speakers.stream()
-                .map(speakerMapper::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    private List<Speaker> convertSpeakersToEntity(List<SpeakerDTO> speakerDTOs) {
-        if (speakerDTOs == null) return new ArrayList<>();
-        return speakerDTOs.stream()
-                .map(speakerMapper::convertToEntity)
-                .collect(Collectors.toList());
-    }
-
-    public SessionReviewImportData toSessionImportData(Session session) {
-        if (session == null) {
-            return null;
-        }
-
-        SessionReviewImportData importData = new SessionReviewImportData();
-        importData.setId(session.getId());
-        importData.setTitle(session.getTitle());
-        importData.setAbstractText(session.getAbstractText());
-        importData.setDeliberationStatus(session.getDeliberationStatus());
-        importData.setConfirmationStatus(session.getConfirmationStatus());
-        importData.setLevel(session.getLevel());
-        importData.setReferences(session.getReferences());
-        importData.setEventId(session.getEventId());
-
-        if (session.getFormats() != null) {
-            importData.setFormats(session.getFormats());
-        } else {
-            importData.setFormats(new ArrayList<>());
-        }
-
-        if (session.getCategories() != null) {
-            importData.setCategories(session.getCategories());
-        } else {
-            importData.setCategories(new ArrayList<>());
-        }
-
-        if (session.getTags() != null) {
-            importData.setTags(session.getTags());
-        } else {
-            importData.setTags(new ArrayList<>());
-        }
-
-        if (session.getLanguages() != null) {
-            importData.setLanguages(session.getLanguages());
-        } else {
-            importData.setLanguages(new ArrayList<>());
-        }
-
-        if (session.getSpeakers() != null) {
-            importData.setSpeakers(session.getSpeakers());
-        } else {
-            importData.setSpeakers(new ArrayList<>());
-        }
-
-        if (session.getReviews() != null) {
-            importData.setReviews(session.getReviews());
-        }
-
-        return importData;
     }
 }

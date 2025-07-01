@@ -397,7 +397,6 @@ export class AuthService {
         const token = await currentUser.getIdToken(true);
         return token;
       }
-      console.warn('No authenticated user found');
       return null;
     } catch (error) {
       console.error('Error getting user token:', error);

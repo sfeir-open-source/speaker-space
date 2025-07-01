@@ -18,7 +18,7 @@ public class Session {
     private List<Category> categories;
     private List<String> tags;
     private List<String> languages;
-    private List<Speaker> speakers;
+    private List<String> speakerIds;
     private Reviews reviews;
     private String eventId;
 
@@ -136,12 +136,12 @@ public class Session {
         this.languages = languages;
     }
 
-    public List<Speaker> getSpeakers() {
-        return speakers;
+    public List<String> getSpeakerIds() {
+        return speakerIds;
     }
 
-    public void setSpeakers(List<Speaker> speakers) {
-        this.speakers = speakers;
+    public void setSpeakerIds(List<String> speakerIds) {
+        this.speakerIds = speakerIds;
     }
 
     public Reviews getReviews() {
