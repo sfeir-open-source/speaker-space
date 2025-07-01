@@ -31,7 +31,7 @@
             <div class="flex items-center flex-wrap gap-2 min-w-0 flex-1">
               @if (session.speakers && session.speakers.length > 0) {
                 @for (speaker of session.speakers; track speaker.name) {
-                  <div class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-2 py-1 bg-white shadow-sm">
+                  <div (click)="openItemDetail(speaker.id)" class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-2 py-1 bg-white shadow-sm cursor-pointer">
                     <div class="flex-shrink-0">
                       <img
                         [src]="speaker.picture || 'img/profil-picture.svg'"

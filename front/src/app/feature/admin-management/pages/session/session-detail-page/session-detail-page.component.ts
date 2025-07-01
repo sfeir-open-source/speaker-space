@@ -2,7 +2,7 @@ import {Component} from '@angular/core';
 import {Category, Format, SessionImportData} from '../../../type/session/session';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {takeUntil} from 'rxjs';
-import {ActivatedRoute } from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {SessionService} from '../../../services/sessions/session.service';
 import {
@@ -28,7 +28,8 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
   constructor(
     route: ActivatedRoute,
     eventService: EventService,
-    private sessionService: SessionService
+    private sessionService: SessionService,
+    protected router: Router,
   ) {
     super(route, eventService);
   }
@@ -139,6 +140,10 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
       console.warn(`Unable to format language code: ${languageCode}`, error);
       return languageCode.toUpperCase();
     }
+  }
+
+  openItemDetail(speakerId: string): void {
+    this.router.navigate(['event', this.eventId, 'speaker', speakerId]);
   }
 
   onEditSession(): void {
