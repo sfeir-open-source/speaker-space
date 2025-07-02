@@ -54,3 +54,9 @@ export type SessionScheduleImportDataDTO = {
   };
   eventId: string;
 }
+
+export type SessionScheduleUpdate = {
+  start?: Date;
+  end?: Date;
+  track?: string;
+}

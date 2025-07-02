@@ -59,6 +59,27 @@ public class SessionController {
         });
     }
 
+    @PutMapping("/event/{eventId}/session/{sessionId}/schedule")
+    public ResponseEntity<SessionDTO> updateSessionSchedule(
+            @PathVariable String eventId,
+            @PathVariable String sessionId,
+            @RequestBody SessionScheduleUpdateDTO scheduleUpdate,
+            Authentication authentication) {
+
+        return executeWithEventAuthorization(eventId, authentication, () -> {
+            if (scheduleUpdate.getStart() != null && scheduleUpdate.getEnd() != null) {
+                if (scheduleUpdate.getStart().after(scheduleUpdate.getEnd())) {
+                    throw new IllegalArgumentException("Start time must be before end time");
+                }
+            }
+
+            SessionDTO updatedSession = sessionService.updateSessionSchedule(
+                    sessionId, eventId, scheduleUpdate);
+
+            return updatedSession;
+        });
+    }
+
     @GetMapping("/event/{eventId}")
     public ResponseEntity<List<SessionReviewImportData>> getSessionsByEventId(
             @PathVariable String eventId,

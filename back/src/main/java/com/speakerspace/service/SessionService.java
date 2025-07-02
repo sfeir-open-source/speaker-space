@@ -77,6 +77,25 @@ public class SessionService {
         return new ImportResultDTO(successfulImports, failedImports);
     }
 
+    public SessionDTO updateSessionSchedule(String sessionId, String eventId, SessionScheduleUpdateDTO scheduleUpdate) {
+        if (!sessionRepository.existsByIdAndEventId(sessionId, eventId)) {
+            throw new IllegalArgumentException("Session not found or does not belong to the specified event");
+        }
+
+        Session updatedSession = sessionRepository.updateScheduleFields(
+                sessionId,
+                scheduleUpdate.getStart(),
+                scheduleUpdate.getEnd(),
+                scheduleUpdate.getTrack()
+        );
+
+        if (updatedSession == null) {
+            throw new RuntimeException("Failed to update session schedule");
+        }
+
+        return sessionMapper.convertToDTO(updatedSession);
+    }
+
     private void enrichExistingSessionWithScheduleData(Session existingSession, SessionScheduleImportDataDTO scheduleData) {
         existingSession.setStart(scheduleData.getStart());
         existingSession.setEnd(scheduleData.getEnd());

@@ -5,7 +5,10 @@ import com.speakerspace.model.session.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -152,5 +155,35 @@ public class SessionRepositoryImpl implements SessionRepository {
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Failed to batch delete sessions by event ID", e);
         }
+    }
+
+    public Session updateScheduleFields(String sessionId, Date start, Date end, String track) {
+        return executeFirestoreOperation(() -> {
+            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document(sessionId);
+
+            Map<String, Object> updates = new HashMap<>();
+
+            if (start != null) {
+                updates.put("start", start);
+            }
+            if (end != null) {
+                updates.put("end", end);
+            }
+            if (track != null) {
+                updates.put("track", track);
+            }
+
+            updates.put("updatedAt", new Date());
+
+            try {
+                docRef.update(updates).get();
+
+                DocumentSnapshot updatedDoc = docRef.get().get();
+                return updatedDoc.exists() ? updatedDoc.toObject(Session.class) : null;
+
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException("Failed to update session schedule", e);
+            }
+        }, "Failed to update session schedule");
     }
 }

@@ -5,6 +5,7 @@ import {HttpClient} from '@angular/common/http';
 import {environment} from '../../../../../environments/environment.development';
 import {map} from 'rxjs/operators';
 import {convertToDate} from '../../utils/date.utils';
+import {SessionScheduleUpdate} from '../../type/session/schedule-json-data';
 
 @Injectable({
   providedIn: 'root'
@@ -30,5 +31,15 @@ export class SessionService {
       createdAt: sessionData.createdAt ? convertToDate(sessionData.createdAt)?.toISOString() : undefined,
       updatedAt: sessionData.updatedAt ? convertToDate(sessionData.updatedAt)?.toISOString() : undefined
     };
+  }
+
+  updateSessionSchedule(eventId: string, sessionId: string, scheduleUpdate: SessionScheduleUpdate): Observable<SessionImportData> {
+    return this.http.put<any>(
+      `${environment.apiUrl}/session/event/${eventId}/session/${sessionId}/schedule`,
+      scheduleUpdate,
+      { withCredentials: true }
+    ).pipe(
+      map(sessionData => this.convertSessionDates(sessionData))
+    );
   }
 }

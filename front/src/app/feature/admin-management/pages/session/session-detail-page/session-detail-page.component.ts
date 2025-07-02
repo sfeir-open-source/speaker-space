@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {Category, Format, SessionImportData} from '../../../type/session/session';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {takeUntil} from 'rxjs';
+import {finalize, takeUntil} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {SessionService} from '../../../services/sessions/session.service';
@@ -9,12 +9,22 @@ import {
   NavbarSessionPageComponent
 } from '../../../components/session/navbar-session-page/navbar-session-page.component';
 import {BaseDetailComponent} from '../../../components/class/bade-detail-component';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators
+} from '@angular/forms';
+import {SessionScheduleUpdate} from '../../../type/session/schedule-json-data';
 
 @Component({
     selector: 'app-session-detail-page',
   imports: [
     ButtonGreyComponent,
-    NavbarSessionPageComponent
+    NavbarSessionPageComponent,
+    ReactiveFormsModule
   ],
     templateUrl: './session-detail-page.component.html',
     styleUrl: './session-detail-page.component.scss'
@@ -24,14 +34,56 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
   session: SessionImportData | null = null;
   format: Format | null = null;
   category: Category | null = null;
+  isEditingSchedule: boolean = false;
+  isUpdatingSchedule: boolean = false;
+  scheduleForm!: FormGroup;
+  scheduleError: string | null = null;
 
   constructor(
     route: ActivatedRoute,
     eventService: EventService,
     private sessionService: SessionService,
     protected router: Router,
+    private fb: FormBuilder,
   ) {
     super(route, eventService);
+  }
+
+  override ngOnInit(): void {
+    super.ngOnInit();
+    this.initializeScheduleForm();
+  }
+
+  private initializeScheduleForm(): FormGroup {
+    return this.fb.group({
+      startDate: [''],
+      startTime: [''],
+      endDate: [''],
+      endTime: [''],
+      track: ['', [Validators.maxLength(50)]]
+    }, {
+      validators: [this.dateTimeValidator.bind(this)]
+    });
+  }
+
+  private dateTimeValidator(control: AbstractControl): ValidationErrors | null {
+    const startDate = control.get('startDate')?.value;
+    const startTime = control.get('startTime')?.value;
+    const endDate = control.get('endDate')?.value;
+    const endTime = control.get('endTime')?.value;
+
+    if (!startDate || !startTime || !endDate || !endTime) {
+      return null;
+    }
+
+    const start = this.combineDateAndTime(startDate, startTime);
+    const end = this.combineDateAndTime(endDate, endTime);
+
+    if (start && end && start >= end) {
+      return { dateTimeInvalid: true };
+    }
+
+    return null;
   }
 
   protected subscribeToRouteParams(): void {
@@ -68,6 +120,101 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     });
   }
 
+  onEditSession(): void {
+    this.isEditingSchedule = true;
+    this.scheduleError = null;
+    this.populateScheduleForm();
+  }
+
+  private populateScheduleForm(): void {
+    if (!this.session || !this.scheduleForm) return;
+
+    const formValues: any = {
+      track: this.session.track || ''
+    };
+
+    if (this.session.start) {
+      const startDate = new Date(this.session.start);
+      formValues.startDate = this.formatDateForInput(startDate);
+      formValues.startTime = this.formatTimeForInput(startDate);
+    }
+
+    if (this.session.end) {
+      const endDate = new Date(this.session.end);
+      formValues.endDate = this.formatDateForInput(endDate);
+      formValues.endTime = this.formatTimeForInput(endDate);
+    }
+
+    this.scheduleForm.patchValue(formValues);
+  }
+
+  private formatDateForInput(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
+
+  private formatTimeForInput(date: Date): string {
+    return date.toTimeString().slice(0, 5);
+  }
+
+  private combineDateAndTime(dateStr: string, timeStr: string): Date | null {
+    if (!dateStr || !timeStr) return null;
+
+    const combinedStr = `${dateStr}T${timeStr}:00`;
+    const date = new Date(combinedStr);
+
+    return isNaN(date.getTime()) ? null : date;
+  }
+
+  onSaveSchedule(): void {
+    if (!this.scheduleForm || this.scheduleForm.invalid || this.isUpdatingSchedule) {
+      return;
+    }
+
+    const formValues = this.scheduleForm.value;
+
+    const startDate = this.combineDateAndTime(formValues.startDate, formValues.startTime);
+    const endDate = this.combineDateAndTime(formValues.endDate, formValues.endTime);
+
+    if (startDate && endDate && startDate >= endDate) {
+      this.scheduleError = 'Start time must be before end time';
+      return;
+    }
+
+    const scheduleUpdate: SessionScheduleUpdate = {
+      start: startDate || undefined,
+      end: endDate || undefined,
+      track: formValues.track?.trim() || undefined
+    };
+
+    this.isUpdatingSchedule = true;
+    this.scheduleError = null;
+
+    this.sessionService.updateSessionSchedule(this.eventId, this.sessionId, scheduleUpdate)
+      .pipe(
+        finalize(() => this.isUpdatingSchedule = false),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (updatedSession) => {
+          this.session = updatedSession;
+          this.isEditingSchedule = false;
+          this.scheduleError = null;
+        },
+        error: (error) => {
+          console.error('Error updating session schedule:', error);
+          this.scheduleError = error.error?.message || 'Failed to update session schedule';
+        }
+      });
+  }
+
+  onCancelScheduleEdit(): void {
+    this.isEditingSchedule = false;
+    this.scheduleError = null;
+    if (this.scheduleForm) {
+      this.scheduleForm.reset();
+    }
+  }
+
   hasScheduleInfo(): boolean {
     return !!(this.session?.start || this.session?.track);
   }
@@ -87,7 +234,7 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
         };
 
         const dateStr = this.session.start.toLocaleDateString('en-US', options);
-        const timeStr : string = this.session.start.toLocaleTimeString('en-US', {
+        const timeStr: string = this.session.start.toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
           hour12: false
@@ -144,9 +291,5 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
 
   openItemDetail(speakerId: string): void {
     this.router.navigate(['event', this.eventId, 'speaker', speakerId]);
-  }
-
-  onEditSession(): void {
-    // TODO
   }
 }
