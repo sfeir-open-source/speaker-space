@@ -4,8 +4,13 @@ import com.speakerspace.dto.EventDTO;
 import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.repository.EventRepository;
+import com.speakerspace.repository.SessionRepository;
+import com.speakerspace.repository.SpeakerRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -16,14 +21,20 @@ public class EventService {
 
     private static final String BASE_URL = "https://speaker-space.io/event/";
 
+    private static final Logger logger = LoggerFactory.getLogger(EventService.class);
+
     private final EventMapper eventMapper;
     private final EventRepository eventRepository;
     private final UserService userService;
+    private final SessionRepository sessionRepository;
+    private final SpeakerRepository speakerRepository;
 
-    public EventService(EventMapper eventMapper, EventRepository eventRepository, UserService userService) {
+    public EventService(EventMapper eventMapper, EventRepository eventRepository, UserService userService, SessionRepository sessionRepository, SpeakerRepository speakerRepository) {
         this.eventMapper = eventMapper;
         this.eventRepository = eventRepository;
         this.userService = userService;
+        this.sessionRepository = sessionRepository;
+        this.speakerRepository = speakerRepository;
     }
 
     public EventDTO createEvent(EventDTO eventDTO) {
@@ -218,21 +229,6 @@ public class EventService {
         }
     }
 
-    public boolean deleteEvent(String id) {
-        String currentUserId = userService.getCurrentUserId();
-
-        Event existingEvent = eventRepository.findById(id);
-        if (existingEvent == null) {
-            return false;
-        }
-
-        if (!existingEvent.getUserCreateId().equals(currentUserId)) {
-            throw new RuntimeException("Not authorized to delete this event");
-        }
-
-        return eventRepository.delete(id);
-    }
-
     private String generateUrlSuffix(String eventName) {
         if (eventName == null || eventName.isEmpty()) {
             return UUID.randomUUID().toString();
@@ -243,5 +239,40 @@ public class EventService {
                 .replaceAll("\\s+", "-")
                 .replaceAll("[^a-z0-9-]", "")
                 .replaceAll("-+", "-");
+    }
+
+    public boolean deleteEvent(String eventId) throws AccessDeniedException {
+        String currentUserId = userService.getCurrentUserId();
+
+        Event event = eventRepository.findById(eventId);
+        if (event == null) {
+            return false;
+        }
+
+        if (!event.getUserCreateId().equals(currentUserId)) {
+            throw new AccessDeniedException("You don't have permission to delete this event");
+        }
+
+        try {
+            return deleteEventWithDependencies(eventId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete event and associated data", e);
+        }
+    }
+
+    private boolean deleteEventWithDependencies(String eventId) {
+        int deletedSessionsCount = sessionRepository.deleteByEventId(eventId);
+        int deletedSpeakersCount = speakerRepository.deleteByEventId(eventId);
+
+        boolean eventDeleted = eventRepository.delete(eventId);
+
+        if (eventDeleted) {
+            logger.info("Event deleted successfully: {} (with {} sessions and {} speakers)",
+                    eventId, deletedSessionsCount, deletedSpeakersCount);
+            return true;
+        } else {
+            logger.error("Failed to delete event: {}", eventId);
+            return false;
+        }
     }
 }

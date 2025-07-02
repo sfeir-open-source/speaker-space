@@ -102,15 +102,13 @@ public class SpeakerRepositoryImpl implements SpeakerRepository {
     }
 
     @Override
-    public void deleteById(String id) {
-        executeFirestoreOperation(() -> {
-            try {
-                firestore.collection(COLLECTION_NAME).document(id).delete().get();
-                return null;
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException("Failed to delete speaker", e);
-            }
-        });
+    public boolean delete(String id) {
+        try {
+            firestore.collection(COLLECTION_NAME).document(id).delete().get();
+            return true;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to delete Speaker", e);
+        }
     }
 
     private DocumentReference getDocumentReference(Speaker speaker) {
@@ -132,5 +130,33 @@ public class SpeakerRepositoryImpl implements SpeakerRepository {
 
     private <T> T executeFirestoreOperation(Supplier<T> operation) {
         return operation.get();
+    }
+
+    @Override
+    public int deleteByEventId(String eventId) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("eventId", eventId);
+            QuerySnapshot querySnapshot = query.get().get();
+
+            List<QueryDocumentSnapshot> documents = querySnapshot.getDocuments();
+
+            if (documents.isEmpty()) {
+                return 0;
+            }
+
+            WriteBatch batch = firestore.batch();
+
+            for (QueryDocumentSnapshot document : documents) {
+                batch.delete(document.getReference());
+            }
+
+            batch.commit().get();
+
+            int deletedCount = documents.size();
+            return deletedCount;
+
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to batch delete speakers by event ID", e);
+        }
     }
 }

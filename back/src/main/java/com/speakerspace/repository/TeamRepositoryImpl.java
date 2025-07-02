@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -99,10 +98,11 @@ public class TeamRepositoryImpl implements TeamRepository {
     }
 
     @Override
-    public void delete(String id) {
+    public boolean delete(String id) {
         try {
             firestore.collection(COLLECTION_NAME).document(id).delete().get();
             logger.info("Team deleted with ID: {}", id);
+            return true;
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error deleting team: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to delete team", e);

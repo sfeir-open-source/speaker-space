@@ -323,7 +323,9 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
       entityName: this.teamName,
       title: 'Confirm Team Deletion',
       confirmButtonText: 'Delete permanently',
-      loadingText: 'Deleting...'
+      loadingText: 'Deleting...',
+      requireTextConfirmation: true,
+      confirmationText: 'DELETE'
     };
   }
 

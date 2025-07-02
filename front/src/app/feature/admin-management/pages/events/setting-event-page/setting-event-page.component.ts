@@ -201,7 +201,9 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
       entityName: this.eventName,
       title: 'Confirm Event Deletion',
       confirmButtonText: 'Delete permanently',
-      loadingText: 'Deleting...'
+      loadingText: 'Deleting...',
+      requireTextConfirmation: true,
+      confirmationText: 'DELETE'
     };
   }
 

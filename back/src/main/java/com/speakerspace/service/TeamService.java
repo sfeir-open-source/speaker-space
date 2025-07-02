@@ -3,9 +3,12 @@ package com.speakerspace.service;
 import com.speakerspace.dto.TeamDTO;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.mapper.TeamMapper;
+import com.speakerspace.model.Event;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
 import com.speakerspace.repository.EventRepository;
+import com.speakerspace.repository.SessionRepository;
+import com.speakerspace.repository.SpeakerRepository;
 import com.speakerspace.repository.TeamRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,12 +29,16 @@ public class TeamService {
     private final EventRepository eventRepository;
     private final TeamRepository teamRepository;
     private final UserService userService;
+    private final SessionRepository sessionRepository;
+    private final SpeakerRepository speakerRepository;
 
-    public TeamService(TeamMapper teamMapper, EventRepository eventRepository, TeamRepository teamRepository, UserService userService) {
+    public TeamService(TeamMapper teamMapper, EventRepository eventRepository, TeamRepository teamRepository, UserService userService, SessionRepository sessionRepository, SpeakerRepository speakerRepository) {
         this.teamMapper = teamMapper;
         this.eventRepository = eventRepository;
         this.teamRepository = teamRepository;
         this.userService = userService;
+        this.sessionRepository = sessionRepository;
+        this.speakerRepository = speakerRepository;
     }
 
     public TeamDTO createTeam(TeamDTO teamDTO) {
@@ -142,17 +149,38 @@ public class TeamService {
         }
 
         try {
+            return deleteTeamWithFirestoreTransaction(teamId);
+
+        } catch (Exception e) {
+            logger.error("Error deleting team {} and its dependencies: {}", teamId, e.getMessage(), e);
+            throw new RuntimeException("Failed to delete team and associated data", e);
+        }
+    }
+
+    private boolean deleteTeamWithFirestoreTransaction(String teamId) {
+        try {
+            List<Event> eventsToDelete = eventRepository.findByTeamId(teamId);
+
+            int totalDeletedSessions = 0;
+            int totalDeletedSpeakers = 0;
+
+            for (Event event : eventsToDelete) {
+                totalDeletedSessions += sessionRepository.deleteByEventId(event.getIdEvent());
+                totalDeletedSpeakers += speakerRepository.deleteByEventId(event.getIdEvent());
+            }
+
             int deletedEventsCount = eventRepository.deleteByTeamId(teamId);
-            logger.info("Deleted {} events associated with team {}", deletedEventsCount, teamId);
 
             teamRepository.delete(teamId);
-            logger.info("Team deleted successfully: {} (with {} associated events)", teamId, deletedEventsCount);
+
+            logger.info("Team deleted successfully: {} (with {} events, {} sessions, {} speakers)",
+                    teamId, deletedEventsCount, totalDeletedSessions, totalDeletedSpeakers);
 
             return true;
 
         } catch (Exception e) {
-            logger.error("Error deleting team {} and its events: {}", teamId, e.getMessage(), e);
-            throw new RuntimeException("Failed to delete team and associated events", e);
+            logger.error("Error in Firestore transaction for team deletion: {}", e.getMessage(), e);
+            throw e;
         }
     }
 }

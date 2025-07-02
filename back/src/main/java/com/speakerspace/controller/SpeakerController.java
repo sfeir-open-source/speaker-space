@@ -2,6 +2,7 @@ package com.speakerspace.controller;
 
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
+import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.security.AuthenticationHelper;
 import com.speakerspace.service.EventService;
@@ -22,11 +23,13 @@ public class SpeakerController {
     private final SpeakerService speakerService;
     private final EventService eventService;
     private final AuthenticationHelper authHelper;
+    private final SpeakerMapper speakerMapper;
 
-    public SpeakerController(SpeakerService speakerService, EventService eventService, AuthenticationHelper authHelper) {
+    public SpeakerController(SpeakerService speakerService, EventService eventService, AuthenticationHelper authHelper, SpeakerMapper speakerMapper) {
         this.speakerService = speakerService;
         this.eventService = eventService;
         this.authHelper = authHelper;
+        this.speakerMapper = speakerMapper;
     }
 
     @GetMapping("/event/{eventId}")
@@ -37,7 +40,7 @@ public class SpeakerController {
         return executeWithEventAuthorization(eventId, authentication, () -> {
             List<Speaker> speakers = speakerService.findByEventId(eventId);
             List<SpeakerDTO> speakerDTOs = speakers.stream()
-                    .map(this::convertToDTO)
+                    .map(speakerMapper::convertToDTO)
                     .collect(Collectors.toList());
             return ResponseEntity.ok(speakerDTOs);
         });
@@ -54,7 +57,7 @@ public class SpeakerController {
         }
 
         return executeWithEventAuthorization(speaker.getEventId(), authentication, () -> {
-            SpeakerDTO speakerDTO = convertToDTO(speaker);
+            SpeakerDTO speakerDTO = speakerMapper.convertToDTO(speaker);
             return ResponseEntity.ok(speakerDTO);
         });
     }
@@ -66,11 +69,11 @@ public class SpeakerController {
             Authentication authentication) {
 
         return executeWithEventAuthorization(eventId, authentication, () -> {
-            Speaker speaker = convertToEntity(speakerDTO);
+            Speaker speaker = speakerMapper.convertToEntity(speakerDTO);
             speaker.setEventId(eventId);
 
             Speaker savedSpeaker = speakerService.saveSpeaker(speaker);
-            SpeakerDTO resultDTO = convertToDTO(savedSpeaker);
+            SpeakerDTO resultDTO = speakerMapper.convertToDTO(savedSpeaker);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(resultDTO);
         });
@@ -102,31 +105,9 @@ public class SpeakerController {
         }
     }
 
-    private SpeakerDTO convertToDTO(Speaker speaker) {
-        SpeakerDTO dto = new SpeakerDTO();
-        dto.setId(speaker.getId());
-        dto.setName(speaker.getName());
-        dto.setBio(speaker.getBio());
-        dto.setCompany(speaker.getCompany());
-        dto.setReferences(speaker.getReferences());
-        dto.setPicture(speaker.getPicture());
-        dto.setLocation(speaker.getLocation());
-        dto.setEmail(speaker.getEmail());
-        dto.setSocialLinks(speaker.getSocialLinks());
-        return dto;
-    }
-
-    private Speaker convertToEntity(SpeakerDTO dto) {
-        Speaker speaker = new Speaker();
-        speaker.setId(dto.getId());
-        speaker.setName(dto.getName());
-        speaker.setBio(dto.getBio());
-        speaker.setCompany(dto.getCompany());
-        speaker.setReferences(dto.getReferences());
-        speaker.setPicture(dto.getPicture());
-        speaker.setLocation(dto.getLocation());
-        speaker.setEmail(dto.getEmail());
-        speaker.setSocialLinks(dto.getSocialLinks());
-        return speaker;
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSpeaker(@PathVariable String id) {
+        boolean deleted = speakerService.deleteSpeaker(id);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

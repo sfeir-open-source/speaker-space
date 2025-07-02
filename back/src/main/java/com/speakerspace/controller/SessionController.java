@@ -176,4 +176,10 @@ public class SessionController {
             throw new IllegalArgumentException("No sessions data provided");
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSession(@PathVariable String id) {
+        boolean deleted = sessionService.deleteSession(id);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
 }

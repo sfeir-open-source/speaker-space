@@ -323,4 +323,12 @@ public class SessionService {
                 .replaceAll("_+", "_")
                 .replaceAll("^_|_$", "");
     }
+
+    public boolean deleteSession(String id) {
+        Session existingSession = sessionRepository.findById(id);
+        if (existingSession == null) {
+            return false;
+        }
+        return sessionRepository.delete(id);
+    }
 }

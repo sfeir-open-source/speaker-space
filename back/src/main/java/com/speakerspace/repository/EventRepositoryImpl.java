@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Repository
 public class EventRepositoryImpl implements EventRepository {
@@ -47,8 +48,7 @@ public class EventRepositoryImpl implements EventRepository {
         try {
             DocumentSnapshot document = firestore.collection(COLLECTION_NAME).document(id).get().get();
             if (document.exists()) {
-                Event event = document.toObject(Event.class);
-                return event;
+                return document.toObject(Event.class);
             }
             return null;
         } catch (InterruptedException | ExecutionException e) {
@@ -79,12 +79,14 @@ public class EventRepositoryImpl implements EventRepository {
             Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("teamId", teamId);
             QuerySnapshot querySnapshot = query.get().get();
 
-            List<Event> events = new ArrayList<>();
-            querySnapshot.getDocuments().forEach(doc -> {
-                events.add(doc.toObject(Event.class));
-            });
+            return querySnapshot.getDocuments().stream()
+                    .map(doc -> {
+                        Event event = doc.toObject(Event.class);
+                        event.setIdEvent(doc.getId());
+                        return event;
+                    })
+                    .collect(Collectors.toList());
 
-            return events;
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error finding events by team ID: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to find events by team ID", e);
@@ -113,10 +115,8 @@ public class EventRepositoryImpl implements EventRepository {
     public boolean delete(String id) {
         try {
             firestore.collection(COLLECTION_NAME).document(id).delete().get();
-            logger.info("Event deleted with ID: {}", id);
             return true;
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error deleting event: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to delete event", e);
         }
     }

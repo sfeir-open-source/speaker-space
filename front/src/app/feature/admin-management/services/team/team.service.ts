@@ -76,22 +76,34 @@ export class TeamService {
         })
       );
   }
-
   deleteTeam(teamId: string): Observable<{message: string, teamId: string}> {
-    return this.http.delete<{message: string, teamId: string}>(`${environment.apiUrl}/team/${teamId}`)
-      .pipe(
-        catchError((error: HttpErrorResponse) => {
-          if (error.status === 403) {
-            throw new Error('You don\'t have permission to delete this team');
-          } else if (error.status === 404) {
-            throw new Error('Team not found');
-          } else {
-            throw new Error('Failed to delete team');
-          }
-        })
-      );
-  }
+    return this.http.delete<{message: string, teamId: string}>(
+      `${environment.apiUrl}/team/${teamId}`,
+      { withCredentials: true }
+    ).pipe(
+      tap(() => {
+        const updatedTeams = this.teamsSubject.value.filter(team => team.id !== teamId);
+        this.teamsSubject.next(updatedTeams);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        let errorMessage = 'Failed to delete team';
 
+        switch (error.status) {
+          case 403:
+            errorMessage = 'You don\'t have permission to delete this team';
+            break;
+          case 404:
+            errorMessage = 'Team not found';
+            break;
+          case 500:
+            errorMessage = 'Internal server error occurred while deleting team';
+            break;
+        }
+
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+  }
   extractUrlId(url: string): string {
     if (url.includes('/team/')) {
       return url.split('/team/').pop() || url;

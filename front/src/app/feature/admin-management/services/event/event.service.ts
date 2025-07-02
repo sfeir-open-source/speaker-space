@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {BehaviorSubject, from, Observable, of, switchMap, throwError} from 'rxjs';
 import {catchError, tap} from 'rxjs/operators';
-import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {HttpClient, HttpErrorResponse, HttpHeaders} from '@angular/common/http';
 import { environment } from '../../../../../environments/environment.development';
 import { Event } from '../../type/event/event';
 import {EventDTO} from '../../type/event/eventDTO';
@@ -141,16 +141,35 @@ export class EventService {
     return this.http.get<Event[]>(`${environment.apiUrl}/event/by-team/${teamId}`, { withCredentials: true })
       .pipe(catchError(this.handleError('Error getting events by team')));
   }
+  deleteEvent(id: string): Observable<{message: string, eventId: string}> {
+    return this.http.delete<{message: string, eventId: string}>(
+      `${environment.apiUrl}/event/${id}`,
+      { withCredentials: true }
+    ).pipe(
+      tap(() => {
+        const updated: Event[] = this.eventsSubject.value.filter(event => event.idEvent !== id);
+        this.eventsSubject.next(updated);
 
-  deleteEvent(id: string): Observable<void> {
-    return this.http.delete<void>(`${environment.apiUrl}/event/${id}`, { withCredentials: true })
-      .pipe(
-        tap(() => {
-          const updated : Event[] = this.eventsSubject.value.filter(event => event.idEvent !== id);
-          this.eventsSubject.next(updated);
-        }),
-        catchError(this.handleError('Error deleting event'))
-      );
+        this.eventCache.delete(id);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        let errorMessage = 'Failed to delete event';
+
+        switch (error.status) {
+          case 403:
+            errorMessage = 'You don\'t have permission to delete this event';
+            break;
+          case 404:
+            errorMessage = 'Event not found';
+            break;
+          case 500:
+            errorMessage = 'Internal server error occurred while deleting event';
+            break;
+        }
+
+        return throwError(() => new Error(errorMessage));
+      })
+    );
   }
 
   getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {

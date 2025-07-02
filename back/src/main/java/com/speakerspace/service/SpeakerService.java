@@ -80,5 +80,13 @@ public class SpeakerService {
 
         return merged;
     }
+
+    public boolean deleteSpeaker(String id) {
+        Speaker existingSpeaker = speakerRepository.findById(id);
+        if (existingSpeaker == null) {
+            return false;
+        }
+        return speakerRepository.delete(id);
+    }
 }
 

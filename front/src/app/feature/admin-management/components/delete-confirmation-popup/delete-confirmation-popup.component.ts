@@ -1,9 +1,12 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {DeleteConfirmationConfig} from '../../type/components/delete-confirmation';
+import {FormsModule} from '@angular/forms';
 
 @Component({
   selector: 'app-delete-confirmation-popup',
-  imports: [],
+  imports: [
+    FormsModule
+  ],
   templateUrl: './delete-confirmation-popup.component.html',
   styleUrl: './delete-confirmation-popup.component.scss'
 })
@@ -12,8 +15,8 @@ export class DeleteConfirmationPopupComponent implements OnInit {
   @Input() isOpen: boolean = false;
   @Input() isDeleting: boolean = false;
 
-  @Output() confirm = new EventEmitter<void>();
-  @Output() cancel = new EventEmitter<void>();
+  @Output() confirm: EventEmitter<void> = new EventEmitter<void>();
+  @Output() cancel : EventEmitter<void> = new EventEmitter<void>();
 
   modalId: string = '';
   modalTitleId: string = '';
@@ -22,38 +25,50 @@ export class DeleteConfirmationPopupComponent implements OnInit {
   confirmButtonText: string = '';
   loadingText: string = '';
 
+  userConfirmationText: string = '';
+  requiredConfirmationText: string = 'DELETE';
+  requireTextConfirmation: boolean = false;
+
   ngOnInit(): void {
     this.setupModalContent();
+  }
+
+  get isConfirmationValid(): boolean {
+    if (!this.requireTextConfirmation) {
+      return true;
+    }
+    return this.userConfirmationText.trim() === this.requiredConfirmationText;
+  }
+
+  get isDeleteButtonDisabled(): boolean {
+    return this.isDeleting || !this.isConfirmationValid;
   }
 
   private setupModalContent(): void {
     if (!this.config) return;
 
-    const entityType = this.config.entityType;
-    const entityName = this.config.entityName;
+    const entityType :'team'|'event' = this.config.entityType;
+    const entityName: string = this.config.entityName;
 
     this.modalId = `delete-${entityType}-modal`;
     this.modalTitleId = `delete-${entityType}-modal-title`;
 
     this.title = this.config.title || `Confirm ${this.capitalizeFirst(entityType)} Deletion`;
-
     this.description = this.config.description || this.getDefaultDescription(entityType, entityName);
-
     this.confirmButtonText = this.config.confirmButtonText || 'Delete permanently';
-
     this.loadingText = this.config.loadingText || 'Deleting...';
+
+    this.requireTextConfirmation = this.config.requireTextConfirmation ?? true;
+    this.requiredConfirmationText = this.config.confirmationText || 'DELETE';
   }
 
   private getDefaultDescription(entityType: string, entityName: string): string {
-    const baseText = `Are you sure you want to delete the ${entityType} "${entityName}"?`;
-
     if (entityType === 'team') {
-      return `${baseText} This will permanently delete the team, all events, speakers proposals, reviews, comments, schedule, and settings. This action cannot be undone.`;
+      return 'This will permanently delete the team, all events, speakers proposals, reviews, comments, schedule, and settings.';
     } else if (entityType === 'event') {
-      return `${baseText} This will permanently delete the event, all speakers proposals, reviews, comments, schedule, and settings. This action cannot be undone.`;
+      return 'This will permanently delete the event, all speakers proposals, reviews, comments, schedule, and settings.';
     }
-
-    return `${baseText} This action cannot be undone.`;
+    return 'This will permanently delete all associated data.';
   }
 
   private capitalizeFirst(text: string): string {
@@ -62,25 +77,40 @@ export class DeleteConfirmationPopupComponent implements OnInit {
 
   onCancel(event: MouseEvent): void {
     event.preventDefault();
+    this.resetForm();
     this.cancel.emit();
   }
 
   onConfirm(event: MouseEvent): void {
     event.preventDefault();
-    this.confirm.emit();
+
+    if (this.isConfirmationValid && !this.isDeleting) {
+      this.confirm.emit();
+    }
   }
 
   onBackdropClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
     if (target.id === this.modalId) {
+      this.resetForm();
       this.cancel.emit();
     }
   }
 
   onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
+      this.resetForm();
       this.cancel.emit();
     }
+  }
+
+  onConfirmationTextChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.userConfirmationText = target.value;
+  }
+
+  private resetForm(): void {
+    this.userConfirmationText = '';
   }
 
   getDescriptionText(): string {
@@ -91,5 +121,4 @@ export class DeleteConfirmationPopupComponent implements OnInit {
     }
     return 'This will permanently delete all associated data.';
   }
-
 }

@@ -10,7 +10,8 @@ public interface SessionRepository {
     Session save(Session session);
     Session findById(String id);
     List<Session> findByEventId(String eventId);
-    void deleteById(String id);
+    boolean delete(String id);
     boolean existsByIdAndEventId(String id, String eventId);
     Session findByIdAndEventId(String sessionId, String eventId);
+    int deleteByEventId(String eventId);
 }
