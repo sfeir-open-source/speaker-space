@@ -1,0 +1,161 @@
+.calendar-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-grid-container {
+  flex: 1;
+  overflow: auto;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.calendar-grid-header {
+  display: grid;
+  grid-template-columns: 80px repeat(auto-fit, minmax(200px, 1fr));
+  border-bottom: 2px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+}
+
+.calendar-grid-body {
+  display: grid;
+  grid-template-columns: 80px repeat(auto-fit, minmax(200px, 1fr));
+  flex: 1;
+}
+
+.time-column {
+  background: #f9fafb;
+}
+
+.time-slot {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.track-column {
+  position: relative;
+  min-height: 720px;
+}
+
+.hour-line {
+  position: relative;
+}
+
+.hour-line:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #f3f4f6;
+}
+
+.calendar-session {
+  border-radius: 6px;
+  border-left-width: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.calendar-session:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.calendar-session--conference {
+  border-left-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.calendar-session--workshop {
+  border-left-color: #10b981;
+  background: #ecfdf5;
+}
+
+.calendar-session--keynote {
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.calendar-session--break {
+  border-left-color: #6b7280;
+  background: #f9fafb;
+}
+
+.calendar-session--networking {
+  border-left-color: #8b5cf6;
+  background: #f5f3ff;
+}
+
+.calendar-session {
+  border-left-color: #6b7280;
+  background: #f8fafc;
+}
+
+.session-content {
+  overflow: hidden;
+}
+
+.session-time {
+  color: #374151;
+  font-weight: 600;
+}
+
+.session-title {
+  color: #111827;
+  line-height: 1.2;
+}
+
+.session-speakers {
+  color: #6b7280;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .calendar-grid-header,
+  .calendar-grid-body {
+    grid-template-columns: 60px repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .time-column-header,
+  .track-column-header {
+    padding: 8px 4px;
+  }
+
+  .session-content {
+    padding: 4px;
+  }
+
+  .session-title {
+    font-size: 12px;
+  }
+
+  .session-time,
+  .session-speakers {
+    font-size: 10px;
+  }
+}

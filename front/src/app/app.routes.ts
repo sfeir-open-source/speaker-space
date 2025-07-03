@@ -34,6 +34,9 @@ import {
 import {
   SpeakerDetailPageComponent
 } from './feature/admin-management/pages/speaker/speaker-detail-page/speaker-detail-page.component';
+import {
+  CalendarEventPageComponent
+} from './feature/admin-management/pages/calendar/calendar-event-page/calendar-event-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -49,6 +52,7 @@ export const routes: Routes = [
   { path: 'event-customize/:eventId', component: CustomizeEventComponent, canActivate: [AuthGuard] },
   { path: 'event-sessions/:eventId', component: SessionListPageComponent, canActivate: [AuthGuard] },
   { path: 'event-speakers/:eventId', component: SpeakerListPageComponent, canActivate: [AuthGuard] },
+  { path: 'event-calendar/:eventId', component: CalendarEventPageComponent, canActivate: [AuthGuard] },
   { path: 'event/:eventId/session/:sessionId', component: SessionDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'event/:eventId/speaker/:speakerId', component: SpeakerDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},

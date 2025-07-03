@@ -96,6 +96,10 @@ public class SessionService {
         return sessionMapper.convertToDTO(updatedSession);
     }
 
+    public List<String> getDistinctTracksByEventId(String eventId) {
+        return sessionRepository.findDistinctTracksByEventId(eventId);
+    }
+
     private void enrichExistingSessionWithScheduleData(Session existingSession, SessionScheduleImportDataDTO scheduleData) {
         existingSession.setStart(scheduleData.getStart());
         existingSession.setEnd(scheduleData.getEnd());

@@ -145,6 +145,23 @@ public class SessionController {
                 sessionService.getSpeakersWithSessionsByEventId(eventId));
     }
 
+    @GetMapping("/event/{eventId}/tracks")
+    public ResponseEntity<List<String>> getAvailableTracksForEvent(
+            @PathVariable String eventId,
+            Authentication authentication) {
+
+        return executeWithEventAuthorization(eventId, authentication, () -> {
+            List<String> tracks = sessionService.getDistinctTracksByEventId(eventId);
+            return tracks;
+        });
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSession(@PathVariable String id) {
+        boolean deleted = sessionService.deleteSession(id);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
     private <T> ResponseEntity<T> executeWithEventAuthorization(String eventId, Authentication authentication,
                                                                 Supplier<T> operation) {
         if (authentication == null) {
@@ -196,11 +213,5 @@ public class SessionController {
         if (sessions == null || sessions.isEmpty()) {
             throw new IllegalArgumentException("No sessions data provided");
         }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSession(@PathVariable String id) {
-        boolean deleted = sessionService.deleteSession(id);
-        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

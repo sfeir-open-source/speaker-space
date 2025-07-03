@@ -11,6 +11,7 @@ public interface SessionRepository {
     Session save(Session session);
     Session findById(String id);
     List<Session> findByEventId(String eventId);
+    List<String> findDistinctTracksByEventId(String eventId);
     boolean delete(String id);
     boolean existsByIdAndEventId(String id, String eventId);
     Session findByIdAndEventId(String sessionId, String eventId);

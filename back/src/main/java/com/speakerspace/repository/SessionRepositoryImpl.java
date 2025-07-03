@@ -5,10 +5,7 @@ import com.speakerspace.model.session.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -53,6 +50,31 @@ public class SessionRepositoryImpl implements SessionRepository {
                     .map(doc -> doc.toObject(Session.class))
                     .collect(Collectors.toList());
         }, "Failed to find sessions by event ID");
+    }
+
+    public List<String> findDistinctTracksByEventId(String eventId) {
+        return executeFirestoreOperation(() -> {
+            try {
+                QuerySnapshot querySnapshot = firestore.collection(COLLECTION_NAME)
+                        .whereEqualTo("eventId", eventId)
+                        .get()
+                        .get();
+
+                Set<String> uniqueTracks = new HashSet<>();
+
+                for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                    String track = doc.getString("track");
+                    if (track != null && !track.trim().isEmpty()) {
+                        uniqueTracks.add(track.trim());
+                    }
+                }
+
+                return new ArrayList<>(uniqueTracks);
+
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException("Failed to fetch tracks", e);
+            }
+        }, "Failed to fetch distinct tracks for event");
     }
 
     @Override

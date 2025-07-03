@@ -42,4 +42,20 @@ export class SessionService {
       map(sessionData => this.convertSessionDates(sessionData))
     );
   }
+
+  getAvailableTracksForEvent(eventId: string): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${environment.apiUrl}/session/event/${eventId}/tracks`,
+      { withCredentials: true }
+    );
+  }
+
+  getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {
+    return this.http.get<any[]>(
+      `${environment.apiUrl}/session/event/${eventId}`,
+      { withCredentials: true }
+    ).pipe(
+      map(sessions => sessions.map(session => this.convertSessionDates(session)))
+    );
+  }
 }

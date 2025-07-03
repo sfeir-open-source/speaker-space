@@ -1,0 +1,168 @@
+<app-navbar-event-page
+  [eventUrl]="eventUrl"
+  [eventId]="eventId"
+  [eventName]="eventName"
+  [teamId]="teamId">
+</app-navbar-event-page>
+
+<div class="calendar-container">
+  <div class="calendar-header bg-white shadow-sm border-b border-gray-200 p-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-4">
+        <h1 class="text-2xl font-bold text-gray-900">
+          {{ eventName }} - Schedule
+        </h1>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div class="relative">
+          <input
+            type="text"
+            placeholder="Search sessions..."
+            (input)="onSearch($event)"
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+          <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button
+            type="button"
+            (click)="goToPreviousDay()"
+            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            (click)="goToToday()"
+            class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+            Today
+          </button>
+
+          <button
+            type="button"
+            (click)="goToNextDay()"
+            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
+
+        <input
+          type="date"
+          [value]="formatInputDate(selectedDate)"
+          (change)="onDateChange($event)"
+          class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+      </div>
+    </div>
+
+    <div class="mt-2">
+      <h2 class="text-lg font-medium text-gray-700">
+        {{ formatDisplayDate(selectedDate) }}
+      </h2>
+      @if (searchTerm) {
+        <p class="text-sm text-gray-500 mt-1">
+          Filtering sessions containing "{{ searchTerm }}"
+        </p>
+      }
+    </div>
+  </div>
+
+  @if (isLoading || isLoadingItems) {
+    <div class="flex justify-center items-center h-64">
+      <div class="text-gray-500">Loading schedule...</div>
+    </div>
+  }
+
+  @if (error) {
+    <div class="m-4 p-4 bg-red-50 border border-red-200 rounded-md">
+      <p class="text-red-600">{{ error }}</p>
+    </div>
+  }
+
+  @if (!isLoading && !isLoadingItems && !error) {
+    <div class="calendar-grid-container overflow-auto">
+      <div class="calendar-grid">
+        <div class="calendar-grid-header">
+          <div class="time-column-header bg-gray-50 border-r border-gray-200 p-3">
+            <span class="text-sm font-medium text-gray-500">Time</span>
+          </div>
+
+          @for (column of trackColumns; track column.name) {
+            <div class="track-column-header bg-gray-50 border-r border-gray-200 p-3 text-center">
+              <h3 class="text-sm font-medium text-gray-900">{{ column.name }}</h3>
+              <span class="text-xs text-gray-500">
+                {{ column.sessions.length }} session{{ column.sessions.length !== 1 ? 's' : '' }}
+              </span>
+            </div>
+          }
+        </div>
+
+        <div class="calendar-grid-body">
+          <div class="time-column">
+            @for (hour of displayHours; track hour) {
+              <div
+                class="time-slot border-r border-gray-200 p-2 text-right"
+                [style.height.px]="HOUR_HEIGHT">
+                <span class="text-sm text-gray-500">{{ hour }}</span>
+              </div>
+            }
+          </div>
+
+          @for (column of trackColumns; track column.name) {
+            <div class="track-column border-r border-gray-200 relative">
+              @for (hour of displayHours; track hour) {
+                <div
+                  class="hour-line border-b border-gray-100"
+                  [style.height.px]="HOUR_HEIGHT">
+                </div>
+              }
+
+              @for (calendarSession of column.sessions; track calendarSession.session.id) {
+                <div
+                  class="absolute left-1 right-1 cursor-pointer transition-all duration-200 hover:shadow-lg"
+                  [style.top.px]="calendarSession.topPosition"
+                  [style.height.px]="calendarSession.height"
+                  [ngClass]="getSessionCssClass(calendarSession.session)"
+                  (click)="onSessionClick(calendarSession.session)">
+
+                  <div class="session-content h-full p-2 rounded-md border-l-4">
+                    <div class="session-time text-xs font-medium mb-1">
+                      {{ formatSessionTime(calendarSession) }}
+                    </div>
+                    <div class="session-title text-sm font-medium line-clamp-2 mb-1">
+                      {{ calendarSession.session.title }}
+                    </div>
+                    @if (calendarSession.session.speakers && calendarSession.session.speakers.length > 0) {
+                      <div class="session-speakers text-xs text-gray-600 line-clamp-1">
+                        {{ getSpeakerNames(calendarSession.session) }}
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!isLoading && !isLoadingItems && !error && trackColumns.length === 0) {
+    <div class="flex flex-col items-center justify-center h-64 text-gray-500">
+      <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"/>
+      </svg>
+      <p class="text-lg font-medium">No sessions scheduled</p>
+      <p class="text-sm">for {{ formatDisplayDate(selectedDate) }}</p>
+      @if (searchTerm) {
+        <p class="text-sm mt-2">Try adjusting your search criteria</p>
+      }
+    </div>
+  }
+</div>

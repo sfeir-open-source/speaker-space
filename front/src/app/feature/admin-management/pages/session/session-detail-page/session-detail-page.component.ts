@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, HostListener} from '@angular/core';
 import {Category, Format, SessionImportData} from '../../../type/session/session';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {finalize, takeUntil} from 'rxjs';
@@ -18,13 +18,15 @@ import {
   Validators
 } from '@angular/forms';
 import {SessionScheduleUpdate} from '../../../type/session/schedule-json-data';
+import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 
 @Component({
     selector: 'app-session-detail-page',
   imports: [
     ButtonGreyComponent,
     NavbarSessionPageComponent,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    ButtonGreenActionsComponent
   ],
     templateUrl: './session-detail-page.component.html',
     styleUrl: './session-detail-page.component.scss'
@@ -38,6 +40,24 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
   isUpdatingSchedule: boolean = false;
   scheduleForm!: FormGroup;
   scheduleError: string | null = null;
+  showDurationDropdown: boolean = false;
+
+  availableTracks: string[] = [];
+  selectedDuration: number = 60;
+  durations = [
+    { label: '20 minutes', value: 20 },
+    { label: '30 minutes', value: 30 },
+    { label: '40 minutes', value: 40 },
+    { label: '45 minutes', value: 45 },
+    { label: '50 minutes', value: 50 },
+    { label: '1 hour', value: 60 },
+    { label: '1 hour 15 min', value: 75 },
+    { label: '1 hour 30 min', value: 90 },
+    { label: '1 hour 45 min', value: 105 },
+    { label: '1 hour 50 min', value: 110 },
+    { label: '2 hours', value: 120 },
+    { label: '2 hours 10 min', value: 130 },
+  ];
 
   constructor(
     route: ActivatedRoute,
@@ -54,36 +74,39 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     this.initializeScheduleForm();
   }
 
-  private initializeScheduleForm(): FormGroup {
-    return this.fb.group({
-      startDate: [''],
-      startTime: [''],
-      endDate: [''],
-      endTime: [''],
+  private initializeScheduleForm(): void {
+    this.scheduleForm = this.fb.group({
+      startDate: ['', Validators.required],
+      startTime: ['', Validators.required],
+      duration: [60, [Validators.required, Validators.min(15)]],
       track: ['', [Validators.maxLength(50)]]
     }, {
-      validators: [this.dateTimeValidator.bind(this)]
+      validators: [this.scheduleValidator.bind(this)]
     });
   }
 
-  private dateTimeValidator(control: AbstractControl): ValidationErrors | null {
+  private scheduleValidator(control: AbstractControl): ValidationErrors | null {
     const startDate = control.get('startDate')?.value;
     const startTime = control.get('startTime')?.value;
-    const endDate = control.get('endDate')?.value;
-    const endTime = control.get('endTime')?.value;
+    const duration = control.get('duration')?.value;
 
-    if (!startDate || !startTime || !endDate || !endTime) {
+    if (!startDate || !startTime || !duration) {
       return null;
     }
 
-    const start = this.combineDateAndTime(startDate, startTime);
-    const end = this.combineDateAndTime(endDate, endTime);
-
-    if (start && end && start >= end) {
-      return { dateTimeInvalid: true };
+    if (duration <= 0) {
+      return { invalidDuration: true };
     }
 
     return null;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.relative')) {
+      this.showDurationDropdown = false;
+    }
   }
 
   protected subscribeToRouteParams(): void {
@@ -102,21 +125,19 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
 
   protected loadDetailData(): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.sessionService.getSessionById(this.eventId, this.sessionId)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (session: SessionImportData) => {
-            this.session = session;
-            this.format = session.formats?.[0] || null;
-            this.category = session.categories?.[0] || null;
-            resolve();
-          },
-          error: (err) => {
-            console.error('Error loading session:', err);
-            this.error = 'Failed to load session data';
-            reject(err);
-          }
-        });
+      Promise.all([
+        this.sessionService.getSessionById(this.eventId, this.sessionId).toPromise(),
+        this.sessionService.getAvailableTracksForEvent(this.eventId).toPromise()
+      ]).then(([session, tracks]) => {
+        this.session = session!;
+        this.availableTracks = tracks || [];
+        this.format = session!.formats?.[0] || null;
+        this.category = session!.categories?.[0] || null;
+        resolve();
+      }).catch(err => {
+        this.error = 'Failed to load session data';
+        reject(err);
+      });
     });
   }
 
@@ -130,38 +151,89 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     if (!this.session || !this.scheduleForm) return;
 
     const formValues: any = {
-      track: this.session.track || ''
+      track: this.session.track || '',
+      startDate: this.getStartDateValue(),
+      startTime: this.getStartTimeValue()
     };
 
-    if (this.session.start) {
-      const startDate = new Date(this.session.start);
-      formValues.startDate = this.formatDateForInput(startDate);
-      formValues.startTime = this.formatTimeForInput(startDate);
-    }
+    if (this.session.start && this.session.end) {
+      try {
+        const startDate = new Date(this.session.start);
+        const endDate = new Date(this.session.end);
+        const durationMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
 
-    if (this.session.end) {
-      const endDate = new Date(this.session.end);
-      formValues.endDate = this.formatDateForInput(endDate);
-      formValues.endTime = this.formatTimeForInput(endDate);
+        if (durationMinutes > 0) {
+          formValues.duration = durationMinutes;
+          this.selectedDuration = durationMinutes;
+        }
+      } catch (error) {
+        console.warn('Error calculating duration:', error);
+        formValues.duration = 60;
+        this.selectedDuration = 60;
+      }
+    } else {
+      formValues.duration = 60;
+      this.selectedDuration = 60;
     }
 
     this.scheduleForm.patchValue(formValues);
   }
 
-  private formatDateForInput(date: Date): string {
+  getTrackPlaceholder(): string {
+    return this.session?.track || 'Enter room or track name';
+  }
+
+  getStartTimeValue(): string {
+    if (this.session?.start) {
+      try {
+        return this.formatTimeForInput(new Date(this.session.start));
+      } catch (error) {
+        console.warn('Error formatting start time:', error);
+        return '';
+      }
+    }
+    return '';
+  }
+
+  getStartDateValue(): string {
+    if (this.session?.start) {
+      try {
+        return this.formatDateForInput(new Date(this.session.start));
+      } catch (error) {
+        console.warn('Error formatting start date:', error);
+        return '';
+      }
+    }
+    return '';
+  }
+
+  public formatDateForInput(date: Date): string {
+    if (!date || isNaN(date.getTime())) {
+      return '';
+    }
     return date.toISOString().split('T')[0];
   }
 
-  private formatTimeForInput(date: Date): string {
+  public formatTimeForInput(date: Date): string {
+    if (!date || isNaN(date.getTime())) {
+      return '';
+    }
     return date.toTimeString().slice(0, 5);
+  }
+
+  onDurationSelect(duration: number): void {
+    this.selectedDuration = duration;
+    this.scheduleForm.patchValue({ duration: duration });
+  }
+
+  private calculateEndDate(startDate: Date, durationMinutes: number): Date {
+    return new Date(startDate.getTime() + (durationMinutes * 60 * 1000));
   }
 
   private combineDateAndTime(dateStr: string, timeStr: string): Date | null {
     if (!dateStr || !timeStr) return null;
-
     const combinedStr = `${dateStr}T${timeStr}:00`;
     const date = new Date(combinedStr);
-
     return isNaN(date.getTime()) ? null : date;
   }
 
@@ -171,18 +243,18 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     }
 
     const formValues = this.scheduleForm.value;
-
     const startDate = this.combineDateAndTime(formValues.startDate, formValues.startTime);
-    const endDate = this.combineDateAndTime(formValues.endDate, formValues.endTime);
 
-    if (startDate && endDate && startDate >= endDate) {
-      this.scheduleError = 'Start time must be before end time';
+    if (!startDate) {
+      this.scheduleError = 'Please provide a valid start date and time';
       return;
     }
 
+    const endDate = this.calculateEndDate(startDate, formValues.duration);
+
     const scheduleUpdate: SessionScheduleUpdate = {
-      start: startDate || undefined,
-      end: endDate || undefined,
+      start: startDate,
+      end: endDate,
       track: formValues.track?.trim() || undefined
     };
 
@@ -213,6 +285,23 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     if (this.scheduleForm) {
       this.scheduleForm.reset();
     }
+  }
+
+  get scheduleFormErrors(): string[] {
+    if (!this.scheduleForm) return [];
+
+    const errors: string[] = [];
+
+    if (this.scheduleForm.hasError('invalidDuration')) {
+      errors.push('Duration must be positive');
+    }
+
+    const trackControl = this.scheduleForm.get('track');
+    if (trackControl?.hasError('maxlength')) {
+      errors.push('Track name must be less than 50 characters');
+    }
+
+    return errors;
   }
 
   hasScheduleInfo(): boolean {

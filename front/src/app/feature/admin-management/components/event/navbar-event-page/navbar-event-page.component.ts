@@ -39,7 +39,6 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     private authService: AuthService,
     private userRoleService: UserRoleService,
     private eventService: EventService,
-    private teamService: TeamService
   ) {}
 
   ngOnInit(): void {
@@ -99,6 +98,11 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
           materialIcon: 'group',
           route: `/event-speakers/${this.eventId}`,
           handler: this.speaker.bind(this)
+        },{
+          id: 'calendar',
+          label: 'Schedule',
+          materialIcon: 'calendar_today',
+          handler: this.calendar.bind(this)
         },
         {
           id: 'settings',
@@ -141,6 +145,9 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
       case currentRoute.includes('speakers'):
         this.activePage = 'speakers';
         break;
+      case currentRoute.includes('calendar'):
+        this.activePage = 'calendar';
+        break;
       case currentRoute.includes('event-detail'):
         this.activePage = 'settings';
         break;
@@ -167,6 +174,14 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     this.router.navigate(['/event-speakers', this.eventId]);
+  }
+
+  private calendar(): void {
+    if (!this.eventId) {
+      return;
+    }
+
+    this.router.navigate(['/event-calendar', this.eventId]);
   }
 
   private settings(): void {
