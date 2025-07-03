@@ -44,20 +44,19 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
 
   availableTracks: string[] = [];
   selectedDuration: number = 60;
-  durations = [
-    { label: '20 minutes', value: 20 },
-    { label: '30 minutes', value: 30 },
-    { label: '40 minutes', value: 40 },
-    { label: '45 minutes', value: 45 },
-    { label: '50 minutes', value: 50 },
-    { label: '1 hour', value: 60 },
-    { label: '1 hour 15 min', value: 75 },
-    { label: '1 hour 30 min', value: 90 },
-    { label: '1 hour 45 min', value: 105 },
-    { label: '1 hour 50 min', value: 110 },
-    { label: '2 hours', value: 120 },
-    { label: '2 hours 10 min', value: 130 },
-  ];
+  durations = [20, 30, 40, 45, 50, 60, 75, 90, 105, 110, 120, 130].map(val => {
+    const hours = Math.floor(val / 60);
+    const minutes = val % 60;
+    let label = '';
+    if (hours > 0) {
+      label += `${hours} hour${hours > 1 ? 's' : ''}`;
+    }
+    if (minutes > 0) {
+      if (hours > 0) label += ' ';
+      label += `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    }
+    return { label, value: val };
+  });
 
   constructor(
     route: ActivatedRoute,
@@ -177,10 +176,6 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     }
 
     this.scheduleForm.patchValue(formValues);
-  }
-
-  getTrackPlaceholder(): string {
-    return this.session?.track || 'Enter room or track name';
   }
 
   getStartTimeValue(): string {

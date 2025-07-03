@@ -354,4 +354,13 @@ public class SessionService {
         }
         return sessionRepository.delete(id);
     }
+
+    public List<SessionDTO> getSessionsWithScheduleByEventId(String eventId) {
+        List<Session> sessions = sessionRepository.findByEventId(eventId);
+        return sessions.stream()
+                .map(sessionMapper::convertToDTO)
+                .filter(Objects::nonNull)
+                .filter(session -> session.getStart() != null && session.getEnd() != null)
+                .collect(Collectors.toList());
+    }
 }

@@ -1,51 +1,39 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {NavbarEventPageComponent} from "../../../components/event/navbar-event-page/navbar-event-page.component";
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { finalize, takeUntil, forkJoin } from 'rxjs';
 import {BaseListComponent} from '../../../components/class/base-list-component';
-import {SessionImportData} from '../../../type/session/session';
-import {finalize, takeUntil} from 'rxjs';
-import {ActivatedRoute, Router} from '@angular/router';
-import {SessionService} from '../../../services/sessions/session.service';
+import {
+  CalendarDayData,
+  CalendarService,
+  CalendarSession,
+  CalendarSessionData
+} from '../../../services/calendar/calendar.service';
 import {EventService} from '../../../services/event/event.service';
-import {NgClass} from '@angular/common';
 import {SpeakerService} from '../../../services/speaker/speaker.service';
 import {EventDataService} from '../../../services/event/event-data.service';
-
-interface CalendarSession {
-  session: SessionImportData;
-  startTime: Date;
-  endTime: Date;
-  duration: number;
-  track: string;
-  topPosition: number;
-  height: number;
-}
-
-interface TrackColumn {
-  name: string;
-  sessions: CalendarSession[];
-}
+import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
+import {NgClass} from '@angular/common';
 
 @Component({
   selector: 'app-calendar-event-page',
+  templateUrl: './calendar-event-page.component.html',
   imports: [
     NavbarEventPageComponent,
     NgClass
   ],
-  templateUrl: './calendar-event-page.component.html',
-  styleUrl: './calendar-event-page.component.scss'
+  styleUrls: ['./calendar-event-page.component.css']
 })
-export class CalendarEventPageComponent extends BaseListComponent<SessionImportData> implements OnInit, OnDestroy {
+export class CalendarEventPageComponent extends BaseListComponent<CalendarSessionData> implements OnInit, OnDestroy {
 
-  event: Event | null = null;
   selectedDate: Date = new Date();
-  sessions: SessionImportData[] = [];
-  trackColumns: TrackColumn[] = [];
+  sessions: CalendarSessionData[] = [];
+  tracks: string[] = [];
+  calendarData: CalendarDayData | null = null;
+  eventDateRange: { start: Date; end: Date } | null = null;
 
-  readonly HOUR_HEIGHT = 60;
-  readonly START_HOUR = 8;
-  readonly END_HOUR = 20;
-
-  private sessionService: SessionService;
+  readonly HOUR_HEIGHT : number = 100;
+  readonly START_HOUR : number = 9;
+  readonly END_HOUR : number = 20;
 
   constructor(
     route: ActivatedRoute,
@@ -53,10 +41,9 @@ export class CalendarEventPageComponent extends BaseListComponent<SessionImportD
     eventService: EventService,
     speakerService: SpeakerService,
     eventDataService: EventDataService,
-    sessionService: SessionService
+    private calendarService: CalendarService
   ) {
     super(route, router, eventService, speakerService, eventDataService);
-    this.sessionService = sessionService;
   }
 
   override ngOnInit(): void {
@@ -71,27 +58,36 @@ export class CalendarEventPageComponent extends BaseListComponent<SessionImportD
     if (!this.eventId) return;
 
     this.isLoadingItems = true;
-    this.sessionService.getSessionsByEventId(this.eventId)
-      .pipe(
-        finalize(() => this.isLoadingItems = false),
-        takeUntil(this.destroy$)
-      )
-      .subscribe({
-        next: (sessions: SessionImportData[]) => {
-          this.sessions = sessions || [];
-          this.items = this.sessions;
-          this.filteredItems = this.sessions;
-          this.totalItems = this.sessions.length;
-          this.buildCalendarData();
-        },
-        error: (err) => {
-          console.error('Error loading sessions:', err);
-          this.error = 'Failed to load sessions';
+
+    forkJoin({
+      sessions: this.calendarService.getCalendarSessions(this.eventId),
+      tracks: this.calendarService.getEventTracks(this.eventId)
+    }).pipe(
+      finalize(() => this.isLoadingItems = false),
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: ({sessions, tracks}) => {
+        this.sessions = sessions || [];
+        this.tracks = tracks || [];
+        this.items = this.sessions;
+        this.filteredItems = this.sessions;
+        this.totalItems = this.sessions.length;
+
+        this.eventDateRange = this.calendarService.getEventDateRange(this.sessions);
+        if (this.eventDateRange) {
+          this.selectedDate = new Date(this.eventDateRange.start);
         }
-      });
+
+        this.buildCalendarData();
+      },
+      error: (err) => {
+        console.error('Error loading calendar data:', err);
+        this.error = 'Failed to load calendar data';
+      }
+    });
   }
 
-  override getItemId(item: SessionImportData): string {
+  override getItemId(item: CalendarSessionData): string {
     return item.id || '';
   }
 
@@ -101,7 +97,7 @@ export class CalendarEventPageComponent extends BaseListComponent<SessionImportD
     } else {
       this.filteredItems = this.sessions.filter(session =>
         session.title.toLowerCase().includes(this.searchTerm) ||
-        session.abstractText.toLowerCase().includes(this.searchTerm) ||
+        (session.abstractText && session.abstractText.toLowerCase().includes(this.searchTerm)) ||
         (session.speakers && session.speakers.some(speaker =>
           speaker.name.toLowerCase().includes(this.searchTerm)
         ))
@@ -116,88 +112,11 @@ export class CalendarEventPageComponent extends BaseListComponent<SessionImportD
   }
 
   private buildCalendarData(): void {
-    const sessionsForDay = this.getSessionsForDate(this.selectedDate);
-    const tracks = this.getUniqueTracksFromSessions(sessionsForDay);
-
-    this.trackColumns = tracks.map(track => ({
-      name: track,
-      sessions: this.getCalendarSessionsForTrack(sessionsForDay, track)
-    }));
-  }
-
-  private getSessionsForDate(date: Date): SessionImportData[] {
-    const targetDate = this.formatDateOnly(date);
-
-    return this.filteredItems.filter(session => {
-      if (!session.start) return false;
-
-      const sessionDate = this.formatDateOnly(new Date(session.start));
-      return sessionDate === targetDate;
-    });
-  }
-
-  private getUniqueTracksFromSessions(sessions: SessionImportData[]): string[] {
-    const tracks = new Set<string>();
-
-    sessions.forEach(session => {
-      const track = session.track || 'No Track';
-      tracks.add(track);
-    });
-
-    return Array.from(tracks).sort();
-  }
-
-  private getCalendarSessionsForTrack(sessions: SessionImportData[], track: string): CalendarSession[] {
-    const trackSessions = sessions.filter(session =>
-      (session.track || 'No Track') === track &&
-      session.start &&
-      session.end
+    this.calendarData = this.calendarService.buildCalendarData(
+      this.filteredItems,
+      this.selectedDate,
+      this.tracks
     );
-
-    return trackSessions.map(session => {
-      const startTime = new Date(session.start!);
-      const endTime = new Date(session.end!);
-      const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-
-      return {
-        session,
-        startTime,
-        endTime,
-        duration,
-        track,
-        topPosition: this.calculateTopPosition(startTime),
-        height: this.calculateHeight(duration)
-      };
-    }).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-  }
-
-  private calculateTopPosition(startTime: Date): number {
-    const hours = startTime.getHours();
-    const minutes = startTime.getMinutes();
-    const totalMinutes = (hours - this.START_HOUR) * 60 + minutes;
-    return (totalMinutes / 60) * this.HOUR_HEIGHT;
-  }
-
-  private calculateHeight(durationMinutes: number): number {
-    return Math.max((durationMinutes / 60) * this.HOUR_HEIGHT, 30);
-  }
-
-  private formatDateOnly(date: Date): string {
-    return date.toISOString().split('T')[0];
-  }
-
-  get displayHours(): string[] {
-    const hours: string[] = [];
-    for (let hour = this.START_HOUR; hour <= this.END_HOUR; hour++) {
-      hours.push(`${hour.toString().padStart(2, '0')}:00`);
-    }
-    return hours;
-  }
-
-  onDateChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.selectedDate = new Date(target.value);
-    this.buildCalendarData();
   }
 
   goToPreviousDay(): void {
@@ -214,57 +133,74 @@ export class CalendarEventPageComponent extends BaseListComponent<SessionImportD
     this.buildCalendarData();
   }
 
-  goToToday(): void {
-    this.selectedDate = new Date();
-    this.buildCalendarData();
+  goToEventStart(): void {
+    if (this.eventDateRange) {
+      this.selectedDate = new Date(this.eventDateRange.start);
+      this.buildCalendarData();
+    }
+  }
+
+  onSessionClick(session: CalendarSessionData): void {
+    this.openItemDetail(session.id);
+  }
+
+  get displayHours(): string[] {
+    const hours: string[] = [];
+    for (let hour: number = this.START_HOUR; hour <= this.END_HOUR; hour++) {
+      hours.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+    return hours;
   }
 
   formatDisplayDate(date: Date): string {
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-EN', {
       weekday: 'long',
-      year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
   }
 
-  formatInputDate(date: Date): string {
-    return this.formatDateOnly(date);
-  }
-
   formatSessionTime(session: CalendarSession): string {
-    const start = session.startTime.toLocaleTimeString('en-US', {
+    const start : string = session.startTime.toLocaleTimeString('en-EN', {
       hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+      minute: '2-digit'
     });
-    const end = session.endTime.toLocaleTimeString('en-US', {
+    const end : string = session.endTime.toLocaleTimeString('en-EN', {
       hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+      minute: '2-digit'
     });
     return `${start} - ${end}`;
   }
 
-  onSessionClick(session: SessionImportData): void {
-    this.openItemDetail(session.id || '');
+  getSpeakerNames(session: CalendarSessionData): string {
+    if (!session.speakers || session.speakers.length === 0) {
+      return '';
+    }
+    return session.speakers.map(speaker => speaker.name).join(', ');
   }
 
-  getSessionCssClass(session: SessionImportData): string {
+  getSessionCssClass(session: CalendarSessionData): string {
     const baseClass = 'calendar-session';
 
     if (session.categories && session.categories.length > 0) {
-      const category = session.categories[0].name.toLowerCase().replace(/\s+/g, '-');
+      const category: string = session.categories[0].name.toLowerCase().replace(/\s+/g, '-');
       return `${baseClass} ${baseClass}--${category}`;
     }
 
     return baseClass;
   }
 
-  getSpeakerNames(session: SessionImportData): string {
-    if (!session.speakers || session.speakers.length === 0) {
-      return '';
-    }
-    return session.speakers.map(speaker => speaker.name).join(', ');
+  canGoToPreviousDay(): boolean {
+    if (!this.eventDateRange) return true;
+    const previousDay = new Date(this.selectedDate);
+    previousDay.setDate(previousDay.getDate() - 1);
+    return previousDay >= this.eventDateRange.start;
+  }
+
+  canGoToNextDay(): boolean {
+    if (!this.eventDateRange) return true;
+    const nextDay = new Date(this.selectedDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    return nextDay <= this.eventDateRange.end;
   }
 }

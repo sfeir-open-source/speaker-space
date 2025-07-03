@@ -156,6 +156,18 @@ public class SessionController {
         });
     }
 
+    @GetMapping("/event/{eventId}/calendar")
+    public ResponseEntity<List<SessionDTO>> getSessionsForCalendar(
+            @PathVariable String eventId,
+            Authentication authentication) {
+
+        return executeWithEventAuthorization(eventId, authentication, () -> {
+            List<SessionDTO> sessions = sessionService.getSessionsWithScheduleByEventId(eventId);
+            sessions.sort(Comparator.comparing(SessionDTO::getStart));
+            return sessions;
+        });
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSession(@PathVariable String id) {
         boolean deleted = sessionService.deleteSession(id);

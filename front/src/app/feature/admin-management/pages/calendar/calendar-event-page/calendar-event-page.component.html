@@ -5,32 +5,42 @@
   [teamId]="teamId">
 </app-navbar-event-page>
 
-<div class="calendar-container">
-  <div class="calendar-header bg-white shadow-sm border-b border-gray-200 p-4">
+<main class="calendar-container bg-gray-50 min-h-screen">
+  <header class="calendar-header bg-white shadow-sm border-b border-gray-200 p-4 pb-8">
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-4">
-        <h1 class="text-2xl font-bold text-gray-900">
-          {{ eventName }} - Schedule
+        <h1 class="text-2xl font-medium text-gray-900">
+          {{ eventName }} - Planning
         </h1>
+        @if (eventDateRange) {
+          <span class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+            {{ formatDisplayDate(eventDateRange.start) }} - {{ formatDisplayDate(eventDateRange.end) }}
+          </span>
+        }
       </div>
 
       <div class="flex items-center space-x-4">
         <div class="relative">
           <input
             type="text"
-            placeholder="Search sessions..."
+            placeholder="Search sessions ..."
             (input)="onSearch($event)"
-            class="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+            class="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm w-64"
+            aria-label="Search sessions">
           <svg class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
         </div>
 
-        <div class="flex items-center space-x-2">
+        <nav class="flex items-center space-x-2" aria-label="Navigation des jours">
           <button
             type="button"
             (click)="goToPreviousDay()"
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md">
+            [disabled]="!canGoToPreviousDay()"
+            [class.opacity-50]="!canGoToPreviousDay()"
+            [class.cursor-not-allowed]="!canGoToPreviousDay()"
+            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md disabled:hover:bg-transparent disabled:hover:text-gray-400"
+            aria-label="Jour précédent">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
@@ -38,84 +48,76 @@
 
           <button
             type="button"
-            (click)="goToToday()"
+            (click)="goToEventStart()"
             class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-            Today
+            {{ formatDisplayDate(selectedDate) }}
           </button>
 
           <button
             type="button"
             (click)="goToNextDay()"
-            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md">
+            [disabled]="!canGoToNextDay()"
+            [class.opacity-50]="!canGoToNextDay()"
+            [class.cursor-not-allowed]="!canGoToNextDay()"
+            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md disabled:hover:bg-transparent disabled:hover:text-gray-400"
+            aria-label="Jour suivant">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
           </button>
-        </div>
-
-        <input
-          type="date"
-          [value]="formatInputDate(selectedDate)"
-          (change)="onDateChange($event)"
-          class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </nav>
       </div>
     </div>
-
-    <div class="mt-2">
-      <h2 class="text-lg font-medium text-gray-700">
-        {{ formatDisplayDate(selectedDate) }}
-      </h2>
-      @if (searchTerm) {
-        <p class="text-sm text-gray-500 mt-1">
-          Filtering sessions containing "{{ searchTerm }}"
-        </p>
-      }
-    </div>
-  </div>
+  </header>
 
   @if (isLoading || isLoadingItems) {
-    <div class="flex justify-center items-center h-64">
-      <div class="text-gray-500">Loading schedule...</div>
+    <div class="flex justify-center items-center h-32 px-4">
+      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <span class="ml-2 text-gray-600">Loading calendar...</span>
     </div>
   }
 
   @if (error) {
     <div class="m-4 p-4 bg-red-50 border border-red-200 rounded-md">
-      <p class="text-red-600">{{ error }}</p>
+      <div class="flex">
+        <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="ml-3 text-red-600">{{ error }}</p>
+      </div>
     </div>
   }
 
-  @if (!isLoading && !isLoadingItems && !error) {
-    <div class="calendar-grid-container overflow-auto">
-      <div class="calendar-grid">
-        <div class="calendar-grid-header">
-          <div class="time-column-header bg-gray-50 border-r border-gray-200 p-3">
-            <span class="text-sm font-medium text-gray-500">Time</span>
+  @if (!isLoading && !isLoadingItems && !error && calendarData) {
+    <div class="calendar-grid-container overflow-auto bg-white m-4 rounded-lg shadow">
+      <div class="calendar-grid min-w-max">
+        <header class="calendar-grid-header flex border-b border-gray-200 sticky top-0 bg-white z-10">
+          <div class="time-column-header w-20 bg-gray-50 border-r border-gray-200 p-3 flex-shrink-0">
           </div>
 
-          @for (column of trackColumns; track column.name) {
-            <div class="track-column-header bg-gray-50 border-r border-gray-200 p-3 text-center">
-              <h3 class="text-sm font-medium text-gray-900">{{ column.name }}</h3>
+          @for (track of calendarData.tracks; track track.name) {
+            <div class="track-column-header min-w-55 bg-gray-50 border-r border-gray-200 p-3 text-center flex-shrink-0">
+              <h3 class="text-sm font-medium text-gray-900">{{ track.name }}</h3>
               <span class="text-xs text-gray-500">
-                {{ column.sessions.length }} session{{ column.sessions.length !== 1 ? 's' : '' }}
+                {{ track.sessions.length }} session{{ track.sessions.length !== 1 ? 's' : '' }}
               </span>
             </div>
           }
-        </div>
+        </header>
 
-        <div class="calendar-grid-body">
-          <div class="time-column">
+        <div class="calendar-grid-body flex">
+          <div class="time-column w-20 border-r border-gray-200 flex-shrink-0">
             @for (hour of displayHours; track hour) {
               <div
-                class="time-slot border-r border-gray-200 p-2 text-right"
+                class="time-slot p-2 text-right border-b border-gray-100"
                 [style.height.px]="HOUR_HEIGHT">
                 <span class="text-sm text-gray-500">{{ hour }}</span>
               </div>
             }
           </div>
 
-          @for (column of trackColumns; track column.name) {
-            <div class="track-column border-r border-gray-200 relative">
+          @for (track of calendarData.tracks; track track.name) {
+            <div class="track-column min-w-55 border-r border-gray-200 relative flex-shrink-0">
               @for (hour of displayHours; track hour) {
                 <div
                   class="hour-line border-b border-gray-100"
@@ -123,28 +125,33 @@
                 </div>
               }
 
-              @for (calendarSession of column.sessions; track calendarSession.session.id) {
-                <div
-                  class="absolute left-1 right-1 cursor-pointer transition-all duration-200 hover:shadow-lg"
+              @for (calendarSession of track.sessions; track calendarSession.session.id) {
+                <article
+                  class="absolute left-1 right-1 cursor-pointer transition-all duration-200 hover:shadow-lg hover:z-20"
                   [style.top.px]="calendarSession.topPosition"
                   [style.height.px]="calendarSession.height"
                   [ngClass]="getSessionCssClass(calendarSession.session)"
-                  (click)="onSessionClick(calendarSession.session)">
+                  (click)="onSessionClick(calendarSession.session)"
+                  (keydown.enter)="onSessionClick(calendarSession.session)"
+                  (keydown.space)="onSessionClick(calendarSession.session)"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-label]="'Session: ' + calendarSession.session.title">
 
-                  <div class="session-content h-full p-2 rounded-md border-l-4">
-                    <div class="session-time text-xs font-medium mb-1">
+                  <div class="session-content h-full p-2 rounded-md border-l-4 bg-white shadow-sm">
+                    <time class="session-time text-xs font-medium text-gray-600 block mb-1">
                       {{ formatSessionTime(calendarSession) }}
-                    </div>
-                    <div class="session-title text-sm font-medium line-clamp-2 mb-1">
+                    </time>
+                    <h4 class="session-title text-sm font-medium line-clamp-2 mb-1 text-gray-900">
                       {{ calendarSession.session.title }}
-                    </div>
+                    </h4>
                     @if (calendarSession.session.speakers && calendarSession.session.speakers.length > 0) {
-                      <div class="session-speakers text-xs text-gray-600 line-clamp-1">
+                      <p class="session-speakers text-xs text-gray-600 line-clamp-1">
                         {{ getSpeakerNames(calendarSession.session) }}
-                      </div>
+                      </p>
                     }
                   </div>
-                </div>
+                </article>
               }
             </div>
           }
@@ -153,16 +160,25 @@
     </div>
   }
 
-  @if (!isLoading && !isLoadingItems && !error && trackColumns.length === 0) {
-    <div class="flex flex-col items-center justify-center h-64 text-gray-500">
-      <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z"/>
+  @if (!isLoading && !isLoadingItems && !error && (!calendarData )) {
+    <div class="flex flex-col items-center justify-center h-64 text-gray-500 bg-white m-4 rounded-lg shadow">
+      <svg class="w-12 h-12 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"/>
       </svg>
-      <p class="text-lg font-medium">No sessions scheduled</p>
-      <p class="text-sm">for {{ formatDisplayDate(selectedDate) }}</p>
+      <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune session programmée</h3>
+      <p class="text-sm text-gray-500">pour le {{ formatDisplayDate(selectedDate) }}</p>
       @if (searchTerm) {
-        <p class="text-sm mt-2">Try adjusting your search criteria</p>
+        <p class="text-sm mt-2 text-gray-400">Essayez d'ajuster vos critères de recherche</p>
+      }
+      @if (eventDateRange) {
+        <button
+          type="button"
+          (click)="goToEventStart()"
+          class="mt-4 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100">
+          Aller au premier jour de l'événement
+        </button>
       }
     </div>
   }
-</div>
+</main>
+

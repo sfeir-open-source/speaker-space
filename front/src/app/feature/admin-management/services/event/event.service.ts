@@ -141,6 +141,7 @@ export class EventService {
     return this.http.get<Event[]>(`${environment.apiUrl}/event/by-team/${teamId}`, { withCredentials: true })
       .pipe(catchError(this.handleError('Error getting events by team')));
   }
+
   deleteEvent(id: string): Observable<{message: string, eventId: string}> {
     return this.http.delete<{message: string, eventId: string}>(
       `${environment.apiUrl}/event/${id}`,

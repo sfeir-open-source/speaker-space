@@ -104,18 +104,96 @@
         </div>
 
         <div class="p-6 border-b border-gray-200">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-base font-medium text-gray-900">Schedule</h3>
+          <div class="items-center justify-between mb-4">
+            <h4 class="font-base font-medium text-gray-900 mb-4">Schedule</h4>
 
-            @if (isEditingSchedule) {
-              <div class="flex gap-2">
+            @if (!isEditingSchedule && hasScheduleInfo()) {
+              <p class="text-sm text-gray-700" [innerHTML]="formatCompleteSessionInfo()"></p>
+            } @else if (!isEditingSchedule) {
+              <p class="text-sm text-gray-500 italic">Schedule information not yet available</p>
+            }
+          </div>
+
+          @if (isEditingSchedule) {
+            <form [formGroup]="scheduleForm" class="space-y-4">
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div>
+                  <label for="start-date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                  <input
+                    id="start-date"
+                    type="date"
+                    formControlName="startDate"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Start Time & Duration</label>
+                  <div class="flex">
+                    <input
+                      type="time"
+                      formControlName="startTime"
+                      class="w-1/2 px-3 py-2 border border-gray-300 rounded-l-md text-sm focus:ring-blue-500 focus:border-blue-500" />
+
+                    <div class="relative w-1/2">
+                      <button
+                        type="button"
+                        class="w-full inline-flex justify-between items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-100 text-sm hover:bg-gray-200"
+                        (click)="showDurationDropdown = !showDurationDropdown">
+                        {{ selectedDuration }} min
+                        <svg class="w-4 h-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </button>
+
+                      @if (showDurationDropdown) {
+                        <ul class="absolute z-10 bg-white border rounded-md shadow-md w-full max-h-60 overflow-y-auto">
+                          @for (duration of durations; track duration.value) {
+                            <li>
+                              <button type="button" (click)="onDurationSelect(duration.value); showDurationDropdown = false"
+                                      class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
+                                {{ duration.label }}
+                              </button>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label for="track" class="block text-sm font-medium text-gray-700 mb-2">Track</label>
+                  @if(availableTracks.length > 0){
+                    <ng-container >
+                      <select
+                        id="track"
+                        formControlName="track"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Select a track...</option>
+                        @for (track of availableTracks; track track) {
+                          <option [value]="track">{{ track }}</option>
+                        }
+                      </select>
+                    </ng-container>
+                  }@else{
+                    <ng-template>
+                      <input
+                        type="text"
+                        formControlName="track"
+                        placeholder="Enter track name"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </ng-template>
+                  }
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-4">
                 <app-button-grey
                   type="button"
                   (click)="onCancelScheduleEdit()"
                   customTextClass="text-gray-600 hover:text-gray-600"
-                  class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+                  class="rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 shadow-sm">
                   Cancel
                 </app-button-grey>
+
                 <app-button-green-actions
                   type="button"
                   (click)="onSaveSchedule()"
@@ -127,108 +205,8 @@
                   }
                 </app-button-green-actions>
               </div>
-            }
-
-            @if (scheduleError) {
-              <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p class="text-sm text-red-600">{{ scheduleError }}</p>
-              </div>
-            }
-
-            @if (scheduleFormErrors.length > 0) {
-              <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                @for (error of scheduleFormErrors; track error) {
-                  <p class="text-sm text-red-600">{{ error }}</p>
-                }
-              </div>
-            }
-
-            @if (isEditingSchedule) {
-              <form [formGroup]="scheduleForm" class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <label for="start-date" class="block text-sm font-medium text-gray-700">Start Date</label>
-                    <input
-                      id="start-date"
-                      type="date"
-                      formControlName="startDate"
-                      [placeholder]="getStartDateValue()"
-                      class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Start Time & Duration</label>
-                    <div class="flex">
-                      <input
-                        type="time"
-                        formControlName="startTime"
-                        [placeholder]="getStartTimeValue()"
-                        class="rounded-none rounded-s-lg bg-gray-50 border text-gray-900 leading-none focus:ring-blue-500 focus:border-blue-500 block flex-1 w-full text-sm border-gray-300 p-2.5">
-
-                      <div class="relative">
-                        <button
-                          type="button"
-                          class="border-s-0 shrink-0 z-10 inline-flex items-center py-2.5 px-4 text-sm font-medium text-center text-gray-900 bg-gray-100 border border-gray-300 rounded-e-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-100"
-                          (click)="showDurationDropdown = !showDurationDropdown">
-                          {{ selectedDuration }} min
-                          <svg class="w-2.5 h-2.5 ms-2.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
-                          </svg>
-                        </button>
-
-                        @if (showDurationDropdown) {
-                          <div class="absolute top-full right-0 z-20 bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-36 border">
-                            <ul class="py-2 text-sm text-gray-700">
-                              @for (duration of durations; track duration.value) {
-                                <li>
-                                  <button
-                                    type="button"
-                                    (click)="onDurationSelect(duration.value); showDurationDropdown = false"
-                                    class="inline-flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    {{ duration.label }}
-                                  </button>
-                                </li>
-                              }
-                            </ul>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="space-y-2">
-                  <label for="track-select" class="block text-sm font-medium text-gray-700">Track/Room</label>
-                  @if (availableTracks.length > 0) {
-                    <select
-                      id="track-select"
-                      formControlName="track"
-                      class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                      <option value="">Select a track...</option>
-                      @for (track of availableTracks; track track) {
-                        <option [value]="track">{{ track }}</option>
-                      }
-                    </select>
-                  } @else {
-                    <input
-                      id="track-input"
-                      type="text"
-                      formControlName="track"
-                      [placeholder]="getTrackPlaceholder()"
-                      class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
-                  }
-                </div>
-              </form>
-            } @else {
-              @if(hasScheduleInfo()) {
-                <p class="text-sm text-gray-700" [innerHTML]="formatCompleteSessionInfo()"></p>
-              } @else {
-                <p class="text-sm text-gray-500 italic">
-                  Schedule information not yet available
-                </p>
-              }
-            }
-          </div>
+            </form>
+          }
         </div>
       </div>
     }
