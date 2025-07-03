@@ -2,17 +2,13 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, takeUntil, forkJoin } from 'rxjs';
 import {BaseListComponent} from '../../../components/class/base-list-component';
-import {
-  CalendarDayData,
-  CalendarService,
-  CalendarSession,
-  CalendarSessionData
-} from '../../../services/calendar/calendar.service';
+import {CalendarService} from '../../../services/calendar/calendar.service';
 import {EventService} from '../../../services/event/event.service';
 import {SpeakerService} from '../../../services/speaker/speaker.service';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import {NgClass} from '@angular/common';
+import {CalendarDayData, CalendarSession, CalendarSessionData} from '../../../type/calendar/calendar';
 
 @Component({
   selector: 'app-calendar-event-page',
@@ -31,7 +27,7 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
   calendarData: CalendarDayData | null = null;
   eventDateRange: { start: Date; end: Date } | null = null;
 
-  readonly HOUR_HEIGHT : number = 100;
+  readonly HOUR_HEIGHT : number = 120;
   readonly START_HOUR : number = 9;
   readonly END_HOUR : number = 20;
 

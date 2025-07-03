@@ -1,6 +1,10 @@
 @charset "UTF-8";
 @use "tailwindcss" as *;
 
+@theme {
+  --color-action: #045d5e;
+}
+
 :root {
   font-family: 'Roboto', sans-serif;
   padding: 0;

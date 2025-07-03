@@ -5,8 +5,8 @@
   [teamId]="teamId">
 </app-navbar-event-page>
 
-<main class="calendar-container bg-gray-50 min-h-screen">
-  <header class="calendar-header bg-white shadow-sm border-b border-gray-200 p-4 pb-8">
+<main class="bg-gray-50 min-h-screen">
+  <header class="bg-white shadow-sm border-b border-gray-200 p-4 pb-8">
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-4">
         <h1 class="text-2xl font-medium text-gray-900">
@@ -89,14 +89,14 @@
   }
 
   @if (!isLoading && !isLoadingItems && !error && calendarData) {
-    <div class="calendar-grid-container overflow-auto bg-white m-4 rounded-lg shadow">
-      <div class="calendar-grid min-w-max">
-        <header class="calendar-grid-header flex border-b border-gray-200 sticky top-0 bg-white z-10">
-          <div class="time-column-header w-20 bg-gray-50 border-r border-gray-200 p-3 flex-shrink-0">
+    <div class="overflow-auto bg-white m-4 rounded-lg shadow">
+      <div class="min-w-max">
+        <header class="flex border-b border-gray-200 sticky top-0 bg-white z-10">
+          <div class="w-20 bg-gray-50 border-r border-gray-200 p-3 flex-shrink-0">
           </div>
 
           @for (track of calendarData.tracks; track track.name) {
-            <div class="track-column-header min-w-55 bg-gray-50 border-r border-gray-200 p-3 text-center flex-shrink-0">
+            <div class="min-w-55 bg-gray-50 border-r border-gray-200 p-3 text-center flex-shrink-0">
               <h3 class="text-sm font-medium text-gray-900">{{ track.name }}</h3>
               <span class="text-xs text-gray-500">
                 {{ track.sessions.length }} session{{ track.sessions.length !== 1 ? 's' : '' }}
@@ -105,8 +105,8 @@
           }
         </header>
 
-        <div class="calendar-grid-body flex">
-          <div class="time-column w-20 border-r border-gray-200 flex-shrink-0">
+        <div class="flex">
+          <div class="w-20 border-r border-gray-200 flex-shrink-0">
             @for (hour of displayHours; track hour) {
               <div
                 class="time-slot p-2 text-right border-b border-gray-100"
@@ -120,7 +120,7 @@
             <div class="track-column min-w-55 border-r border-gray-200 relative flex-shrink-0">
               @for (hour of displayHours; track hour) {
                 <div
-                  class="hour-line border-b border-gray-100"
+                  class="border-b border-gray-100"
                   [style.height.px]="HOUR_HEIGHT">
                 </div>
               }
@@ -138,15 +138,15 @@
                   role="button"
                   [attr.aria-label]="'Session: ' + calendarSession.session.title">
 
-                  <div class="session-content h-full p-2 rounded-md border-l-4 bg-white shadow-sm">
-                    <time class="session-time text-xs font-medium text-gray-600 block mb-1">
+                  <div class="h-full pl-2 rounded-md border-l-4 border-action bg-white shadow-sm">
+                    <time class="text-xs font-medium text-action block">
                       {{ formatSessionTime(calendarSession) }}
                     </time>
-                    <h4 class="session-title text-sm font-medium line-clamp-2 mb-1 text-gray-900">
+                    <h4 class="text-sm font-medium line-clamp-1 text-gray-900">
                       {{ calendarSession.session.title }}
                     </h4>
-                    @if (calendarSession.session.speakers && calendarSession.session.speakers.length > 0) {
-                      <p class="session-speakers text-xs text-gray-600 line-clamp-1">
+                    @if ((calendarSession.session.speakers && calendarSession.session.speakers.length > 0) && calendarSession.height > 60) {
+                      <p class="text-xs text-gray-600 line-clamp-1">
                         {{ getSpeakerNames(calendarSession.session) }}
                       </p>
                     }
@@ -157,27 +157,6 @@
           }
         </div>
       </div>
-    </div>
-  }
-
-  @if (!isLoading && !isLoadingItems && !error && (!calendarData )) {
-    <div class="flex flex-col items-center justify-center h-64 text-gray-500 bg-white m-4 rounded-lg shadow">
-      <svg class="w-12 h-12 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z"/>
-      </svg>
-      <h3 class="text-lg font-medium text-gray-900 mb-2">Aucune session programmée</h3>
-      <p class="text-sm text-gray-500">pour le {{ formatDisplayDate(selectedDate) }}</p>
-      @if (searchTerm) {
-        <p class="text-sm mt-2 text-gray-400">Essayez d'ajuster vos critères de recherche</p>
-      }
-      @if (eventDateRange) {
-        <button
-          type="button"
-          (click)="goToEventStart()"
-          class="mt-4 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100">
-          Aller au premier jour de l'événement
-        </button>
-      }
     </div>
   }
 </main>

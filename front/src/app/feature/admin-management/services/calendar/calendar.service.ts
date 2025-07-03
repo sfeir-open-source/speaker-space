@@ -2,40 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {environment} from '../../../../../environments/environment.development';
-import {Category, Format, Speaker} from '../../type/session/session';
+import {CalendarDayData, CalendarSession, CalendarSessionData, TrackColumn} from '../../type/calendar/calendar';
 
-export interface CalendarSessionData {
-  id: string;
-  title: string;
-  abstractText?: string;
-  start: Date;
-  end: Date;
-  track?: string;
-  speakers: Speaker[];
-  level?: string;
-  formats?: Format[];
-  categories?: Category[];
-}
-
-export interface CalendarDayData {
-  date: Date;
-  tracks: TrackColumn[];
-}
-
-export interface TrackColumn {
-  name: string;
-  sessions: CalendarSession[];
-}
-
-export interface CalendarSession {
-  session: CalendarSessionData;
-  startTime: Date;
-  endTime: Date;
-  duration: number;
-  track: string;
-  topPosition: number;
-  height: number;
-}
+const HOUR_HEIGHT : number = 120;
 
 @Injectable({
   providedIn: 'root'
@@ -77,11 +46,11 @@ export class CalendarService {
   }
 
   private getSessionsForDate(sessions: CalendarSessionData[], date: Date): CalendarSessionData[] {
-    const targetDate = this.formatDateOnly(date);
+    const targetDate : string = this.formatDateOnly(date);
 
     return sessions.filter(session => {
       if (!session.start) return false;
-      const sessionDate = this.formatDateOnly(new Date(session.start));
+      const sessionDate : string = this.formatDateOnly(new Date(session.start));
       return sessionDate === targetDate;
     });
   }
@@ -99,7 +68,7 @@ export class CalendarService {
     return trackSessions.map(session => {
       const startTime = new Date(session.start);
       const endTime = new Date(session.end);
-      const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+      const duration: number = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
       return {
         session,
@@ -114,14 +83,14 @@ export class CalendarService {
   }
 
   private calculateTopPosition(startTime: Date, startHour: number = 8): number {
-    const hours = startTime.getHours();
-    const minutes = startTime.getMinutes();
-    const totalMinutes = (hours - startHour) * 60 + minutes;
-    return (totalMinutes / 60) * 60;
+    const hours : number = startTime.getHours();
+    const minutes: number = startTime.getMinutes();
+    const totalMinutes: number = (hours - startHour) * 60 + minutes;
+    return (totalMinutes / 60) * HOUR_HEIGHT;
   }
 
   private calculateHeight(durationMinutes: number): number {
-    return Math.max((durationMinutes / 60) * 60, 30);
+    return Math.max((durationMinutes / 60) * HOUR_HEIGHT, 30);
   }
 
   private formatDateOnly(date: Date): string {
