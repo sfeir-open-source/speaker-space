@@ -12,14 +12,6 @@ public class TeamDTO {
     private List<String> memberIds;
     private List<TeamMemberDTO> members;
 
-    public TeamDTO(String id, String name, String url, String userCreateId, List<String> memberIds) {
-        this.id = id;
-        this.name = name;
-        this.url = url;
-        this.userCreateId = userCreateId;
-        this.memberIds = memberIds;
-    }
-
     public TeamDTO() {
         this.memberIds = new ArrayList<>();
         this.members = new ArrayList<>();

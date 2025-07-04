@@ -12,9 +12,9 @@ public interface SessionRepository {
     Session findById(String id);
     List<Session> findByEventId(String eventId);
     List<String> findDistinctTracksByEventId(String eventId);
-    boolean delete(String id);
-    boolean existsByIdAndEventId(String id, String eventId);
     Session findByIdAndEventId(String sessionId, String eventId);
-    int deleteByEventId(String eventId);
     Session updateScheduleFields(String sessionId, Date start, Date end, String track);
+    boolean existsByIdAndEventId(String id, String eventId);
+    boolean delete(String id);
+    int deleteByEventId(String eventId);
 }

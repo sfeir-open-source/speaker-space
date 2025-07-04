@@ -13,7 +13,7 @@ public class ProposalScheduleDTO {
     private String level;
     private List<String> formats;
     private List<String> categories;
-    private List<SpeakerScheduleDTO> speakers;
+    private List<SpeakerDTO> speakers;
 
     public ProposalScheduleDTO() {}
 
@@ -32,6 +32,6 @@ public class ProposalScheduleDTO {
     public List<String> getCategories() { return categories; }
     public void setCategories(List<String> categories) { this.categories = categories; }
 
-    public List<SpeakerScheduleDTO> getSpeakers() { return speakers; }
-    public void setSpeakers(List<SpeakerScheduleDTO> speakers) { this.speakers = speakers; }
+    public List<SpeakerDTO> getSpeakers() { return speakers; }
+    public void setSpeakers(List<SpeakerDTO> speakers) { this.speakers = speakers; }
 }

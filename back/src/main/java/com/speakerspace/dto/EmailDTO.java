@@ -6,15 +6,6 @@ public class EmailDTO {
 
     public EmailDTO() {}
 
-    public EmailDTO(String email) {
-        this.email = email;
-    }
-
-    public EmailDTO(String email, String uid) {
-        this.email = email;
-        this.uid = uid;
-    }
-
     public String getEmail() {
         return email;
     }

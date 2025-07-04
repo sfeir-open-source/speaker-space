@@ -43,6 +43,28 @@ public class EventController {
         }
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<EventDTO> getEvent(@PathVariable String id) {
+        EventDTO event = eventService.getEventById(id);
+        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/by-url/{urlId}")
+    public ResponseEntity<EventDTO> getEventByUrl(@PathVariable String urlId) {
+        EventDTO event = eventService.getEventByUrl(urlId);
+        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/by-team/{teamId}")
+    public ResponseEntity<List<EventDTO>> getEventsByTeam(@PathVariable String teamId) {
+        return ResponseEntity.ok(eventService.getEventsByTeamId(teamId));
+    }
+
+    @GetMapping("/my-events")
+    public ResponseEntity<List<EventDTO>> getMyEvents() {
+        return ResponseEntity.ok(eventService.getEventsForCurrentUser());
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<EventDTO> updateEvent(
             @PathVariable String id,
@@ -72,28 +94,6 @@ public class EventController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<EventDTO> getEvent(@PathVariable String id) {
-        EventDTO event = eventService.getEventById(id);
-        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
-    }
-
-    @GetMapping("/by-url/{urlId}")
-    public ResponseEntity<EventDTO> getEventByUrl(@PathVariable String urlId) {
-        EventDTO event = eventService.getEventByUrl(urlId);
-        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
-    }
-
-    @GetMapping("/by-team/{teamId}")
-    public ResponseEntity<List<EventDTO>> getEventsByTeam(@PathVariable String teamId) {
-        return ResponseEntity.ok(eventService.getEventsByTeamId(teamId));
-    }
-
-    @GetMapping("/my-events")
-    public ResponseEntity<List<EventDTO>> getMyEvents() {
-        return ResponseEntity.ok(eventService.getEventsForCurrentUser());
     }
 
     @DeleteMapping("/{eventId}")

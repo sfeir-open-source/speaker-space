@@ -8,7 +8,6 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {Category, Format, Speaker} from '../../../type/session/session';
 import {BaseListComponent} from '../../../components/class/base-list-component';
-import {EmailEncoderService} from '../../../components/services/email-encoder.service';
 import {SpeakerFilters} from '../../../type/speaker/speaker-filters';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {SpeakerWithSessionsDTO} from '../../../type/speaker/speaker-with-sessions';
@@ -64,7 +63,6 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
     eventService: EventService,
     speakerService : SpeakerService,
     eventDataService: EventDataService,
-    private emailEncoderService: EmailEncoderService
   ) {
     super(route, router, eventService, speakerService, eventDataService);
   }

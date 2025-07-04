@@ -24,32 +24,6 @@ public class TeamMemberService {
         this.userService = userService;
     }
 
-    public List<TeamMemberDTO> getTeamMembers(String teamId) throws AccessDeniedException {
-        Team team = validateTeamAccess(teamId);
-
-        List<TeamMemberDTO> memberDTOs = new ArrayList<>();
-
-        if (team.getMembers() != null) {
-            for (TeamMember member : team.getMembers()) {
-                TeamMemberDTO dto = new TeamMemberDTO();
-                dto.setUserId(member.getUserId());
-                dto.setRole(member.getRole());
-                dto.setEmail(member.getEmail());
-
-                UserDTO userDTO = userService.getUserByUid(member.getUserId());
-                if (userDTO != null) {
-                    dto.setDisplayName(userDTO.getDisplayName());
-                    dto.setPhotoURL(userDTO.getPhotoURL());
-                    dto.setEmail(userDTO.getEmail());
-                }
-
-                memberDTOs.add(dto);
-            }
-        }
-
-        return memberDTOs;
-    }
-
     public TeamMemberDTO addTeamMember(String teamId, TeamMemberDTO memberDTO) throws AccessDeniedException {
         Team team = validateTeamAccess(teamId);
 
@@ -98,6 +72,32 @@ public class TeamMemberService {
         resultDTO.setStatus("active");
 
         return resultDTO;
+    }
+
+    public List<TeamMemberDTO> getTeamMembers(String teamId) throws AccessDeniedException {
+        Team team = validateTeamAccess(teamId);
+
+        List<TeamMemberDTO> memberDTOs = new ArrayList<>();
+
+        if (team.getMembers() != null) {
+            for (TeamMember member : team.getMembers()) {
+                TeamMemberDTO dto = new TeamMemberDTO();
+                dto.setUserId(member.getUserId());
+                dto.setRole(member.getRole());
+                dto.setEmail(member.getEmail());
+
+                UserDTO userDTO = userService.getUserByUid(member.getUserId());
+                if (userDTO != null) {
+                    dto.setDisplayName(userDTO.getDisplayName());
+                    dto.setPhotoURL(userDTO.getPhotoURL());
+                    dto.setEmail(userDTO.getEmail());
+                }
+
+                memberDTOs.add(dto);
+            }
+        }
+
+        return memberDTOs;
     }
 
     public TeamMemberDTO updateTeamMemberRole(String teamId, String userId, String newRole) throws AccessDeniedException {

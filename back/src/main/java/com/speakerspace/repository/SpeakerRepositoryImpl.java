@@ -111,27 +111,6 @@ public class SpeakerRepositoryImpl implements SpeakerRepository {
         }
     }
 
-    private DocumentReference getDocumentReference(Speaker speaker) {
-        if (speaker.getId() == null || speaker.getId().isEmpty()) {
-            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document();
-            speaker.setId(docRef.getId());
-            return docRef;
-        }
-        return firestore.collection(COLLECTION_NAME).document(speaker.getId());
-    }
-
-    private <T> List<List<T>> createBatches(List<T> list, int batchSize) {
-        List<List<T>> batches = new ArrayList<>();
-        for (int i = 0; i < list.size(); i += batchSize) {
-            batches.add(list.subList(i, Math.min(i + batchSize, list.size())));
-        }
-        return batches;
-    }
-
-    private <T> T executeFirestoreOperation(Supplier<T> operation) {
-        return operation.get();
-    }
-
     @Override
     public int deleteByEventId(String eventId) {
         try {
@@ -158,5 +137,26 @@ public class SpeakerRepositoryImpl implements SpeakerRepository {
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Failed to batch delete speakers by event ID", e);
         }
+    }
+
+    private DocumentReference getDocumentReference(Speaker speaker) {
+        if (speaker.getId() == null || speaker.getId().isEmpty()) {
+            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document();
+            speaker.setId(docRef.getId());
+            return docRef;
+        }
+        return firestore.collection(COLLECTION_NAME).document(speaker.getId());
+    }
+
+    private <T> List<List<T>> createBatches(List<T> list, int batchSize) {
+        List<List<T>> batches = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += batchSize) {
+            batches.add(list.subList(i, Math.min(i + batchSize, list.size())));
+        }
+        return batches;
+    }
+
+    private <T> T executeFirestoreOperation(Supplier<T> operation) {
+        return operation.get();
     }
 }

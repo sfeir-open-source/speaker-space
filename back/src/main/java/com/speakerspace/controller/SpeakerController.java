@@ -32,6 +32,23 @@ public class SpeakerController {
         this.speakerMapper = speakerMapper;
     }
 
+    @PostMapping("/event/{eventId}")
+    public ResponseEntity<ResponseEntity<SpeakerDTO>> createSpeaker(
+            @PathVariable String eventId,
+            @RequestBody SpeakerDTO speakerDTO,
+            Authentication authentication) {
+
+        return executeWithEventAuthorization(eventId, authentication, () -> {
+            Speaker speaker = speakerMapper.convertToEntity(speakerDTO);
+            speaker.setEventId(eventId);
+
+            Speaker savedSpeaker = speakerService.saveSpeaker(speaker);
+            SpeakerDTO resultDTO = speakerMapper.convertToDTO(savedSpeaker);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(resultDTO);
+        });
+    }
+
     @GetMapping("/event/{eventId}")
     public ResponseEntity<ResponseEntity<List<SpeakerDTO>>> getSpeakersByEvent(
             @PathVariable String eventId,
@@ -62,21 +79,10 @@ public class SpeakerController {
         });
     }
 
-    @PostMapping("/event/{eventId}")
-    public ResponseEntity<ResponseEntity<SpeakerDTO>> createSpeaker(
-            @PathVariable String eventId,
-            @RequestBody SpeakerDTO speakerDTO,
-            Authentication authentication) {
-
-        return executeWithEventAuthorization(eventId, authentication, () -> {
-            Speaker speaker = speakerMapper.convertToEntity(speakerDTO);
-            speaker.setEventId(eventId);
-
-            Speaker savedSpeaker = speakerService.saveSpeaker(speaker);
-            SpeakerDTO resultDTO = speakerMapper.convertToDTO(savedSpeaker);
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(resultDTO);
-        });
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSpeaker(@PathVariable String id) {
+        boolean deleted = speakerService.deleteSpeaker(id);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     private <T> ResponseEntity<T> executeWithEventAuthorization(String eventId, Authentication authentication,
@@ -103,11 +109,5 @@ public class SpeakerController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSpeaker(@PathVariable String id) {
-        boolean deleted = speakerService.deleteSpeaker(id);
-        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

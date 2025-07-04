@@ -15,24 +15,7 @@ public class UserDTO {
     private String biography;
     private String otherLink;
 
-    public UserDTO(String uid, String email, String displayName, String photoURL, String company, String city, String phoneNumber, String githubLink, String twitterLink, String blueSkyLink, String linkedInLink, String biography, String otherLink) {
-        this.uid = uid;
-        this.email = email;
-        this.displayName = displayName;
-        this.photoURL = photoURL;
-        this.company = company;
-        this.city = city;
-        this.phoneNumber = phoneNumber;
-        this.githubLink = githubLink;
-        this.twitterLink = twitterLink;
-        this.blueSkyLink = blueSkyLink;
-        this.linkedInLink = linkedInLink;
-        this.biography = biography;
-        this.otherLink = otherLink;
-    }
-
-    public UserDTO() {
-    }
+    public UserDTO() {}
 
     public String getUid() {
         return uid;

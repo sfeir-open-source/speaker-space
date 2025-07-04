@@ -35,7 +35,6 @@ public class EventRepositoryImpl implements EventRepository {
             }
 
             docRef.set(event).get();
-            logger.info("Event saved with ID: {}", event.getIdEvent());
             return event;
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error saving event: {}", e.getMessage(), e);
@@ -112,16 +111,6 @@ public class EventRepositoryImpl implements EventRepository {
     }
 
     @Override
-    public boolean delete(String id) {
-        try {
-            firestore.collection(COLLECTION_NAME).document(id).delete().get();
-            return true;
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to delete event", e);
-        }
-    }
-
-    @Override
     public boolean existsByEventNameAndTeamId(String eventName, String teamId) {
         try {
             Query query = firestore.collection(COLLECTION_NAME)
@@ -156,6 +145,16 @@ public class EventRepositoryImpl implements EventRepository {
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error checking event name uniqueness for update: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to check event name uniqueness for update", e);
+        }
+    }
+
+    @Override
+    public boolean delete(String id) {
+        try {
+            firestore.collection(COLLECTION_NAME).document(id).delete().get();
+            return true;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to delete event", e);
         }
     }
 

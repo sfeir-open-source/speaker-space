@@ -19,30 +19,7 @@ public class EventDTO {
     private String logoBase64;
     private String type;
 
-
-    public EventDTO(String idEvent, String eventName, String description, String startDate, String endDate, boolean isOnline, String location, boolean isPrivate, String webLinkUrl, boolean isFinish, String url, String userCreateId, String conferenceHallUrl, String teamId, String timeZone, String logoBase64, String type) {
-        this.idEvent = idEvent;
-        this.eventName = eventName;
-        this.description = description;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.isOnline = isOnline;
-        this.location = location;
-        this.isPrivate = isPrivate;
-        this.webLinkUrl = webLinkUrl;
-        this.isFinish = isFinish;
-        this.url = url;
-        this.conferenceHallUrl = conferenceHallUrl;
-        this.userCreateId = userCreateId;
-        this.teamId = teamId;
-        this.timeZone = timeZone;
-        this.logoBase64 = logoBase64;
-        this.type = type;
-    }
-
-    public EventDTO() {
-
-    }
+    public EventDTO() {}
 
     public String getIdEvent() {
         return idEvent;

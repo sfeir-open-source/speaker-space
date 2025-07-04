@@ -13,7 +13,7 @@ public interface TeamRepository {
     List<Team> findTeamsByMemberId(String memberId);
     List<Team> findTeamsByUserCreateId(String userCreateId);
     Team findByIdUrl(String url);
-    boolean delete(String id);
     List<Team> findTeamsByInvitedEmail(String email);
     boolean existsByName(String name);
+    boolean delete(String id);
 }

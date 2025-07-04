@@ -27,13 +27,6 @@ export class SidebarEventComponent {
         label: 'Customize',
         materialIcon: 'brush',
         route: 'event-customize'
-      },
-      {
-        id: 'support-speaker-space',
-        label: 'Support Speaker Space',
-        materialIcon: 'favorite',
-        route: 'support-speaker-space',
-        isDisabled: true
       }
     ]
   };

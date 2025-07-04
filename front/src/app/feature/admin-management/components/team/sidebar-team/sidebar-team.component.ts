@@ -27,13 +27,6 @@ export class SidebarTeamComponent {
         label: 'Members',
         materialIcon: 'groups',
         route: 'settings-members'
-      },
-      {
-        id: 'support-speaker-space',
-        label: 'Support Speaker Space',
-        materialIcon: 'favorite',
-        route: 'support-speaker-space',
-        isDisabled: true
       }
     ]
   };

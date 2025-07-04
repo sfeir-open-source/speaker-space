@@ -117,6 +117,41 @@ public class EventService {
         return eventMapper.convertToDTO(updatedEvent);
     }
 
+    public boolean deleteEvent(String eventId) throws AccessDeniedException {
+        String currentUserId = userService.getCurrentUserId();
+
+        Event event = eventRepository.findById(eventId);
+        if (event == null) {
+            return false;
+        }
+
+        if (!event.getUserCreateId().equals(currentUserId)) {
+            throw new AccessDeniedException("You don't have permission to delete this event");
+        }
+
+        try {
+            return deleteEventWithDependencies(eventId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete event and associated data", e);
+        }
+    }
+
+    private boolean deleteEventWithDependencies(String eventId) {
+        int deletedSessionsCount = sessionRepository.deleteByEventId(eventId);
+        int deletedSpeakersCount = speakerRepository.deleteByEventId(eventId);
+
+        boolean eventDeleted = eventRepository.delete(eventId);
+
+        if (eventDeleted) {
+            logger.info("Event deleted successfully: {} (with {} sessions and {} speakers)",
+                    eventId, deletedSessionsCount, deletedSpeakersCount);
+            return true;
+        } else {
+            logger.error("Failed to delete event: {}", eventId);
+            return false;
+        }
+    }
+
     private Event mergeEventDataCorrectly(Event existing, EventDTO updates) {
         Event merged = existing;
         if (updates.getEventName() != null) {
@@ -239,40 +274,5 @@ public class EventService {
                 .replaceAll("\\s+", "-")
                 .replaceAll("[^a-z0-9-]", "")
                 .replaceAll("-+", "-");
-    }
-
-    public boolean deleteEvent(String eventId) throws AccessDeniedException {
-        String currentUserId = userService.getCurrentUserId();
-
-        Event event = eventRepository.findById(eventId);
-        if (event == null) {
-            return false;
-        }
-
-        if (!event.getUserCreateId().equals(currentUserId)) {
-            throw new AccessDeniedException("You don't have permission to delete this event");
-        }
-
-        try {
-            return deleteEventWithDependencies(eventId);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to delete event and associated data", e);
-        }
-    }
-
-    private boolean deleteEventWithDependencies(String eventId) {
-        int deletedSessionsCount = sessionRepository.deleteByEventId(eventId);
-        int deletedSpeakersCount = speakerRepository.deleteByEventId(eventId);
-
-        boolean eventDeleted = eventRepository.delete(eventId);
-
-        if (eventDeleted) {
-            logger.info("Event deleted successfully: {} (with {} sessions and {} speakers)",
-                    eventId, deletedSessionsCount, deletedSpeakersCount);
-            return true;
-        } else {
-            logger.error("Failed to delete event: {}", eventId);
-            return false;
-        }
     }
 }

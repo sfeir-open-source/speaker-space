@@ -98,34 +98,6 @@ public class TeamRepositoryImpl implements TeamRepository {
     }
 
     @Override
-    public boolean delete(String id) {
-        try {
-            firestore.collection(COLLECTION_NAME).document(id).delete().get();
-            logger.info("Team deleted with ID: {}", id);
-            return true;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error deleting team: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to delete team", e);
-        }
-    }
-
-    private List<Team> executeQuery(Query query) {
-        try {
-            List<QueryDocumentSnapshot> documents = query.get().get().getDocuments();
-            List<Team> teams = new ArrayList<>();
-
-            for (QueryDocumentSnapshot document : documents) {
-                teams.add(document.toObject(Team.class));
-            }
-
-            return teams;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error executing query: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to execute query", e);
-        }
-    }
-
-    @Override
     public List<Team> findTeamsByInvitedEmail(String email) {
         try {
             List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
@@ -156,6 +128,34 @@ public class TeamRepositoryImpl implements TeamRepository {
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error checking team name uniqueness: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to check team name uniqueness", e);
+        }
+    }
+
+    @Override
+    public boolean delete(String id) {
+        try {
+            firestore.collection(COLLECTION_NAME).document(id).delete().get();
+            logger.info("Team deleted with ID: {}", id);
+            return true;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error deleting team: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to delete team", e);
+        }
+    }
+
+    private List<Team> executeQuery(Query query) {
+        try {
+            List<QueryDocumentSnapshot> documents = query.get().get().getDocuments();
+            List<Team> teams = new ArrayList<>();
+
+            for (QueryDocumentSnapshot document : documents) {
+                teams.add(document.toObject(Team.class));
+            }
+
+            return teams;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error executing query: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to execute query", e);
         }
     }
 }

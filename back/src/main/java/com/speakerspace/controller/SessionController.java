@@ -2,6 +2,7 @@ package com.speakerspace.controller;
 
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.*;
+import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.SessionReviewImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.security.AuthenticationHelper;
@@ -56,27 +57,6 @@ public class SessionController {
             validateEventIdMatch(eventId, importRequest.getEventId());
             validateSessionsData(importRequest.getSessions());
             return sessionService.importSessionsSchedule(eventId, importRequest.getSessions());
-        });
-    }
-
-    @PutMapping("/event/{eventId}/session/{sessionId}/schedule")
-    public ResponseEntity<SessionDTO> updateSessionSchedule(
-            @PathVariable String eventId,
-            @PathVariable String sessionId,
-            @RequestBody SessionScheduleUpdateDTO scheduleUpdate,
-            Authentication authentication) {
-
-        return executeWithEventAuthorization(eventId, authentication, () -> {
-            if (scheduleUpdate.getStart() != null && scheduleUpdate.getEnd() != null) {
-                if (scheduleUpdate.getStart().after(scheduleUpdate.getEnd())) {
-                    throw new IllegalArgumentException("Start time must be before end time");
-                }
-            }
-
-            SessionDTO updatedSession = sessionService.updateSessionSchedule(
-                    sessionId, eventId, scheduleUpdate);
-
-            return updatedSession;
         });
     }
 
@@ -165,6 +145,27 @@ public class SessionController {
             List<SessionDTO> sessions = sessionService.getSessionsWithScheduleByEventId(eventId);
             sessions.sort(Comparator.comparing(SessionDTO::getStart));
             return sessions;
+        });
+    }
+
+    @PutMapping("/event/{eventId}/session/{sessionId}/schedule")
+    public ResponseEntity<SessionDTO> updateSessionSchedule(
+            @PathVariable String eventId,
+            @PathVariable String sessionId,
+            @RequestBody Session session,
+            Authentication authentication) {
+
+        return executeWithEventAuthorization(eventId, authentication, () -> {
+            if (session.getStart() != null && session.getEnd() != null) {
+                if (session.getStart().after(session.getEnd())) {
+                    throw new IllegalArgumentException("Start time must be before end time");
+                }
+            }
+
+            SessionDTO updatedSession = sessionService.updateSessionSchedule(
+                    sessionId, eventId, session);
+
+            return updatedSession;
         });
     }
 

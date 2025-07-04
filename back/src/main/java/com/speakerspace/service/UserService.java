@@ -55,26 +55,71 @@ public class UserService {
         }
     }
 
-    private void validateRequiredFields(User user) {
-        Map<String, String> validationErrors = new HashMap<>();
+    public UserDTO getUserByUid(String uid) {
+        User user = getUserEntityByUid(uid);
+        return user != null ? userMapper.convertToDTO(user) : null;
+    }
 
-        if (user.getUid() == null || user.getUid().trim().isEmpty()) {
-            validationErrors.put("uid", "User ID is required");
+    private User getUserEntityByUid(String uid) {
+        try {
+            DocumentSnapshot document = firestore.collection(COLLECTION_NAME)
+                    .document(uid)
+                    .get()
+                    .get();
+
+            return document.exists() ? document.toObject(User.class) : null;
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error fetching user by UID", e);
+            return null;
         }
+    }
 
-        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
-            validationErrors.put("email", "Email is required");
-        } else if (!isValidEmail(user.getEmail())) {
-            validationErrors.put("email", "Invalid email format");
+    public String getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getName())) {
+            return authentication.getName();
         }
+        throw new IllegalStateException("No authenticated user found");
+    }
 
-        if (user.getDisplayName() != null && !user.getDisplayName().isEmpty()
-                && user.getDisplayName().length() < 2) {
-            validationErrors.put("displayName", "Display name must be at least 2 characters");
+    public UserDTO getUserByEmail(String email) {
+        try {
+            List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("email", email)
+                    .get().get().getDocuments();
+
+            if (documents.isEmpty()) {
+                return null;
+            }
+
+            User user = documents.get(0).toObject(User.class);
+            return userMapper.convertToDTO(user);
+        } catch (Exception e) {
+            logger.error("Error getting user by email", e);
+            return null;
         }
+    }
 
-        if (!validationErrors.isEmpty()) {
-            throw new ValidationException("User validation failed", validationErrors);
+    public UserDTO updateUser(UserDTO userDTO) {
+        try {
+            User existingUser = getUserEntityByUid(userDTO.getUid());
+            if (existingUser == null) {
+                return null;
+            }
+
+            User updatedUser = userMapper.updateEntityFromDTO(userDTO, existingUser);
+            validateFullUser(updatedUser);
+
+            firestore.collection(COLLECTION_NAME)
+                    .document(updatedUser.getUid())
+                    .set(updatedUser)
+                    .get();
+
+            return userMapper.convertToDTO(updatedUser);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
         }
     }
 
@@ -111,43 +156,26 @@ public class UserService {
         return newUser;
     }
 
-    public UserDTO getUserByUid(String uid) {
-        User user = getUserEntityByUid(uid);
-        return user != null ? userMapper.convertToDTO(user) : null;
-    }
+    private void validateRequiredFields(User user) {
+        Map<String, String> validationErrors = new HashMap<>();
 
-    private User getUserEntityByUid(String uid) {
-        try {
-            DocumentSnapshot document = firestore.collection(COLLECTION_NAME)
-                    .document(uid)
-                    .get()
-                    .get();
-
-            return document.exists() ? document.toObject(User.class) : null;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error fetching user by UID", e);
-            return null;
+        if (user.getUid() == null || user.getUid().trim().isEmpty()) {
+            validationErrors.put("uid", "User ID is required");
         }
-    }
 
-    public UserDTO updateUser(UserDTO userDTO) {
-        try {
-            User existingUser = getUserEntityByUid(userDTO.getUid());
-            if (existingUser == null) {
-                return null;
-            }
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            validationErrors.put("email", "Email is required");
+        } else if (!isValidEmail(user.getEmail())) {
+            validationErrors.put("email", "Invalid email format");
+        }
 
-            User updatedUser = userMapper.updateEntityFromDTO(userDTO, existingUser);
-            validateFullUser(updatedUser);
+        if (user.getDisplayName() != null && !user.getDisplayName().isEmpty()
+                && user.getDisplayName().length() < 2) {
+            validationErrors.put("displayName", "Display name must be at least 2 characters");
+        }
 
-            firestore.collection(COLLECTION_NAME)
-                    .document(updatedUser.getUid())
-                    .set(updatedUser)
-                    .get();
-
-            return userMapper.convertToDTO(updatedUser);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
+        if (!validationErrors.isEmpty()) {
+            throw new ValidationException("User validation failed", validationErrors);
         }
     }
 
@@ -208,6 +236,37 @@ public class UserService {
         }
     }
 
+    private Map<String, String> validatePartialUser(User partialUser) {
+        Map<String, String> validationErrors = new HashMap<>();
+
+        validateOptionalField(partialUser.getDisplayName(), "displayName",
+                "Display name must be at least 2 characters", 2, validationErrors);
+        validateOptionalField(partialUser.getCompany(), "company",
+                "Company name must be at least 2 characters", 2, validationErrors);
+        validateOptionalField(partialUser.getCity(), "city",
+                "City must be at least 2 characters", 2, validationErrors);
+
+        validateOptionalUrl(partialUser.getPhotoURL(), "photoURL",
+                "Invalid photo URL format", validationErrors);
+        validateOptionalUrl(partialUser.getGithubLink(), "githubLink",
+                "Invalid GitHub URL format", validationErrors);
+        validateOptionalUrl(partialUser.getTwitterLink(), "twitterLink",
+                "Invalid Twitter URL format", validationErrors);
+        validateOptionalUrl(partialUser.getBlueSkyLink(), "blueSkyLink",
+                "Invalid BlueSky URL format", validationErrors);
+        validateOptionalUrl(partialUser.getLinkedInLink(), "linkedInLink",
+                "Invalid LinkedIn URL format", validationErrors);
+        validateOptionalUrl(partialUser.getOtherLink(), "otherLink",
+                "Invalid URL format", validationErrors);
+
+        if (partialUser.getPhoneNumber() != null && !partialUser.getPhoneNumber().isEmpty()
+                && !partialUser.getPhoneNumber().matches("^(\\+?[0-9\\s.-]{6,})?$")) {
+            validationErrors.put("phoneNumber", "Invalid phone number format");
+        }
+
+        return validationErrors;
+    }
+
     private boolean isValidUrl(String url) {
         try {
             new URL(url).toURI();
@@ -249,34 +308,6 @@ public class UserService {
                     .collect(Collectors.toList());
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Failed to search users", e);
-        }
-    }
-
-    public String getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication != null && authentication.isAuthenticated()
-                && !"anonymousUser".equals(authentication.getName())) {
-            return authentication.getName();
-        }
-        throw new IllegalStateException("No authenticated user found");
-    }
-
-    public UserDTO getUserByEmail(String email) {
-        try {
-            List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("email", email)
-                    .get().get().getDocuments();
-
-            if (documents.isEmpty()) {
-                return null;
-            }
-
-            User user = documents.get(0).toObject(User.class);
-            return userMapper.convertToDTO(user);
-        } catch (Exception e) {
-            logger.error("Error getting user by email", e);
-            return null;
         }
     }
 
@@ -355,36 +386,5 @@ public class UserService {
         });
 
         return updatedUser;
-    }
-
-    private Map<String, String> validatePartialUser(User partialUser) {
-        Map<String, String> validationErrors = new HashMap<>();
-
-        validateOptionalField(partialUser.getDisplayName(), "displayName",
-                "Display name must be at least 2 characters", 2, validationErrors);
-        validateOptionalField(partialUser.getCompany(), "company",
-                "Company name must be at least 2 characters", 2, validationErrors);
-        validateOptionalField(partialUser.getCity(), "city",
-                "City must be at least 2 characters", 2, validationErrors);
-
-        validateOptionalUrl(partialUser.getPhotoURL(), "photoURL",
-                "Invalid photo URL format", validationErrors);
-        validateOptionalUrl(partialUser.getGithubLink(), "githubLink",
-                "Invalid GitHub URL format", validationErrors);
-        validateOptionalUrl(partialUser.getTwitterLink(), "twitterLink",
-                "Invalid Twitter URL format", validationErrors);
-        validateOptionalUrl(partialUser.getBlueSkyLink(), "blueSkyLink",
-                "Invalid BlueSky URL format", validationErrors);
-        validateOptionalUrl(partialUser.getLinkedInLink(), "linkedInLink",
-                "Invalid LinkedIn URL format", validationErrors);
-        validateOptionalUrl(partialUser.getOtherLink(), "otherLink",
-                "Invalid URL format", validationErrors);
-
-        if (partialUser.getPhoneNumber() != null && !partialUser.getPhoneNumber().isEmpty()
-                && !partialUser.getPhoneNumber().matches("^(\\+?[0-9\\s.-]{6,})?$")) {
-            validationErrors.put("phoneNumber", "Invalid phone number format");
-        }
-
-        return validationErrors;
     }
 }

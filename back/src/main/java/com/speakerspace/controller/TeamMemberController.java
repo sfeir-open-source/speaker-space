@@ -24,6 +24,20 @@ public class TeamMemberController {
         this.teamMemberService = teamMemberService;
     }
 
+    @PostMapping("/{teamId}/members")
+    public ResponseEntity<TeamMemberDTO> addTeamMember(
+            @PathVariable String teamId,
+            @RequestBody TeamMemberDTO memberDTO) {
+        try {
+            TeamMemberDTO addedMember = teamMemberService.addTeamMember(teamId, memberDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(addedMember);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/{teamId}/members")
     public ResponseEntity<List<TeamMemberDTO>> getTeamMembers(@PathVariable String teamId) {
         try {
@@ -36,15 +50,15 @@ public class TeamMemberController {
         }
     }
 
-    @PostMapping("/{teamId}/members")
-    public ResponseEntity<TeamMemberDTO> addTeamMember(
-            @PathVariable String teamId,
-            @RequestBody TeamMemberDTO memberDTO) {
+    @GetMapping("/search")
+    public ResponseEntity<List<TeamMemberDTO>> searchUsersByEmail(@RequestParam String email) {
+        if (email == null || email.length() < 2) {
+            return ResponseEntity.badRequest().build();
+        }
+
         try {
-            TeamMemberDTO addedMember = teamMemberService.addTeamMember(teamId, memberDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(addedMember);
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            List<TeamMemberDTO> users = userService.searchUsersByEmail(email);
+            return ResponseEntity.ok(users);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -74,20 +88,6 @@ public class TeamMemberController {
             return removed ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<TeamMemberDTO>> searchUsersByEmail(@RequestParam String email) {
-        if (email == null || email.length() < 2) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        try {
-            List<TeamMemberDTO> users = userService.searchUsersByEmail(email);
-            return ResponseEntity.ok(users);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

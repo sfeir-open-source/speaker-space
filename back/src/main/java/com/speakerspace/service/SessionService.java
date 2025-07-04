@@ -2,6 +2,7 @@ package com.speakerspace.service;
 
 import com.speakerspace.dto.session.*;
 import com.speakerspace.mapper.session.SessionMapper;
+import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.session.*;
 import com.speakerspace.repository.SessionRepository;
 import org.springframework.stereotype.Service;
@@ -15,18 +16,20 @@ public class SessionService {
     private final SessionRepository sessionRepository;
     private final SessionMapper sessionMapper;
     private final SpeakerService speakerService;
+    private final SpeakerMapper speakerMapper;
 
-    public SessionService(SessionRepository sessionRepository, SessionMapper sessionMapper, SpeakerService speakerService) {
+    public SessionService(SessionRepository sessionRepository, SessionMapper sessionMapper, SpeakerService speakerService, SpeakerMapper speakerMapper) {
         this.sessionRepository = sessionRepository;
         this.sessionMapper = sessionMapper;
         this.speakerService = speakerService;
+        this.speakerMapper = speakerMapper;
     }
 
-    public ImportResultDTO importSessionsReview(String eventId, List<SessionReviewImportDataDTO> importDataList) {
+    public ImportResultDTO importSessionsReview(String eventId, List<SessionDTO> importDataList) {
         List<String> successfulImports = new ArrayList<>();
         List<String> failedImports = new ArrayList<>();
 
-        for (SessionReviewImportDataDTO importData : importDataList) {
+        for (SessionDTO importData : importDataList) {
             try {
                 SessionDTO sessionDTO = convertImportDataToSessionDTO(importData, eventId);
 
@@ -77,7 +80,105 @@ public class SessionService {
         return new ImportResultDTO(successfulImports, failedImports);
     }
 
-    public SessionDTO updateSessionSchedule(String sessionId, String eventId, SessionScheduleUpdateDTO scheduleUpdate) {
+    private Session createSessionFromScheduleData(SessionScheduleImportDataDTO scheduleData, String eventId) {
+        Session session = new Session();
+
+        String sessionId = scheduleData.getProposal() != null && scheduleData.getProposal().getId() != null
+                ? scheduleData.getProposal().getId()
+                : scheduleData.getId();
+
+        session.setId(sessionId);
+        session.setTitle(scheduleData.getTitle());
+        session.setStart(scheduleData.getStart());
+        session.setEnd(scheduleData.getEnd());
+        session.setTrack(scheduleData.getTrack());
+        session.setEventId(eventId);
+
+        if (scheduleData.getLanguages() != null) {
+            session.setLanguages(Arrays.asList(scheduleData.getLanguages()));
+        }
+
+        if (scheduleData.getProposal() != null) {
+            ProposalScheduleDTO proposal = scheduleData.getProposal();
+
+            session.setAbstractText(proposal.getAbstractText());
+            session.setLevel(proposal.getLevel());
+
+            if (proposal.getFormats() != null) {
+                session.setFormats(convertStringFormatsToObjects(proposal.getFormats()));
+            }
+            if (proposal.getCategories() != null) {
+                session.setCategories(convertStringCategoriesToObjects(proposal.getCategories()));
+            }
+            if (proposal.getSpeakers() != null) {
+                List<Speaker> speakers = convertScheduleSpeakersToSpeakers(proposal.getSpeakers());
+                List<String> speakerIds = speakerService.processSpeakers(speakers, eventId);
+                session.setSpeakerIds(speakerIds);
+            }
+        }
+
+        return session;
+    }
+
+    public List<SessionReviewImportData> getSessionsReviewAsImportData(String eventId) {
+        List<Session> sessions = sessionRepository.findByEventId(eventId);
+        return sessions.stream()
+                .map(sessionMapper::toSessionImportData)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    public SessionReviewImportData getSessionById(String eventId, String sessionId) {
+        Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
+        return session != null ? sessionMapper.toSessionImportData(session) : null;
+    }
+
+    public SessionDTO getSessionByIdAndEventId(String sessionId, String eventId) {
+        Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
+        return session != null ? sessionMapper.convertToDTO(session) : null;
+    }
+
+    public List<Speaker> getUniqueSpeekersByEventId(String eventId) {
+        return speakerService.findByEventId(eventId);
+    }
+
+    public Speaker getSpeakerById(String eventId, String speakerId) {
+        Speaker speaker = speakerService.findById(speakerId);
+        if (speaker != null && eventId.equals(speaker.getEventId())) {
+            return speaker;
+        }
+        return null;
+    }
+
+    public List<SessionDTO> getSessionsWithScheduleByEventId(String eventId) {
+        List<Session> sessions = sessionRepository.findByEventId(eventId);
+        return sessions.stream()
+                .map(sessionMapper::convertToDTO)
+                .filter(Objects::nonNull)
+                .filter(session -> session.getStart() != null && session.getEnd() != null)
+                .collect(Collectors.toList());
+    }
+
+    public List<SpeakerWithSessionsDTO> getSpeakersWithSessionsByEventId(String eventId) {
+        List<Speaker> speakers = speakerService.findByEventId(eventId);
+
+        List<Session> sessions = sessionRepository.findByEventId(eventId);
+
+        return speakers.stream()
+                .map(speaker -> {
+                    List<SessionReviewImportData> speakerSessions = sessions.stream()
+                            .filter(session -> session.getSpeakerIds() != null &&
+                                    session.getSpeakerIds().contains(speaker.getId()))
+                            .map(sessionMapper::toSessionImportData)
+                            .collect(Collectors.toList());
+
+                    return new SpeakerWithSessionsDTO(speaker, speakerSessions);
+                })
+                .sorted(Comparator.comparing(dto -> dto.getSpeaker().getName().toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
+    public SessionDTO updateSessionSchedule(String sessionId, String eventId, Session scheduleUpdate) {
         if (!sessionRepository.existsByIdAndEventId(sessionId, eventId)) {
             throw new IllegalArgumentException("Session not found or does not belong to the specified event");
         }
@@ -158,122 +259,42 @@ public class SessionService {
         session.setSpeakerIds(new ArrayList<>(existingSpeakerIds));
     }
 
-    private Session createSessionFromScheduleData(SessionScheduleImportDataDTO scheduleData, String eventId) {
-        Session session = new Session();
-
-        String sessionId = scheduleData.getProposal() != null && scheduleData.getProposal().getId() != null
-                ? scheduleData.getProposal().getId()
-                : scheduleData.getId();
-
-        session.setId(sessionId);
-        session.setTitle(scheduleData.getTitle());
-        session.setStart(scheduleData.getStart());
-        session.setEnd(scheduleData.getEnd());
-        session.setTrack(scheduleData.getTrack());
-        session.setEventId(eventId);
-
-        if (scheduleData.getLanguages() != null) {
-            session.setLanguages(Arrays.asList(scheduleData.getLanguages()));
-        }
-
-        if (scheduleData.getProposal() != null) {
-            ProposalScheduleDTO proposal = scheduleData.getProposal();
-
-            session.setAbstractText(proposal.getAbstractText());
-            session.setLevel(proposal.getLevel());
-
-            if (proposal.getFormats() != null) {
-                session.setFormats(convertStringFormatsToObjects(proposal.getFormats()));
-            }
-            if (proposal.getCategories() != null) {
-                session.setCategories(convertStringCategoriesToObjects(proposal.getCategories()));
-            }
-            if (proposal.getSpeakers() != null) {
-                List<Speaker> speakers = convertScheduleSpeakersToSpeakers(proposal.getSpeakers());
-                List<String> speakerIds = speakerService.processSpeakers(speakers, eventId);
-                session.setSpeakerIds(speakerIds);
-            }
-        }
-
-        return session;
-    }
-
     private List<String> processSpeakersForSession(List<SpeakerDTO> speakerDTOs, String eventId) {
         if (speakerDTOs == null || speakerDTOs.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<Speaker> speakers = speakerDTOs.stream()
-                .map(this::convertSpeakerDTOToEntity)
+                .map(speakerMapper::convertToEntity)
                 .collect(Collectors.toList());
 
         return speakerService.processSpeakers(speakers, eventId);
     }
 
-    private Speaker convertSpeakerDTOToEntity(SpeakerDTO speakerDTO) {
-        Speaker speaker = new Speaker();
-        speaker.setId(speakerDTO.getId());
-        speaker.setName(speakerDTO.getName());
-        speaker.setBio(speakerDTO.getBio());
-        speaker.setCompany(speakerDTO.getCompany());
-        speaker.setReferences(speakerDTO.getReferences());
-        speaker.setPicture(speakerDTO.getPicture());
-        speaker.setLocation(speakerDTO.getLocation());
-        speaker.setEmail(speakerDTO.getEmail());
-        speaker.setSocialLinks(speakerDTO.getSocialLinks());
-        return speaker;
+    private boolean isBlank(String str) {
+        return str == null || str.trim().isEmpty();
     }
 
-    public List<SessionReviewImportData> getSessionsReviewAsImportData(String eventId) {
-        List<Session> sessions = sessionRepository.findByEventId(eventId);
-        return sessions.stream()
-                .map(sessionMapper::toSessionImportData)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    private <T> T defaultIfNull(T value, T defaultValue) {
+        return value != null ? value : defaultValue;
     }
 
-    public SessionReviewImportData getSessionById(String eventId, String sessionId) {
-        Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
-        return session != null ? sessionMapper.toSessionImportData(session) : null;
+    private String generateIdFromString(String content) {
+        return content.toLowerCase()
+                .replaceAll("[^a-z0-9]", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_|_$", "");
     }
 
-    public SessionDTO getSessionByIdAndEventId(String sessionId, String eventId) {
-        Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
-        return session != null ? sessionMapper.convertToDTO(session) : null;
-    }
-
-    public List<Speaker> getUniqueSpeekersByEventId(String eventId) {
-        return speakerService.findByEventId(eventId);
-    }
-
-    public Speaker getSpeakerById(String eventId, String speakerId) {
-        Speaker speaker = speakerService.findById(speakerId);
-        if (speaker != null && eventId.equals(speaker.getEventId())) {
-            return speaker;
+    public boolean deleteSession(String id) {
+        Session existingSession = sessionRepository.findById(id);
+        if (existingSession == null) {
+            return false;
         }
-        return null;
+        return sessionRepository.delete(id);
     }
 
-    public List<SpeakerWithSessionsDTO> getSpeakersWithSessionsByEventId(String eventId) {
-        List<Speaker> speakers = speakerService.findByEventId(eventId);
-
-        List<Session> sessions = sessionRepository.findByEventId(eventId);
-
-        return speakers.stream()
-                .map(speaker -> {
-                    List<SessionReviewImportData> speakerSessions = sessions.stream()
-                            .filter(session -> session.getSpeakerIds() != null &&
-                                    session.getSpeakerIds().contains(speaker.getId()))
-                            .map(sessionMapper::toSessionImportData)
-                            .collect(Collectors.toList());
-
-                    return new SpeakerWithSessionsDTO(speaker, speakerSessions);
-                })
-                .sorted(Comparator.comparing(dto -> dto.getSpeaker().getName().toLowerCase()))
-                .collect(Collectors.toList());
-    }
-
-    private SessionDTO convertImportDataToSessionDTO(SessionReviewImportDataDTO importData, String eventId) {
+    private SessionDTO convertImportDataToSessionDTO(SessionDTO importData, String eventId) {
         SessionDTO sessionDTO = new SessionDTO();
         sessionDTO.setId(importData.getId());
         sessionDTO.setTitle(importData.getTitle());
@@ -290,14 +311,6 @@ public class SessionService {
         sessionDTO.setSpeakers(defaultIfNull(importData.getSpeakers(), new ArrayList<>()));
         sessionDTO.setReviews(importData.getReviews());
         return sessionDTO;
-    }
-
-    private boolean isBlank(String str) {
-        return str == null || str.trim().isEmpty();
-    }
-
-    private <T> T defaultIfNull(T value, T defaultValue) {
-        return value != null ? value : defaultValue;
     }
 
     private List<Format> convertStringFormatsToObjects(List<String> formatStrings) {
@@ -324,7 +337,7 @@ public class SessionService {
                 .collect(Collectors.toList());
     }
 
-    private List<Speaker> convertScheduleSpeakersToSpeakers(List<SpeakerScheduleDTO> scheduleSpeakers) {
+    private List<Speaker> convertScheduleSpeakersToSpeakers(List<SpeakerDTO> scheduleSpeakers) {
         return scheduleSpeakers.stream()
                 .map(scheduleSpeaker -> {
                     Speaker speaker = new Speaker();
@@ -337,30 +350,6 @@ public class SessionService {
                             scheduleSpeaker.getSocialLinks() : new ArrayList<>());
                     return speaker;
                 })
-                .collect(Collectors.toList());
-    }
-
-    private String generateIdFromString(String content) {
-        return content.toLowerCase()
-                .replaceAll("[^a-z0-9]", "_")
-                .replaceAll("_+", "_")
-                .replaceAll("^_|_$", "");
-    }
-
-    public boolean deleteSession(String id) {
-        Session existingSession = sessionRepository.findById(id);
-        if (existingSession == null) {
-            return false;
-        }
-        return sessionRepository.delete(id);
-    }
-
-    public List<SessionDTO> getSessionsWithScheduleByEventId(String eventId) {
-        List<Session> sessions = sessionRepository.findByEventId(eventId);
-        return sessions.stream()
-                .map(sessionMapper::convertToDTO)
-                .filter(Objects::nonNull)
-                .filter(session -> session.getStart() != null && session.getEnd() != null)
                 .collect(Collectors.toList());
     }
 }

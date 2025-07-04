@@ -56,6 +56,92 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        cookieService.clearAuthCookie(response);
+        return ResponseEntity.ok().build();
+    }
+
+    private static class AuthenticationException extends Exception {
+        public AuthenticationException(String message) {
+            super(message);
+        }
+    }
+
+    private static class SecurityException extends Exception {
+        public SecurityException(String message) {
+            super(message);
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<?> createUser(@RequestBody UserDTO userDTO) {
+        try {
+            logger.info("Creating/updating user: {}", userDTO.getUid());
+            return ResponseEntity.ok(userService.saveUser(userDTO));
+        } catch (Exception e) {
+            logger.error("Error creating/updating user", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to create/update user: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{uid}")
+    public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
+        UserDTO userDTO = userService.getUserByUid(uid);
+        return userDTO != null
+                ? ResponseEntity.ok(userDTO)
+                : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/user/{uid}")
+    public ResponseEntity<?> getUserData(@PathVariable String uid, HttpServletRequest request) {
+        try {
+            String tokenUid = authenticateAndAuthorize(request, uid);
+
+            UserDTO userDTO = userService.getUserByUid(uid);
+            if (userDTO == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(userDTO);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Failed to retrieve user data", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve user data: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateUserProfile(@RequestBody UserDTO userDTO, HttpServletRequest request) {
+        try {
+            String uid = authenticateAndAuthorize(request, userDTO.getUid());
+
+            UserDTO existingUser = userService.getUserByUid(uid);
+            if (existingUser == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            UserDTO updatedUser = userService.partialUpdateUser(userDTO, existingUser);
+            return ResponseEntity.ok(updatedUser);
+        } catch (ValidationException e) {
+            logger.warn("Validation error during profile update: {}", e.getErrors());
+            return ResponseEntity.badRequest().body(e.getErrors());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Failed to update profile", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update profile: " + e.getMessage());
+        }
+    }
+
     private UserDTO createNewUser(FirebaseToken decodedToken) {
         UserDTO userDTO = new UserDTO();
         userDTO.setUid(decodedToken.getUid());
@@ -98,74 +184,6 @@ public class AuthController {
         return existingUser;
     }
 
-    @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody UserDTO userDTO) {
-        try {
-            logger.info("Creating/updating user: {}", userDTO.getUid());
-            return ResponseEntity.ok(userService.saveUser(userDTO));
-        } catch (Exception e) {
-            logger.error("Error creating/updating user", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to create/update user: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/{uid}")
-    public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
-        UserDTO userDTO = userService.getUserByUid(uid);
-        return userDTO != null
-                ? ResponseEntity.ok(userDTO)
-                : ResponseEntity.notFound().build();
-    }
-
-    @PutMapping("/profile")
-    public ResponseEntity<?> updateUserProfile(@RequestBody UserDTO userDTO, HttpServletRequest request) {
-        try {
-            String uid = authenticateAndAuthorize(request, userDTO.getUid());
-
-            UserDTO existingUser = userService.getUserByUid(uid);
-            if (existingUser == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            UserDTO updatedUser = userService.partialUpdateUser(userDTO, existingUser);
-            return ResponseEntity.ok(updatedUser);
-        } catch (ValidationException e) {
-            logger.warn("Validation error during profile update: {}", e.getErrors());
-            return ResponseEntity.badRequest().body(e.getErrors());
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Failed to update profile", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to update profile: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/user/{uid}")
-    public ResponseEntity<?> getUserData(@PathVariable String uid, HttpServletRequest request) {
-        try {
-            String tokenUid = authenticateAndAuthorize(request, uid);
-
-            UserDTO userDTO = userService.getUserByUid(uid);
-            if (userDTO == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok(userDTO);
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Failed to retrieve user data", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to retrieve user data: " + e.getMessage());
-        }
-    }
-
     private String authenticateAndAuthorize(HttpServletRequest request, String targetUid)
             throws AuthenticationException, SecurityException {
         String token = cookieService.getAuthTokenFromCookies(request);
@@ -187,24 +205,6 @@ public class AuthController {
                 throw new AuthenticationException("Token expired, please refresh");
             }
             throw new RuntimeException(e);
-        }
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
-        cookieService.clearAuthCookie(response);
-        return ResponseEntity.ok().build();
-    }
-
-    private static class AuthenticationException extends Exception {
-        public AuthenticationException(String message) {
-            super(message);
-        }
-    }
-
-    private static class SecurityException extends Exception {
-        public SecurityException(String message) {
-            super(message);
         }
     }
 }

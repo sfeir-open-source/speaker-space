@@ -282,23 +282,6 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     }
   }
 
-  get scheduleFormErrors(): string[] {
-    if (!this.scheduleForm) return [];
-
-    const errors: string[] = [];
-
-    if (this.scheduleForm.hasError('invalidDuration')) {
-      errors.push('Duration must be positive');
-    }
-
-    const trackControl = this.scheduleForm.get('track');
-    if (trackControl?.hasError('maxlength')) {
-      errors.push('Track name must be less than 50 characters');
-    }
-
-    return errors;
-  }
-
   hasScheduleInfo(): boolean {
     return !!(this.session?.start || this.session?.track);
   }

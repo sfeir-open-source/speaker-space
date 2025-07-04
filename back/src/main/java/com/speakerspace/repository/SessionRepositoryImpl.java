@@ -34,6 +34,21 @@ public class SessionRepositoryImpl implements SessionRepository {
     }
 
     @Override
+    public Session findById(String id) {
+        return executeFirestoreOperation(() -> {
+            DocumentSnapshot document = null;
+            try {
+                document = firestore.collection(COLLECTION_NAME).document(id).get().get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+            return document.exists() ? document.toObject(Session.class) : null;
+        }, "Failed to find session");
+    }
+
+    @Override
     public List<Session> findByEventId(String eventId) {
         return executeFirestoreOperation(() -> {
             Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("eventId", eventId);
@@ -78,47 +93,6 @@ public class SessionRepositoryImpl implements SessionRepository {
     }
 
     @Override
-    public Session findById(String id) {
-        return executeFirestoreOperation(() -> {
-            DocumentSnapshot document = null;
-            try {
-                document = firestore.collection(COLLECTION_NAME).document(id).get().get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-            return document.exists() ? document.toObject(Session.class) : null;
-        }, "Failed to find session");
-    }
-
-    @Override
-    public boolean delete(String id) {
-        try {
-            firestore.collection(COLLECTION_NAME).document(id).delete().get();
-            return true;
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to delete Session", e);
-        }
-    }
-
-    @Override
-    public boolean existsByIdAndEventId(String id, String eventId) {
-        return executeFirestoreOperation(() -> {
-            Query query = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("id", id)
-                    .whereEqualTo("eventId", eventId);
-            try {
-                return !query.get().get().isEmpty();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            }
-        }, "Failed to check session existence");
-    }
-
-    @Override
     public Session findByIdAndEventId(String sessionId, String eventId) {
         return executeFirestoreOperation(() -> {
             Query query = firestore.collection(COLLECTION_NAME)
@@ -136,47 +110,6 @@ public class SessionRepositoryImpl implements SessionRepository {
             return querySnapshot.isEmpty() ? null :
                     querySnapshot.getDocuments().get(0).toObject(Session.class);
         }, "Failed to find session");
-    }
-
-    private DocumentReference getDocumentReference(Session session) {
-        if (session.getId() == null || session.getId().isEmpty()) {
-            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document();
-            session.setId(docRef.getId());
-            return docRef;
-        }
-        return firestore.collection(COLLECTION_NAME).document(session.getId());
-    }
-
-    private <T> T executeFirestoreOperation(Supplier<T> operation, String errorMessage) {
-        return operation.get();
-    }
-
-    @Override
-    public int deleteByEventId(String eventId) {
-        try {
-            Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("eventId", eventId);
-            QuerySnapshot querySnapshot = query.get().get();
-
-            List<QueryDocumentSnapshot> documents = querySnapshot.getDocuments();
-
-            if (documents.isEmpty()) {
-                return 0;
-            }
-
-            WriteBatch batch = firestore.batch();
-
-            for (QueryDocumentSnapshot document : documents) {
-                batch.delete(document.getReference());
-            }
-
-            batch.commit().get();
-
-            int deletedCount = documents.size();
-            return deletedCount;
-
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to batch delete sessions by event ID", e);
-        }
     }
 
     public Session updateScheduleFields(String sessionId, Date start, Date end, String track) {
@@ -207,5 +140,72 @@ public class SessionRepositoryImpl implements SessionRepository {
                 throw new RuntimeException("Failed to update session schedule", e);
             }
         }, "Failed to update session schedule");
+    }
+
+    @Override
+    public boolean existsByIdAndEventId(String id, String eventId) {
+        return executeFirestoreOperation(() -> {
+            Query query = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("id", id)
+                    .whereEqualTo("eventId", eventId);
+            try {
+                return !query.get().get().isEmpty();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }, "Failed to check session existence");
+    }
+
+    @Override
+    public boolean delete(String id) {
+        try {
+            firestore.collection(COLLECTION_NAME).document(id).delete().get();
+            return true;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to delete Session", e);
+        }
+    }
+
+    @Override
+    public int deleteByEventId(String eventId) {
+        try {
+            Query query = firestore.collection(COLLECTION_NAME).whereEqualTo("eventId", eventId);
+            QuerySnapshot querySnapshot = query.get().get();
+
+            List<QueryDocumentSnapshot> documents = querySnapshot.getDocuments();
+
+            if (documents.isEmpty()) {
+                return 0;
+            }
+
+            WriteBatch batch = firestore.batch();
+
+            for (QueryDocumentSnapshot document : documents) {
+                batch.delete(document.getReference());
+            }
+
+            batch.commit().get();
+
+            int deletedCount = documents.size();
+            return deletedCount;
+
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to batch delete sessions by event ID", e);
+        }
+    }
+
+    private DocumentReference getDocumentReference(Session session) {
+        if (session.getId() == null || session.getId().isEmpty()) {
+            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document();
+            session.setId(docRef.getId());
+            return docRef;
+        }
+        return firestore.collection(COLLECTION_NAME).document(session.getId());
+    }
+
+    private <T> T executeFirestoreOperation(Supplier<T> operation, String errorMessage) {
+        return operation.get();
     }
 }
