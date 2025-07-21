@@ -7,6 +7,7 @@ import com.speakerspace.model.session.Speaker;
 import com.speakerspace.security.AuthenticationHelper;
 import com.speakerspace.service.EventService;
 import com.speakerspace.service.SpeakerService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,19 +19,13 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/speaker")
+@RequiredArgsConstructor
 public class SpeakerController {
 
     private final SpeakerService speakerService;
     private final EventService eventService;
     private final AuthenticationHelper authHelper;
     private final SpeakerMapper speakerMapper;
-
-    public SpeakerController(SpeakerService speakerService, EventService eventService, AuthenticationHelper authHelper, SpeakerMapper speakerMapper) {
-        this.speakerService = speakerService;
-        this.eventService = eventService;
-        this.authHelper = authHelper;
-        this.speakerMapper = speakerMapper;
-    }
 
     @PostMapping("/event/{eventId}")
     public ResponseEntity<ResponseEntity<SpeakerDTO>> createSpeaker(
@@ -97,7 +92,7 @@ public class SpeakerController {
                 return ResponseEntity.notFound().build();
             }
 
-            if (!authHelper.isUserAuthorized(authentication, existingEvent.getUserCreateId())) {
+            if (!authHelper.isUserAuthorized(authentication, existingEvent.userCreateId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 

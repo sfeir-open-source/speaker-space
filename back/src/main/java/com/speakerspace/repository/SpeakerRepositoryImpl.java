@@ -2,6 +2,7 @@ package com.speakerspace.repository;
 
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.session.Speaker;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -12,6 +13,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Repository
+@RequiredArgsConstructor
 public class SpeakerRepositoryImpl implements SpeakerRepository {
 
     private static final String COLLECTION_NAME = "speakers";

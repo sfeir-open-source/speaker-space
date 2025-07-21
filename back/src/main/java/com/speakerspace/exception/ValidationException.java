@@ -1,8 +1,12 @@
 package com.speakerspace.exception;
 
+import lombok.Getter;
+
 import java.util.Map;
 
+@Getter
 public class ValidationException extends RuntimeException {
+
     private final Map<String, String> errors;
 
     public ValidationException(String message, Map<String, String> errors) {
@@ -10,7 +14,8 @@ public class ValidationException extends RuntimeException {
         this.errors = errors;
     }
 
-    public Map<String, String> getErrors() {
-        return errors;
+    public ValidationException(String message) {
+        super(message);
+        this.errors = Map.of();
     }
 }

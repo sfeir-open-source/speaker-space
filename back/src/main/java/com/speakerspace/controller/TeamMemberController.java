@@ -3,8 +3,7 @@ package com.speakerspace.controller;
 import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.service.TeamMemberService;
 import com.speakerspace.service.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,15 +13,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/team-members")
+@RequiredArgsConstructor
 public class TeamMemberController {
 
     private final UserService userService;
     private final TeamMemberService teamMemberService;
-
-    public TeamMemberController(UserService userService, TeamMemberService teamMemberService) {
-        this.userService = userService;
-        this.teamMemberService = teamMemberService;
-    }
 
     @PostMapping("/{teamId}/members")
     public ResponseEntity<TeamMemberDTO> addTeamMember(
@@ -70,7 +65,7 @@ public class TeamMemberController {
             @PathVariable String userId,
             @RequestBody TeamMemberDTO memberDTO) {
         try {
-            TeamMemberDTO updatedMember = teamMemberService.updateTeamMemberRole(teamId, userId, memberDTO.getRole());
+            TeamMemberDTO updatedMember = teamMemberService.updateTeamMemberRole(teamId, userId, memberDTO.role());
             return ResponseEntity.ok(updatedMember);
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();

@@ -77,7 +77,7 @@ public class AuthController {
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody UserDTO userDTO) {
         try {
-            logger.info("Creating/updating user: {}", userDTO.getUid());
+            logger.info("Creating/updating user: {}", userDTO.uid());
             return ResponseEntity.ok(userService.saveUser(userDTO));
         } catch (Exception e) {
             logger.error("Error creating/updating user", e);
@@ -119,7 +119,7 @@ public class AuthController {
     @PutMapping("/profile")
     public ResponseEntity<?> updateUserProfile(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         try {
-            String uid = authenticateAndAuthorize(request, userDTO.getUid());
+            String uid = authenticateAndAuthorize(request, userDTO.uid());
 
             UserDTO existingUser = userService.getUserByUid(uid);
             if (existingUser == null) {
@@ -143,11 +143,12 @@ public class AuthController {
     }
 
     private UserDTO createNewUser(FirebaseToken decodedToken) {
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUid(decodedToken.getUid());
-        userDTO.setEmail(decodedToken.getEmail());
-        userDTO.setDisplayName(decodedToken.getName());
-        userDTO.setPhotoURL(decodedToken.getPicture());
+        UserDTO userDTO = UserDTO.builder()
+                .uid(decodedToken.getUid())
+                .email(decodedToken.getEmail())
+                .displayName(decodedToken.getName())
+                .photoURL(decodedToken.getPicture())
+                .build();
 
         UserDTO createdUser = userService.saveUser(userDTO);
         if (createdUser == null) {
@@ -159,26 +160,41 @@ public class AuthController {
 
     private UserDTO updateExistingUserIfNeeded(UserDTO existingUser, FirebaseToken decodedToken) {
         boolean needsUpdate = false;
+        UserDTO.UserDTOBuilder builder = UserDTO.builder()
+                .uid(existingUser.uid())
+                .email(existingUser.email())
+                .displayName(existingUser.displayName())
+                .photoURL(existingUser.photoURL())
+                .company(existingUser.company())
+                .city(existingUser.city())
+                .phoneNumber(existingUser.phoneNumber())
+                .githubLink(existingUser.githubLink())
+                .twitterLink(existingUser.twitterLink())
+                .blueSkyLink(existingUser.blueSkyLink())
+                .linkedInLink(existingUser.linkedInLink())
+                .biography(existingUser.biography())
+                .otherLink(existingUser.otherLink());
 
-        if (existingUser.getEmail() == null && decodedToken.getEmail() != null) {
-            existingUser.setEmail(decodedToken.getEmail());
+        if (existingUser.email() == null && decodedToken.getEmail() != null) {
+            builder.email(decodedToken.getEmail());
             needsUpdate = true;
         }
 
-        if ((existingUser.getDisplayName() == null || existingUser.getDisplayName().isEmpty())
+        if ((existingUser.displayName() == null || existingUser.displayName().isEmpty())
                 && decodedToken.getName() != null) {
-            existingUser.setDisplayName(decodedToken.getName());
+            builder.displayName(decodedToken.getName());
             needsUpdate = true;
         }
 
-        if ((existingUser.getPhotoURL() == null || existingUser.getPhotoURL().isEmpty())
+        if ((existingUser.photoURL() == null || existingUser.photoURL().isEmpty())
                 && decodedToken.getPicture() != null) {
-            existingUser.setPhotoURL(decodedToken.getPicture());
+            builder.photoURL(decodedToken.getPicture());
             needsUpdate = true;
         }
 
         if (needsUpdate) {
-            existingUser = userService.saveUser(existingUser);
+            UserDTO updatedUserDTO = builder.build();
+            return userService.saveUser(updatedUserDTO);
         }
 
         return existingUser;

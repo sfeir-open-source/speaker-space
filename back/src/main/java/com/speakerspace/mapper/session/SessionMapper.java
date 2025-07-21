@@ -30,63 +30,56 @@ public class SessionMapper {
     private SpeakerService speakerService;
 
     public SessionDTO convertToDTO(Session session) {
-        if(session == null) {
-            return null;
-        }
+        if(session  == null) return null;
 
-        SessionDTO sessionDTO = new SessionDTO();
-        sessionDTO.setId(session.getId());
-        sessionDTO.setTitle(session.getTitle());
-        sessionDTO.setAbstractText(session.getAbstractText());
-        sessionDTO.setDeliberationStatus(session.getDeliberationStatus());
-        sessionDTO.setConfirmationStatus(session.getConfirmationStatus());
-        sessionDTO.setLevel(session.getLevel());
-        sessionDTO.setReferences(session.getReferences());
-        sessionDTO.setFormats(convertFormatsToDTO(session.getFormats()));
-        sessionDTO.setCategories(convertCategoriesToDTO(session.getCategories()));
-        sessionDTO.setTags(session.getTags());
-        sessionDTO.setLanguages(session.getLanguages());
-        sessionDTO.setSpeakers(convertSpeakerIdsToDTO(session.getSpeakerIds()));
-        sessionDTO.setReviews(reviewsMapper.convertToDTO(session.getReviews()));
-        sessionDTO.setEventId(session.getEventId());
-        sessionDTO.setStart(session.getStart());
-        sessionDTO.setEnd(session.getEnd());
-        sessionDTO.setTrack(session.getTrack());
-
-        return sessionDTO;
+        return new SessionDTO(
+            session.getId(),
+            session.getTitle(),
+            session.getAbstractText(),
+            session.getDeliberationStatus(),
+            session.getConfirmationStatus(),
+            session.getLevel(),
+            session.getReferences(),
+            convertFormatsToDTO(session.getFormats()),
+            convertCategoriesToDTO(session.getCategories()),
+            session.getTags(),
+            session.getLanguages(),
+            convertSpeakerIdsToDTO(session.getSpeakerIds()),
+            reviewsMapper.convertToDTO(session.getReviews()),
+            session.getEventId(),
+            session.getStart(),
+            session.getEnd(),
+            session.getTrack()
+        );
     }
 
     public Session convertToEntity(SessionDTO sessionDTO) {
-        if(sessionDTO == null) {
-            return null;
-        }
+        if(sessionDTO  == null) return null;
 
         Session session = new Session();
-        session.setId(sessionDTO.getId());
-        session.setTitle(sessionDTO.getTitle());
-        session.setAbstractText(sessionDTO.getAbstractText());
-        session.setDeliberationStatus(sessionDTO.getDeliberationStatus());
-        session.setConfirmationStatus(sessionDTO.getConfirmationStatus());
-        session.setLevel(sessionDTO.getLevel());
-        session.setReferences(sessionDTO.getReferences());
-        session.setFormats(convertFormatsToEntity(sessionDTO.getFormats()));
-        session.setCategories(convertCategoriesToEntity(sessionDTO.getCategories()));
-        session.setTags(sessionDTO.getTags());
-        session.setLanguages(sessionDTO.getLanguages());
-        session.setSpeakerIds(extractSpeakerIds(sessionDTO.getSpeakers()));
-        session.setReviews(reviewsMapper.convertToEntity(sessionDTO.getReviews()));
-        session.setEventId(sessionDTO.getEventId());
-        session.setStart(sessionDTO.getStart());
-        session.setEnd(sessionDTO.getEnd());
-        session.setTrack(sessionDTO.getTrack());
+        session.setId(sessionDTO.id());
+        session.setTitle(sessionDTO.title());
+        session.setAbstractText(sessionDTO.abstractText());
+        session.setDeliberationStatus(sessionDTO.deliberationStatus());
+        session.setConfirmationStatus(sessionDTO.confirmationStatus());
+        session.setLevel(sessionDTO.level());
+        session.setReferences(sessionDTO.references());
+        session.setFormats(convertFormatsToEntity(sessionDTO.formats()));
+        session.setCategories(convertCategoriesToEntity(sessionDTO.categories()));
+        session.setTags(sessionDTO.tags());
+        session.setLanguages(sessionDTO.languages());
+        session.setSpeakerIds(extractSpeakerIds(sessionDTO.speakers()));
+        session.setReviews(reviewsMapper.convertToEntity(sessionDTO.reviews()));
+        session.setEventId(sessionDTO.eventId());
+        session.setStart(sessionDTO.start());
+        session.setEnd(sessionDTO.end());
+        session.setTrack(sessionDTO.track());
 
         return session;
     }
 
     public SessionReviewImportData toSessionImportData(Session session) {
-        if (session == null) {
-            return null;
-        }
+        if (session  == null) return null;
 
         SessionReviewImportData importData = new SessionReviewImportData();
         importData.setId(session.getId());
@@ -134,7 +127,7 @@ public class SessionMapper {
         }
 
         return speakerDTOs.stream()
-                .map(SpeakerDTO::getId)
+                .map(SpeakerDTO::id)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -144,18 +137,17 @@ public class SessionMapper {
             return null;
         }
 
-        SpeakerDTO speakerDTO = new SpeakerDTO();
-        speakerDTO.setId(speaker.getId());
-        speakerDTO.setName(speaker.getName());
-        speakerDTO.setBio(speaker.getBio());
-        speakerDTO.setCompany(speaker.getCompany());
-        speakerDTO.setReferences(speaker.getReferences());
-        speakerDTO.setPicture(speaker.getPicture());
-        speakerDTO.setLocation(speaker.getLocation());
-        speakerDTO.setEmail(speaker.getEmail());
-        speakerDTO.setSocialLinks(speaker.getSocialLinks());
-
-        return speakerDTO;
+        return new SpeakerDTO(
+            speaker.getId(),
+            speaker.getName(),
+            speaker.getBio(),
+            speaker.getCompany(),
+            speaker.getReferences(),
+            speaker.getPicture(),
+            speaker.getLocation(),
+            speaker.getEmail(),
+            speaker.getSocialLinks()
+        );
     }
 
     private List<FormatDTO> convertFormatsToDTO(List<Format> formats) {

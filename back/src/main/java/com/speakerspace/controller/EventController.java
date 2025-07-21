@@ -3,27 +3,23 @@ package com.speakerspace.controller;
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.security.AuthenticationHelper;
 import com.speakerspace.service.EventService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/event")
+@RequiredArgsConstructor
 public class EventController {
 
     private final EventService eventService;
     private final AuthenticationHelper authHelper;
-
-    public EventController(EventService eventService, AuthenticationHelper authHelper) {
-        this.eventService = eventService;
-        this.authHelper = authHelper;
-    }
 
     @PostMapping("/create")
     public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO, Authentication authentication) {
@@ -31,10 +27,28 @@ public class EventController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        eventDTO.setUserCreateId(authHelper.getUserId(authentication));
+        EventDTO eventWithUserId = EventDTO.builder()
+                .idEvent(eventDTO.idEvent())
+                .eventName(eventDTO.eventName())
+                .description(eventDTO.description())
+                .endDate(eventDTO.endDate())
+                .url(eventDTO.url())
+                .startDate(eventDTO.startDate())
+                .isOnline(eventDTO.isOnline())
+                .location(eventDTO.location())
+                .isPrivate(eventDTO.isPrivate())
+                .webLinkUrl(eventDTO.webLinkUrl())
+                .isFinish(eventDTO.isFinish())
+                .userCreateId(authHelper.getUserId(authentication))
+                .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                .teamId(eventDTO.teamId())
+                .timeZone(eventDTO.timeZone())
+                .logoBase64(eventDTO.logoBase64())
+                .type(eventDTO.type())
+                .build();
 
         try {
-            EventDTO createdEvent = eventService.createEvent(eventDTO);
+            EventDTO createdEvent = eventService.createEvent(eventWithUserId);
             return ResponseEntity.ok(createdEvent);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
@@ -71,7 +85,7 @@ public class EventController {
             @RequestBody EventDTO eventDTO,
             Authentication authentication) {
 
-        if (authentication == null || !id.equals(eventDTO.getIdEvent())) {
+        if (authentication == null || !id.equals(eventDTO.idEvent())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -81,12 +95,31 @@ public class EventController {
                 return ResponseEntity.notFound().build();
             }
 
-            if (!authHelper.isUserAuthorized(authentication, existingEvent.getUserCreateId())) {
+            if (!authHelper.isUserAuthorized(authentication, existingEvent.userCreateId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
-            eventDTO.setUserCreateId(existingEvent.getUserCreateId());
-            EventDTO updatedEvent = eventService.updateEvent(eventDTO);
+            EventDTO eventWithPreservedUserId = EventDTO.builder()
+                    .idEvent(eventDTO.idEvent())
+                    .eventName(eventDTO.eventName())
+                    .description(eventDTO.description())
+                    .endDate(eventDTO.endDate())
+                    .url(eventDTO.url())
+                    .startDate(eventDTO.startDate())
+                    .isOnline(eventDTO.isOnline())
+                    .location(eventDTO.location())
+                    .isPrivate(eventDTO.isPrivate())
+                    .webLinkUrl(eventDTO.webLinkUrl())
+                    .isFinish(eventDTO.isFinish())
+                    .userCreateId(existingEvent.userCreateId())
+                    .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                    .teamId(eventDTO.teamId())
+                    .timeZone(eventDTO.timeZone())
+                    .logoBase64(eventDTO.logoBase64())
+                    .type(eventDTO.type())
+                    .build();
+
+            EventDTO updatedEvent = eventService.updateEvent(eventWithPreservedUserId);
             return ResponseEntity.ok(updatedEvent);
 
         } catch (IllegalArgumentException e) {
@@ -102,24 +135,27 @@ public class EventController {
             boolean deleted = eventService.deleteEvent(eventId);
 
             if (deleted) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("message", "Event and associated speakers and sessions deleted successfully");
-                response.put("eventId", eventId);
+                Map<String, Object> response = Map.of(
+                        "message", "Event and associated speakers and sessions deleted successfully",
+                        "eventId", eventId
+                );
                 return ResponseEntity.ok(response);
             } else {
                 return ResponseEntity.notFound().build();
             }
 
         } catch (AccessDeniedException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Access denied");
-            errorResponse.put("message", "You don't have permission to delete this event");
+            Map<String, Object> errorResponse = Map.of(
+                    "error", "Access denied",
+                    "message", "You don't have permission to delete this event"
+            );
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
 
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Internal server error");
-            errorResponse.put("message", "Failed to delete event");
+            Map<String, Object> errorResponse = Map.of(
+                    "error", "Internal server error",
+                    "message", "Failed to delete event"
+            );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }

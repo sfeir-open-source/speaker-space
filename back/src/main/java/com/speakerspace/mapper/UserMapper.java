@@ -8,42 +8,42 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
 
     public UserDTO convertToDTO(User user) {
-        if (user == null) {
-            return null;
-        }
+        if (user  == null) return null;
 
-        UserDTO userDTO = new UserDTO();
-        userDTO.setUid(user.getUid());
-        userDTO.setEmail(user.getEmail());
-        userDTO.setDisplayName(user.getDisplayName());
-        userDTO.setPhotoURL(user.getPhotoURL());
-        userDTO.setCompany(user.getCompany());
-        userDTO.setCity(user.getCity());
-        userDTO.setPhoneNumber(user.getPhoneNumber());
-        userDTO.setGithubLink(user.getGithubLink());
-        userDTO.setTwitterLink(user.getTwitterLink());
-        userDTO.setBlueSkyLink(user.getBlueSkyLink());
-        userDTO.setLinkedInLink(user.getLinkedInLink());
-        userDTO.setBiography(user.getBiography());
-        userDTO.setOtherLink(user.getOtherLink());
-        return userDTO;
+        return new UserDTO(
+            user.getUid(),
+            user.getEmail(),
+            user.getDisplayName(),
+            user.getPhotoURL(),
+            user.getCompany(),
+            user.getCity(),
+            user.getPhoneNumber(),
+            user.getGithubLink(),
+            user.getTwitterLink(),
+            user.getBlueSkyLink(),
+            user.getLinkedInLink(),
+            user.getBiography(),
+            user.getOtherLink()
+        );
     }
 
     public User convertToEntity(UserDTO userDTO) {
+        if (userDTO  == null) return null;
+
         User user = new User();
-        user.setUid(userDTO.getUid());
-        user.setEmail(userDTO.getEmail());
-        user.setDisplayName(userDTO.getDisplayName());
-        user.setPhotoURL(userDTO.getPhotoURL());
-        user.setCompany(userDTO.getCompany());
-        user.setCity(userDTO.getCity());
-        user.setPhoneNumber(userDTO.getPhoneNumber());
-        user.setGithubLink(userDTO.getGithubLink());
-        user.setTwitterLink(userDTO.getTwitterLink());
-        user.setBlueSkyLink(userDTO.getBlueSkyLink());
-        user.setLinkedInLink(userDTO.getLinkedInLink());
-        user.setBiography(userDTO.getBiography());
-        user.setOtherLink(userDTO.getOtherLink());
+        user.setUid(userDTO.uid());
+        user.setEmail(userDTO.email());
+        user.setDisplayName(userDTO.displayName());
+        user.setPhotoURL(userDTO.photoURL());
+        user.setCompany(userDTO.company());
+        user.setCity(userDTO.city());
+        user.setPhoneNumber(userDTO.phoneNumber());
+        user.setGithubLink(userDTO.githubLink());
+        user.setTwitterLink(userDTO.twitterLink());
+        user.setBlueSkyLink(userDTO.blueSkyLink());
+        user.setLinkedInLink(userDTO.linkedInLink());
+        user.setBiography(userDTO.biography());
+        user.setOtherLink(userDTO.otherLink());
         return user;
     }
 
@@ -52,48 +52,48 @@ public class UserMapper {
             return existingUser;
         }
 
-        if (dto.getDisplayName() != null) {
-            existingUser.setDisplayName(dto.getDisplayName());
+        if (dto.displayName() != null) {
+            existingUser.setDisplayName(dto.displayName());
         }
 
-        if (dto.getPhotoURL() != null) {
-            existingUser.setPhotoURL(dto.getPhotoURL());
+        if (dto.photoURL() != null) {
+            existingUser.setPhotoURL(dto.photoURL());
         }
 
-        if (dto.getCompany() != null) {
-            existingUser.setCompany(dto.getCompany());
+        if (dto.company() != null) {
+            existingUser.setCompany(dto.company());
         }
 
-        if (dto.getCity() != null) {
-            existingUser.setCity(dto.getCity());
+        if (dto.city() != null) {
+            existingUser.setCity(dto.city());
         }
 
-        if (dto.getPhoneNumber() != null) {
-            existingUser.setPhoneNumber(dto.getPhoneNumber());
+        if (dto.phoneNumber() != null) {
+            existingUser.setPhoneNumber(dto.phoneNumber());
         }
 
-        if (dto.getGithubLink() != null) {
-            existingUser.setGithubLink(dto.getGithubLink());
+        if (dto.githubLink() != null) {
+            existingUser.setGithubLink(dto.githubLink());
         }
 
-        if (dto.getTwitterLink() != null) {
-            existingUser.setTwitterLink(dto.getTwitterLink());
+        if (dto.twitterLink() != null) {
+            existingUser.setTwitterLink(dto.twitterLink());
         }
 
-        if (dto.getBlueSkyLink() != null) {
-            existingUser.setBlueSkyLink(dto.getBlueSkyLink());
+        if (dto.blueSkyLink() != null) {
+            existingUser.setBlueSkyLink(dto.blueSkyLink());
         }
 
-        if (dto.getLinkedInLink() != null) {
-            existingUser.setLinkedInLink(dto.getLinkedInLink());
+        if (dto.linkedInLink() != null) {
+            existingUser.setLinkedInLink(dto.linkedInLink());
         }
 
-        if (dto.getBiography() != null) {
-            existingUser.setBiography(dto.getBiography());
+        if (dto.biography() != null) {
+            existingUser.setBiography(dto.biography());
         }
 
-        if (dto.getOtherLink() != null) {
-            existingUser.setOtherLink(dto.getOtherLink());
+        if (dto.otherLink() != null) {
+            existingUser.setOtherLink(dto.otherLink());
         }
 
         return existingUser;

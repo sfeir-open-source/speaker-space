@@ -5,112 +5,81 @@ import com.speakerspace.dto.UserDTO;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
 import com.speakerspace.repository.TeamRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class TeamMemberService {
 
     private final TeamRepository teamRepository;
     private final UserService userService;
 
-    public TeamMemberService(TeamRepository teamRepository, UserService userService) {
-        this.teamRepository = teamRepository;
-        this.userService = userService;
-    }
-
     public TeamMemberDTO addTeamMember(String teamId, TeamMemberDTO memberDTO) throws AccessDeniedException {
         Team team = validateTeamAccess(teamId);
-
         String currentUserId = userService.getCurrentUserId();
-        boolean isCurrentUserOwner = false;
-        for (TeamMember member : team.getMembers()) {
-            if (member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole())) {
-                isCurrentUserOwner = true;
-                break;
-            }
-        }
+
+        boolean isCurrentUserOwner = team.getMembers().stream()
+                .anyMatch(member -> member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole()));
 
         if (!isCurrentUserOwner) {
             throw new AccessDeniedException("Only Owners can add members");
         }
 
-        UserDTO userDTO = userService.getUserByUid(memberDTO.getUserId());
+        UserDTO userDTO = userService.getUserByUid(memberDTO.userId());
         if (userDTO == null) {
             throw new IllegalArgumentException("User does not exist");
         }
 
-        if (team.getMemberIds() != null && team.getMemberIds().contains(memberDTO.getUserId())) {
+        if (team.getMemberIds() != null && team.getMemberIds().contains(memberDTO.userId())) {
             throw new IllegalArgumentException("User is already a member of this team");
         }
 
-        String role = memberDTO.getRole() != null ? memberDTO.getRole() : "Member";
+        String role = Optional.ofNullable(memberDTO.role()).orElse("Member");
 
-        team.addMemberWithRole(memberDTO.getUserId(), role);
+        team.addMemberWithRole(memberDTO.userId(), role);
 
-        for (TeamMember member : team.getMembers()) {
-            if (member.getUserId().equals(memberDTO.getUserId())) {
-                member.setEmail(userDTO.getEmail());
-                member.setStatus("active");
-                break;
-            }
-        }
+        team.getMembers().stream()
+                .filter(member -> member.getUserId().equals(memberDTO.userId()))
+                .findFirst()
+                .ifPresent(member -> {
+                    member.setEmail(userDTO.email());
+                    member.setStatus("active");
+                });
 
         teamRepository.save(team);
 
-        TeamMemberDTO resultDTO = new TeamMemberDTO();
-        resultDTO.setUserId(memberDTO.getUserId());
-        resultDTO.setRole(role);
-        resultDTO.setDisplayName(userDTO.getDisplayName());
-        resultDTO.setPhotoURL(userDTO.getPhotoURL());
-        resultDTO.setEmail(userDTO.getEmail());
-        resultDTO.setStatus("active");
-
-        return resultDTO;
+        return TeamMemberDTO.builder()
+                .userId(memberDTO.userId())
+                .role(role)
+                .displayName(userDTO.displayName())
+                .photoURL(userDTO.photoURL())
+                .email(userDTO.email())
+                .status("active")
+                .build();
     }
 
     public List<TeamMemberDTO> getTeamMembers(String teamId) throws AccessDeniedException {
         Team team = validateTeamAccess(teamId);
 
-        List<TeamMemberDTO> memberDTOs = new ArrayList<>();
-
-        if (team.getMembers() != null) {
-            for (TeamMember member : team.getMembers()) {
-                TeamMemberDTO dto = new TeamMemberDTO();
-                dto.setUserId(member.getUserId());
-                dto.setRole(member.getRole());
-                dto.setEmail(member.getEmail());
-
-                UserDTO userDTO = userService.getUserByUid(member.getUserId());
-                if (userDTO != null) {
-                    dto.setDisplayName(userDTO.getDisplayName());
-                    dto.setPhotoURL(userDTO.getPhotoURL());
-                    dto.setEmail(userDTO.getEmail());
-                }
-
-                memberDTOs.add(dto);
-            }
-        }
-
-        return memberDTOs;
+        return Optional.ofNullable(team.getMembers())
+                .orElse(List.of())
+                .stream()
+                .map(this::convertMemberToDTO)
+                .toList();
     }
 
     public TeamMemberDTO updateTeamMemberRole(String teamId, String userId, String newRole) throws AccessDeniedException {
         Team team = validateTeamAccess(teamId);
         String currentUserId = userService.getCurrentUserId();
 
-        boolean isCurrentUserOwner = false;
-        for (TeamMember member : team.getMembers()) {
-            if (member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole())) {
-                isCurrentUserOwner = true;
-                break;
-            }
-        }
+        boolean isCurrentUserOwner = team.getMembers().stream()
+                .anyMatch(member -> member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole()));
 
         if (!isCurrentUserOwner) {
             throw new AccessDeniedException("Only Owners can change member roles");
@@ -120,19 +89,13 @@ public class TeamMemberService {
             throw new IllegalArgumentException("You cannot change your own role");
         }
 
-        if ("Owner".equals(newRole)) {
-        } else {
-            int ownerCount = 0;
-            boolean isTargetUserOwner = false;
+        if (!"Owner".equals(newRole)) {
+            long ownerCount = team.getMembers().stream()
+                    .filter(member -> "Owner".equals(member.getRole()))
+                    .count();
 
-            for (TeamMember member : team.getMembers()) {
-                if ("Owner".equals(member.getRole())) {
-                    ownerCount++;
-                    if (member.getUserId().equals(userId)) {
-                        isTargetUserOwner = true;
-                    }
-                }
-            }
+            boolean isTargetUserOwner = team.getMembers().stream()
+                    .anyMatch(member -> member.getUserId().equals(userId) && "Owner".equals(member.getRole()));
 
             if (isTargetUserOwner && ownerCount <= 1) {
                 throw new IllegalArgumentException("Cannot demote the last Owner. Promote another member to Owner first.");
@@ -142,61 +105,98 @@ public class TeamMemberService {
         team.updateMemberRole(userId, newRole);
         teamRepository.save(team);
 
-        TeamMemberDTO resultDTO = new TeamMemberDTO();
-        resultDTO.setUserId(userId);
-        resultDTO.setRole(newRole);
         UserDTO userDTO = userService.getUserByUid(userId);
-        if (userDTO != null) {
-            resultDTO.setDisplayName(userDTO.getDisplayName());
-            resultDTO.setPhotoURL(userDTO.getPhotoURL());
-            resultDTO.setEmail(userDTO.getEmail());
-        }
-
-        return resultDTO;
+        return TeamMemberDTO.builder()
+                .userId(userId)
+                .role(newRole)
+                .displayName(userDTO != null ? userDTO.displayName() : null)
+                .photoURL(userDTO != null ? userDTO.photoURL() : null)
+                .email(userDTO != null ? userDTO.email() : null)
+                .status("active")
+                .build();
     }
-
 
     public boolean removeTeamMember(String teamId, String userId) throws AccessDeniedException {
         Team team = validateTeamAccess(teamId);
         String currentUserId = userService.getCurrentUserId();
 
-        boolean isCurrentUserOwner = false;
-        for (TeamMember member : team.getMembers()) {
-            if (member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole())) {
-                isCurrentUserOwner = true;
-                break;
-            }
-        }
+        boolean isCurrentUserOwner = team.getMembers().stream()
+                .anyMatch(member -> member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole()));
 
         if (!isCurrentUserOwner) {
             throw new AccessDeniedException("Only Owners can remove members");
         }
 
-        boolean memberExists = false;
-        boolean isTargetUserOwner = false;
+        Optional<TeamMember> targetMember = team.getMembers().stream()
+                .filter(member -> member.getUserId().equals(userId))
+                .findFirst();
 
-        for (TeamMember member : team.getMembers()) {
-            if (member.getUserId().equals(userId)) {
-                memberExists = true;
-                if ("Owner".equals(member.getRole())) {
-                    isTargetUserOwner = true;
-                }
-                break;
-            }
-        }
-
-        if (!memberExists) {
+        if (targetMember.isEmpty()) {
             return false;
         }
 
-        if (isTargetUserOwner) {
+        if ("Owner".equals(targetMember.get().getRole())) {
             throw new IllegalArgumentException("Cannot remove an Owner. Change their role to Member first.");
         }
 
         team.removeMember(userId);
         teamRepository.save(team);
-
         return true;
+    }
+
+    public TeamMemberDTO inviteMemberByEmail(String teamId, String email) throws AccessDeniedException {
+        Team team = validateTeamAccess(teamId);
+        String currentUserId = userService.getCurrentUserId();
+
+        boolean isCurrentUserOwner = team.getMembers().stream()
+                .anyMatch(member -> member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole()));
+
+        if (!isCurrentUserOwner) {
+            throw new AccessDeniedException("Only Owners can invite members");
+        }
+
+        UserDTO existingUser = userService.getUserByEmail(email);
+
+        if (existingUser != null) {
+            if (team.getMemberIds() != null && team.getMemberIds().contains(existingUser.uid())) {
+                throw new IllegalArgumentException("User is already a member of this team");
+            }
+
+            TeamMemberDTO memberDTO = TeamMemberDTO.builder()
+                    .userId(existingUser.uid())
+                    .role("Member")
+                    .email(email)
+                    .status("active")
+                    .build();
+
+            return addTeamMember(teamId, memberDTO);
+        } else {
+            String temporaryUserId = "invited_" + UUID.randomUUID().toString();
+
+            TeamMember invitedMember = new TeamMember(temporaryUserId, "Member");
+            invitedMember.setEmail(email);
+            invitedMember.setStatus("invited");
+
+            team.addMemberWithRole(temporaryUserId, "Member");
+
+            team.getMembers().stream()
+                    .filter(member -> member.getUserId().equals(temporaryUserId))
+                    .findFirst()
+                    .ifPresent(member -> {
+                        member.setEmail(email);
+                        member.setStatus("invited");
+                    });
+
+            team.addInvitedEmail(email, temporaryUserId);
+            teamRepository.save(team);
+
+            return TeamMemberDTO.builder()
+                    .userId(temporaryUserId)
+                    .role("Member")
+                    .email(email)
+                    .status("invited")
+                    .build();
+        }
     }
 
     private Team validateTeamAccess(String teamId) throws AccessDeniedException {
@@ -216,63 +216,16 @@ public class TeamMemberService {
         return team;
     }
 
-    public TeamMemberDTO inviteMemberByEmail(String teamId, String email) throws AccessDeniedException {
-        Team team = validateTeamAccess(teamId);
+    private TeamMemberDTO convertMemberToDTO(TeamMember member) {
+        UserDTO userDTO = userService.getUserByUid(member.getUserId());
 
-        String currentUserId = userService.getCurrentUserId();
-        boolean isCurrentUserOwner = false;
-        for (TeamMember member : team.getMembers()) {
-            if (member.getUserId().equals(currentUserId) && "Owner".equals(member.getRole())) {
-                isCurrentUserOwner = true;
-                break;
-            }
-        }
-
-        if (!isCurrentUserOwner) {
-            throw new AccessDeniedException("Only Owners can invite members");
-        }
-
-        UserDTO existingUser = userService.getUserByEmail(email);
-
-        if (existingUser != null) {
-            if (team.getMemberIds() != null && team.getMemberIds().contains(existingUser.getUid())) {
-                throw new IllegalArgumentException("User is already a member of this team");
-            }
-
-            TeamMemberDTO memberDTO = new TeamMemberDTO();
-            memberDTO.setUserId(existingUser.getUid());
-            memberDTO.setRole("Member");
-            memberDTO.setEmail(email);
-            memberDTO.setStatus("active");
-            return addTeamMember(teamId, memberDTO);
-        } else {
-            String temporaryUserId = "invited_" + UUID.randomUUID().toString();
-
-            TeamMember invitedMember = new TeamMember(temporaryUserId, "Member");
-            invitedMember.setEmail(email);
-            invitedMember.setStatus("invited");
-
-            team.addMemberWithRole(temporaryUserId, "Member");
-
-            for (TeamMember member : team.getMembers()) {
-                if (member.getUserId().equals(temporaryUserId)) {
-                    member.setEmail(email);
-                    member.setStatus("invited");
-                    break;
-                }
-            }
-
-            team.addInvitedEmail(email, temporaryUserId);
-
-            teamRepository.save(team);
-
-            TeamMemberDTO resultDTO = new TeamMemberDTO();
-            resultDTO.setUserId(temporaryUserId);
-            resultDTO.setRole("Member");
-            resultDTO.setEmail(email);
-            resultDTO.setStatus("invited");
-
-            return resultDTO;
-        }
+        return TeamMemberDTO.builder()
+                .userId(member.getUserId())
+                .role(member.getRole())
+                .email(member.getEmail())
+                .displayName(userDTO != null ? userDTO.displayName() : null)
+                .photoURL(userDTO != null ? userDTO.photoURL() : null)
+                .status(member.getStatus())
+                .build();
     }
 }

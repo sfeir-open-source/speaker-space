@@ -8,40 +8,34 @@ import org.springframework.stereotype.Component;
 public class SpeakerMapper {
 
     public SpeakerDTO convertToDTO(Speaker speaker) {
+        if(speaker  == null) return null;
 
-        if(speaker == null) {
-            return null;
-        }
-
-        SpeakerDTO dto = new SpeakerDTO();
-        dto.setId(speaker.getId());
-        dto.setName(speaker.getName());
-        dto.setBio(speaker.getBio());
-        dto.setCompany(speaker.getCompany());
-        dto.setReferences(speaker.getReferences());
-        dto.setPicture(speaker.getPicture());
-        dto.setLocation(speaker.getLocation());
-        dto.setEmail(speaker.getEmail());
-        dto.setSocialLinks(speaker.getSocialLinks());
-        return dto;
+        return new SpeakerDTO(
+            speaker.getId(),
+            speaker.getName(),
+            speaker.getBio(),
+            speaker.getCompany(),
+            speaker.getReferences(),
+            speaker.getPicture(),
+            speaker.getLocation(),
+            speaker.getEmail(),
+            speaker.getSocialLinks()
+        );
     }
 
     public Speaker convertToEntity(SpeakerDTO dto) {
-
-        if(dto == null) {
-            return null;
-        }
+        if(dto  == null) return null;
 
         Speaker speaker = new Speaker();
-        speaker.setId(dto.getId());
-        speaker.setName(dto.getName());
-        speaker.setBio(dto.getBio());
-        speaker.setCompany(dto.getCompany());
-        speaker.setReferences(dto.getReferences());
-        speaker.setPicture(dto.getPicture());
-        speaker.setLocation(dto.getLocation());
-        speaker.setEmail(dto.getEmail());
-        speaker.setSocialLinks(dto.getSocialLinks());
+        speaker.setId(dto.id());
+        speaker.setName(dto.name());
+        speaker.setBio(dto.bio());
+        speaker.setCompany(dto.company());
+        speaker.setReferences(dto.references());
+        speaker.setPicture(dto.picture());
+        speaker.setLocation(dto.location());
+        speaker.setEmail(dto.email());
+        speaker.setSocialLinks(dto.socialLinks());
         return speaker;
     }
 }

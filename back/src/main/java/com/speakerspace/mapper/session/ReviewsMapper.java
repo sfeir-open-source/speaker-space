@@ -8,27 +8,22 @@ import org.springframework.stereotype.Component;
 public class ReviewsMapper {
 
     public ReviewDTO convertToDTO (Reviews reviews) {
-        if(reviews == null) {
-            return null;
-        }
+        if(reviews  == null) return null;
 
-        ReviewDTO reviewDTO = new ReviewDTO();
-        reviewDTO.setAverage(reviews.getAverage());
-        reviewDTO.setPositives(reviews.getPositives());
-        reviewDTO.setNegatives(reviews.getNegatives());
-
-        return reviewDTO;
+        return new ReviewDTO(
+            reviews.getAverage(),
+            reviews.getPositives(),
+            reviews.getNegatives()
+        );
     }
 
     public Reviews convertToEntity (ReviewDTO reviewsDTO) {
-        if (reviewsDTO == null) {
-            return null;
-        }
+        if (reviewsDTO  == null) return null;
 
         Reviews reviews = new Reviews();
-        reviews.setAverage(reviewsDTO.getAverage());
-        reviews.setPositives(reviewsDTO.getPositives());
-        reviews.setNegatives(reviewsDTO.getNegatives());
+        reviews.setAverage(reviewsDTO.average());
+        reviews.setPositives(reviewsDTO.positives());
+        reviews.setNegatives(reviewsDTO.negatives());
 
         return reviews;
     }

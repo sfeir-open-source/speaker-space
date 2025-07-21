@@ -2,6 +2,7 @@ package com.speakerspace.repository;
 
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.Team;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -12,16 +13,13 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Repository
+@RequiredArgsConstructor
 public class TeamRepositoryImpl implements TeamRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(TeamRepositoryImpl.class);
     private static final String COLLECTION_NAME = "teams";
 
     private final Firestore firestore;
-
-    public TeamRepositoryImpl(Firestore firestore) {
-        this.firestore = firestore;
-    }
 
     @Override
     public Team save(Team team) {

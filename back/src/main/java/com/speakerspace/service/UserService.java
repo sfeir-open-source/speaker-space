@@ -20,7 +20,6 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -104,7 +103,7 @@ public class UserService {
 
     public UserDTO updateUser(UserDTO userDTO) {
         try {
-            User existingUser = getUserEntityByUid(userDTO.getUid());
+            User existingUser = getUserEntityByUid(userDTO.uid());
             if (existingUser == null) {
                 return null;
             }
@@ -112,6 +111,86 @@ public class UserService {
             User updatedUser = userMapper.updateEntityFromDTO(userDTO, existingUser);
             validateFullUser(updatedUser);
 
+            firestore.collection(COLLECTION_NAME)
+                    .document(updatedUser.getUid())
+                    .set(updatedUser)
+                    .get();
+
+            return userMapper.convertToDTO(updatedUser);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
+        }
+    }
+
+    public List<TeamMemberDTO> searchUsersByEmail(String emailQuery) {
+        String normalizedQuery = emailQuery.toLowerCase();
+
+        try {
+            QuerySnapshot querySnapshot = firestore.collection(COLLECTION_NAME)
+                    .whereGreaterThanOrEqualTo("email", normalizedQuery)
+                    .whereLessThanOrEqualTo("email", normalizedQuery + "\uf8ff")
+                    .limit(10)
+                    .get()
+                    .get();
+
+            return querySnapshot.getDocuments().stream()
+                    .map(doc -> {
+                        User user = doc.toObject(User.class);
+                        if (user != null && user.getEmail() != null) {
+                            return TeamMemberDTO.builder()
+                                    .userId(doc.getId())
+                                    .displayName(user.getDisplayName())
+                                    .photoURL(user.getPhotoURL())
+                                    .email(user.getEmail())
+                                    .build();
+                        }
+                        return null;
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to search users", e);
+        }
+    }
+
+    public void processUserLogin(String email, String uid) {
+        if (email == null || uid == null) {
+            logger.error("Email or UID is null");
+            return;
+        }
+
+        email = email.toLowerCase();
+        List<Team> teamsWithInvitation = teamRepository.findTeamsByInvitedEmail(email);
+
+        for (Team team : teamsWithInvitation) {
+            String temporaryUserId = team.getTemporaryUserIdByEmail(email);
+            if (temporaryUserId != null) {
+                team.updateMemberId(temporaryUserId, uid);
+
+                team.getMembers().stream()
+                        .filter(member -> member.getUserId().equals(uid))
+                        .findFirst()
+                        .ifPresent(member -> member.setStatus("active"));
+
+                team.removeInvitedEmail(email);
+                teamRepository.save(team);
+            }
+        }
+    }
+
+    public UserDTO partialUpdateUser(UserDTO partialUserDTO, UserDTO existingUserDTO) {
+        User existingUser = userMapper.convertToEntity(existingUserDTO);
+        User partialUser = userMapper.convertToEntity(partialUserDTO);
+
+        User updatedUser = mergeUsers(partialUser, existingUser);
+
+        Map<String, String> validationErrors = validatePartialUser(partialUser);
+
+        if (!validationErrors.isEmpty()) {
+            throw new ValidationException("User validation failed", validationErrors);
+        }
+
+        try {
             firestore.collection(COLLECTION_NAME)
                     .document(updatedUser.getUid())
                     .set(updatedUser)
@@ -278,86 +357,6 @@ public class UserService {
 
     private boolean isValidEmail(String email) {
         return email.matches("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$");
-    }
-
-    public List<TeamMemberDTO> searchUsersByEmail(String emailQuery) {
-        String normalizedQuery = emailQuery.toLowerCase();
-
-        try {
-            QuerySnapshot querySnapshot = firestore.collection(COLLECTION_NAME)
-                    .whereGreaterThanOrEqualTo("email", normalizedQuery)
-                    .whereLessThanOrEqualTo("email", normalizedQuery + "\uf8ff")
-                    .limit(10)
-                    .get()
-                    .get();
-
-            return querySnapshot.getDocuments().stream()
-                    .map(doc -> {
-                        User user = doc.toObject(User.class);
-                        if (user != null && user.getEmail() != null) {
-                            TeamMemberDTO memberDTO = new TeamMemberDTO();
-                            memberDTO.setUserId(doc.getId());
-                            memberDTO.setDisplayName(user.getDisplayName());
-                            memberDTO.setPhotoURL(user.getPhotoURL());
-                            memberDTO.setEmail(user.getEmail());
-                            return memberDTO;
-                        }
-                        return null;
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to search users", e);
-        }
-    }
-
-    public void processUserLogin(String email, String uid) {
-        if (email == null || uid == null) {
-            logger.error("Email or UID is null");
-            return;
-        }
-
-        email = email.toLowerCase();
-        List<Team> teamsWithInvitation = teamRepository.findTeamsByInvitedEmail(email);
-
-        for (Team team : teamsWithInvitation) {
-            String temporaryUserId = team.getTemporaryUserIdByEmail(email);
-            if (temporaryUserId != null) {
-                team.updateMemberId(temporaryUserId, uid);
-
-                team.getMembers().stream()
-                        .filter(member -> member.getUserId().equals(uid))
-                        .findFirst()
-                        .ifPresent(member -> member.setStatus("active"));
-
-                team.removeInvitedEmail(email);
-                teamRepository.save(team);
-            }
-        }
-    }
-
-    public UserDTO partialUpdateUser(UserDTO partialUserDTO, UserDTO existingUserDTO) {
-        User existingUser = userMapper.convertToEntity(existingUserDTO);
-        User partialUser = userMapper.convertToEntity(partialUserDTO);
-
-        User updatedUser = mergeUsers(partialUser, existingUser);
-
-        Map<String, String> validationErrors = validatePartialUser(partialUser);
-
-        if (!validationErrors.isEmpty()) {
-            throw new ValidationException("User validation failed", validationErrors);
-        }
-
-        try {
-            firestore.collection(COLLECTION_NAME)
-                    .document(updatedUser.getUid())
-                    .set(updatedUser)
-                    .get();
-
-            return userMapper.convertToDTO(updatedUser);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
-        }
     }
 
     private User mergeUsers(User partialUser, User existingUser) {

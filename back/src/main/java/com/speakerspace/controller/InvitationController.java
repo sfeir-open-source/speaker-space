@@ -4,9 +4,9 @@ import com.speakerspace.dto.EmailDTO;
 import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.service.TeamMemberService;
 import com.speakerspace.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,24 +15,19 @@ import java.nio.file.AccessDeniedException;
 import java.util.Map;
 
 @RestController
+@RequiredArgsConstructor
 public class InvitationController {
 
     private final TeamMemberService teamMemberService;
     private final UserService userService;
     private static final Logger logger = LoggerFactory.getLogger(InvitationController.class);
 
-    @Autowired
-    public InvitationController(TeamMemberService teamMemberService, UserService userService) {
-        this.teamMemberService = teamMemberService;
-        this.userService = userService;
-    }
-
     @PostMapping("/team-members/{teamId}/invite")
     public ResponseEntity<TeamMemberDTO> inviteMemberByEmail(
             @PathVariable String teamId,
             @RequestBody EmailDTO invitationDTO) {
         try {
-            TeamMemberDTO invitedMember = teamMemberService.inviteMemberByEmail(teamId, invitationDTO.getEmail());
+            TeamMemberDTO invitedMember = teamMemberService.inviteMemberByEmail(teamId, invitationDTO.email());
             return ResponseEntity.status(HttpStatus.CREATED).body(invitedMember);
         } catch (AccessDeniedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -44,8 +39,8 @@ public class InvitationController {
     @PostMapping("/public/invitations/process")
     public ResponseEntity<Void> processInvitation(@RequestBody EmailDTO emailDTO) {
         try {
-            String email = emailDTO.getEmail();
-            String uid = emailDTO.getUid();
+            String email = emailDTO.email();
+            String uid = emailDTO.uid();
 
             if (email == null || uid == null) {
                 return ResponseEntity.badRequest().build();

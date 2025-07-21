@@ -2,6 +2,7 @@ package com.speakerspace.controller;
 
 import com.speakerspace.dto.TeamDTO;
 import com.speakerspace.service.TeamService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -15,18 +16,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/team")
+@RequiredArgsConstructor
 public class TeamController {
 
     private final TeamService teamService;
     private static final Logger logger = LoggerFactory.getLogger(TeamController.class);
 
-    public TeamController(TeamService teamService) {
-        this.teamService = teamService;
-    }
-
     @PostMapping("/create")
     public ResponseEntity<TeamDTO> createTeam(@RequestBody TeamDTO teamDTO) {
-        if (teamDTO.getName() == null || teamDTO.getName().isEmpty()) {
+        if (teamDTO.name() == null || teamDTO.name().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -73,7 +71,7 @@ public class TeamController {
 
     @PutMapping("/{teamId}")
     public ResponseEntity<TeamDTO> updateTeam(@PathVariable String teamId, @RequestBody TeamDTO teamDTO) {
-        if (teamDTO.getName() == null || teamDTO.getName().isEmpty()) {
+        if (teamDTO.name() == null || teamDTO.name().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 

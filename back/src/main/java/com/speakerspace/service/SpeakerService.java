@@ -2,6 +2,7 @@ package com.speakerspace.service;
 
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.SpeakerRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -11,13 +12,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class SpeakerService {
 
     private final SpeakerRepository speakerRepository;
-
-    public SpeakerService(SpeakerRepository speakerRepository) {
-        this.speakerRepository = speakerRepository;
-    }
 
     public Speaker saveSpeaker(Speaker speaker) {
         return speakerRepository.save(speaker);

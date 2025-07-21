@@ -2,6 +2,7 @@ package com.speakerspace.repository;
 
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.Event;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -12,15 +13,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Repository
+@RequiredArgsConstructor
 public class EventRepositoryImpl implements EventRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(EventRepositoryImpl.class);
     private static final String COLLECTION_NAME = "events";
     private final Firestore firestore;
-
-    public EventRepositoryImpl(Firestore firestore) {
-        this.firestore = firestore;
-    }
 
     @Override
     public Event save(Event event) {

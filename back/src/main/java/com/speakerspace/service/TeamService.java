@@ -10,6 +10,7 @@ import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
 import com.speakerspace.repository.TeamRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class TeamService {
 
     private static final Logger logger = LoggerFactory.getLogger(TeamService.class);
@@ -32,19 +34,10 @@ public class TeamService {
     private final SessionRepository sessionRepository;
     private final SpeakerRepository speakerRepository;
 
-    public TeamService(TeamMapper teamMapper, EventRepository eventRepository, TeamRepository teamRepository, UserService userService, SessionRepository sessionRepository, SpeakerRepository speakerRepository) {
-        this.teamMapper = teamMapper;
-        this.eventRepository = eventRepository;
-        this.teamRepository = teamRepository;
-        this.userService = userService;
-        this.sessionRepository = sessionRepository;
-        this.speakerRepository = speakerRepository;
-    }
-
     public TeamDTO createTeam(TeamDTO teamDTO) {
         String currentUserId = userService.getCurrentUserId();
 
-        if (teamRepository.existsByName(teamDTO.getName())) {
+        if (teamRepository.existsByName(teamDTO.name())) {
             throw new IllegalArgumentException("A team with this name already exists");
         }
 
@@ -55,13 +48,13 @@ public class TeamService {
 
         for (TeamMember member : team.getMembers()) {
             if (member.getUserId().equals(currentUserId)) {
-                member.setEmail(currentUser.getEmail());
+                member.setEmail(currentUser.email());
                 member.setStatus("active");
                 break;
             }
         }
 
-        team.setCreatorEmail(currentUser.getEmail());
+        team.setCreatorEmail(currentUser.email());
 
         Team savedTeam = teamRepository.save(team);
         return teamMapper.convertToDTO(savedTeam);
@@ -87,7 +80,7 @@ public class TeamService {
 
         List<TeamDTO> allTeams = new ArrayList<>(ownedTeams);
         memberTeams.stream()
-                .filter(team -> ownedTeams.stream().noneMatch(t -> t.getId().equals(team.getId())))
+                .filter(team -> ownedTeams.stream().noneMatch(t -> t.id().equals(team.id())))
                 .forEach(allTeams::add);
 
         return allTeams;
@@ -105,7 +98,7 @@ public class TeamService {
             return null;
         }
 
-        if (teamRepository.existsByName(teamDTO.getName())) {
+        if (teamRepository.existsByName(teamDTO.name())) {
             throw new IllegalArgumentException("A team with this name already exists");
         }
 
@@ -123,9 +116,9 @@ public class TeamService {
             throw new AccessDeniedException("Only Owners can update the team");
         }
 
-        existingTeam.setName(teamDTO.getName());
-        if (teamDTO.getUrl() != null && !teamDTO.getUrl().isEmpty()) {
-            existingTeam.setUrl(teamDTO.getUrl());
+        existingTeam.setName(teamDTO.name());
+        if (teamDTO.url() != null && !teamDTO.url().isEmpty()) {
+            existingTeam.setUrl(teamDTO.url());
         }
 
         Team updatedTeam = teamRepository.save(existingTeam);

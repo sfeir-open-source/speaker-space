@@ -8,27 +8,22 @@ import org.springframework.stereotype.Component;
 public class FormatMapper {
 
     public FormatDTO convertToDTO(Format format) {
-        if(format == null) {
-            return null;
-        }
+        if(format  == null) return null;
 
-        FormatDTO formatDTO = new FormatDTO();
-        formatDTO.setId(format.getId());
-        formatDTO.setName(format.getName());
-        formatDTO.setDescription(format.getDescription());
-
-        return formatDTO;
+        return new FormatDTO(
+            format.getId(),
+            format.getName(),
+            format.getDescription()
+        );
     }
 
     public Format convertToEntity(FormatDTO formatDTO) {
-        if(formatDTO == null) {
-            return null;
-        }
+        if(formatDTO  == null) return null;
 
         Format format = new Format();
-        format.setId(formatDTO.getId());
-        format.setName(formatDTO.getName());
-        format.setDescription(formatDTO.getDescription());
+        format.setId(formatDTO.id());
+        format.setName(formatDTO.name());
+        format.setDescription(formatDTO.description());
 
         return format;
     }

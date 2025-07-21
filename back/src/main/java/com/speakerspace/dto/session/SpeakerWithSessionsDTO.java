@@ -4,71 +4,68 @@ import com.speakerspace.model.session.Category;
 import com.speakerspace.model.session.Format;
 import com.speakerspace.model.session.SessionReviewImportData;
 import com.speakerspace.model.session.Speaker;
+import lombok.Builder;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class SpeakerWithSessionsDTO {
-    private Speaker speaker;
-    private List<SessionReviewImportData> sessions;
-    private Set<Format> formats;
-    private Set<Category> categories;
+@Builder
+public record SpeakerWithSessionsDTO(
+        Speaker speaker,
+        List<SessionReviewImportData> sessions,
+        Set<Format> formats,
+        Set<Category> categories
+) {
+
+    public SpeakerWithSessionsDTO {
+        Objects.requireNonNull(speaker, "Speaker cannot be null");
+
+        sessions = sessions != null ? List.copyOf(sessions) : List.of();
+
+        var extractedData = extractFormatsAndCategories(sessions);
+        formats = extractedData.formats();
+        categories = extractedData.categories();
+    }
 
     public SpeakerWithSessionsDTO(Speaker speaker, List<SessionReviewImportData> sessions) {
-        this.speaker = speaker;
-        this.sessions = sessions != null ? sessions : new ArrayList<>();
-        this.extractFormatsAndCategories();
+        this(speaker, sessions, null, null);
     }
 
-    private void extractFormatsAndCategories() {
-        this.formats = new HashSet<>();
-        this.categories = new HashSet<>();
+    public static SpeakerWithSessionsDTO of(Speaker speaker, List<SessionReviewImportData> sessions) {
+        return new SpeakerWithSessionsDTO(speaker, sessions);
+    }
 
-        if (this.sessions != null) {
-            this.formats = this.sessions.stream()
-                    .filter(session -> session.getFormats() != null)
-                    .flatMap(session -> session.getFormats().stream())
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-
-            this.categories = this.sessions.stream()
-                    .filter(session -> session.getCategories() != null)
-                    .flatMap(session -> session.getCategories().stream())
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
+    private static ExtractedData extractFormatsAndCategories(List<SessionReviewImportData> sessions) {
+        if (sessions == null || sessions.isEmpty()) {
+            return new ExtractedData(Set.of(), Set.of());
         }
+
+        Set<Format> extractedFormats = sessions.stream()
+                .filter(Objects::nonNull)
+                .map(SessionReviewImportData::getFormats)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableSet());
+
+        Set<Category> extractedCategories = sessions.stream()
+                .filter(Objects::nonNull)
+                .map(SessionReviewImportData::getCategories)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableSet());
+
+        return new ExtractedData(extractedFormats, extractedCategories);
     }
 
-    public Speaker getSpeaker() {
-        return speaker;
+    public SpeakerWithSessionsDTO withSessions(List<SessionReviewImportData> newSessions) {
+        return new SpeakerWithSessionsDTO(this.speaker, newSessions);
     }
 
-    public void setSpeaker(Speaker speaker) {
-        this.speaker = speaker;
+    public SpeakerWithSessionsDTO withSpeaker(Speaker newSpeaker) {
+        return new SpeakerWithSessionsDTO(newSpeaker, this.sessions);
     }
 
-    public List<SessionReviewImportData> getSessions() {
-        return sessions;
-    }
-
-    public void setSessions(List<SessionReviewImportData> sessions) {
-        this.sessions = sessions != null ? sessions : new ArrayList<>();
-        this.extractFormatsAndCategories();
-    }
-
-    public Set<Format> getFormats() {
-        return formats;
-    }
-
-    public void setFormats(Set<Format> formats) {
-        this.formats = formats != null ? formats : new HashSet<>();
-    }
-
-    public Set<Category> getCategories() {
-        return categories;
-    }
-
-    public void setCategories(Set<Category> categories) {
-        this.categories = categories != null ? categories : new HashSet<>();
-    }
+    private record ExtractedData(Set<Format> formats, Set<Category> categories) {}
 }

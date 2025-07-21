@@ -5,6 +5,7 @@ import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.speakerspace.model.User;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -13,16 +14,13 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Repository
+@RequiredArgsConstructor
 public class UserRepositoryImpl implements UserRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(UserRepositoryImpl.class);
     private static final String COLLECTION_NAME = "users";
 
     private final Firestore firestore;
-
-    public UserRepositoryImpl(Firestore firestore) {
-        this.firestore = firestore;
-    }
 
     @Override
     public Optional<User> findById(String uid) {

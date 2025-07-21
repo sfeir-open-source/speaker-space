@@ -6,6 +6,7 @@ import com.speakerspace.model.Event;
 import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -13,14 +14,14 @@ import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class EventService {
 
     private static final String BASE_URL = "https://speaker-space.io/event/";
-
     private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     private final EventMapper eventMapper;
@@ -28,14 +29,6 @@ public class EventService {
     private final UserService userService;
     private final SessionRepository sessionRepository;
     private final SpeakerRepository speakerRepository;
-
-    public EventService(EventMapper eventMapper, EventRepository eventRepository, UserService userService, SessionRepository sessionRepository, SpeakerRepository speakerRepository) {
-        this.eventMapper = eventMapper;
-        this.eventRepository = eventRepository;
-        this.userService = userService;
-        this.sessionRepository = sessionRepository;
-        this.speakerRepository = speakerRepository;
-    }
 
     public EventDTO createEvent(EventDTO eventDTO) {
         String currentUserId = userService.getCurrentUserId();
@@ -51,12 +44,31 @@ public class EventService {
             event.setUrl(BASE_URL + urlSuffix);
         }
 
-        if (eventDTO.getIsPrivate() == null) {
-            eventDTO.setPrivate(true);
+        EventDTO finalEventDTO = eventDTO;
+        if (eventDTO.isPrivate() == null) {
+            finalEventDTO = EventDTO.builder()
+                    .idEvent(eventDTO.idEvent())
+                    .eventName(eventDTO.eventName())
+                    .description(eventDTO.description())
+                    .endDate(eventDTO.endDate())
+                    .url(eventDTO.url())
+                    .startDate(eventDTO.startDate())
+                    .isOnline(eventDTO.isOnline())
+                    .location(eventDTO.location())
+                    .isPrivate(true)
+                    .webLinkUrl(eventDTO.webLinkUrl())
+                    .isFinish(eventDTO.isFinish())
+                    .userCreateId(currentUserId)
+                    .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                    .teamId(eventDTO.teamId())
+                    .timeZone(eventDTO.timeZone())
+                    .logoBase64(eventDTO.logoBase64())
+                    .type(eventDTO.type())
+                    .build();
+            event = eventMapper.convertToEntity(finalEventDTO);
         }
 
         event.setUserCreateId(currentUserId);
-
         Event savedEvent = eventRepository.save(event);
         return eventMapper.convertToDTO(savedEvent);
     }
@@ -76,7 +88,7 @@ public class EventService {
         List<Event> events = eventRepository.findByTeamId(teamId);
         return events.stream()
                 .map(eventMapper::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<EventDTO> getEventsForCurrentUser() {
@@ -84,27 +96,26 @@ public class EventService {
         List<Event> events = eventRepository.findByUserCreateId(currentUserId);
         return events.stream()
                 .map(eventMapper::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public EventDTO updateEvent(EventDTO eventDTO) {
-        if (eventDTO.getIdEvent() == null || eventDTO.getIdEvent().isEmpty()) {
+        if (eventDTO.idEvent() == null || eventDTO.idEvent().isEmpty()) {
             throw new IllegalArgumentException("Event ID is required for update");
         }
 
-        Event existingEvent = eventRepository.findById(eventDTO.getIdEvent());
-
+        Event existingEvent = eventRepository.findById(eventDTO.idEvent());
         if (existingEvent == null) {
             throw new RuntimeException("Event not found");
         }
 
-        if (eventDTO.getEventName() != null &&
-                !eventDTO.getEventName().equals(existingEvent.getEventName()) &&
+        if (eventDTO.eventName() != null &&
+                !eventDTO.eventName().equals(existingEvent.getEventName()) &&
                 existingEvent.getTeamId() != null &&
                 eventRepository.existsByEventNameAndTeamIdAndIdEventNot(
-                        eventDTO.getEventName(),
+                        eventDTO.eventName(),
                         existingEvent.getTeamId(),
-                        eventDTO.getIdEvent()
+                        eventDTO.idEvent()
                 )) {
             throw new IllegalArgumentException("An event with this name already exists in this team");
         }
@@ -153,66 +164,34 @@ public class EventService {
     }
 
     private Event mergeEventDataCorrectly(Event existing, EventDTO updates) {
-        Event merged = existing;
-        if (updates.getEventName() != null) {
-            merged.setEventName(updates.getEventName());
-            String newUrl = generateFullUrl(updates.getEventName());
-            merged.setUrl(newUrl);
+        if (updates.eventName() != null) {
+            existing.setEventName(updates.eventName());
+            String newUrl = generateFullUrl(updates.eventName());
+            existing.setUrl(newUrl);
         }
 
-        if (updates.getDescription() != null) {
-            merged.setDescription(updates.getDescription());
+        Optional.ofNullable(updates.description()).ifPresent(existing::setDescription);
+        Optional.ofNullable(updates.location()).ifPresent(existing::setLocation);
+        Optional.ofNullable(updates.webLinkUrl()).ifPresent(existing::setWebLinkUrl);
+        Optional.ofNullable(updates.conferenceHallUrl()).ifPresent(existing::setConferenceHallUrl);
+        Optional.ofNullable(updates.isOnline()).ifPresent(existing::setIsOnline);
+        Optional.ofNullable(updates.isPrivate()).ifPresent(existing::setPrivate);
+        Optional.ofNullable(updates.timeZone()).ifPresent(existing::setTimeZone);
+        Optional.ofNullable(updates.type()).ifPresent(existing::setType);
+
+        Optional.ofNullable(updates.startDate())
+                .filter(date -> !date.trim().isEmpty())
+                .ifPresent(date -> existing.setStartDate(parseStringToTimestamp(date)));
+
+        Optional.ofNullable(updates.endDate())
+                .filter(date -> !date.trim().isEmpty())
+                .ifPresent(date -> existing.setEndDate(parseStringToTimestamp(date)));
+
+        if (updates.logoBase64() != null) {
+            existing.setLogoBase64(updates.logoBase64().isEmpty() ? null : updates.logoBase64());
         }
 
-        if (updates.getLocation() != null) {
-            merged.setLocation(updates.getLocation());
-        }
-
-        if (updates.getWebLinkUrl() != null) {
-            merged.setWebLinkUrl(updates.getWebLinkUrl());
-        }
-
-        if (updates.getConferenceHallUrl() != null) {
-            merged.setConferenceHallUrl(updates.getConferenceHallUrl());
-        }
-
-        if (updates.getIsOnline() != null) {
-            merged.setIsOnline(updates.getIsOnline());
-        }
-
-        if (updates.getIsPrivate() != null) {
-            merged.setPrivate(updates.getIsPrivate());
-        }
-
-        if (updates.getStartDate() != null && !updates.getStartDate().isEmpty()) {
-            merged.setStartDate(parseStringToTimestamp(updates.getStartDate()));
-        }
-
-        if (updates.getEndDate() != null && !updates.getEndDate().isEmpty()) {
-            merged.setEndDate(parseStringToTimestamp(updates.getEndDate()));
-        }
-
-        if (updates.getTimeZone() != null) {
-            merged.setTimeZone(updates.getTimeZone());
-        }
-
-        if (updates.isFinish() != null) {
-            merged.setFinish(updates.isFinish());
-        }
-
-        if (updates.getLogoBase64() != null) {
-            if (updates.getLogoBase64().isEmpty()) {
-                merged.setLogoBase64(null);
-            } else {
-                merged.setLogoBase64(updates.getLogoBase64());
-            }
-        }
-
-        if (updates.getType() != null) {
-            merged.setType(updates.getType());
-        }
-
-        return merged;
+        return existing;
     }
 
     private String generateFullUrl(String eventName) {
@@ -231,9 +210,7 @@ public class EventService {
                     event.getEndDate().getSeconds(),
                     event.getEndDate().getNanos()
             );
-            Instant now = Instant.now();
-
-            event.setFinish(endInstant.isBefore(now));
+            event.setFinish(endInstant.isBefore(Instant.now()));
         }
     }
 

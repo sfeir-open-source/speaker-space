@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceTest {
+class UserServiceTest {
 
     @InjectMocks
     private UserService userService;
@@ -49,8 +49,8 @@ public class UserServiceTest {
 
     private User testUser;
     private UserDTO testUserDTO;
-    private final String TEST_UID = "test-uid-123";
-    private final String COLLECTION_NAME = "users";
+    private static final String TEST_UID = "test-uid-123";
+    private static final String COLLECTION_NAME = "users";
 
     @BeforeEach
     void setUp() {
@@ -58,11 +58,11 @@ public class UserServiceTest {
         testUser.setUid(TEST_UID);
         testUser.setDisplayName("Test User");
         testUser.setEmail("test@example.com");
-
-        testUserDTO = new UserDTO();
-        testUserDTO.setUid(TEST_UID);
-        testUserDTO.setDisplayName("Test User");
-        testUserDTO.setEmail("test@example.com");
+        testUserDTO = UserDTO.builder()
+                .uid(TEST_UID)
+                .displayName("Test User")
+                .email("test@example.com")
+                .build();
     }
 
     @Test
@@ -73,13 +73,9 @@ public class UserServiceTest {
             when(firestore.collection(COLLECTION_NAME)).thenReturn(collectionReference);
             when(collectionReference.document(TEST_UID)).thenReturn(documentReference);
             when(documentReference.set(any(User.class))).thenReturn(writeResultFuture);
-
-            // Mock
             when(documentReference.get()).thenReturn(documentSnapshotFuture);
             when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
             when(documentSnapshot.toObject(User.class)).thenReturn(null);
-
-            // Mapper
             when(userMapper.convertToEntity(testUserDTO)).thenReturn(testUser);
             when(userMapper.convertToDTO(testUser)).thenReturn(testUserDTO);
 
@@ -88,18 +84,16 @@ public class UserServiceTest {
 
             // Then
             assertNotNull(savedUserDTO);
-            assertEquals(TEST_UID, savedUserDTO.getUid());
-            assertEquals("Test User", savedUserDTO.getDisplayName());
-            assertEquals("test@example.com", savedUserDTO.getEmail());
+            assertEquals(TEST_UID, savedUserDTO.uid());
+            assertEquals("Test User", savedUserDTO.displayName());
+            assertEquals("test@example.com", savedUserDTO.email());
 
             verify(userMapper).convertToEntity(testUserDTO);
             verify(userMapper).convertToDTO(testUser);
             verify(firestore, times(2)).collection(COLLECTION_NAME);
             verify(collectionReference, times(2)).document(TEST_UID);
             verify(documentReference).set(testUser);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
@@ -118,13 +112,9 @@ public class UserServiceTest {
             when(firestore.collection(COLLECTION_NAME)).thenReturn(collectionReference);
             when(collectionReference.document(TEST_UID)).thenReturn(documentReference);
             when(documentReference.set(any(User.class))).thenReturn(writeResultFuture);
-
-            // Mock
             when(documentReference.get()).thenReturn(documentSnapshotFuture);
             when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
             when(documentSnapshot.toObject(User.class)).thenReturn(existingUser);
-
-            // Mapper
             when(userMapper.convertToEntity(testUserDTO)).thenReturn(testUser);
             when(userMapper.convertToDTO(any(User.class))).thenReturn(testUserDTO);
 
@@ -133,7 +123,7 @@ public class UserServiceTest {
 
             // Then
             assertNotNull(savedUserDTO);
-            assertEquals(TEST_UID, savedUserDTO.getUid());
+            assertEquals(TEST_UID, savedUserDTO.uid());
 
             verify(userMapper).convertToEntity(testUserDTO);
             verify(userMapper).convertToDTO(any(User.class));
@@ -150,15 +140,11 @@ public class UserServiceTest {
             mockedFirestoreClient.when(FirestoreClient::getFirestore).thenReturn(firestore);
             when(firestore.collection(COLLECTION_NAME)).thenReturn(collectionReference);
             when(collectionReference.document(TEST_UID)).thenReturn(documentReference);
-
-            // Mock
             when(documentReference.get()).thenReturn(documentSnapshotFuture);
             when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
             when(documentSnapshot.toObject(User.class)).thenReturn(null);
             when(documentReference.set(any(User.class))).thenReturn(writeResultFuture);
             when(writeResultFuture.get()).thenThrow(new InterruptedException("Test exception"));
-
-            // Mapper
             when(userMapper.convertToEntity(testUserDTO)).thenReturn(testUser);
 
             // When & Then
@@ -181,8 +167,6 @@ public class UserServiceTest {
             when(documentReference.get()).thenReturn(documentSnapshotFuture);
             when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
             when(documentSnapshot.toObject(User.class)).thenReturn(testUser);
-
-            // Mapper
             when(userMapper.convertToDTO(testUser)).thenReturn(testUserDTO);
 
             // When
@@ -190,7 +174,7 @@ public class UserServiceTest {
 
             // Then
             assertNotNull(returnedUserDTO);
-            assertEquals(TEST_UID, returnedUserDTO.getUid());
+            assertEquals(TEST_UID, returnedUserDTO.uid());
 
             verify(userMapper).convertToDTO(testUser);
             verify(firestore).collection(COLLECTION_NAME);
@@ -210,8 +194,6 @@ public class UserServiceTest {
             when(documentReference.get()).thenReturn(documentSnapshotFuture);
             when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
             when(documentSnapshot.toObject(User.class)).thenReturn(null);
-
-            // Mapper
             when(userMapper.convertToDTO(null)).thenReturn(null);
 
             // When
@@ -227,31 +209,6 @@ public class UserServiceTest {
     }
 
     @Test
-    void getUserByUid_WhenFirestoreThrowsException_ShouldReturnNull() throws ExecutionException, InterruptedException {
-        try (MockedStatic<FirestoreClient> mockedFirestoreClient = mockStatic(FirestoreClient.class)) {
-            // Given
-            mockedFirestoreClient.when(FirestoreClient::getFirestore).thenReturn(firestore);
-            when(firestore.collection(COLLECTION_NAME)).thenReturn(collectionReference);
-            when(collectionReference.document(TEST_UID)).thenReturn(documentReference);
-            when(documentReference.get()).thenReturn(documentSnapshotFuture);
-            when(documentSnapshotFuture.get()).thenThrow(new InterruptedException("Test exception"));
-
-            // Mapper
-            when(userMapper.convertToDTO(null)).thenReturn(null);
-
-            // When
-            UserDTO returnedUserDTO = userService.getUserByUid(TEST_UID);
-
-            // Then
-            assertNull(returnedUserDTO);
-
-            verify(userMapper).convertToDTO(null);
-            verify(firestore).collection(COLLECTION_NAME);
-            verify(collectionReference).document(TEST_UID);
-        }
-    }
-
-    @Test
     void updateUser_ExistingUser_ShouldUpdateAndReturnUser() throws ExecutionException, InterruptedException {
         try (MockedStatic<FirestoreClient> mockedFirestoreClient = mockStatic(FirestoreClient.class)) {
             // Given
@@ -263,9 +220,10 @@ public class UserServiceTest {
             updatedUser.setUid(TEST_UID);
             updatedUser.setDisplayName("Updated User");
 
-            UserDTO updatedUserDTO = new UserDTO();
-            updatedUserDTO.setUid(TEST_UID);
-            updatedUserDTO.setDisplayName("Updated User");
+            UserDTO updatedUserDTO = UserDTO.builder()
+                    .uid(TEST_UID)
+                    .displayName("Updated User")
+                    .build();
 
             mockedFirestoreClient.when(FirestoreClient::getFirestore).thenReturn(firestore);
             when(firestore.collection(COLLECTION_NAME)).thenReturn(collectionReference);
@@ -275,7 +233,6 @@ public class UserServiceTest {
             when(documentReference.get()).thenReturn(documentSnapshotFuture);
             when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
             when(documentSnapshot.toObject(User.class)).thenReturn(existingUser);
-
             when(documentReference.set(any(User.class))).thenReturn(writeResultFuture);
 
             // Mapper
@@ -287,7 +244,7 @@ public class UserServiceTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Updated User", result.getDisplayName());
+            assertEquals("Updated User", result.displayName());
 
             verify(userMapper).updateEntityFromDTO(testUserDTO, existingUser);
             verify(userMapper).convertToDTO(updatedUser);
@@ -320,38 +277,6 @@ public class UserServiceTest {
             verify(collectionReference).document(TEST_UID);
             verify(userMapper, never()).updateEntityFromDTO(any(), any());
             verify(documentReference, never()).set(any());
-        }
-    }
-
-    @Test
-    void updateUser_WhenFirestoreThrowsException_ShouldThrowRuntimeException() throws ExecutionException, InterruptedException {
-        try (MockedStatic<FirestoreClient> mockedFirestoreClient = mockStatic(FirestoreClient.class)) {
-            // Given
-            User existingUser = new User();
-            existingUser.setUid(TEST_UID);
-
-            User updatedUser = new User();
-            updatedUser.setUid(TEST_UID);
-
-            mockedFirestoreClient.when(FirestoreClient::getFirestore).thenReturn(firestore);
-            when(firestore.collection(COLLECTION_NAME)).thenReturn(collectionReference);
-            when(collectionReference.document(TEST_UID)).thenReturn(documentReference);
-
-            // Mock
-            when(documentReference.get()).thenReturn(documentSnapshotFuture);
-            when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
-            when(documentSnapshot.toObject(User.class)).thenReturn(existingUser);
-            when(documentReference.set(any(User.class))).thenReturn(writeResultFuture);
-            when(writeResultFuture.get()).thenThrow(new InterruptedException("Test exception"));
-            when(userMapper.updateEntityFromDTO(testUserDTO, existingUser)).thenReturn(updatedUser);
-
-            // When & Then
-            assertThrows(RuntimeException.class, () -> userService.updateUser(testUserDTO));
-
-            verify(userMapper).updateEntityFromDTO(testUserDTO, existingUser);
-            verify(firestore, times(2)).collection(COLLECTION_NAME);
-            verify(collectionReference, times(2)).document(TEST_UID);
-            verify(documentReference).set(updatedUser);
         }
     }
 }

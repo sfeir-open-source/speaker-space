@@ -1,6 +1,7 @@
 package com.speakerspace.controller;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.config.CookieService;
 import com.speakerspace.config.FirebaseTokenRequest;
@@ -27,7 +28,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-public class AuthControllerTest {
+class AuthControllerTest {
 
     @Mock
     private UserService userService;
@@ -40,7 +41,6 @@ public class AuthControllerTest {
 
     @Mock
     private UserMapper userMapper;
-
     @Mock
     private HttpServletResponse response;
 
@@ -55,24 +55,25 @@ public class AuthControllerTest {
 
     private UserDTO testUserDTO;
     private FirebaseTokenRequest tokenRequest;
-    private final String VALID_TOKEN = "valid-token-123";
-    private final String TEST_UID = "test-uid-123";
+    private static final String VALID_TOKEN = "valid-token-123";
+    private static final String TEST_UID = "test-uid-123";
 
     @BeforeEach
     void setUp() {
-        testUserDTO = new UserDTO();
-        testUserDTO.setUid(TEST_UID);
-        testUserDTO.setDisplayName("Test User");
-        testUserDTO.setEmail("test@example.com");
-        testUserDTO.setPhotoURL("https://example.com/photo.jpg");
+        testUserDTO = UserDTO.builder()
+                .uid(TEST_UID)
+                .displayName("Test User")
+                .email("test@example.com")
+                .photoURL("https://example.com/photo.jpg")
+                .build();
 
         tokenRequest = new FirebaseTokenRequest();
         tokenRequest.idToken = VALID_TOKEN;
 
-        when(firebaseToken.getUid()).thenReturn(testUserDTO.getUid());
-        when(firebaseToken.getEmail()).thenReturn(testUserDTO.getEmail());
-        when(firebaseToken.getName()).thenReturn(testUserDTO.getDisplayName());
-        when(firebaseToken.getPicture()).thenReturn(testUserDTO.getPhotoURL());
+        when(firebaseToken.getUid()).thenReturn(testUserDTO.uid());
+        when(firebaseToken.getEmail()).thenReturn(testUserDTO.email());
+        when(firebaseToken.getName()).thenReturn(testUserDTO.displayName());
+        when(firebaseToken.getPicture()).thenReturn(testUserDTO.photoURL());
     }
 
     @Test
@@ -209,6 +210,44 @@ public class AuthControllerTest {
     }
 
     @Test
+    void updateUserProfile_WithUnauthorizedUser_ShouldReturnForbidden() throws Exception {
+        // Given
+        String differentUid = "different-uid";
+        UserDTO differentUserDTO = UserDTO.builder()
+                .uid(differentUid)
+                .displayName("Different User")
+                .email("different@example.com")
+                .build();
+
+        when(cookieService.getAuthTokenFromCookies(request)).thenReturn(VALID_TOKEN);
+        when(firebaseAuth.verifyIdToken(VALID_TOKEN)).thenReturn(firebaseToken);
+
+        // When
+        ResponseEntity<?> responseEntity = authController.updateUserProfile(differentUserDTO, request);
+
+        // Then
+        assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
+        verify(cookieService).getAuthTokenFromCookies(request);
+        verify(firebaseAuth).verifyIdToken(VALID_TOKEN);
+        verify(userService, never()).updateUser(any());
+    }
+
+    @Test
+    void updateUserProfile_WithNoToken_ShouldReturnUnauthorized() throws FirebaseAuthException {
+        // Given
+        when(cookieService.getAuthTokenFromCookies(request)).thenReturn(null);
+
+        // When
+        ResponseEntity<?> responseEntity = authController.updateUserProfile(testUserDTO, request);
+
+        // Then
+        assertEquals(HttpStatus.UNAUTHORIZED, responseEntity.getStatusCode());
+        verify(cookieService).getAuthTokenFromCookies(request);
+        verify(firebaseAuth, never()).verifyIdToken(anyString());
+        verify(userService, never()).updateUser(any());
+    }
+
+    @Test
     void getUserData_WithValidTokenAndAuthorizedUser_ShouldReturnUser() throws Exception {
         // Given
         when(cookieService.getAuthTokenFromCookies(request)).thenReturn(VALID_TOKEN);
@@ -227,9 +266,24 @@ public class AuthControllerTest {
     }
 
     @Test
-    void logout_ShouldClearCookieAndReturnOk() {
+    void getUserData_WithUnauthorizedUser_ShouldReturnForbidden() throws Exception {
         // Given
+        String differentUid = "different-uid";
+        when(cookieService.getAuthTokenFromCookies(request)).thenReturn(VALID_TOKEN);
+        when(firebaseAuth.verifyIdToken(VALID_TOKEN)).thenReturn(firebaseToken);
 
+        // When
+        ResponseEntity<?> responseEntity = authController.getUserData(differentUid, request);
+
+        // Then
+        assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
+        verify(cookieService).getAuthTokenFromCookies(request);
+        verify(firebaseAuth).verifyIdToken(VALID_TOKEN);
+        verify(userService, never()).getUserByUid(differentUid);
+    }
+
+    @Test
+    void logout_ShouldClearCookieAndReturnOk() {
         // When
         ResponseEntity<?> responseEntity = authController.logout(response);
 

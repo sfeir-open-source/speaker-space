@@ -10,6 +10,7 @@ import com.speakerspace.utils.email.UserEmailExtractor;
 import com.speakerspace.service.EventService;
 import com.speakerspace.service.SessionService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,20 +21,13 @@ import java.util.function.Supplier;
 
 @RestController
 @RequestMapping("/session")
+@RequiredArgsConstructor
 public class SessionController {
 
     private final EventService eventService;
     private final SessionService sessionService;
     private final AuthenticationHelper authHelper;
     private final UserEmailExtractor emailExtractor;
-
-    public SessionController(EventService eventService, SessionService sessionService,
-                             AuthenticationHelper authHelper, UserEmailExtractor emailExtractor) {
-        this.eventService = eventService;
-        this.sessionService = sessionService;
-        this.authHelper = authHelper;
-        this.emailExtractor = emailExtractor;
-    }
 
     @PostMapping("/event/{eventId}/import")
     public ResponseEntity<ImportResultDTO> importSessionsReview(
@@ -42,8 +36,8 @@ public class SessionController {
             Authentication authentication) {
 
         return executeWithEventAuthorization(eventId, authentication, () -> {
-            validateEventIdMatch(eventId, importRequest.getEventId());
-            return sessionService.importSessionsReview(eventId, importRequest.getSessions());
+            validateEventIdMatch(eventId, importRequest.eventId());
+            return sessionService.importSessionsReview(eventId, importRequest.sessions());
         });
     }
 
@@ -54,9 +48,9 @@ public class SessionController {
             Authentication authentication) {
 
         return executeWithEventAuthorization(eventId, authentication, () -> {
-            validateEventIdMatch(eventId, importRequest.getEventId());
-            validateSessionsData(importRequest.getSessions());
-            return sessionService.importSessionsSchedule(eventId, importRequest.getSessions());
+            validateEventIdMatch(eventId, importRequest.eventId());
+            validateSessionsData(importRequest.sessions());
+            return sessionService.importSessionsSchedule(eventId, importRequest.sessions());
         });
     }
 
@@ -143,7 +137,7 @@ public class SessionController {
 
         return executeWithEventAuthorization(eventId, authentication, () -> {
             List<SessionDTO> sessions = sessionService.getSessionsWithScheduleByEventId(eventId);
-            sessions.sort(Comparator.comparing(SessionDTO::getStart));
+            sessions.sort(Comparator.comparing(SessionDTO::start));
             return sessions;
         });
     }
@@ -187,7 +181,7 @@ public class SessionController {
                 return ResponseEntity.notFound().build();
             }
 
-            if (!authHelper.isUserAuthorized(authentication, existingEvent.getUserCreateId())) {
+            if (!authHelper.isUserAuthorized(authentication, existingEvent.userCreateId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
