@@ -32,7 +32,36 @@ public class EventService {
 
     public EventDTO createEvent(EventDTO eventDTO) {
         String currentUserId = userService.getCurrentUserId();
-        Event event = eventMapper.convertToEntity(eventDTO);
+
+        if (eventDTO.eventName() == null || eventDTO.eventName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Event name is required");
+        }
+
+        if (eventDTO.type() == null || eventDTO.type().trim().isEmpty()) {
+            throw new IllegalArgumentException("Event type is required");
+        }
+
+        EventDTO sanitizedEventDTO = EventDTO.builder()
+                .idEvent(eventDTO.idEvent())
+                .eventName(eventDTO.eventName().trim())
+                .description(eventDTO.description())
+                .endDate(eventDTO.endDate())
+                .url(eventDTO.url())
+                .startDate(eventDTO.startDate())
+                .isOnline(Optional.ofNullable(eventDTO.isOnline()).orElse(false))
+                .location(eventDTO.location())
+                .isPrivate(Optional.ofNullable(eventDTO.isPrivate()).orElse(true))
+                .webLinkUrl(eventDTO.webLinkUrl())
+                .isFinish(Optional.ofNullable(eventDTO.isFinish()).orElse(false))
+                .userCreateId(currentUserId)
+                .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                .teamId(eventDTO.teamId())
+                .timeZone(Optional.ofNullable(eventDTO.timeZone()).orElse("Europe/Paris"))
+                .logoBase64(eventDTO.logoBase64())
+                .type(eventDTO.type().trim())
+                .build();
+
+        Event event = eventMapper.convertToEntity(sanitizedEventDTO);
 
         if (event.getTeamId() != null &&
                 eventRepository.existsByEventNameAndTeamId(event.getEventName(), event.getTeamId())) {
@@ -44,31 +73,6 @@ public class EventService {
             event.setUrl(BASE_URL + urlSuffix);
         }
 
-        EventDTO finalEventDTO = eventDTO;
-        if (eventDTO.isPrivate() == null) {
-            finalEventDTO = EventDTO.builder()
-                    .idEvent(eventDTO.idEvent())
-                    .eventName(eventDTO.eventName())
-                    .description(eventDTO.description())
-                    .endDate(eventDTO.endDate())
-                    .url(eventDTO.url())
-                    .startDate(eventDTO.startDate())
-                    .isOnline(eventDTO.isOnline())
-                    .location(eventDTO.location())
-                    .isPrivate(true)
-                    .webLinkUrl(eventDTO.webLinkUrl())
-                    .isFinish(eventDTO.isFinish())
-                    .userCreateId(currentUserId)
-                    .conferenceHallUrl(eventDTO.conferenceHallUrl())
-                    .teamId(eventDTO.teamId())
-                    .timeZone(eventDTO.timeZone())
-                    .logoBase64(eventDTO.logoBase64())
-                    .type(eventDTO.type())
-                    .build();
-            event = eventMapper.convertToEntity(finalEventDTO);
-        }
-
-        event.setUserCreateId(currentUserId);
         Event savedEvent = eventRepository.save(event);
         return eventMapper.convertToDTO(savedEvent);
     }
@@ -250,6 +254,7 @@ public class EventService {
                 .toLowerCase()
                 .replaceAll("\\s+", "-")
                 .replaceAll("[^a-z0-9-]", "")
-                .replaceAll("-+", "-");
+                .replaceAll("-+", "-")
+                .replaceAll("^-|-$", "");
     }
 }

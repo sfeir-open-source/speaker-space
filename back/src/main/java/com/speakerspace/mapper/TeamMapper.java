@@ -6,7 +6,10 @@ import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class TeamMapper {
@@ -20,7 +23,7 @@ public class TeamMapper {
                 .url(team.getUrl())
                 .userCreateId(team.getUserCreateId())
                 .creatorEmail(team.getCreatorEmail())
-                .memberIds(team.getMemberIds())
+                .memberIds(new ArrayList<>(team.getMemberIds()))
                 .members(team.getMembers() != null
                         ? team.getMembers().stream()
                         .map(this::convertMemberToDTO)
@@ -38,13 +41,16 @@ public class TeamMapper {
         team.setUrl(teamDTO.url());
         team.setUserCreateId(teamDTO.userCreateId());
         team.setCreatorEmail(teamDTO.creatorEmail());
-        team.setMemberIds(teamDTO.memberIds());
+        if (teamDTO.memberIds() != null) {
+            team.setMemberIds(new ArrayList<>(teamDTO.memberIds()));
+        }
 
-        team.setMembers(teamDTO.members() != null
-                ? teamDTO.members().stream()
-                .map(this::convertMemberToEntity)
-                .toList()
-                : Collections.emptyList());
+        if (teamDTO.members() != null) {
+            List<TeamMember> members = teamDTO.members().stream()
+                    .map(this::convertDTOToMember)
+                    .collect(Collectors.toCollection(ArrayList::new)); // Force ArrayList
+            team.setMembers(members);
+        }
 
         return team;
     }
@@ -58,9 +64,15 @@ public class TeamMapper {
                 .build();
     }
 
-    private TeamMember convertMemberToEntity(TeamMemberDTO dto) {
-        if (dto == null) return null;
-
-        return new TeamMember(dto.userId(), dto.role());
+    private TeamMember convertDTOToMember(TeamMemberDTO dto) {
+        TeamMember member = new TeamMember(dto.userId(), dto.role());
+        member.setUserId(dto.userId());
+        member.setRole(dto.role());
+        member.setDisplayName(dto.displayName());
+        member.setEmail(dto.email());
+        member.setPhotoURL(dto.photoURL());
+        member.setStatus(dto.status());
+        member.setIsCreator(dto.isCreator());
+        return member;
     }
 }

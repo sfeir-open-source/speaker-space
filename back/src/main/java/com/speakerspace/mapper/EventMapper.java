@@ -27,7 +27,7 @@ public class EventMapper {
                 .endDate(Optional.ofNullable(event.getEndDate())
                         .map(timestamp -> timestamp.toDate().toInstant().toString())
                         .orElse(null))
-                .isOnline(event.getIsOnline())
+                .isOnline(Optional.ofNullable(event.getIsOnline()).orElse(false))
                 .location(event.getLocation())
                 .isPrivate(event.isPrivate())
                 .webLinkUrl(event.getWebLinkUrl())
@@ -58,11 +58,11 @@ public class EventMapper {
                 .filter(date -> !date.trim().isEmpty())
                 .ifPresent(date -> event.setEndDate(parseStringToTimestamp(date)));
 
-        event.setIsOnline(eventDTO.isOnline());
+        event.setIsOnline(Optional.ofNullable(eventDTO.isOnline()).orElse(false));
         event.setLocation(eventDTO.location());
         event.setPrivate(Optional.ofNullable(eventDTO.isPrivate()).orElse(true));
         event.setWebLinkUrl(eventDTO.webLinkUrl());
-        event.setFinish(eventDTO.isFinish());
+        event.setFinish(Optional.ofNullable(eventDTO.isFinish()).orElse(false));
         event.setUrl(eventDTO.url());
         event.setUserCreateId(eventDTO.userCreateId());
         event.setConferenceHallUrl(eventDTO.conferenceHallUrl());

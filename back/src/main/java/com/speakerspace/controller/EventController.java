@@ -1,6 +1,8 @@
 package com.speakerspace.controller;
 
 import com.speakerspace.dto.EventDTO;
+import com.speakerspace.exception.EntityNotFoundException;
+import com.speakerspace.exception.UnauthorizedException;
 import com.speakerspace.security.AuthenticationHelper;
 import com.speakerspace.service.EventService;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +26,7 @@ public class EventController {
     @PostMapping("/create")
     public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO, Authentication authentication) {
         if (authentication == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new UnauthorizedException("Authentication required");
         }
 
         EventDTO eventWithUserId = EventDTO.builder()
@@ -47,26 +49,26 @@ public class EventController {
                 .type(eventDTO.type())
                 .build();
 
-        try {
-            EventDTO createdEvent = eventService.createEvent(eventWithUserId);
-            return ResponseEntity.ok(createdEvent);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        EventDTO createdEvent = eventService.createEvent(eventWithUserId);
+        return ResponseEntity.ok(createdEvent);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<EventDTO> getEvent(@PathVariable String id) {
         EventDTO event = eventService.getEventById(id);
-        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
+        if (event == null) {
+            throw new EntityNotFoundException("Event not found with id: " + id);
+        }
+        return ResponseEntity.ok(event);
     }
 
     @GetMapping("/by-url/{urlId}")
     public ResponseEntity<EventDTO> getEventByUrl(@PathVariable String urlId) {
         EventDTO event = eventService.getEventByUrl(urlId);
-        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
+        if (event == null) {
+            throw new EntityNotFoundException("Event not found with URL: " + urlId);
+        }
+        return ResponseEntity.ok(event);
     }
 
     @GetMapping("/by-team/{teamId}")
@@ -83,80 +85,61 @@ public class EventController {
     public ResponseEntity<EventDTO> updateEvent(
             @PathVariable String id,
             @RequestBody EventDTO eventDTO,
-            Authentication authentication) {
+            Authentication authentication) throws AccessDeniedException {
 
-        if (authentication == null || !id.equals(eventDTO.idEvent())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        if (authentication == null) {
+            throw new UnauthorizedException("Authentication required");
         }
 
-        try {
-            EventDTO existingEvent = eventService.getEventById(id);
-            if (existingEvent == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            if (!authHelper.isUserAuthorized(authentication, existingEvent.userCreateId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-
-            EventDTO eventWithPreservedUserId = EventDTO.builder()
-                    .idEvent(eventDTO.idEvent())
-                    .eventName(eventDTO.eventName())
-                    .description(eventDTO.description())
-                    .endDate(eventDTO.endDate())
-                    .url(eventDTO.url())
-                    .startDate(eventDTO.startDate())
-                    .isOnline(eventDTO.isOnline())
-                    .location(eventDTO.location())
-                    .isPrivate(eventDTO.isPrivate())
-                    .webLinkUrl(eventDTO.webLinkUrl())
-                    .isFinish(eventDTO.isFinish())
-                    .userCreateId(existingEvent.userCreateId())
-                    .conferenceHallUrl(eventDTO.conferenceHallUrl())
-                    .teamId(eventDTO.teamId())
-                    .timeZone(eventDTO.timeZone())
-                    .logoBase64(eventDTO.logoBase64())
-                    .type(eventDTO.type())
-                    .build();
-
-            EventDTO updatedEvent = eventService.updateEvent(eventWithPreservedUserId);
-            return ResponseEntity.ok(updatedEvent);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        if (!id.equals(eventDTO.idEvent())) {
+            throw new IllegalArgumentException("Path ID and body ID must match");
         }
+
+        EventDTO existingEvent = eventService.getEventById(id);
+        if (existingEvent == null) {
+            throw new EntityNotFoundException("Event not found with id: " + id);
+        }
+
+        if (!authHelper.isUserAuthorized(authentication, existingEvent.userCreateId())) {
+            throw new AccessDeniedException("User not authorized to update this event");
+        }
+
+        EventDTO eventWithPreservedUserId = EventDTO.builder()
+                .idEvent(eventDTO.idEvent())
+                .eventName(eventDTO.eventName())
+                .description(eventDTO.description())
+                .endDate(eventDTO.endDate())
+                .url(eventDTO.url())
+                .startDate(eventDTO.startDate())
+                .isOnline(eventDTO.isOnline())
+                .location(eventDTO.location())
+                .isPrivate(eventDTO.isPrivate())
+                .webLinkUrl(eventDTO.webLinkUrl())
+                .isFinish(eventDTO.isFinish())
+                .userCreateId(existingEvent.userCreateId())
+                .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                .teamId(eventDTO.teamId())
+                .timeZone(eventDTO.timeZone())
+                .logoBase64(eventDTO.logoBase64())
+                .type(eventDTO.type())
+                .build();
+
+        EventDTO updatedEvent = eventService.updateEvent(eventWithPreservedUserId);
+        return ResponseEntity.ok(updatedEvent);
     }
 
     @DeleteMapping("/{eventId}")
-    public ResponseEntity<Map<String, Object>> deleteEvent(@PathVariable String eventId) {
-        try {
-            boolean deleted = eventService.deleteEvent(eventId);
+    public ResponseEntity<Map<String, Object>> deleteEvent(@PathVariable String eventId) throws AccessDeniedException {
+        boolean deleted = eventService.deleteEvent(eventId);
 
-            if (deleted) {
-                Map<String, Object> response = Map.of(
-                        "message", "Event and associated speakers and sessions deleted successfully",
-                        "eventId", eventId
-                );
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-
-        } catch (AccessDeniedException e) {
-            Map<String, Object> errorResponse = Map.of(
-                    "error", "Access denied",
-                    "message", "You don't have permission to delete this event"
-            );
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
-
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = Map.of(
-                    "error", "Internal server error",
-                    "message", "Failed to delete event"
-            );
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        if (!deleted) {
+            throw new EntityNotFoundException("Event not found with id: " + eventId);
         }
+
+        Map<String, Object> response = Map.of(
+                "message", "Event and associated speakers and sessions deleted successfully",
+                "eventId", eventId
+        );
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,5 +1,5 @@
 export type EventDTO = {
-  teamUrl: string;
+  teamUrl?: string;
   idEvent?: string;
   eventName: string;
   description?: string;

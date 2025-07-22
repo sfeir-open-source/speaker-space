@@ -1,41 +1,36 @@
 package com.speakerspace.controller;
 
-import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.*;
+import com.speakerspace.exception.EntityNotFoundException;
+import com.speakerspace.exception.EventAuthorizationHelper;
 import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.SessionReviewImportData;
 import com.speakerspace.model.session.Speaker;
-import com.speakerspace.security.AuthenticationHelper;
-import com.speakerspace.utils.email.UserEmailExtractor;
-import com.speakerspace.service.EventService;
 import com.speakerspace.service.SessionService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.file.AccessDeniedException;
 import java.util.*;
-import java.util.function.Supplier;
 
 @RestController
 @RequestMapping("/session")
 @RequiredArgsConstructor
 public class SessionController {
 
-    private final EventService eventService;
     private final SessionService sessionService;
-    private final AuthenticationHelper authHelper;
-    private final UserEmailExtractor emailExtractor;
+    private final EventAuthorizationHelper authorizationHelper;
 
     @PostMapping("/event/{eventId}/import")
     public ResponseEntity<ImportResultDTO> importSessionsReview(
             @PathVariable String eventId,
             @RequestBody SessionReviewImportRequestDTO importRequest,
-            Authentication authentication) {
+            Authentication authentication) throws AccessDeniedException {
 
-        return executeWithEventAuthorization(eventId, authentication, () -> {
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
             validateEventIdMatch(eventId, importRequest.eventId());
             return sessionService.importSessionsReview(eventId, importRequest.sessions());
         });
@@ -45,9 +40,9 @@ public class SessionController {
     public ResponseEntity<ImportResultDTO> importSessionsSchedule(
             @PathVariable String eventId,
             @RequestBody SessionScheduleImportRequestDTO importRequest,
-            Authentication authentication) {
+            Authentication authentication) throws AccessDeniedException {
 
-        return executeWithEventAuthorization(eventId, authentication, () -> {
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
             validateEventIdMatch(eventId, importRequest.eventId());
             validateSessionsData(importRequest.sessions());
             return sessionService.importSessionsSchedule(eventId, importRequest.sessions());
@@ -60,21 +55,13 @@ public class SessionController {
             HttpServletRequest request,
             Authentication authentication) {
 
-        return executeWithUserAuthentication(request, authentication, () -> {
-            try {
-                List<SessionReviewImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
-
-                List<SessionReviewImportData> mutableSessions = new ArrayList<>(sessions);
-                mutableSessions.sort(Comparator.comparing(s ->
-                        s.getTitle() != null ? s.getTitle().toLowerCase() : ""
-                ));
-
-                return mutableSessions;
-            } catch (Exception e) {
-                System.err.println("Error fetching sessions for event " + eventId + ": " + e.getMessage());
-                e.printStackTrace();
-                throw e;
-            }
+        return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
+            List<SessionReviewImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
+            List<SessionReviewImportData> mutableSessions = new ArrayList<>(sessions);
+            mutableSessions.sort(Comparator.comparing(s ->
+                    s.getTitle() != null ? s.getTitle().toLowerCase() : ""
+            ));
+            return mutableSessions;
         });
     }
 
@@ -85,7 +72,7 @@ public class SessionController {
             HttpServletRequest request,
             Authentication authentication) {
 
-        return executeWithUserAuthentication(request, authentication, () ->
+        return authorizationHelper.executeWithUserAuthentication(request, authentication, () ->
                 sessionService.getSessionById(eventId, sessionId));
     }
 
@@ -93,9 +80,9 @@ public class SessionController {
     public ResponseEntity<SessionDTO> getSessionDetailById(
             @PathVariable String eventId,
             @PathVariable String sessionId,
-            Authentication authentication) {
+            Authentication authentication) throws AccessDeniedException {
 
-        return executeWithEventAuthorization(eventId, authentication, () ->
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () ->
                 sessionService.getSessionByIdAndEventId(sessionId, eventId));
     }
 
@@ -105,7 +92,7 @@ public class SessionController {
             HttpServletRequest request,
             Authentication authentication) {
 
-        return executeWithUserAuthentication(request, authentication, () ->
+        return authorizationHelper.executeWithUserAuthentication(request, authentication, () ->
                 sessionService.getUniqueSpeekersByEventId(eventId));
     }
 
@@ -116,7 +103,7 @@ public class SessionController {
             HttpServletRequest request,
             Authentication authentication) {
 
-        return executeWithUserAuthentication(request, authentication, () ->
+        return authorizationHelper.executeWithUserAuthentication(request, authentication, () ->
                 sessionService.getSpeakerById(eventId, speakerId));
     }
 
@@ -126,39 +113,29 @@ public class SessionController {
             HttpServletRequest request,
             Authentication authentication) {
 
-        return executeWithUserAuthentication(request, authentication, () ->
+        return authorizationHelper.executeWithUserAuthentication(request, authentication, () ->
                 sessionService.getSpeakersWithSessionsByEventId(eventId));
     }
 
     @GetMapping("/event/{eventId}/tracks")
     public ResponseEntity<List<String>> getAvailableTracksForEvent(
             @PathVariable String eventId,
-            Authentication authentication) {
+            Authentication authentication) throws AccessDeniedException {
 
-        return executeWithEventAuthorization(eventId, authentication, () -> {
-            List<String> tracks = sessionService.getDistinctTracksByEventId(eventId);
-            return tracks;
-        });
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () ->
+                sessionService.getDistinctTracksByEventId(eventId));
     }
 
     @GetMapping("/event/{eventId}/calendar")
     public ResponseEntity<List<SessionDTO>> getSessionsForCalendar(
             @PathVariable String eventId,
-            Authentication authentication) {
+            Authentication authentication) throws AccessDeniedException {
 
-        return executeWithEventAuthorization(eventId, authentication, () -> {
-            try {
-                List<SessionDTO> sessions = sessionService.getSessionsWithScheduleByEventId(eventId);
-
-                List<SessionDTO> mutableSessions = new ArrayList<>(sessions);
-                mutableSessions.sort(Comparator.comparing(SessionDTO::start));
-
-                return mutableSessions;
-            } catch (Exception e) {
-                System.err.println("Error fetching calendar sessions for event " + eventId + ": " + e.getMessage());
-                e.printStackTrace();
-                throw e;
-            }
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
+            List<SessionDTO> sessions = sessionService.getSessionsWithScheduleByEventId(eventId);
+            List<SessionDTO> mutableSessions = new ArrayList<>(sessions);
+            mutableSessions.sort(Comparator.comparing(SessionDTO::start));
+            return mutableSessions;
         });
     }
 
@@ -167,78 +144,27 @@ public class SessionController {
             @PathVariable String eventId,
             @PathVariable String sessionId,
             @RequestBody Session session,
-            Authentication authentication) {
+            Authentication authentication) throws AccessDeniedException {
 
-        return executeWithEventAuthorization(eventId, authentication, () -> {
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
             if (session.getStart() != null && session.getEnd() != null) {
                 if (session.getStart().after(session.getEnd())) {
                     throw new IllegalArgumentException("Start time must be before end time");
                 }
             }
 
-            SessionDTO updatedSession = sessionService.updateSessionSchedule(
-                    sessionId, eventId, session);
-
-            return updatedSession;
+            return sessionService.updateSessionSchedule(sessionId, eventId, session);
         });
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSession(@PathVariable String id) {
         boolean deleted = sessionService.deleteSession(id);
-        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        if (!deleted) {
+            throw new EntityNotFoundException("Session not found with id: " + id);
+        }
+        return ResponseEntity.noContent().build();
     }
-
-    private <T> ResponseEntity<T> executeWithEventAuthorization(String eventId, Authentication authentication,
-                                                                Supplier<T> operation) {
-        if (authentication == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        try {
-            EventDTO existingEvent = eventService.getEventById(eventId);
-            if (existingEvent == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            if (!authHelper.isUserAuthorized(authentication, existingEvent.userCreateId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-
-            T result = operation.get();
-            return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
-
-        } catch (IllegalArgumentException e) {
-            System.err.println("Bad request error: " + e.getMessage());
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            System.err.println("Internal server error: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    private <T> ResponseEntity<T> executeWithUserAuthentication(HttpServletRequest request, Authentication authentication,
-                                                                Supplier<T> operation) {
-        String userEmail = emailExtractor.extractUserEmail(request, authentication);
-        if (userEmail == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
-        try {
-            T result = operation.get();
-            return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
-        } catch (UnsupportedOperationException e) {
-            System.err.println("Immutable collection operation error: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } catch (Exception e) {
-            System.err.println("Error in user authentication operation: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
 
     private void validateEventIdMatch(String pathEventId, String bodyEventId) {
         if (!pathEventId.equals(bodyEventId)) {

@@ -66,17 +66,17 @@ export class ListEventPageComponent implements OnInit {
   transformEventsToFields(events: Event[]): EventTeamField[] {
     return events
       .filter(event => {
-        const isFinished : boolean = event.isFinish || false;
-        return this.activeTab === 'Achived' ? isFinished : !isFinished;
+        const isFinished: boolean = event.isFinish ?? false;
+        return this.activeTab === 'Archived' ? isFinished : !isFinished;
       })
       .map(event => ({
-        idEvent: event.idEvent || '',
-        title: event.eventName,
-        type: event.type,
-        img: event.logoBase64 || '',
-        link: event.webLinkUrl || '',
-        statusText: event.isFinish ? 'Closed' : 'Open',
-        publicUrl: event.url || '',
+        idEvent: event.idEvent ?? '',
+        title: event.eventName ?? 'Untitled Event',
+        type: event.type ?? 'Unknown',
+        img: event.logoBase64 ?? '',
+        link: event.webLinkUrl ?? '',
+        statusText: (event.isFinish ?? false) ? 'Closed' : 'Open',
+        publicUrl: event.url ?? '',
         logoBase64: event.logoBase64
       }));
   }

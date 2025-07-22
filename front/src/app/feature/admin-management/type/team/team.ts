@@ -1,6 +1,4 @@
-import {
-  SettingTeamMembersPageComponent
-} from '../../pages/team/setting-team-members-page/setting-team-members-page.component';
+import {TeamMember} from './team-member';
 
 export type Team = {
   id?: string;
@@ -8,5 +6,5 @@ export type Team = {
   url?: string;
   userCreateId?: string;
   memberIds?: string[];
-  members?: SettingTeamMembersPageComponent[];
+  members?: TeamMember[];
 };

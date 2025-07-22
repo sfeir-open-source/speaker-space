@@ -5,5 +5,5 @@ export type EventTeamField = {
   img: string;
   link: string;
   statusText: string;
-  logoBase64?: string;
+  logoBase64?: string | null;
 }

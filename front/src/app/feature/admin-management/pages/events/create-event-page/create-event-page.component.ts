@@ -48,7 +48,16 @@ export class CreateEventPageComponent implements OnInit {
   }
 
   onGeneralFormSubmitted(eventData: EventDTO): void {
-    this.eventService.createEvent(eventData).subscribe({
+    const sanitizedEventData: EventDTO = {
+      ...eventData,
+      isOnline: eventData.isOnline ?? false,
+      isPrivate: eventData.isPrivate ?? true,
+      isFinish: eventData.isFinish ?? false,
+      timeZone: eventData.timeZone ?? 'Europe/Paris',
+      teamUrl: eventData.teamUrl ?? ''
+    };
+
+    this.eventService.createEvent(sanitizedEventData).subscribe({
       next: (response: EventDTO) => {
         this.eventDataService.setEventId(response.idEvent || '');
         this.eventDataService.updateEventData({
@@ -58,15 +67,16 @@ export class CreateEventPageComponent implements OnInit {
           eventName: response.eventName,
           timeZone: response.timeZone,
           webLinkUrl: response.webLinkUrl,
-          isPrivate: true,
-          type : response.type,
+          isPrivate: response.isPrivate ?? true,
+          type: response.type,
         });
 
         this.eventDataService.goToNextStep();
       },
       error: (err) => {
         console.error('Failed to create event:', err);
-        alert('Failed to create event: ' + (err.message || 'Unknown error'));
+        const errorMessage = err.error?.message || err.message || 'Unknown error occurred';
+        alert('Failed to create event: ' + errorMessage);
       }
     });
   }

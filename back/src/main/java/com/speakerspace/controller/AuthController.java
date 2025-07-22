@@ -6,16 +6,17 @@ import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.config.CookieService;
 import com.speakerspace.config.FirebaseTokenRequest;
 import com.speakerspace.dto.UserDTO;
-import com.speakerspace.exception.ValidationException;
+import com.speakerspace.exception.*;
 import com.speakerspace.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.nio.file.AccessDeniedException;
 
 @RestController
 @RequestMapping("/auth")
@@ -28,117 +29,80 @@ public class AuthController {
     private final FirebaseAuth firebaseAuth;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody FirebaseTokenRequest request, HttpServletResponse response) {
+    public ResponseEntity<UserDTO> login(@RequestBody FirebaseTokenRequest request, HttpServletResponse response) {
         if (request.getIdToken() == null) {
-            logger.error("No token provided in request");
-            return ResponseEntity.badRequest().body("No token provided");
+            throw new IllegalArgumentException("No token provided");
         }
 
-        try {
-            FirebaseToken decodedToken = firebaseAuth.verifyIdToken(request.getIdToken());
-            String uid = decodedToken.getUid();
+        FirebaseToken decodedToken = verifyFirebaseToken(request.getIdToken());
+        String uid = decodedToken.getUid();
 
-            cookieService.setAuthCookie(response, request.getIdToken());
-            logger.info("Setting auth cookie for user");
+        cookieService.setAuthCookie(response, request.getIdToken());
 
-            UserDTO existingUser = userService.getUserByUid(uid);
+        UserDTO existingUser = userService.getUserByUid(uid);
 
-            if (existingUser == null) {
-                existingUser = createNewUser(decodedToken);
-            } else {
-                existingUser = updateExistingUserIfNeeded(existingUser, decodedToken);
-            }
-
-            return ResponseEntity.ok(existingUser);
-        } catch (Exception e) {
-            logger.error("Error during login", e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+        if (existingUser == null) {
+            existingUser = createNewUser(decodedToken);
+        } else {
+            existingUser = updateExistingUserIfNeeded(existingUser, decodedToken);
         }
+
+        return ResponseEntity.ok(existingUser);
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response) {
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
         cookieService.clearAuthCookie(response);
         return ResponseEntity.ok().build();
     }
 
-    private static class AuthenticationException extends Exception {
-        public AuthenticationException(String message) {
-            super(message);
-        }
-    }
-
-    private static class SecurityException extends Exception {
-        public SecurityException(String message) {
-            super(message);
-        }
-    }
-
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody UserDTO userDTO) {
-        try {
-            logger.info("Creating/updating user: {}", userDTO.uid());
-            return ResponseEntity.ok(userService.saveUser(userDTO));
-        } catch (Exception e) {
-            logger.error("Error creating/updating user", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to create/update user: " + e.getMessage());
-        }
+    public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
+        logger.info("Creating/updating user: {}", userDTO.uid());
+        UserDTO savedUser = userService.saveUser(userDTO);
+        return ResponseEntity.ok(savedUser);
     }
 
     @GetMapping("/{uid}")
-    public ResponseEntity<?> getUserByUid(@PathVariable String uid) {
+    public ResponseEntity<UserDTO> getUserByUid(@PathVariable String uid) {
         UserDTO userDTO = userService.getUserByUid(uid);
-        return userDTO != null
-                ? ResponseEntity.ok(userDTO)
-                : ResponseEntity.notFound().build();
+        if (userDTO == null) {
+            throw new EntityNotFoundException("User not found with uid: " + uid);
+        }
+        return ResponseEntity.ok(userDTO);
     }
 
     @GetMapping("/user/{uid}")
-    public ResponseEntity<?> getUserData(@PathVariable String uid, HttpServletRequest request) {
-        try {
-            String tokenUid = authenticateAndAuthorize(request, uid);
+    public ResponseEntity<UserDTO> getUserData(@PathVariable String uid, HttpServletRequest request) {
+        authenticateAndAuthorize(request, uid);
 
-            UserDTO userDTO = userService.getUserByUid(uid);
-            if (userDTO == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok(userDTO);
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Failed to retrieve user data", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to retrieve user data: " + e.getMessage());
+        UserDTO userDTO = userService.getUserByUid(uid);
+        if (userDTO == null) {
+            throw new EntityNotFoundException("User not found with uid: " + uid);
         }
+
+        return ResponseEntity.ok(userDTO);
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<?> updateUserProfile(@RequestBody UserDTO userDTO, HttpServletRequest request) {
+    public ResponseEntity<UserDTO> updateUserProfile(@RequestBody UserDTO userDTO, HttpServletRequest request) {
+        String uid = authenticateAndAuthorize(request, userDTO.uid());
+
+        UserDTO existingUser = userService.getUserByUid(uid);
+        if (existingUser == null) {
+            throw new EntityNotFoundException("User not found with uid: " + uid);
+        }
+
+        UserDTO updatedUser = userService.partialUpdateUser(userDTO, existingUser);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    private FirebaseToken verifyFirebaseToken(String idToken) {
         try {
-            String uid = authenticateAndAuthorize(request, userDTO.uid());
-
-            UserDTO existingUser = userService.getUserByUid(uid);
-            if (existingUser == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            UserDTO updatedUser = userService.partialUpdateUser(userDTO, existingUser);
-            return ResponseEntity.ok(updatedUser);
-        } catch (ValidationException e) {
-            logger.warn("Validation error during profile update: {}", e.getErrors());
-            return ResponseEntity.badRequest().body(e.getErrors());
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Failed to update profile", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to update profile: " + e.getMessage());
+            return firebaseAuth.verifyIdToken(idToken);
+        } catch (FirebaseAuthException e) {
+            logger.error("Firebase token verification failed: {}", e.getMessage());
+            throw new FirebaseAuthenticationException("Invalid token");
         }
     }
 
@@ -152,7 +116,6 @@ public class AuthController {
 
         UserDTO createdUser = userService.saveUser(userDTO);
         if (createdUser == null) {
-            logger.error("Failed to create new user");
             throw new RuntimeException("Failed to create user");
         }
         return createdUser;
@@ -200,11 +163,10 @@ public class AuthController {
         return existingUser;
     }
 
-    private String authenticateAndAuthorize(HttpServletRequest request, String targetUid)
-            throws AuthenticationException, SecurityException {
+    private String authenticateAndAuthorize(HttpServletRequest request, String targetUid) {
         String token = cookieService.getAuthTokenFromCookies(request);
         if (token == null) {
-            throw new AuthenticationException("Authentication required");
+            throw new UnauthorizedException("Authentication required");
         }
 
         try {
@@ -212,15 +174,15 @@ public class AuthController {
             String tokenUid = decodedToken.getUid();
 
             if (!tokenUid.equals(targetUid)) {
-                throw new SecurityException("Not authorized to access this profile");
+                throw new AccessDeniedException("Not authorized to access this profile");
             }
 
             return tokenUid;
-        } catch (FirebaseAuthException e) {
+        } catch (FirebaseAuthException | AccessDeniedException e) {
             if (e.getMessage().contains("expired")) {
-                throw new AuthenticationException("Token expired, please refresh");
+                throw new TokenExpiredException("Token expired, please refresh");
             }
-            throw new RuntimeException(e);
+            throw new FirebaseAuthenticationException("Token verification failed", e);
         }
     }
 }

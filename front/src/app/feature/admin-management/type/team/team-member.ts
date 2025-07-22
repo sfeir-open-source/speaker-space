@@ -1,4 +1,4 @@
-export interface TeamMember {
+export type TeamMember = {
   teamId?: string;
   teamName?: string;
   invitedBy?: string;
@@ -9,4 +9,5 @@ export interface TeamMember {
   displayName?: string;
   photoURL?: string;
   status?: 'active' | 'invited';
+  isCreator?: boolean;
 }

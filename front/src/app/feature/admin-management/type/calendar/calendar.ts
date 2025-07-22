@@ -1,6 +1,6 @@
 import {Category, Format, Speaker} from '../session/session';
 
-export interface CalendarSessionData {
+export type CalendarSessionData = {
   id: string;
   title: string;
   abstractText?: string;
@@ -13,17 +13,17 @@ export interface CalendarSessionData {
   categories?: Category[];
 }
 
-export interface CalendarDayData {
+export type CalendarDayData = {
   date: Date;
   tracks: TrackColumn[];
 }
 
-export interface TrackColumn {
+export type TrackColumn = {
   name: string;
   sessions: CalendarSession[];
 }
 
-export interface CalendarSession {
+export type CalendarSession = {
   session: CalendarSessionData;
   startTime: Date;
   endTime: Date;

@@ -1,57 +1,24 @@
 package com.speakerspace.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class TeamMember {
 
     private String userId;
     private String role;
+    private String displayName;
     private String email;
+    private String photoURL;
     private String status;
-    private boolean isCreator;
+    private Boolean isCreator;
 
     public TeamMember() {}
 
     public TeamMember(String userId, String role) {
         this.userId = userId;
         this.role = role;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public boolean isCreator() {
-        return isCreator;
-    }
-
-    public void setCreator(boolean creator) {
-        isCreator = creator;
     }
 }

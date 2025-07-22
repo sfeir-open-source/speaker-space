@@ -1,4 +1,4 @@
-export interface User {
+export type User = {
   token?: string;
   uid: string;
   email?: string | null;

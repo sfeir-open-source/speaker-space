@@ -1,16 +1,14 @@
 package com.speakerspace.controller;
 
 import com.speakerspace.dto.TeamDTO;
+import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.service.TeamService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,22 +18,15 @@ import java.util.Map;
 public class TeamController {
 
     private final TeamService teamService;
-    private static final Logger logger = LoggerFactory.getLogger(TeamController.class);
 
     @PostMapping("/create")
     public ResponseEntity<TeamDTO> createTeam(@RequestBody TeamDTO teamDTO) {
         if (teamDTO.name() == null || teamDTO.name().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Team name is required");
         }
 
-        try {
-            TeamDTO createdTeam = teamService.createTeam(teamDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdTeam);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        TeamDTO createdTeam = teamService.createTeam(teamDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTeam);
     }
 
     @GetMapping("/my-other-teams")
@@ -50,12 +41,11 @@ public class TeamController {
 
     @GetMapping("/{teamId}")
     public ResponseEntity<TeamDTO> getTeamById(@PathVariable String teamId) {
-        try {
-            TeamDTO team = teamService.getTeamById(teamId);
-            return team != null ? ResponseEntity.ok(team) : ResponseEntity.notFound().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        TeamDTO team = teamService.getTeamById(teamId);
+        if (team == null) {
+            throw new EntityNotFoundException("Team not found with id: " + teamId);
         }
+        return ResponseEntity.ok(team);
     }
 
     @GetMapping("/user-teams")
@@ -66,53 +56,38 @@ public class TeamController {
     @GetMapping("/by-url/{id}")
     public ResponseEntity<TeamDTO> getTeamByUrl(@PathVariable String id) {
         TeamDTO team = teamService.getTeamById(id);
-        return team != null ? ResponseEntity.ok(team) : ResponseEntity.notFound().build();
+        if (team == null) {
+            throw new EntityNotFoundException("Team not found with id: " + id);
+        }
+        return ResponseEntity.ok(team);
     }
 
     @PutMapping("/{teamId}")
-    public ResponseEntity<TeamDTO> updateTeam(@PathVariable String teamId, @RequestBody TeamDTO teamDTO) {
+    public ResponseEntity<TeamDTO> updateTeam(@PathVariable String teamId, @RequestBody TeamDTO teamDTO) throws AccessDeniedException {
         if (teamDTO.name() == null || teamDTO.name().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Team name is required");
         }
 
-        try {
-            TeamDTO updatedTeam = teamService.updateTeam(teamId, teamDTO);
-            return updatedTeam != null ? ResponseEntity.ok(updatedTeam) : ResponseEntity.notFound().build();
-        } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        TeamDTO updatedTeam = teamService.updateTeam(teamId, teamDTO);
+        if (updatedTeam == null) {
+            throw new EntityNotFoundException("Team not found with id: " + teamId);
         }
+        return ResponseEntity.ok(updatedTeam);
     }
 
     @DeleteMapping("/{teamId}")
-    public ResponseEntity<Map<String, Object>> deleteTeam(@PathVariable String teamId) {
-        try {
-            boolean deleted = teamService.deleteTeam(teamId);
+    public ResponseEntity<Map<String, Object>> deleteTeam(@PathVariable String teamId) throws AccessDeniedException {
+        boolean deleted = teamService.deleteTeam(teamId);
 
-            if (deleted) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("message", "Team and associated events deleted successfully");
-                response.put("teamId", teamId);
-
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-
-        } catch (AccessDeniedException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Access denied");
-            errorResponse.put("message", "You don't have permission to delete this team");
-
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
-
-        } catch (Exception e) {
-            logger.error("Error deleting team {}: {}", teamId, e.getMessage(), e);
-
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Internal server error");
-            errorResponse.put("message", "Failed to delete team");
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        if (!deleted) {
+            throw new EntityNotFoundException("Team not found with id: " + teamId);
         }
+
+        Map<String, Object> response = Map.of(
+                "message", "Team and associated events deleted successfully",
+                "teamId", teamId
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

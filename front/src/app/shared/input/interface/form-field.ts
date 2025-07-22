@@ -1,4 +1,4 @@
-export interface FormField {
+export type FormField = {
   isRequired?: boolean;
   minLength?: number;
   name: string;

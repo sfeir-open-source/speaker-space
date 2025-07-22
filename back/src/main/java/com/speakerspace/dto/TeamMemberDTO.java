@@ -9,5 +9,6 @@ public record TeamMemberDTO (
         String displayName,
         String email,
         String photoURL,
-        String status
+        String status,
+        Boolean isCreator
 ){}

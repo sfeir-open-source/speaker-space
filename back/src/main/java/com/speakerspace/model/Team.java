@@ -1,10 +1,15 @@
 package com.speakerspace.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Getter
+@Setter
 public class Team {
     private String id;
     private String name;
@@ -18,195 +23,132 @@ public class Team {
     public Team() {
         this.memberIds = new ArrayList<>();
         this.members = new ArrayList<>();
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public String getUserCreateId() {
-        return userCreateId;
-    }
-
-    public void setUserCreateId(String userCreateId) {
-        this.userCreateId = userCreateId;
+        this.invitedEmails = new HashMap<>();
     }
 
     public List<String> getMemberIds() {
-        return memberIds;
+        return memberIds != null ? memberIds : new ArrayList<>();
     }
 
     public void setMemberIds(List<String> memberIds) {
-        this.memberIds = memberIds;
+        this.memberIds = memberIds != null ? new ArrayList<>(memberIds) : new ArrayList<>();
     }
 
     public List<TeamMember> getMembers() {
-        return members;
+        return members != null ? members : new ArrayList<>();
     }
 
     public void setMembers(List<TeamMember> members) {
-        this.members = members;
+        this.members = members != null ? new ArrayList<>(members) : new ArrayList<>();
     }
 
     public Map<String, String> getInvitedEmails() {
-        return invitedEmails;
+        return invitedEmails != null ? invitedEmails : new HashMap<>();
     }
 
     public void setInvitedEmails(Map<String, String> invitedEmails) {
-        this.invitedEmails = invitedEmails;
-    }
-
-    public String getCreatorEmail() {
-        return creatorEmail;
-    }
-
-    public void setCreatorEmail(String creatorEmail) {
-        this.creatorEmail = creatorEmail;
+        this.invitedEmails = invitedEmails != null ? new HashMap<>(invitedEmails) : new HashMap<>();
     }
 
     public void addMember(String userId) {
-        if (memberIds == null) {
-            memberIds = new ArrayList<>();
-        }
+        ensureMutableCollections();
+
         if (!memberIds.contains(userId)) {
             memberIds.add(userId);
         }
-
         addMemberWithRole(userId, "Owner", true);
     }
 
     public void addMemberWithRole(String userId, String role, boolean isCreator) {
-        if (memberIds == null) {
-            memberIds = new ArrayList<>();
-        }
+        ensureMutableCollections();
+
         if (!memberIds.contains(userId)) {
             memberIds.add(userId);
         }
 
-        if (members == null) {
-            members = new ArrayList<>();
-        }
+        TeamMember existingMember = members.stream()
+                .filter(member -> member.getUserId().equals(userId))
+                .findFirst()
+                .orElse(null);
 
-        boolean memberExists = false;
-        for (TeamMember member : members) {
-            if (member.getUserId().equals(userId)) {
-                member.setRole(role);
-                member.setCreator(isCreator);
-                memberExists = true;
-                break;
-            }
-        }
-
-        if (!memberExists) {
+        if (existingMember != null) {
+            existingMember.setRole(role);
+            existingMember.setIsCreator(isCreator);
+        } else {
             TeamMember newMember = new TeamMember(userId, role);
-            newMember.setCreator(isCreator);
+            newMember.setIsCreator(isCreator);
             newMember.setStatus("active");
             members.add(newMember);
         }
     }
 
     public void addMemberWithRole(String userId, String role) {
-        if (memberIds == null) {
-            memberIds = new ArrayList<>();
-        }
-        if (!memberIds.contains(userId)) {
-            memberIds.add(userId);
-        }
-
-        if (members == null) {
-            members = new ArrayList<>();
-        }
-
-        boolean memberExists = false;
-        for (TeamMember member : members) {
-            if (member.getUserId().equals(userId)) {
-                member.setRole(role);
-                memberExists = true;
-                break;
-            }
-        }
-
-        if (!memberExists) {
-            TeamMember newMember = new TeamMember(userId, role);
-            newMember.setStatus("active");
-            members.add(newMember);
-        }
+        addMemberWithRole(userId, role, false);
     }
 
     public void removeMember(String userId) {
-        if (memberIds != null) {
-            memberIds.remove(userId);
-        }
+        ensureMutableCollections();
 
-        if (members != null) {
-            members.removeIf(member -> member.getUserId().equals(userId));
-        }
+        memberIds.remove(userId);
+        members.removeIf(member -> member.getUserId().equals(userId));
     }
 
     public void updateMemberRole(String userId, String newRole) {
-        if (members != null) {
-            for (TeamMember member : members) {
-                if (member.getUserId().equals(userId)) {
-                    member.setRole(newRole);
-                    break;
-                }
-            }
-        }
+        ensureMutableCollections();
+
+        members.stream()
+                .filter(member -> member.getUserId().equals(userId))
+                .findFirst()
+                .ifPresent(member -> member.setRole(newRole));
     }
 
     public void addInvitedEmail(String email, String temporaryUserId) {
-        if (invitedEmails == null) {
-            invitedEmails = new HashMap<>();
-        }
+        ensureMutableCollections();
         invitedEmails.put(email, temporaryUserId);
     }
 
     public String getTemporaryUserIdByEmail(String email) {
-        return invitedEmails != null ? invitedEmails.get(email) : null;
+        return invitedEmails.get(email);
     }
 
     public void removeInvitedEmail(String email) {
-        if (invitedEmails != null) {
-            invitedEmails.remove(email);
-        }
+        ensureMutableCollections();
+        invitedEmails.remove(email);
     }
 
     public void updateMemberId(String oldId, String newId) {
-        if (members != null) {
-            for (TeamMember member : members) {
-                if (member.getUserId().equals(oldId)) {
-                    member.setUserId(newId);
-                }
-            }
-        }
+        ensureMutableCollections();
 
-        if (memberIds != null) {
-            List<String> updatedMemberIds = new ArrayList<>();
-            for (String id : memberIds) {
-                updatedMemberIds.add(id.equals(oldId) ? newId : id);
+        members.stream()
+                .filter(member -> member.getUserId().equals(oldId))
+                .findFirst()
+                .ifPresent(member -> member.setUserId(newId));
+
+        for (int i = 0; i < memberIds.size(); i++) {
+            if (memberIds.get(i).equals(oldId)) {
+                memberIds.set(i, newId);
+                break;
             }
-            memberIds = updatedMemberIds;
         }
     }
 
+    private void ensureMutableCollections() {
+        if (memberIds == null) {
+            memberIds = new ArrayList<>();
+        } else if (!(memberIds instanceof ArrayList)) {
+            memberIds = new ArrayList<>(memberIds);
+        }
+
+        if (members == null) {
+            members = new ArrayList<>();
+        } else if (!(members instanceof ArrayList)) {
+            members = new ArrayList<>(members);
+        }
+
+        if (invitedEmails == null) {
+            invitedEmails = new HashMap<>();
+        } else if (!(invitedEmails instanceof HashMap)) {
+            invitedEmails = new HashMap<>(invitedEmails);
+        }
+    }
 }
