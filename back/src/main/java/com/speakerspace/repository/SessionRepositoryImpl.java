@@ -23,13 +23,17 @@ public class SessionRepositoryImpl implements SessionRepository {
     @Override
     public Session save(Session session) {
         return executeFirestoreOperation(() -> {
+            Date now = new Date();
+            if (session.getCreatedAt() == null) {
+                session.setCreatedAt(now);
+            }
+            session.setUpdatedAt(now);
+
             DocumentReference docRef = getDocumentReference(session);
             try {
                 docRef.set(session).get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException("Failed to save session", e);
             }
             return session;
         }, "Failed to save session");
@@ -134,7 +138,6 @@ public class SessionRepositoryImpl implements SessionRepository {
 
             try {
                 docRef.update(updates).get();
-
                 DocumentSnapshot updatedDoc = docRef.get().get();
                 return updatedDoc.exists() ? updatedDoc.toObject(Session.class) : null;
 

@@ -20,7 +20,7 @@ public record SpeakerWithSessionsDTO(
     public SpeakerWithSessionsDTO {
         Objects.requireNonNull(speaker, "Speaker cannot be null");
 
-        sessions = sessions != null ? List.copyOf(sessions) : List.of();
+        sessions = sessions != null ? new ArrayList<>(sessions) : new ArrayList<>();
 
         var extractedData = extractFormatsAndCategories(sessions);
         formats = extractedData.formats();
@@ -46,7 +46,7 @@ public record SpeakerWithSessionsDTO(
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         Set<Category> extractedCategories = sessions.stream()
                 .filter(Objects::nonNull)
@@ -54,7 +54,7 @@ public record SpeakerWithSessionsDTO(
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         return new ExtractedData(extractedFormats, extractedCategories);
     }

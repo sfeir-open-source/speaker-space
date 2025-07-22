@@ -23,5 +23,7 @@ public record SessionDTO (
         String eventId,
         Date start,
         Date end,
-        String track
+        String track,
+        Date createdAt,
+        Date updatedAt
 ){}

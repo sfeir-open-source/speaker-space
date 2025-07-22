@@ -49,7 +49,9 @@ public class SessionMapper {
             session.getEventId(),
             session.getStart(),
             session.getEnd(),
-            session.getTrack()
+            session.getTrack(),
+            session.getCreatedAt(),
+            session.getUpdatedAt()
         );
     }
 
@@ -74,6 +76,8 @@ public class SessionMapper {
         session.setStart(sessionDTO.start());
         session.setEnd(sessionDTO.end());
         session.setTrack(sessionDTO.track());
+        session.setCreatedAt(sessionDTO.createdAt());
+        session.setUpdatedAt(sessionDTO.updatedAt());
 
         return session;
     }

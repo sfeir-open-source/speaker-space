@@ -61,9 +61,20 @@ public class SessionController {
             Authentication authentication) {
 
         return executeWithUserAuthentication(request, authentication, () -> {
-            List<SessionReviewImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
-            sessions.sort(Comparator.comparing(s -> s.getTitle() != null ? s.getTitle().toLowerCase() : ""));
-            return sessions;
+            try {
+                List<SessionReviewImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
+
+                List<SessionReviewImportData> mutableSessions = new ArrayList<>(sessions);
+                mutableSessions.sort(Comparator.comparing(s ->
+                        s.getTitle() != null ? s.getTitle().toLowerCase() : ""
+                ));
+
+                return mutableSessions;
+            } catch (Exception e) {
+                System.err.println("Error fetching sessions for event " + eventId + ": " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
         });
     }
 
@@ -136,9 +147,18 @@ public class SessionController {
             Authentication authentication) {
 
         return executeWithEventAuthorization(eventId, authentication, () -> {
-            List<SessionDTO> sessions = sessionService.getSessionsWithScheduleByEventId(eventId);
-            sessions.sort(Comparator.comparing(SessionDTO::start));
-            return sessions;
+            try {
+                List<SessionDTO> sessions = sessionService.getSessionsWithScheduleByEventId(eventId);
+
+                List<SessionDTO> mutableSessions = new ArrayList<>(sessions);
+                mutableSessions.sort(Comparator.comparing(SessionDTO::start));
+
+                return mutableSessions;
+            } catch (Exception e) {
+                System.err.println("Error fetching calendar sessions for event " + eventId + ": " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
         });
     }
 
@@ -189,8 +209,11 @@ public class SessionController {
             return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
 
         } catch (IllegalArgumentException e) {
+            System.err.println("Bad request error: " + e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
+            System.err.println("Internal server error: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -205,10 +228,17 @@ public class SessionController {
         try {
             T result = operation.get();
             return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
+        } catch (UnsupportedOperationException e) {
+            System.err.println("Immutable collection operation error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
+            System.err.println("Error in user authentication operation: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 
     private void validateEventIdMatch(String pathEventId, String bodyEventId) {
         if (!pathEventId.equals(bodyEventId)) {

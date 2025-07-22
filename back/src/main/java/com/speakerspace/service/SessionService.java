@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -134,10 +135,11 @@ public class SessionService {
 
     public List<SessionReviewImportData> getSessionsReviewAsImportData(String eventId) {
         List<Session> sessions = sessionRepository.findByEventId(eventId);
+
         return sessions.stream()
                 .map(sessionMapper::toSessionImportData)
                 .filter(Objects::nonNull)
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public SessionReviewImportData getSessionById(String eventId, String sessionId) {
@@ -164,29 +166,33 @@ public class SessionService {
 
     public List<SessionDTO> getSessionsWithScheduleByEventId(String eventId) {
         List<Session> sessions = sessionRepository.findByEventId(eventId);
+
         return sessions.stream()
                 .map(sessionMapper::convertToDTO)
                 .filter(Objects::nonNull)
                 .filter(session -> session.start() != null && session.end() != null)
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     public List<SpeakerWithSessionsDTO> getSpeakersWithSessionsByEventId(String eventId) {
         List<Speaker> speakers = speakerService.findByEventId(eventId);
         List<Session> sessions = sessionRepository.findByEventId(eventId);
 
-        return speakers.stream()
+        List<SpeakerWithSessionsDTO> result = speakers.stream()
                 .map(speaker -> {
                     List<SessionReviewImportData> speakerSessions = sessions.stream()
                             .filter(session -> session.getSpeakerIds() != null &&
                                     session.getSpeakerIds().contains(speaker.getId()))
                             .map(sessionMapper::toSessionImportData)
-                            .toList();
+                            .collect(Collectors.toCollection(ArrayList::new));
 
                     return new SpeakerWithSessionsDTO(speaker, speakerSessions);
                 })
-                .sorted(Comparator.comparing(dto -> dto.speaker().getName().toLowerCase()))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        result.sort(Comparator.comparing(dto -> dto.speaker().getName().toLowerCase()));
+
+        return result;
     }
 
     public SessionDTO updateSessionSchedule(String sessionId, String eventId, Session scheduleUpdate) {

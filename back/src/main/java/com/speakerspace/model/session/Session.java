@@ -21,8 +21,14 @@ public class Session {
     private List<String> speakerIds;
     private Reviews reviews;
     private String eventId;
+    private Date createdAt;
+    private Date updatedAt;
 
-    public Session() {}
+    public Session() {
+        Date now = new Date();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
 
     public String getId() {
         return id;
@@ -158,5 +164,21 @@ public class Session {
 
     public void setEventId(String eventId) {
         this.eventId = eventId;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

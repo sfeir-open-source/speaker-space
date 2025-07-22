@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
   name: 'development',
-  apiUrl: 'http://localhost:8080/api',
+  apiUrl: 'http://localhost:8080',
   baseUrl:'https://speaker-space.io',
   firebaseConfig : {
     apiKey: "apiKey",
