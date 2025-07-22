@@ -1,12 +1,18 @@
 package com.speakerspace.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Builder
 public class TeamMember {
 
+    @NotBlank(message = "ID is required")
+    @EqualsAndHashCode.Include
     private String userId;
     private String role;
     private String displayName;
@@ -14,8 +20,6 @@ public class TeamMember {
     private String photoURL;
     private String status;
     private Boolean isCreator;
-
-    public TeamMember() {}
 
     public TeamMember(String userId, String role) {
         this.userId = userId;

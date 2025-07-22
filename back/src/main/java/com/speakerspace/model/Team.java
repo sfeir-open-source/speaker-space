@@ -1,7 +1,7 @@
 package com.speakerspace.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,7 +10,12 @@ import java.util.Map;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Builder
 public class Team {
+    @NotBlank(message = "ID is required")
+    @EqualsAndHashCode.Include
     private String id;
     private String name;
     private String url;
@@ -44,19 +49,6 @@ public class Team {
 
     public Map<String, String> getInvitedEmails() {
         return invitedEmails != null ? invitedEmails : new HashMap<>();
-    }
-
-    public void setInvitedEmails(Map<String, String> invitedEmails) {
-        this.invitedEmails = invitedEmails != null ? new HashMap<>(invitedEmails) : new HashMap<>();
-    }
-
-    public void addMember(String userId) {
-        ensureMutableCollections();
-
-        if (!memberIds.contains(userId)) {
-            memberIds.add(userId);
-        }
-        addMemberWithRole(userId, "Owner", true);
     }
 
     public void addMemberWithRole(String userId, String role, boolean isCreator) {

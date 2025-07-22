@@ -5,13 +5,21 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import lombok.*;
 import org.hibernate.validator.constraints.URL;
 
 import java.util.Objects;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Builder
 public class User {
 
     @NotBlank(message = "User ID is required")
+    @EqualsAndHashCode.Include
     private String uid;
 
     @NotBlank(message = "Email is required")
@@ -57,130 +65,6 @@ public class User {
     @URL(message = "Invalid URL format")
     @PropertyName("other_link")
     private String otherLink;
-
-    public User() {}
-
-    public User(String uid, String email, String displayName, String company, String city,
-                String photoURL, String phoneNumber, String biography, String githubLink,
-                String twitterLink, String blueSkyLink, String linkedInLink, String otherLink) {
-        this.uid = uid;
-        this.email = email;
-        this.displayName = displayName;
-        this.company = company;
-        this.city = city;
-        this.photoURL = photoURL;
-        this.phoneNumber = phoneNumber;
-        this.biography = biography;
-        this.githubLink = githubLink;
-        this.twitterLink = twitterLink;
-        this.blueSkyLink = blueSkyLink;
-        this.linkedInLink = linkedInLink;
-        this.otherLink = otherLink;
-    }
-
-    public String getUid() {
-        return uid;
-    }
-
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getCompany() {
-        return company;
-    }
-
-    public void setCompany(String company) {
-        this.company = company;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getPhotoURL() {
-        return photoURL;
-    }
-
-    public void setPhotoURL(String photoURL) {
-        this.photoURL = photoURL;
-    }
-
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public String getBiography() {
-        return biography;
-    }
-
-    public void setBiography(String biography) {
-        this.biography = biography;
-    }
-
-    public String getGithubLink() {
-        return githubLink;
-    }
-
-    public void setGithubLink(String githubLink) {
-        this.githubLink = githubLink;
-    }
-
-    public String getTwitterLink() {
-        return twitterLink;
-    }
-
-    public void setTwitterLink(String twitterLink) {
-        this.twitterLink = twitterLink;
-    }
-
-    public String getBlueSkyLink() {
-        return blueSkyLink;
-    }
-
-    public void setBlueSkyLink(String blueSkyLink) {
-        this.blueSkyLink = blueSkyLink;
-    }
-
-    public String getLinkedInLink() {
-        return linkedInLink;
-    }
-
-    public void setLinkedInLink(String linkedInLink) {
-        this.linkedInLink = linkedInLink;
-    }
-
-    public String getOtherLink() {
-        return otherLink;
-    }
-
-    public void setOtherLink(String otherLink) {
-        this.otherLink = otherLink;
-    }
 
     @Override
     public boolean equals(Object o) {

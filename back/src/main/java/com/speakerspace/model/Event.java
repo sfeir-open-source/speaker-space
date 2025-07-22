@@ -1,8 +1,18 @@
 package com.speakerspace.model;
 
 import com.google.cloud.Timestamp;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
+@Getter
+@Setter
+@AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Builder
 public class Event {
+
+    @NotBlank(message = "ID is required")
+    @EqualsAndHashCode.Include
     private String idEvent;
     private String eventName;
     private String description;
@@ -27,21 +37,6 @@ public class Event {
         this.isFinish = false;
     }
 
-    public String getIdEvent() { return idEvent; }
-    public void setIdEvent(String idEvent) { this.idEvent = idEvent; }
-
-    public String getEventName() { return eventName; }
-    public void setEventName(String eventName) { this.eventName = eventName; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public Timestamp getStartDate() { return startDate; }
-    public void setStartDate(Timestamp startDate) { this.startDate = startDate; }
-
-    public Timestamp getEndDate() { return endDate; }
-    public void setEndDate(Timestamp endDate) { this.endDate = endDate; }
-
     public Boolean getIsOnline() {
         return isOnline != null ? isOnline : false;
     }
@@ -50,36 +45,9 @@ public class Event {
         this.isOnline = isOnline != null ? isOnline : false;
     }
 
-    public String getUrl() { return url; }
-    public void setUrl(String url) { this.url = url; }
-
-    public String getLocation() { return location; }
-    public void setLocation(String location) { this.location = location; }
-
     public Boolean isPrivate() { return isPrivate; }
     public void setPrivate(Boolean isPrivate) { this.isPrivate = isPrivate; }
 
-    public String getWebLinkUrl() { return webLinkUrl; }
-    public void setWebLinkUrl(String webLinkUrl) { this.webLinkUrl = webLinkUrl; }
-
     public Boolean isFinish() { return isFinish; }
     public void setFinish(Boolean isFinish) { this.isFinish = isFinish; }
-
-    public String getUserCreateId() { return userCreateId; }
-    public void setUserCreateId(String userCreateId) { this.userCreateId = userCreateId; }
-
-    public String getConferenceHallUrl() { return conferenceHallUrl; }
-    public void setConferenceHallUrl(String conferenceHallUrl) { this.conferenceHallUrl = conferenceHallUrl; }
-
-    public String getTeamId() { return teamId; }
-    public void setTeamId(String teamId) { this.teamId = teamId; }
-
-    public String getTimeZone() { return timeZone; }
-    public void setTimeZone(String timeZone) { this.timeZone = timeZone; }
-
-    public String getLogoBase64() { return logoBase64; }
-    public void setLogoBase64(String logoBase64) { this.logoBase64 = logoBase64; }
-
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
 }
