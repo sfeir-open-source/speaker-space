@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {finalize, takeUntil} from 'rxjs';
+import {finalize} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
@@ -15,6 +15,7 @@ import {SpeakerService} from '../../../services/speaker/speaker.service';
 import {
   SpeakerFilterPopupComponent
 } from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -76,7 +77,7 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
     this.speakerService.getSpeakersWithSessionsByEventId(this.eventId)
       .pipe(
         finalize(() => this.isLoadingItems = false),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe({
         next: (speakersWithSessions: SpeakerWithSessionsDTO[]) => {
@@ -107,7 +108,7 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
 
   private loadSpeakersWithFallback(): void {
     this.eventService.getSpeakersByEventId(this.eventId)
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntilDestroyed(this._destroyRef),)
       .subscribe({
         next: (speakers: Speaker[]) => {
         },

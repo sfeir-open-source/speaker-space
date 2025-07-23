@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {finalize, takeUntil} from 'rxjs';
+import {finalize} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
@@ -14,6 +14,7 @@ import {SpeakerService} from '../../../services/speaker/speaker.service';
 import {
   SessionUnifiedFilterPopupComponent
 } from '../../../components/session/session-filter-popup/session-filter-popup.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-session-list-page',
@@ -71,7 +72,7 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
     this.eventService.getSessionsByEventId(this.eventId)
       .pipe(
         finalize(() => this.isLoadingItems = false),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe({
         next: (sessions: SessionImportData[]) => {

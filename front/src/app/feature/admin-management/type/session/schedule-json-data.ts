@@ -56,7 +56,7 @@ export type SessionScheduleImportDataDTO = {
 }
 
 export type SessionScheduleUpdate = {
-  start?: Date;
-  end?: Date;
+  start: Date;
+  end: Date;
   track?: string;
 }

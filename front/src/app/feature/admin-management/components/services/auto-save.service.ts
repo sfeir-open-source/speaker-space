@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import {DestroyRef, inject, Injectable} from '@angular/core';
 import {FormGroup} from '@angular/forms';
 import {
   BehaviorSubject,
@@ -8,16 +8,17 @@ import {
   finalize,
   Observable,
   Subject,
-  takeUntil
 } from 'rxjs';
 import {SaveStatus} from '../../../../core/types/save-status.types';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AutoSaveService {
-  private readonly DEBOUNCE_TIME = 2000;
-  private readonly SUCCESS_DISPLAY_TIME = 3000;
+  private readonly DEBOUNCE_TIME : number = 2000;
+  private readonly SUCCESS_DISPLAY_TIME : number = 3000;
+  private readonly _destroyRef = inject(DestroyRef);
 
   setupAutoSave<T>(
     form: FormGroup,
@@ -38,13 +39,13 @@ export class AutoSaveService {
 
     form.valueChanges
       .pipe(
-        takeUntil(destroy$),
+        takeUntilDestroyed(this._destroyRef),
         debounceTime(options.debounceTime || this.DEBOUNCE_TIME),
         distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
         filter(() => {
-          const isValid = form.valid;
-          const isDirty = form.dirty;
-          const hasChanges = this.hasSignificantChanges(options.extractValidFields());
+          const isValid : boolean = form.valid;
+          const isDirty : boolean = form.dirty;
+          const hasChanges : boolean = this.hasSignificantChanges(options.extractValidFields());
 
           return isValid && isDirty && hasChanges;
         })
@@ -67,7 +68,7 @@ export class AutoSaveService {
   private hasSignificantChanges(data: any): boolean {
     if (!data) return false;
 
-    const significantFields = Object.keys(data).filter(key => {
+    const significantFields : string[] = Object.keys(data).filter(key => {
       if (key === 'idEvent') return false;
 
       const value = data[key];

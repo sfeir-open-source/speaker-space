@@ -1,15 +1,15 @@
 import {Component} from '@angular/core';
 import {Speaker} from '../../../type/session/session';
-import {takeUntil} from 'rxjs';
 import {ActivatedRoute } from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {
   NavbarSpeakerPageComponent
 } from '../../../components/speaker/navbar-speaker-page/navbar-speaker-page.component';
 import {SpeakerService} from '../../../services/speaker/speaker.service';
-import {BaseDetailComponent} from '../../../components/class/bade-detail-component';
 import {SocialLinkService} from '../../../../../core/services/social-link-service/social-link.service';
 import {SocialLinkInfo} from '../../../../../core/types/social-link-info';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {BaseDetailComponent} from '../../../components/class/base-detail-component';
 
 @Component({
     selector: 'app-speaker-detail-page',
@@ -59,7 +59,7 @@ export class SpeakerDetailPageComponent extends BaseDetailComponent {
   protected loadDetailData(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.speakerService.getSpeakerById(this.eventId, this.speakerId)
-        .pipe(takeUntil(this.destroy$))
+        .pipe(takeUntilDestroyed(this._destroyRef),)
         .subscribe({
           next: (speaker: Speaker) => {
             this.speaker = speaker;

@@ -1,7 +1,7 @@
-import { Component, ElementRef, inject, OnInit, AfterViewInit, signal, OnDestroy } from '@angular/core';
+import {Component, ElementRef, inject, OnInit, AfterViewInit, signal, OnDestroy, DestroyRef} from '@angular/core';
 import { ReactiveFormsModule} from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { ProfileSidebarComponent } from './components/profile-sidebar/profile-sidebar.component';
 import { PersonalInfoComponent } from './components/personal-info/personal-info.component';
 import { BiographyComponent } from './components/biography/biography.component';
@@ -13,6 +13,7 @@ import {UserStateService} from '../../core/services/user-services/user-state.ser
 import {User} from '../../core/models/user.model';
 import {SaveIndicatorComponent} from '../../core/save-indicator/save-indicator.component';
 import {SaveStatus} from '../../core/types/save-status.types';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-profile',
@@ -36,6 +37,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   private snackBar : MatSnackBar = inject(MatSnackBar);
   private userState : UserStateService = inject(UserStateService);
   private destroy$ : Subject<void> = new Subject<void>();
+  private readonly _destroyRef = inject(DestroyRef);
 
   activeSection = signal('personal-info');
   saveStatus = signal<SaveStatus>('idle');
@@ -59,7 +61,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   setupAutoSave() {
     this.profileForm.valueChanges
       .pipe(
-        takeUntil(this.destroy$),
+        takeUntilDestroyed(this._destroyRef),
         debounceTime(3000),
         distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
       )

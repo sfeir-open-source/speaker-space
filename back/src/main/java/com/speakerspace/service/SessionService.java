@@ -1,13 +1,18 @@
 package com.speakerspace.service;
 
+import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.*;
 import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.mapper.session.SpeakerMapper;
+import com.speakerspace.model.Pair;
 import com.speakerspace.model.session.*;
 import com.speakerspace.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -15,10 +20,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SessionService {
 
+    private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
+
     private final SessionRepository sessionRepository;
     private final SessionMapper sessionMapper;
     private final SpeakerService speakerService;
     private final SpeakerMapper speakerMapper;
+    private final TimeZoneService timeZoneService;
+    private final EventService eventService;
 
     public ImportResultDTO importSessionsReview(String eventId, List<SessionDTO> importDataList) {
         List<String> successfulImports = new ArrayList<>();
@@ -57,31 +66,45 @@ public class SessionService {
         List<String> failedImports = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
-        for (SessionScheduleImportDataDTO scheduleData : importDataList) {
-            String sessionId = null;
-            try {
-                sessionId = scheduleData.proposal() != null && scheduleData.proposal().id() != null
-                        ? scheduleData.proposal().id()
-                        : scheduleData.id();
-
-                Session existingSession = sessionRepository.findById(sessionId);
-
-                if (existingSession != null) {
-                    enrichExistingSessionWithScheduleData(existingSession, scheduleData);
-                    sessionRepository.save(existingSession);
-                } else {
-                    Session newSession = createSessionFromScheduleData(scheduleData, eventId);
-                    sessionRepository.save(newSession);
-                }
-
-                successfulImports.add(sessionId);
-
-            } catch (Exception e) {
-                String finalSessionId = sessionId != null ? sessionId :
-                        (scheduleData.proposal() != null ? scheduleData.proposal().id() : scheduleData.id());
-                failedImports.add(finalSessionId);
-                errors.add("Failed to import schedule for session " + finalSessionId + ": " + e.getMessage());
+        try {
+            EventDTO event = eventService.getEventById(eventId);
+            if (event == null) {
+                throw new IllegalArgumentException("Event not found: " + eventId);
             }
+
+            String eventTimeZone = Optional.ofNullable(event.timeZone()).orElse("Europe/Paris");
+
+            updateEventDatesFromSessions(eventId, importDataList, eventTimeZone);
+
+            for (SessionScheduleImportDataDTO scheduleData : importDataList) {
+                String sessionId = null;
+                try {
+                    sessionId = scheduleData.proposal() != null && scheduleData.proposal().id() != null
+                            ? scheduleData.proposal().id()
+                            : scheduleData.id();
+
+                    Session existingSession = sessionRepository.findById(sessionId);
+
+                    if (existingSession != null) {
+                        enrichExistingSessionWithScheduleData(existingSession, scheduleData);
+                        sessionRepository.save(existingSession);
+                    } else {
+                        Session newSession = createSessionFromScheduleData(scheduleData, eventId);
+                        sessionRepository.save(newSession);
+                    }
+
+                    successfulImports.add(sessionId);
+
+                } catch (Exception e) {
+                    String finalSessionId = sessionId != null ? sessionId :
+                            (scheduleData.proposal() != null ? scheduleData.proposal().id() : scheduleData.id());
+                    failedImports.add(finalSessionId);
+                    errors.add("Failed to import schedule for session " + finalSessionId + ": " + e.getMessage());
+                }
+            }
+
+        } catch (Exception e) {
+            errors.add("Global import error: " + e.getMessage());
         }
 
         return ImportResultDTO.builder()
@@ -218,21 +241,13 @@ public class SessionService {
         return sessionRepository.findDistinctTracksByEventId(eventId);
     }
 
-    private void enrichExistingSessionWithScheduleData(Session existingSession, SessionScheduleImportDataDTO scheduleData) {
-        existingSession.setStart(scheduleData.start());
-        existingSession.setEnd(scheduleData.end());
-        existingSession.setTrack(scheduleData.track());
+    private void enrichExistingSessionWithScheduleData(Session session, SessionScheduleImportDataDTO scheduleData) {
+        session.setStart(scheduleData.start());
+        session.setEnd(scheduleData.end());
+        session.setTrack(scheduleData.track());
 
-        if (scheduleData.languages() != null && !scheduleData.languages().trim().isEmpty()) {
-            List<String> newLanguages = List.of(scheduleData.languages());
-            if (existingSession.getLanguages() == null || existingSession.getLanguages().isEmpty()) {
-                existingSession.setLanguages(newLanguages);
-            }
-        }
-
-        if (scheduleData.proposal() != null) {
-            enrichSessionWithProposalData(existingSession, scheduleData.proposal());
-        }
+        logger.debug("Enriching session {}: start={}, end={}",
+                session.getId(), scheduleData.start(), scheduleData.end());
     }
 
     private void enrichSessionWithProposalData(Session session, ProposalScheduleDTO proposalData) {
@@ -371,5 +386,35 @@ public class SessionService {
                     return speaker;
                 })
                 .toList();
+    }
+
+    private void updateEventDatesFromSessions(String eventId, List<SessionScheduleImportDataDTO> sessions, String eventTimeZone) {
+        try {
+            Pair<Instant, Instant> dateRange = timeZoneService.calculateEventDateRange(sessions);
+
+            if (dateRange != null) {
+                EventDTO currentEvent = eventService.getEventById(eventId);
+
+                String newStartDate = dateRange.getFirst().toString();
+                String newEndDate = dateRange.getSecond().toString();
+
+                boolean startDateChanged = !Objects.equals(currentEvent.startDate(), newStartDate);
+                boolean endDateChanged = !Objects.equals(currentEvent.endDate(), newEndDate);
+
+                if (startDateChanged || endDateChanged) {
+                    EventDTO updatedEvent = EventDTO.builder()
+                            .idEvent(eventId)
+                            .startDate(newStartDate)
+                            .endDate(newEndDate)
+                            .build();
+
+                    eventService.updateEvent(updatedEvent);
+
+                    logger.info("Updated event {} dates: start={}, end={}", eventId, newStartDate, newEndDate);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to update event dates for event {}: {}", eventId, e.getMessage(), e);
+        }
     }
 }

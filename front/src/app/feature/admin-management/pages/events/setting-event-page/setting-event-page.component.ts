@@ -1,6 +1,6 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {Component, DestroyRef, inject, OnDestroy, OnInit} from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {finalize, Subject, Subscription, takeUntil} from 'rxjs';
+import {finalize, Subject, Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
@@ -21,6 +21,7 @@ import {ImportResult} from '../../../type/session/session';
 import {
   SessionScheduleImportComponent
 } from '../../../components/session/session-schedule-import/session-schedule-import.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-setting-event-page',
@@ -62,6 +63,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   private routeSubscription?: Subscription;
+  private readonly _destroyRef = inject(DestroyRef);
 
   constructor(
     private route: ActivatedRoute,
@@ -105,7 +107,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
     this.eventService.getEventById(this.eventId)
       .pipe(
         finalize(() => this.isLoading = false),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe({
         next: (event) => {
@@ -171,7 +173,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
           this.isDeleting = false;
           this.showDeleteConfirmation = false;
         }),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe({
         next: () => {
@@ -276,7 +278,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
           this.isArchiving = false;
           this.showArchiveConfirmation = false;
         }),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe({
         next: () => {

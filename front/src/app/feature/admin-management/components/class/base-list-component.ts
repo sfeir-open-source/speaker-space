@@ -1,10 +1,11 @@
-import {finalize, Subject, Subscription, takeUntil} from 'rxjs';
+import {finalize, Subject, Subscription} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
 import {EventService} from '../../services/event/event.service';
 import {EventDataService} from '../../services/event/event-data.service';
-import {OnDestroy, OnInit, Injectable} from '@angular/core';
+import {OnDestroy, OnInit, Injectable, inject, DestroyRef} from '@angular/core';
 import {EventDTO} from '../../type/event/eventDTO';
 import {SpeakerService} from '../../services/speaker/speaker.service';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Injectable()
 export abstract class BaseListComponent<T> implements OnInit, OnDestroy {
@@ -31,6 +32,7 @@ export abstract class BaseListComponent<T> implements OnInit, OnDestroy {
 
   protected destroy$ = new Subject<void>();
   protected routeSubscription?: Subscription;
+  protected readonly _destroyRef = inject(DestroyRef);
 
   constructor(
     protected route: ActivatedRoute,
@@ -74,7 +76,7 @@ export abstract class BaseListComponent<T> implements OnInit, OnDestroy {
     this.eventService.getEventById(this.eventId)
       .pipe(
         finalize(() => this.isLoading = false),
-        takeUntil(this.destroy$)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe({
         next: (event: EventDTO) => {

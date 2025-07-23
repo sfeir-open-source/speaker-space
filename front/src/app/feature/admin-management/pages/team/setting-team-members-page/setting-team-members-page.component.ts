@@ -1,7 +1,17 @@
-import {Component, OnInit, OnDestroy, TemplateRef, ViewChild, Input, ElementRef} from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  TemplateRef,
+  ViewChild,
+  Input,
+  ElementRef,
+  inject,
+  DestroyRef
+} from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import {debounceTime, distinctUntilChanged, finalize, Subject, switchMap, take, takeUntil, tap} from 'rxjs';
+import {debounceTime, distinctUntilChanged, finalize, Subject, switchMap, take, tap} from 'rxjs';
 import { CommonModule } from '@angular/common';
 import {map} from 'rxjs/operators';
 import {SidebarTeamComponent} from '../../../components/team/sidebar-team/sidebar-team.component';
@@ -16,6 +26,7 @@ import {TeamMemberService} from '../../../services/team/team-member.service';
 import {AuthService} from '../../../../../core/login/services/auth.service';
 import {UserRoleService} from '../../../services/team/user-role.service';
 import {FormField} from '../../../../../shared/input/interface/form-field';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-setting-team-members-page',
@@ -58,6 +69,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
   currentTeamMembers: TeamMember[] = [];
 
   private destroy$ = new Subject<void>();
+  private readonly _destroyRef = inject(DestroyRef);
 
   @ViewChild('userItemTemplate') userItemTemplate!: TemplateRef<any>;
 
@@ -80,7 +92,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     });
 
     this.authService.user$.pipe(
-      takeUntil(this.destroy$),
+      takeUntilDestroyed(this._destroyRef),
       switchMap(user => {
         if (!user) {
           return [];
@@ -160,7 +172,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       }),
       debounceTime(300),
       distinctUntilChanged(),
-      takeUntil(this.destroy$),
+      takeUntilDestroyed(this._destroyRef),
       switchMap(query => {
         if (!query || query.length < 2) {
           return [];
