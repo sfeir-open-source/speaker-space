@@ -3,7 +3,6 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {environment} from '../../../../../environments/environment.development';
 import {CalendarDayData, CalendarSession, CalendarSessionData, TrackColumn} from '../../type/calendar/calendar';
-import {DateTimeService} from '../sessions/date-time.service';
 
 const HOUR_HEIGHT : number = 120;
 
@@ -12,10 +11,7 @@ const HOUR_HEIGHT : number = 120;
 })
 export class CalendarService {
 
-  constructor(
-    private http: HttpClient,
-    private dateTimeService: DateTimeService
-  ) {}
+  constructor(private http: HttpClient) {}
 
   getCalendarSessions(eventId: string): Observable<CalendarSessionData[]> {
     return this.http.get<CalendarSessionData[]>(
@@ -34,14 +30,13 @@ export class CalendarService {
   buildCalendarData(
     sessions: CalendarSessionData[],
     selectedDate: Date,
-    tracks: string[],
-    eventTimeZone: string = 'Europe/Paris'
+    tracks: string[]
   ): CalendarDayData {
-    const sessionsForDay = this.getSessionsForDate(sessions, selectedDate, eventTimeZone);
+    const sessionsForDay = this.getSessionsForDate(sessions, selectedDate);
 
     const trackColumns: TrackColumn[] = tracks.map(track => ({
       name: track,
-      sessions: this.getCalendarSessionsForTrack(sessionsForDay, track, eventTimeZone)
+      sessions: this.getCalendarSessionsForTrack(sessionsForDay, track)
     }));
 
     return {
@@ -50,31 +45,18 @@ export class CalendarService {
     };
   }
 
-  private getSessionsForDate(
-    sessions: CalendarSessionData[],
-    date: Date,
-    eventTimeZone: string
-  ): CalendarSessionData[] {
-    const targetDateStr = this.formatDateInTimeZone(date, eventTimeZone);
-
+  private getSessionsForDate(sessions: CalendarSessionData[], date: Date): CalendarSessionData[] {
+    const targetDate : string = this.formatDateOnly(date);
     return sessions.filter(session => {
       if (!session.start) return false;
-
-      try {
-        const sessionDate = new Date(session.start);
-        const sessionDateStr = this.formatDateInTimeZone(sessionDate, eventTimeZone);
-        return sessionDateStr === targetDateStr;
-      } catch (error) {
-        console.warn('Error parsing session date:', session.start, error);
-        return false;
-      }
+      const sessionDate : string = this.formatDateOnly(new Date(session.start));
+      return sessionDate === targetDate;
     });
   }
 
   private getCalendarSessionsForTrack(
     sessions: CalendarSessionData[],
     track: string,
-    eventTimeZone: string
   ): CalendarSession[] {
     const trackSessions = sessions.filter(session =>
       (session.track || 'Main Track') === track &&
@@ -83,96 +65,48 @@ export class CalendarService {
     );
 
     return trackSessions.map(session => {
-      try {
-        const startTime = new Date(session.start);
-        const endTime = new Date(session.end);
+      const startTime = new Date(session.start);
+      const endTime = new Date(session.end);
+      const duration: number = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
-        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-          console.warn('Invalid dates for session:', session.id, session.start, session.end);
-          return null;
-        }
-
-        const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-
-        return {
-          session,
-          startTime,
-          endTime,
-          duration,
-          track,
-          topPosition: this.calculateTopPosition(startTime, eventTimeZone),
-          height: this.calculateHeight(duration)
-        };
-      } catch (error) {
-        console.error('Error processing session for calendar:', session.id, error);
-        return null;
-      }
-    })
-      .filter((session): session is CalendarSession => session !== null)
-      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+      return {
+        session,
+        startTime,
+        endTime,
+        duration,
+        track,
+        topPosition: this.calculateTopPosition(startTime),
+        height: this.calculateHeight(duration)
+      };
+    }).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }
 
-  private calculateTopPosition(startTime: Date, eventTimeZone: string, startHour: number = 9): number {
-    try {
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: eventTimeZone,
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false
-      });
-
-      const parts = formatter.formatToParts(startTime);
-      const hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
-      const minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-
-      const totalMinutes = (hours - startHour) * 60 + minutes;
-      return Math.max(0, (totalMinutes / 60) * 120); // 120 = HOUR_HEIGHT
-    } catch (error) {
-      console.warn('Error calculating position for time:', startTime, error);
-      const hours = startTime.getHours();
-      const minutes = startTime.getMinutes();
-      const totalMinutes = (hours - startHour) * 60 + minutes;
-      return Math.max(0, (totalMinutes / 60) * 120);
-    }
+  private calculateTopPosition(startTime: Date, startHour: number = 8): number {
+    const hours : number = startTime.getHours();
+    const minutes: number = startTime.getMinutes();
+    const totalMinutes: number = (hours - startHour) * 60 + minutes;
+    return (totalMinutes / 60) * HOUR_HEIGHT;
   }
 
   private calculateHeight(durationMinutes: number): number {
-    return Math.max((durationMinutes / 60) * 120, 30); // Hauteur minimum de 30px
+    return Math.max((durationMinutes / 60) * HOUR_HEIGHT, 30);
   }
 
-  private formatDateInTimeZone(date: Date, eventTimeZone: string): string {
-    try {
-      return new Intl.DateTimeFormat('en-CA', {
-        timeZone: eventTimeZone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(date);
-    } catch (error) {
-      console.warn('Error formatting date in timezone:', error);
-      return date.toISOString().split('T')[0];
-    }
-  }
-
-  formatSessionTime(session: CalendarSession, eventTimeZone: string): string {
-    const start = this.dateTimeService.formatTimeForEvent(session.startTime, eventTimeZone);
-    const end = this.dateTimeService.formatTimeForEvent(session.endTime, eventTimeZone);
-    return `${start} - ${end}`;
+  private formatDateOnly(date: Date): string {
+    return date.toISOString().split('T')[0];
   }
 
   getEventDateRange(sessions: CalendarSessionData[]): { start: Date; end: Date } | null {
-    if (!sessions || sessions.length === 0) return null;
+    if (!sessions.length) return null;
 
-    const validDates = sessions
-      .map(session => session.start)
-      .filter(date => date && !isNaN(new Date(date).getTime()))
-      .map(date => new Date(date));
+    const dates = sessions
+      .filter(s => s.start)
+      .map(s => new Date(s.start))
+      .sort((a, b) => a.getTime() - b.getTime());
 
-    if (validDates.length === 0) return null;
-
-    const startDate = new Date(Math.min(...validDates.map(d => d.getTime())));
-    const endDate = new Date(Math.max(...validDates.map(d => d.getTime())));
-
-    return { start: startDate, end: endDate };
+    return {
+      start: dates[0],
+      end: dates[dates.length - 1]
+    };
   }
 }

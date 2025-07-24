@@ -20,7 +20,6 @@ import {SessionScheduleUpdate} from '../../../type/session/schedule-json-data';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {BaseDetailComponent} from '../../../components/class/base-detail-component';
-import {DateTimeService} from '../../../services/sessions/date-time.service';
 
 @Component({
     selector: 'app-session-detail-page',
@@ -64,7 +63,6 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     route: ActivatedRoute,
     eventService: EventService,
     private sessionService: SessionService,
-    private dateTimeService: DateTimeService,
     protected router: Router,
     private fb: FormBuilder,
   ) {
@@ -150,18 +148,15 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
   }
 
   private populateScheduleForm(): void {
-    if (!this.scheduleForm || !this.event) return;
-
-    const eventTimeZone = this.event.timeZone || 'Europe/Paris';
+    if (!this.session || !this.scheduleForm) return;
 
     const formValues: any = {
-      track: this.session?.track || '',
-      startDate: this.getStartDateValue(eventTimeZone),
-      startTime: this.getStartTimeValue(eventTimeZone),
-      duration: this.selectedDuration
+      track: this.session.track || '',
+      startDate: this.getStartDateValue(),
+      startTime: this.getStartTimeValue()
     };
 
-    if (this.session?.start && this.session?.end) {
+    if (this.session.start && this.session.end) {
       try {
         const startDate = new Date(this.session.start);
         const endDate = new Date(this.session.end);
@@ -173,32 +168,53 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
         }
       } catch (error) {
         console.warn('Error calculating duration:', error);
+        formValues.duration = 60;
+        this.selectedDuration = 60;
       }
+    } else {
+      formValues.duration = 60;
+      this.selectedDuration = 60;
     }
 
     this.scheduleForm.patchValue(formValues);
   }
 
-  getStartTimeValue(eventTimeZone: string): string {
-    if (!this.session?.start) return '';
-
-    try {
-      return this.dateTimeService.formatTimeForInput(this.session.start, eventTimeZone);
-    } catch (error) {
-      console.warn('Error formatting start time:', error);
-      return '';
+  getStartTimeValue(): string {
+    if (this.session?.start) {
+      try {
+        return this.formatTimeForInput(new Date(this.session.start));
+      } catch (error) {
+        console.warn('Error formatting start time:', error);
+        return '';
+      }
     }
+    return '';
   }
 
-  getStartDateValue(eventTimeZone: string): string {
-    if (!this.session?.start) return '';
+  getStartDateValue(): string {
+    if (this.session?.start) {
+      try {
+        return this.formatDateForInput(new Date(this.session.start));
+      } catch (error) {
+        console.warn('Error formatting start date:', error);
+        return '';
+      }
+    }
+    return '';
+  }
 
-    try {
-      return this.dateTimeService.formatDateForInput(this.session.start, eventTimeZone);
-    } catch (error) {
-      console.warn('Error formatting start date:', error);
+  public formatDateForInput(date: Date): string {
+    if (!date || isNaN(date.getTime())) {
       return '';
     }
+    return date.toISOString().split('T')[0];
+  }
+
+  public formatTimeForInput(date: Date): string {
+    if (!date || isNaN(date.getTime())) {
+      return '';
+    }
+    return date.toTimeString().slice(0, 5);
   }
 
   onDurationSelect(duration: number): void {
@@ -210,31 +226,20 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     return new Date(startDate.getTime() + (durationMinutes * 60 * 1000));
   }
 
-  private combineDateAndTime(dateStr: string, timeStr: string, eventTimeZone: string): Date | null {
+  private combineDateAndTime(dateStr: string, timeStr: string): Date | null {
     if (!dateStr || !timeStr) return null;
-
-    try {
-      const combinedStr = `${dateStr}T${timeStr}:00`;
-      const tempDate = new Date(combinedStr);
-      const zonedDate = new Date(tempDate.toLocaleString('en-US', { timeZone: 'UTC' }));
-      const localDate = new Date(tempDate.toLocaleString('en-US', { timeZone: eventTimeZone }));
-      const offset = zonedDate.getTime() - localDate.getTime();
-
-      return new Date(tempDate.getTime() + offset);
-    } catch (error) {
-      console.error('Error combining date and time:', error);
-      return null;
-    }
+    const combinedStr = `${dateStr}T${timeStr}:00`;
+    const date = new Date(combinedStr);
+    return isNaN(date.getTime()) ? null : date;
   }
 
   onSaveSchedule(): void {
-    if (!this.scheduleForm || this.scheduleForm.invalid || this.isUpdatingSchedule || !this.event) {
+    if (!this.scheduleForm || this.scheduleForm.invalid || this.isUpdatingSchedule) {
       return;
     }
 
     const formValues = this.scheduleForm.value;
-    const eventTimeZone = this.event.timeZone || 'Europe/Paris';
-    const startDate = this.combineDateAndTime(formValues.startDate, formValues.startTime, eventTimeZone);
+    const startDate = this.combineDateAndTime(formValues.startDate, formValues.startTime);
 
     if (!startDate) {
       this.scheduleError = 'Please provide a valid start date and time';
@@ -279,57 +284,36 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
   }
 
   hasScheduleInfo(): boolean {
-    return !!(
-      (this.session?.start && this.session.start !== null) ||
-      (this.session?.track && this.session.track !== null)
-    );
+    return !!(this.session?.start || this.session?.track);
   }
 
   formatCompleteSessionInfo(): string {
-    if (!this.session || !this.event) return '';
-
+    if (!this.session) return '';
     const parts: string[] = [];
-    const eventTimeZone = this.event.timeZone || 'Europe/Paris';
 
-    if (this.session.start && this.session.start !== null) {
+    if (this.session.start) {
       try {
-        const dateStr = this.dateTimeService.formatDateTimeForEvent(
-          this.session.start,
-          eventTimeZone,
-          {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          }
-        );
+        const options: Intl.DateTimeFormatOptions = {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        };
 
-        const timeStr = this.dateTimeService.formatTimeForEvent(
-          this.session.start,
-          eventTimeZone
-        );
+        const dateStr : string = this.session.start.toLocaleDateString('en-US', options);
+        const timeStr: string = this.session.start.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
 
-        parts.push(`<strong class="font-medium">${dateStr}</strong> at <strong class="font-medium">${timeStr}</strong>`);
-
-        if (this.session.end && this.session.end !== null) {
-          const endTimeStr = this.dateTimeService.formatTimeForEvent(
-            this.session.end,
-            eventTimeZone
-          );
-          parts[parts.length - 1] = parts[parts.length - 1].replace(
-            `at <strong class="font-medium">${timeStr}</strong>`,
-            `from <strong class="font-medium">${timeStr}</strong> to <strong class="font-medium">${endTimeStr}</strong>`
-          );
-        }
+        parts.push(`<strong class="font-medium"> ${dateStr} </strong> at <strong class="font-medium">${timeStr}</strong>`);
       } catch (error) {
-        console.error('Error formatting session date:', error);
-        const fallbackDate = new Date(this.session.start).toLocaleDateString();
-        const fallbackTime = new Date(this.session.start).toLocaleTimeString();
-        parts.push(`<strong class="font-medium">${fallbackDate}</strong> at <strong class="font-medium">${fallbackTime}</strong>`);
+        console.error('Error formatting date:', error);
       }
     }
 
-    if (this.session.track && this.session.track !== null) {
+    if (this.session.track) {
       parts.push(`in room <strong class="font-medium">${this.getTrackName()}</strong>`);
     }
 
@@ -337,7 +321,7 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
   }
 
   getTrackName(): string {
-    if (!this.session?.track || this.session.track === null) return '';
+    if (!this.session?.track) return '';
 
     if (this.session.track.includes(' ')) {
       return this.session.track;

@@ -10,8 +10,6 @@ import {NavbarEventPageComponent} from '../../../components/event/navbar-event-p
 import {NgClass} from '@angular/common';
 import {CalendarDayData, CalendarSession, CalendarSessionData} from '../../../type/calendar/calendar';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {DateTimeService} from '../../../services/sessions/date-time.service';
-import {EventDTO} from '../../../type/event/eventDTO';
 
 @Component({
   selector: 'app-calendar-event-page',
@@ -30,8 +28,6 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
   calendarData: CalendarDayData | null = null;
   eventDateRange: { start: Date; end: Date } | null = null;
 
-  private event: EventDTO | null = null;
-
   readonly HOUR_HEIGHT: number = 120;
   readonly START_HOUR: number = 9;
   readonly END_HOUR: number = 20;
@@ -42,53 +38,17 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
     eventService: EventService,
     speakerService: SpeakerService,
     eventDataService: EventDataService,
-    private calendarService: CalendarService,
-    private dateTimeService: DateTimeService
+    private calendarService: CalendarService
   ) {
     super(route, router, eventService, speakerService, eventDataService);
   }
 
   override ngOnInit(): void {
     super.ngOnInit();
-    this.loadEventData();
   }
 
   override ngOnDestroy(): void {
     super.ngOnDestroy();
-  }
-
-  protected override loadEventData(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID is required to load event data';
-      this.isLoading = false;
-      return;
-    }
-
-    this.eventService.getEventById(this.eventId)
-      .pipe(
-        finalize(() => this.isLoading = false),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe({
-        next: (event: EventDTO) => {
-          this.handleEventDataLoaded(event);
-          this.eventDataService.loadEvent({
-            idEvent: event.idEvent || this.eventId,
-            eventName: event.eventName || '',
-            teamId: event.teamId || '',
-            url: event.url || '',
-            teamUrl: event.teamUrl,
-            type: event.type,
-          });
-
-          this.event = event;
-          this.loadItems();
-        },
-        error: (err) => {
-          console.error('Error loading event:', err);
-          this.error = 'Failed to load event data';
-        }
-      });
   }
 
   override loadItems(): void {
@@ -149,14 +109,10 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
   }
 
   private buildCalendarData(): void {
-    if (!this.event) return;
-
-    const eventTimeZone = this.event.timeZone || 'Europe/Paris';
     this.calendarData = this.calendarService.buildCalendarData(
       this.filteredItems,
       this.selectedDate,
-      this.tracks,
-      eventTimeZone
+      this.tracks
     );
   }
 
@@ -194,10 +150,7 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
   }
 
   formatDisplayDate(date: Date): string {
-    if (!this.event) return date.toLocaleDateString();
-
-    const eventTimeZone = this.event.timeZone || 'Europe/Paris';
-    return this.dateTimeService.formatDateTimeForEvent(date, eventTimeZone, {
+    return date.toLocaleDateString('en-EN', {
       weekday: 'long',
       month: 'long',
       day: 'numeric'
@@ -205,12 +158,15 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
   }
 
   formatSessionTime(session: CalendarSession): string {
-    if (!this.event) {
-      return `${session.startTime.toLocaleTimeString()} - ${session.endTime.toLocaleTimeString()}`;
-    }
-
-    const eventTimeZone = this.event.timeZone || 'Europe/Paris';
-    return this.calendarService.formatSessionTime(session, eventTimeZone);
+    const start : string = session.startTime.toLocaleTimeString('en-EN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const end : string = session.endTime.toLocaleTimeString('en-EN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    return `${start} - ${end}`;
   }
 
   getSpeakerNames(session: CalendarSessionData): string {

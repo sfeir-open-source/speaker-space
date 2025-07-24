@@ -34,7 +34,6 @@ public class TeamRepositoryImpl implements TeamRepository {
             }
 
             docRef.set(team).get();
-            logger.info("Team saved with ID: {}", team.getId());
             return team;
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Error saving team: {}", e.getMessage(), e);
