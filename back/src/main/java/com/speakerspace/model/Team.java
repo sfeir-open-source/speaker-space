@@ -53,6 +53,15 @@ public class Team {
         return invitedEmails != null ? invitedEmails : new HashMap<>();
     }
 
+    public void addMember(String userId) {
+        ensureMutableCollections();
+
+        if (!memberIds.contains(userId)) {
+            memberIds.add(userId);
+        }
+        addMemberWithRole(userId, "Owner", true);
+    }
+
     public void addMemberWithRole(String userId, String role, boolean isCreator) {
         ensureMutableCollections();
 

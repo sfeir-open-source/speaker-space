@@ -44,7 +44,7 @@ public class TeamService {
         UserDTO currentUser = userService.getUserByUid(currentUserId);
         Team team = teamMapper.convertToEntity(teamDTO);
         team.setUserCreateId(currentUserId);
-        team.addMemberWithRole(currentUserId, "Owner");
+        team.addMember(currentUserId);
 
         for (TeamMember member : team.getMembers()) {
             if (member.getUserId().equals(currentUserId)) {
