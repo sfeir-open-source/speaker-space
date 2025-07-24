@@ -1,6 +1,7 @@
 package com.speakerspace.model.session;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.cloud.spring.data.firestore.Document;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -13,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
+@Document
 public class SessionReviewImportData {
 
     @NotBlank(message = "ID is required")

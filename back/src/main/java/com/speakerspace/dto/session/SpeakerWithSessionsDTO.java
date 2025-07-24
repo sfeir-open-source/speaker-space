@@ -59,13 +59,5 @@ public record SpeakerWithSessionsDTO(
         return new ExtractedData(extractedFormats, extractedCategories);
     }
 
-    public SpeakerWithSessionsDTO withSessions(List<SessionReviewImportData> newSessions) {
-        return new SpeakerWithSessionsDTO(this.speaker, newSessions);
-    }
-
-    public SpeakerWithSessionsDTO withSpeaker(Speaker newSpeaker) {
-        return new SpeakerWithSessionsDTO(newSpeaker, this.sessions);
-    }
-
     private record ExtractedData(Set<Format> formats, Set<Category> categories) {}
 }

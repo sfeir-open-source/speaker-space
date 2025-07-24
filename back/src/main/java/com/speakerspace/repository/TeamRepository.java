@@ -8,12 +8,12 @@ import java.util.Optional;
 
 @Repository
 public interface TeamRepository {
-    Team save(Team team);
-    Optional<Team> findById(String id);
+    Team saveTeam(Team team);
+    Optional<Team> findTeamByIdOptional(String id);
     List<Team> findTeamsByMemberId(String memberId);
     List<Team> findTeamsByUserCreateId(String userCreateId);
     Team findByIdUrl(String url);
     List<Team> findTeamsByInvitedEmail(String email);
     boolean existsByName(String name);
-    boolean delete(String id);
+    void deleteTeam(String id);
 }

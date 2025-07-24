@@ -1,11 +1,8 @@
 package com.speakerspace.config;
 
-import com.speakerspace.controller.AuthController;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
@@ -13,7 +10,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class CookieService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     private static final int COOKIE_MAX_AGE = 3600 * 24 * 30;
     private static final boolean SECURE = true;
     private static final boolean HTTP_ONLY = true;

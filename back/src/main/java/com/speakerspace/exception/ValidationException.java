@@ -13,9 +13,4 @@ public class ValidationException extends RuntimeException {
         super(message);
         this.errors = errors;
     }
-
-    public ValidationException(String message) {
-        super(message);
-        this.errors = Map.of();
-    }
 }

@@ -52,7 +52,7 @@ public class TeamMemberService {
                     member.setStatus("active");
                 });
 
-        teamRepository.save(team);
+        teamRepository.saveTeam(team);
 
         return TeamMemberDTO.builder()
                 .userId(memberDTO.userId())
@@ -103,7 +103,7 @@ public class TeamMemberService {
         }
 
         team.updateMemberRole(userId, newRole);
-        teamRepository.save(team);
+        teamRepository.saveTeam(team);
 
         UserDTO userDTO = userService.getUserByUid(userId);
         return TeamMemberDTO.builder()
@@ -140,7 +140,7 @@ public class TeamMemberService {
         }
 
         team.removeMember(userId);
-        teamRepository.save(team);
+        teamRepository.saveTeam(team);
         return true;
     }
 
@@ -171,7 +171,7 @@ public class TeamMemberService {
 
             return addTeamMember(teamId, memberDTO);
         } else {
-            String temporaryUserId = "invited_" + UUID.randomUUID().toString();
+            String temporaryUserId = "invited_" + UUID.randomUUID();
 
             TeamMember invitedMember = new TeamMember(temporaryUserId, "Member");
             invitedMember.setEmail(email);
@@ -188,7 +188,7 @@ public class TeamMemberService {
                     });
 
             team.addInvitedEmail(email, temporaryUserId);
-            teamRepository.save(team);
+            teamRepository.saveTeam(team);
 
             return TeamMemberDTO.builder()
                     .userId(temporaryUserId)
@@ -201,7 +201,7 @@ public class TeamMemberService {
 
     private Team validateTeamAccess(String teamId) throws AccessDeniedException {
         String currentUserId = userService.getCurrentUserId();
-        Optional<Team> teamOpt = teamRepository.findById(teamId);
+        Optional<Team> teamOpt = teamRepository.findTeamByIdOptional(teamId);
 
         if (teamOpt.isEmpty()) {
             throw new IllegalArgumentException("Team not found");

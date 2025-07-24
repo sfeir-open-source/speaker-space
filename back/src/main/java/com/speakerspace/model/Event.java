@@ -1,6 +1,7 @@
 package com.speakerspace.model;
 
 import com.google.cloud.Timestamp;
+import com.google.cloud.spring.data.firestore.Document;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -9,6 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
+@Document
 public class Event {
 
     @NotBlank(message = "ID is required")

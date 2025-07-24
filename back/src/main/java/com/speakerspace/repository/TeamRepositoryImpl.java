@@ -2,110 +2,68 @@ package com.speakerspace.repository;
 
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.Team;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Repository
-@RequiredArgsConstructor
-public class TeamRepositoryImpl implements TeamRepository {
+public class TeamRepositoryImpl extends AbstractFirestoreRepository<Team, String>
+        implements TeamRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(TeamRepositoryImpl.class);
-    private static final String COLLECTION_NAME = "teams";
-
-    private final Firestore firestore;
-
-    @Override
-    public Team save(Team team) {
-        try {
-            DocumentReference docRef;
-
-            if (team.getId() == null || team.getId().isEmpty()) {
-                docRef = firestore.collection(COLLECTION_NAME).document();
-                team.setId(docRef.getId());
-            } else {
-                docRef = firestore.collection(COLLECTION_NAME).document(team.getId());
-            }
-
-            docRef.set(team).get();
-            return team;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error saving team: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to save team", e);
-        }
+    public TeamRepositoryImpl(Firestore firestore) {
+        super(firestore, Team.class, "teams");
     }
 
     @Override
-    public Optional<Team> findById(String id) {
-        try {
-            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document(id);
-            DocumentSnapshot document = docRef.get().get();
-
-            return document.exists()
-                    ? Optional.ofNullable(document.toObject(Team.class))
-                    : Optional.empty();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding team by ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find team", e);
+    protected DocumentReference getDocumentReference(Team team) {
+        if (team.getId() == null || team.getId().isEmpty()) {
+            DocumentReference docRef = getCollection().document();
+            team.setId(docRef.getId());
+            return docRef;
         }
+        return getCollection().document(team.getId());
+    }
+
+    @Override
+    public Team saveTeam(Team team) {
+        return saveSync(team);
+    }
+
+    @Override
+    public Optional<Team> findTeamByIdOptional(String id) {
+        return findByIdSync(id);
     }
 
     @Override
     public List<Team> findTeamsByMemberId(String memberId) {
-        return executeQuery(
-                firestore.collection(COLLECTION_NAME)
-                        .whereArrayContains("memberIds", memberId)
-        );
+        return executeQuery(getCollection().whereArrayContains("memberIds", memberId));
     }
 
     @Override
     public List<Team> findTeamsByUserCreateId(String userCreateId) {
-        return executeQuery(
-                firestore.collection(COLLECTION_NAME)
-                        .whereEqualTo("userCreateId", userCreateId)
-        );
+        return executeQuery(getCollection().whereEqualTo("userCreateId", userCreateId));
     }
 
     @Override
-    public Team findByIdUrl(String id) {
-        try {
-            List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("id", id)
-                    .get().get().getDocuments();
-
-            if (documents.isEmpty()) {
-                return null;
-            }
-
-            return documents.get(0).toObject(Team.class);
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding team by ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find team by ID", e);
-        }
+    public Team findByIdUrl(String url) {
+        return executeQuerySingle(getCollection().whereEqualTo("id", url)).orElse(null);
     }
 
     @Override
     public List<Team> findTeamsByInvitedEmail(String email) {
         try {
-            List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
-                    .get().get().getDocuments();
-
-            List<Team> teams = new ArrayList<>();
-            for (QueryDocumentSnapshot document : documents) {
-                Team team = document.toObject(Team.class);
-                if (team.getInvitedEmails() != null && team.getInvitedEmails().containsKey(email)) {
-                    teams.add(team);
-                }
-            }
-
-            return teams;
+            return getCollection().get().get().getDocuments().stream()
+                    .map(doc -> {
+                        Team team = doc.toObject(Team.class);
+                        team.setId(doc.getId());
+                        return team;
+                    })
+                    .filter(team -> team.getInvitedEmails() != null &&
+                            team.getInvitedEmails().containsKey(email))
+                    .toList();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException("Failed to find teams by invited email", e);
         }
     }
@@ -113,42 +71,15 @@ public class TeamRepositoryImpl implements TeamRepository {
     @Override
     public boolean existsByName(String name) {
         try {
-            Query query = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("name", name);
-
-            QuerySnapshot querySnapshot = query.get().get();
-            return !querySnapshot.isEmpty();
+            return !getCollection().whereEqualTo("name", name).get().get().isEmpty();
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error checking team name uniqueness: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to check team name uniqueness", e);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to check team name existence", e);
         }
     }
 
     @Override
-    public boolean delete(String id) {
-        try {
-            firestore.collection(COLLECTION_NAME).document(id).delete().get();
-            logger.info("Team deleted with ID: {}", id);
-            return true;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error deleting team: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to delete team", e);
-        }
-    }
-
-    private List<Team> executeQuery(Query query) {
-        try {
-            List<QueryDocumentSnapshot> documents = query.get().get().getDocuments();
-            List<Team> teams = new ArrayList<>();
-
-            for (QueryDocumentSnapshot document : documents) {
-                teams.add(document.toObject(Team.class));
-            }
-
-            return teams;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error executing query: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to execute query", e);
-        }
+    public void deleteTeam(String id) {
+        deleteByIdSync(id);
     }
 }

@@ -6,7 +6,6 @@ import com.speakerspace.exception.UnauthorizedException;
 import com.speakerspace.security.AuthenticationHelper;
 import com.speakerspace.service.EventService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;

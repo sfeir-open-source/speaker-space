@@ -7,11 +7,11 @@ import java.util.List;
 
 @Repository
 public interface SpeakerRepository {
-    Speaker save(Speaker speaker);
-    Speaker findById(String id);
+    Speaker saveSpeaker(Speaker speaker);
+    Speaker findSpeakerById(String id);
     List<Speaker> findByIds(List<String> ids);
     List<Speaker> findByEventId(String eventId);
-    boolean existsById(String id);
-    boolean delete(String id);
+    boolean speakerExistsById(String id);
+    boolean deleteSpeaker(String id);
     int deleteByEventId(String eventId);
 }

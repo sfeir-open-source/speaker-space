@@ -48,7 +48,7 @@ public class TeamMapper {
         if (teamDTO.members() != null) {
             List<TeamMember> members = teamDTO.members().stream()
                     .map(this::convertDTOToMember)
-                    .collect(Collectors.toCollection(ArrayList::new)); // Force ArrayList
+                    .collect(Collectors.toCollection(ArrayList::new));
             team.setMembers(members);
         }
 

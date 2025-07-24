@@ -1,6 +1,5 @@
 package com.speakerspace.service;
 
-import com.google.cloud.firestore.*;
 import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.exception.ValidationException;
@@ -8,69 +7,43 @@ import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.User;
 import com.speakerspace.repository.TeamRepository;
+import com.speakerspace.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.net.URL;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-    private static final String COLLECTION_NAME = "users";
 
     private final UserMapper userMapper;
-    private final Firestore firestore;
+    private final UserRepository userRepository;
     private final TeamRepository teamRepository;
+    private static final int MIN_LENGTH = 2;
 
     public UserDTO saveUser(UserDTO userDTO) {
         User user = userMapper.convertToEntity(userDTO);
         validateRequiredFields(user);
 
-        try {
-            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document(user.getUid());
-            DocumentSnapshot existingDoc = docRef.get().get();
-
-            if (existingDoc.exists()) {
-                User existingUser = existingDoc.toObject(User.class);
-                if (existingUser != null) {
-                    user = preserveExistingFields(user, existingUser);
-                }
-            }
-
-            docRef.set(user).get();
-            return userMapper.convertToDTO(user);
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Failed to save user", e);
-            throw new RuntimeException("Failed to save user to Firestore", e);
+        Optional<User> existingUserOpt = userRepository.findUserByIdOptional(user.getUid());
+        if (existingUserOpt.isPresent()) {
+            User existingUser = existingUserOpt.get();
+            preserveExistingFields(user, existingUser);
         }
+
+        User savedUser = userRepository.saveUser(user);
+        return userMapper.convertToDTO(savedUser);
     }
 
     public UserDTO getUserByUid(String uid) {
-        User user = getUserEntityByUid(uid);
+        User user = userRepository.findUserById(uid);
         return user != null ? userMapper.convertToDTO(user) : null;
-    }
-
-    private User getUserEntityByUid(String uid) {
-        try {
-            DocumentSnapshot document = firestore.collection(COLLECTION_NAME)
-                    .document(uid)
-                    .get()
-                    .get();
-
-            return document.exists() ? document.toObject(User.class) : null;
-        } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error fetching user by UID", e);
-            return null;
-        }
     }
 
     public String getCurrentUserId() {
@@ -84,78 +57,40 @@ public class UserService {
     }
 
     public UserDTO getUserByEmail(String email) {
-        try {
-            List<QueryDocumentSnapshot> documents = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("email", email)
-                    .get().get().getDocuments();
-
-            if (documents.isEmpty()) {
-                return null;
-            }
-
-            User user = documents.get(0).toObject(User.class);
-            return userMapper.convertToDTO(user);
-        } catch (Exception e) {
-            logger.error("Error getting user by email", e);
-            return null;
-        }
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        return userOpt.map(userMapper::convertToDTO).orElse(null);
     }
 
     public UserDTO updateUser(UserDTO userDTO) {
-        try {
-            User existingUser = getUserEntityByUid(userDTO.uid());
-            if (existingUser == null) {
-                return null;
-            }
-
-            User updatedUser = userMapper.updateEntityFromDTO(userDTO, existingUser);
-            validateFullUser(updatedUser);
-
-            firestore.collection(COLLECTION_NAME)
-                    .document(updatedUser.getUid())
-                    .set(updatedUser)
-                    .get();
-
-            return userMapper.convertToDTO(updatedUser);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
+        Optional<User> existingUserOpt = userRepository.findUserByIdOptional(userDTO.uid());
+        if (existingUserOpt.isEmpty()) {
+            return null;
         }
+
+        User existingUser = existingUserOpt.get();
+        User updatedUser = userMapper.updateEntityFromDTO(userDTO, existingUser);
+        validateFullUser(updatedUser);
+
+        User savedUser = userRepository.saveUser(updatedUser);
+        return userMapper.convertToDTO(savedUser);
     }
 
     public List<TeamMemberDTO> searchUsersByEmail(String emailQuery) {
-        String normalizedQuery = emailQuery.toLowerCase();
+        List<User> users = userRepository.searchUsersByEmail(emailQuery, 10);
 
-        try {
-            QuerySnapshot querySnapshot = firestore.collection(COLLECTION_NAME)
-                    .whereGreaterThanOrEqualTo("email", normalizedQuery)
-                    .whereLessThanOrEqualTo("email", normalizedQuery + "\uf8ff")
-                    .limit(10)
-                    .get()
-                    .get();
-
-            return querySnapshot.getDocuments().stream()
-                    .map(doc -> {
-                        User user = doc.toObject(User.class);
-                        if (user != null && user.getEmail() != null) {
-                            return TeamMemberDTO.builder()
-                                    .userId(doc.getId())
-                                    .displayName(user.getDisplayName())
-                                    .photoURL(user.getPhotoURL())
-                                    .email(user.getEmail())
-                                    .build();
-                        }
-                        return null;
-                    })
-                    .filter(Objects::nonNull)
-                    .toList();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to search users", e);
-        }
+        return users.stream()
+                .filter(user -> user.getEmail() != null)
+                .map(user -> TeamMemberDTO.builder()
+                        .userId(user.getUid())
+                        .displayName(user.getDisplayName())
+                        .photoURL(user.getPhotoURL())
+                        .email(user.getEmail())
+                        .build())
+                .toList();
     }
 
     public void processUserLogin(String email, String uid) {
         if (email == null || uid == null) {
-            logger.error("Email or UID is null");
             return;
         }
 
@@ -173,7 +108,7 @@ public class UserService {
                         .ifPresent(member -> member.setStatus("active"));
 
                 team.removeInvitedEmail(email);
-                teamRepository.save(team);
+                teamRepository.saveTeam(team);
             }
         }
     }
@@ -185,24 +120,15 @@ public class UserService {
         User updatedUser = mergeUsers(partialUser, existingUser);
 
         Map<String, String> validationErrors = validatePartialUser(partialUser);
-
         if (!validationErrors.isEmpty()) {
             throw new ValidationException("User validation failed", validationErrors);
         }
 
-        try {
-            firestore.collection(COLLECTION_NAME)
-                    .document(updatedUser.getUid())
-                    .set(updatedUser)
-                    .get();
-
-            return userMapper.convertToDTO(updatedUser);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Failed to update user: " + e.getMessage(), e);
-        }
+        User savedUser = userRepository.saveUser(updatedUser);
+        return userMapper.convertToDTO(savedUser);
     }
 
-    private User preserveExistingFields(User newUser, User existingUser) {
+    private void preserveExistingFields(User newUser, User existingUser) {
         if (existingUser.getDisplayName() != null && !existingUser.getDisplayName().isEmpty()) {
             newUser.setDisplayName(existingUser.getDisplayName());
         }
@@ -232,7 +158,6 @@ public class UserService {
             }
         });
 
-        return newUser;
     }
 
     private void validateRequiredFields(User user) {
@@ -248,8 +173,7 @@ public class UserService {
             validationErrors.put("email", "Invalid email format");
         }
 
-        if (user.getDisplayName() != null && !user.getDisplayName().isEmpty()
-                && user.getDisplayName().length() < 2) {
+        if (user.getDisplayName() != null && user.getDisplayName().length() == 1) {
             validationErrors.put("displayName", "Display name must be at least 2 characters");
         }
 
@@ -272,11 +196,11 @@ public class UserService {
         }
 
         validateOptionalField(user.getDisplayName(), "displayName",
-                "Display name must be at least 2 characters", 2, validationErrors);
+                "Display name must be at least 2 characters", validationErrors);
         validateOptionalField(user.getCompany(), "company",
-                "Company name must be at least 2 characters", 2, validationErrors);
+                "Company name must be at least 2 characters", validationErrors);
         validateOptionalField(user.getCity(), "city",
-                "City must be at least 2 characters", 2, validationErrors);
+                "City must be at least 2 characters", validationErrors);
 
         validateOptionalUrl(user.getPhotoURL(), "photoURL",
                 "Invalid photo URL format", validationErrors);
@@ -302,8 +226,8 @@ public class UserService {
     }
 
     private void validateOptionalField(String value, String fieldName, String errorMessage,
-                                       int minLength, Map<String, String> errors) {
-        if (value != null && !value.isEmpty() && value.length() < minLength) {
+                                       Map<String, String> errors) {
+        if (value != null && !value.isEmpty() && value.length() < MIN_LENGTH) {
             errors.put(fieldName, errorMessage);
         }
     }
@@ -319,11 +243,11 @@ public class UserService {
         Map<String, String> validationErrors = new HashMap<>();
 
         validateOptionalField(partialUser.getDisplayName(), "displayName",
-                "Display name must be at least 2 characters", 2, validationErrors);
+                "Display name must be at least 2 characters", validationErrors);
         validateOptionalField(partialUser.getCompany(), "company",
-                "Company name must be at least 2 characters", 2, validationErrors);
+                "Company name must be at least 2 characters", validationErrors);
         validateOptionalField(partialUser.getCity(), "city",
-                "City must be at least 2 characters", 2, validationErrors);
+                "City must be at least 2 characters", validationErrors);
 
         validateOptionalUrl(partialUser.getPhotoURL(), "photoURL",
                 "Invalid photo URL format", validationErrors);

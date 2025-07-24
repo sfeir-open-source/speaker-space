@@ -1,43 +1,66 @@
 package com.speakerspace.repository;
 
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.DocumentReference;
-import com.google.cloud.firestore.DocumentSnapshot;
-import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.*;
 import com.speakerspace.model.User;
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Repository
-@RequiredArgsConstructor
-public class UserRepositoryImpl implements UserRepository {
+public class UserRepositoryImpl extends AbstractFirestoreRepository<User, String>
+        implements UserRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserRepositoryImpl.class);
-    private static final String COLLECTION_NAME = "users";
-
-    private final Firestore firestore;
+    public UserRepositoryImpl(Firestore firestore) {
+        super(firestore, User.class, "users");
+    }
 
     @Override
-    public Optional<User> findById(String uid) {
-        try {
-            DocumentReference docRef = firestore.collection(COLLECTION_NAME).document(uid);
-            ApiFuture<DocumentSnapshot> future = docRef.get();
-            DocumentSnapshot document = future.get();
+    protected DocumentReference getDocumentReference(User user) {
+        if (user.getUid() == null || user.getUid().isEmpty()) {
+            throw new IllegalArgumentException("User UID cannot be null or empty");
+        }
+        return getCollection().document(user.getUid());
+    }
 
-            if (document.exists()) {
-                User user = document.toObject(User.class);
-                return Optional.ofNullable(user);
-            } else {
-                return Optional.empty();
-            }
+    @Override
+    public User saveUser(User user) {
+        return saveSync(user);
+    }
+
+    @Override
+    public User findUserById(String uid) {
+        return findByIdSync(uid).orElse(null);
+    }
+
+    @Override
+    public Optional<User> findUserByIdOptional(String uid) {
+        return findByIdSync(uid);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return executeQuerySingle(getCollection().whereEqualTo("email", email.toLowerCase()));
+    }
+
+    @Override
+    public List<User> searchUsersByEmail(String emailQuery, int limit) {
+        String normalizedQuery = emailQuery.toLowerCase();
+        try {
+            return getCollection()
+                    .whereGreaterThanOrEqualTo("email", normalizedQuery)
+                    .whereLessThanOrEqualTo("email", normalizedQuery + "\uf8ff")
+                    .limit(limit)
+                    .get().get().getDocuments().stream()
+                    .map(doc -> {
+                        User user = doc.toObject(User.class);
+                        user.setUid(doc.getId());
+                        return user;
+                    })
+                    .toList();
         } catch (InterruptedException | ExecutionException e) {
-            logger.error("Error finding user by ID: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to find user", e);
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to search users by email", e);
         }
     }
 }

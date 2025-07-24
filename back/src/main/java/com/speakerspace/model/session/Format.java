@@ -1,5 +1,6 @@
 package com.speakerspace.model.session;
 
+import com.google.cloud.spring.data.firestore.Document;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -9,6 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
+@Document
 public class Format {
     @NotBlank(message = "ID is required")
     @EqualsAndHashCode.Include

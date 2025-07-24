@@ -1,6 +1,7 @@
 package com.speakerspace.model;
 
 import com.google.cloud.firestore.annotation.PropertyName;
+import com.google.cloud.spring.data.firestore.Document;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -16,6 +17,7 @@ import java.util.Objects;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
+@Document
 public class User {
 
     @NotBlank(message = "User ID is required")

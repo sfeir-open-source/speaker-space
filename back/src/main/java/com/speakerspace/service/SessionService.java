@@ -6,8 +6,6 @@ import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.session.*;
 import com.speakerspace.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -17,12 +15,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SessionService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
-
     private final SessionRepository sessionRepository;
     private final SessionMapper sessionMapper;
     private final SpeakerService speakerService;
     private final SpeakerMapper speakerMapper;
+
+    public boolean deleteSession(String id) {
+        Session existingSession = sessionRepository.findSessionById(id);
+        if (existingSession == null) {
+            return false;
+        }
+        return sessionRepository.deleteSession(id);
+    }
+
+    public List<String> getDistinctTracksByEventId(String eventId) {
+        return sessionRepository.findDistinctTracksByEventId(eventId);
+    }
 
     public ImportResultDTO importSessionsReview(String eventId, List<SessionDTO> importDataList) {
         List<String> successfulImports = new ArrayList<>();
@@ -38,7 +46,7 @@ public class SessionService {
                 Session session = sessionMapper.convertToEntity(sessionDTO);
                 session.setSpeakerIds(speakerIds);
 
-                sessionRepository.save(session);
+                sessionRepository.saveSession(session);
                 successfulImports.add(importData.id());
 
             } catch (Exception e) {
@@ -68,14 +76,14 @@ public class SessionService {
                         ? scheduleData.proposal().id()
                         : scheduleData.id();
 
-                Session existingSession = sessionRepository.findById(sessionId);
+                Session existingSession = sessionRepository.findSessionById(sessionId);
 
                 if (existingSession != null) {
                     enrichExistingSessionWithScheduleData(existingSession, scheduleData);
-                    sessionRepository.save(existingSession);
+                    sessionRepository.saveSession(existingSession);
                 } else {
                     Session newSession = createSessionFromScheduleData(scheduleData, eventId);
-                    sessionRepository.save(newSession);
+                    sessionRepository.saveSession(newSession);
                 }
                 successfulImports.add(sessionId);
             } catch (Exception e) {
@@ -93,46 +101,6 @@ public class SessionService {
                 .successCount(successfulImports.size())
                 .errors(errors)
                 .build();
-    }
-
-    private Session createSessionFromScheduleData(SessionScheduleImportDataDTO scheduleData, String eventId) {
-        Session session = new Session();
-
-        String sessionId = scheduleData.proposal() != null && scheduleData.proposal().id() != null
-                ? scheduleData.proposal().id()
-                : scheduleData.id();
-
-        session.setId(sessionId);
-        session.setTitle(scheduleData.title());
-        session.setStart(scheduleData.start());
-        session.setEnd(scheduleData.end());
-        session.setTrack(scheduleData.track());
-        session.setEventId(eventId);
-
-        if (scheduleData.languages() != null) {
-            session.setLanguages(List.of(scheduleData.languages()));
-        }
-
-        if (scheduleData.proposal() != null) {
-            ProposalScheduleDTO proposal = scheduleData.proposal();
-
-            session.setAbstractText(proposal.abstractText());
-            session.setLevel(proposal.level());
-
-            if (proposal.formats() != null) {
-                session.setFormats(convertStringFormatsToObjects(proposal.formats()));
-            }
-            if (proposal.categories() != null) {
-                session.setCategories(convertStringCategoriesToObjects(proposal.categories()));
-            }
-            if (proposal.speakers() != null) {
-                List<Speaker> speakers = convertScheduleSpeakersToSpeakers(proposal.speakers());
-                List<String> speakerIds = speakerService.processSpeakers(speakers, eventId);
-                session.setSpeakerIds(speakerIds);
-            }
-        }
-
-        return session;
     }
 
     public List<SessionReviewImportData> getSessionsReviewAsImportData(String eventId) {
@@ -216,28 +184,50 @@ public class SessionService {
         return sessionMapper.convertToDTO(updatedSession);
     }
 
-    public List<String> getDistinctTracksByEventId(String eventId) {
-        return sessionRepository.findDistinctTracksByEventId(eventId);
+    private Session createSessionFromScheduleData(SessionScheduleImportDataDTO scheduleData, String eventId) {
+        Session session = new Session();
+
+        String sessionId = scheduleData.proposal() != null && scheduleData.proposal().id() != null
+                ? scheduleData.proposal().id()
+                : scheduleData.id();
+
+        session.setId(sessionId);
+        session.setTitle(scheduleData.title());
+        session.setStart(scheduleData.start());
+        session.setEnd(scheduleData.end());
+        session.setTrack(scheduleData.track());
+        session.setEventId(eventId);
+
+        if (scheduleData.languages() != null) {
+            session.setLanguages(List.of(scheduleData.languages()));
+        }
+
+        if (scheduleData.proposal() != null) {
+            ProposalScheduleDTO proposal = scheduleData.proposal();
+
+            session.setAbstractText(proposal.abstractText());
+            session.setLevel(proposal.level());
+
+            if (proposal.formats() != null) {
+                session.setFormats(convertStringFormatsToObjects(proposal.formats()));
+            }
+            if (proposal.categories() != null) {
+                session.setCategories(convertStringCategoriesToObjects(proposal.categories()));
+            }
+            if (proposal.speakers() != null) {
+                List<Speaker> speakers = convertScheduleSpeakersToSpeakers(proposal.speakers());
+                List<String> speakerIds = speakerService.processSpeakers(speakers, eventId);
+                session.setSpeakerIds(speakerIds);
+            }
+        }
+
+        return session;
     }
 
     private void enrichExistingSessionWithScheduleData(Session session, SessionScheduleImportDataDTO scheduleData) {
         session.setStart(scheduleData.start());
         session.setEnd(scheduleData.end());
         session.setTrack(scheduleData.track());
-
-        logger.debug("Enriching session {}: start={}, end={}",
-                session.getId(), scheduleData.start(), scheduleData.end());
-    }
-
-    private void enrichSpeakersData(Session session, List<String> newSpeakerIds) {
-        if (newSpeakerIds == null || newSpeakerIds.isEmpty()) {
-            return;
-        }
-
-        Set<String> existingSpeakerIds = new HashSet<>(session.getSpeakerIds() != null ? session.getSpeakerIds() : new ArrayList<>());
-        existingSpeakerIds.addAll(newSpeakerIds);
-
-        session.setSpeakerIds(new ArrayList<>(existingSpeakerIds));
     }
 
     private List<String> processSpeakersForSession(List<SpeakerDTO> speakerDTOs, String eventId) {
@@ -250,29 +240,6 @@ public class SessionService {
                 .toList();
 
         return speakerService.processSpeakers(speakers, eventId);
-    }
-
-    private boolean isBlank(String str) {
-        return str == null || str.trim().isEmpty();
-    }
-
-    private <T> T defaultIfNull(T value, T defaultValue) {
-        return value != null ? value : defaultValue;
-    }
-
-    private String generateIdFromString(String content) {
-        return content.toLowerCase()
-                .replaceAll("[^a-z0-9]", "_")
-                .replaceAll("_+", "_")
-                .replaceAll("^_|_$", "");
-    }
-
-    public boolean deleteSession(String id) {
-        Session existingSession = sessionRepository.findById(id);
-        if (existingSession == null) {
-            return false;
-        }
-        return sessionRepository.delete(id);
     }
 
     private SessionDTO convertImportDataToSessionDTO(SessionDTO importData, String eventId) {
@@ -335,5 +302,16 @@ public class SessionService {
                     return speaker;
                 })
                 .toList();
+    }
+
+    private <T> T defaultIfNull(T value, T defaultValue) {
+        return value != null ? value : defaultValue;
+    }
+
+    private String generateIdFromString(String content) {
+        return content.toLowerCase()
+                .replaceAll("[^a-z0-9]", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_|_$", "");
     }
 }

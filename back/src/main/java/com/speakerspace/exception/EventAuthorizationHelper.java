@@ -21,7 +21,7 @@ public class EventAuthorizationHelper {
     private final AuthenticationHelper authHelper;
     private final UserEmailExtractor emailExtractor;
 
-    public EventDTO validateEventAuthorization(String eventId, Authentication authentication) throws AccessDeniedException {
+    public void validateEventAuthorization(String eventId, Authentication authentication) throws AccessDeniedException {
         if (authentication == null) {
             throw new UnauthorizedException("Authentication required");
         }
@@ -35,15 +35,13 @@ public class EventAuthorizationHelper {
             throw new AccessDeniedException("User not authorized to access this event");
         }
 
-        return existingEvent;
     }
 
-    public String validateUserAuthentication(HttpServletRequest request, Authentication authentication) {
+    public void validateUserAuthentication(HttpServletRequest request, Authentication authentication) {
         String userEmail = emailExtractor.extractUserEmail(request, authentication);
         if (userEmail == null) {
             throw new UnauthorizedException("Valid authentication required");
         }
-        return userEmail;
     }
 
     public <T> ResponseEntity<T> executeWithEventAuthorization(String eventId, Authentication authentication,

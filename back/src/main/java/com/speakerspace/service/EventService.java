@@ -73,12 +73,12 @@ public class EventService {
             event.setUrl(BASE_URL + urlSuffix);
         }
 
-        Event savedEvent = eventRepository.save(event);
+        Event savedEvent = eventRepository.saveEvent(event);
         return eventMapper.convertToDTO(savedEvent);
     }
 
     public EventDTO getEventById(String id) {
-        Event event = eventRepository.findById(id);
+        Event event = eventRepository.findEventById(id);
         return event != null ? eventMapper.convertToDTO(event) : null;
     }
 
@@ -108,7 +108,7 @@ public class EventService {
             throw new IllegalArgumentException("Event ID is required for update");
         }
 
-        Event existingEvent = eventRepository.findById(eventDTO.idEvent());
+        Event existingEvent = eventRepository.findEventById(eventDTO.idEvent());
         if (existingEvent == null) {
             throw new RuntimeException("Event not found");
         }
@@ -128,14 +128,14 @@ public class EventService {
         updateFinishStatus(eventToUpdate);
         validateEventDates(eventToUpdate);
 
-        Event updatedEvent = eventRepository.save(eventToUpdate);
+        Event updatedEvent = eventRepository.saveEvent(eventToUpdate);
         return eventMapper.convertToDTO(updatedEvent);
     }
 
     public boolean deleteEvent(String eventId) throws AccessDeniedException {
         String currentUserId = userService.getCurrentUserId();
 
-        Event event = eventRepository.findById(eventId);
+        Event event = eventRepository.findEventById(eventId);
         if (event == null) {
             return false;
         }
@@ -155,7 +155,7 @@ public class EventService {
         int deletedSessionsCount = sessionRepository.deleteByEventId(eventId);
         int deletedSpeakersCount = speakerRepository.deleteByEventId(eventId);
 
-        boolean eventDeleted = eventRepository.delete(eventId);
+        boolean eventDeleted = eventRepository.deleteEvent(eventId);
 
         if (eventDeleted) {
             logger.info("Event deleted successfully: {} (with {} sessions and {} speakers)",

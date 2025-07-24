@@ -18,11 +18,11 @@ public class SpeakerService {
     private final SpeakerRepository speakerRepository;
 
     public Speaker saveSpeaker(Speaker speaker) {
-        return speakerRepository.save(speaker);
+        return speakerRepository.saveSpeaker(speaker);
     }
 
     public Speaker findById(String id) {
-        return speakerRepository.findById(id);
+        return speakerRepository.findSpeakerById(id);
     }
 
     public List<Speaker> findByIds(List<String> ids) {
@@ -33,15 +33,23 @@ public class SpeakerService {
         return speakerRepository.findByEventId(eventId);
     }
 
+    public boolean deleteSpeaker(String id) {
+        Speaker existingSpeaker = speakerRepository.findSpeakerById(id);
+        if (existingSpeaker == null) {
+            return false;
+        }
+        return speakerRepository.deleteSpeaker(id);
+    }
+
     public String saveOrUpdateSpeaker(Speaker speaker, String eventId) {
         speaker.setEventId(eventId);
 
-        if (speaker.getId() != null && speakerRepository.existsById(speaker.getId())) {
-            Speaker existingSpeaker = speakerRepository.findById(speaker.getId());
+        if (speaker.getId() != null && speakerRepository.speakerExistsById(speaker.getId())) {
+            Speaker existingSpeaker = speakerRepository.findSpeakerById(speaker.getId());
             Speaker mergedSpeaker = mergeSpeakerData(existingSpeaker, speaker);
-            return speakerRepository.save(mergedSpeaker).getId();
+            return speakerRepository.saveSpeaker(mergedSpeaker).getId();
         } else {
-            return speakerRepository.save(speaker).getId();
+            return speakerRepository.saveSpeaker(speaker).getId();
         }
     }
 
@@ -59,13 +67,14 @@ public class SpeakerService {
         Speaker merged = new Speaker();
         merged.setId(existing.getId());
         merged.setEventId(existing.getEventId());
-        merged.setName(existing.getName() != null ? existing.getName() : incoming.getName());
-        merged.setBio(existing.getBio() != null ? existing.getBio() : incoming.getBio());
-        merged.setCompany(existing.getCompany() != null ? existing.getCompany() : incoming.getCompany());
-        merged.setPicture(existing.getPicture() != null ? existing.getPicture() : incoming.getPicture());
-        merged.setLocation(existing.getLocation() != null ? existing.getLocation() : incoming.getLocation());
-        merged.setEmail(existing.getEmail() != null ? existing.getEmail() : incoming.getEmail());
-        merged.setReferences(existing.getReferences() != null ? existing.getReferences() : incoming.getReferences());
+
+        merged.setName(isNotEmpty(incoming.getName()) ? incoming.getName() : existing.getName());
+        merged.setBio(isNotEmpty(incoming.getBio()) ? incoming.getBio() : existing.getBio());
+        merged.setCompany(isNotEmpty(incoming.getCompany()) ? incoming.getCompany() : existing.getCompany());
+        merged.setPicture(isNotEmpty(incoming.getPicture()) ? incoming.getPicture() : existing.getPicture());
+        merged.setLocation(isNotEmpty(incoming.getLocation()) ? incoming.getLocation() : existing.getLocation());
+        merged.setEmail(isNotEmpty(incoming.getEmail()) ? incoming.getEmail() : existing.getEmail());
+        merged.setReferences(incoming.getReferences() != null ? incoming.getReferences() : existing.getReferences());
 
         Set<String> mergedSocialLinks = new HashSet<>();
         if (existing.getSocialLinks() != null) {
@@ -79,12 +88,7 @@ public class SpeakerService {
         return merged;
     }
 
-    public boolean deleteSpeaker(String id) {
-        Speaker existingSpeaker = speakerRepository.findById(id);
-        if (existingSpeaker == null) {
-            return false;
-        }
-        return speakerRepository.delete(id);
+    private boolean isNotEmpty(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }
-

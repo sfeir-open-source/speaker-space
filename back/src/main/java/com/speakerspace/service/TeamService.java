@@ -56,7 +56,7 @@ public class TeamService {
 
         team.setCreatorEmail(currentUser.email());
 
-        Team savedTeam = teamRepository.save(team);
+        Team savedTeam = teamRepository.saveTeam(team);
         return teamMapper.convertToDTO(savedTeam);
     }
 
@@ -87,13 +87,12 @@ public class TeamService {
     }
 
     public TeamDTO getTeamById(String urlId) {
-        String id = urlId;
-        Team team = teamRepository.findByIdUrl(id);
+        Team team = teamRepository.findByIdUrl(urlId);
         return team != null ? teamMapper.convertToDTO(team) : null;
     }
 
     public TeamDTO updateTeam(String teamId, TeamDTO teamDTO) throws AccessDeniedException {
-        Team existingTeam = teamRepository.findById(teamId).orElse(null);
+        Team existingTeam = teamRepository.findTeamByIdOptional(teamId).orElse(null);
         if (existingTeam == null) {
             return null;
         }
@@ -121,31 +120,27 @@ public class TeamService {
             existingTeam.setUrl(teamDTO.url());
         }
 
-        Team updatedTeam = teamRepository.save(existingTeam);
+        Team updatedTeam = teamRepository.saveTeam(existingTeam);
         return teamMapper.convertToDTO(updatedTeam);
     }
 
     public boolean deleteTeam(String teamId) throws AccessDeniedException {
         String currentUserId = userService.getCurrentUserId();
 
-        Optional<Team> teamOptional = teamRepository.findById(teamId);
+        Optional<Team> teamOptional = teamRepository.findTeamByIdOptional(teamId);
         if (teamOptional.isEmpty()) {
-            logger.warn("Attempt to delete non-existent team: {}", teamId);
             return false;
         }
 
         Team team = teamOptional.get();
 
         if (!team.getUserCreateId().equals(currentUserId)) {
-            logger.warn("User {} attempted to delete team {} without permission", currentUserId, teamId);
             throw new AccessDeniedException("You don't have permission to delete this team");
         }
 
         try {
             return deleteTeamWithFirestoreTransaction(teamId);
-
         } catch (Exception e) {
-            logger.error("Error deleting team {} and its dependencies: {}", teamId, e.getMessage(), e);
             throw new RuntimeException("Failed to delete team and associated data", e);
         }
     }
@@ -164,7 +159,7 @@ public class TeamService {
 
             int deletedEventsCount = eventRepository.deleteByTeamId(teamId);
 
-            teamRepository.delete(teamId);
+            teamRepository.deleteTeam(teamId);
 
             logger.info("Team deleted successfully: {} (with {} events, {} sessions, {} speakers)",
                     teamId, deletedEventsCount, totalDeletedSessions, totalDeletedSpeakers);
