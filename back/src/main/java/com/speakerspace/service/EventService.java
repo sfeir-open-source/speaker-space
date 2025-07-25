@@ -1,11 +1,13 @@
 package com.speakerspace.service;
 
 import com.speakerspace.dto.EventDTO;
+import com.speakerspace.dto.session.SessionScheduleImportDataDTO;
 import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
+import com.speakerspace.utils.date.EventDateCalculator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.nio.file.AccessDeniedException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -236,13 +239,9 @@ public class EventService {
     }
 
     private com.google.cloud.Timestamp parseStringToTimestamp(String dateString) {
-        try {
-            Instant instant = Instant.parse(dateString);
-            return com.google.cloud.Timestamp.ofTimeSecondsAndNanos(
-                    instant.getEpochSecond(), instant.getNano());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid date format: " + dateString, e);
-        }
+        Instant instant = Instant.parse(dateString);
+        return com.google.cloud.Timestamp.ofTimeSecondsAndNanos(
+                instant.getEpochSecond(), instant.getNano());
     }
 
     private String generateUrlSuffix(String eventName) {
@@ -256,5 +255,54 @@ public class EventService {
                 .replaceAll("[^a-z0-9-]", "")
                 .replaceAll("-+", "-")
                 .replaceAll("^-|-$", "");
+    }
+
+    public void updateEventDatesFromSessions(String eventId, List<SessionScheduleImportDataDTO> sessions) {
+        EventDateCalculator.DateRange dateRange = EventDateCalculator.calculateEventDateRange(sessions);
+
+        if (dateRange == null) {
+            logger.debug("No valid date range found in sessions for event: {}", eventId);
+            return;
+        }
+
+        EventDTO currentEvent = getEventById(eventId);
+        if (currentEvent == null) {
+            throw new IllegalArgumentException("Event not found: " + eventId);
+        }
+
+        String newStartDate = dateRange.startDate().toString();
+        String newEndDate = dateRange.endDate().toString();
+
+        boolean startDateChanged = !Objects.equals(currentEvent.startDate(), newStartDate);
+        boolean endDateChanged = !Objects.equals(currentEvent.endDate(), newEndDate);
+
+        if (startDateChanged || endDateChanged) {
+            EventDTO updatedEvent = EventDTO.builder()
+                    .idEvent(currentEvent.idEvent())
+                    .eventName(currentEvent.eventName())
+                    .description(currentEvent.description())
+                    .startDate(newStartDate)
+                    .endDate(newEndDate)
+                    .isOnline(currentEvent.isOnline())
+                    .location(currentEvent.location())
+                    .isPrivate(currentEvent.isPrivate())
+                    .webLinkUrl(currentEvent.webLinkUrl())
+                    .isFinish(currentEvent.isFinish())
+                    .url(currentEvent.url())
+                    .userCreateId(currentEvent.userCreateId())
+                    .conferenceHallUrl(currentEvent.conferenceHallUrl())
+                    .teamId(currentEvent.teamId())
+                    .timeZone(currentEvent.timeZone())
+                    .logoBase64(currentEvent.logoBase64())
+                    .type(currentEvent.type())
+                    .build();
+
+            updateEvent(updatedEvent);
+
+            logger.info("Updated event {} dates from sessions: start={}, end={}",
+                    eventId, newStartDate, newEndDate);
+        } else {
+            logger.debug("Event {} dates are already up to date", eventId);
+        }
     }
 }

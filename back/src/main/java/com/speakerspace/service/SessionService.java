@@ -1,11 +1,13 @@
 package com.speakerspace.service;
 
+import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.*;
 import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.session.*;
 import com.speakerspace.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -19,6 +21,9 @@ public class SessionService {
     private final SessionMapper sessionMapper;
     private final SpeakerService speakerService;
     private final SpeakerMapper speakerMapper;
+
+    @Autowired
+    private EventService eventService;
 
     public boolean deleteSession(String id) {
         Session existingSession = sessionRepository.findSessionById(id);
@@ -69,6 +74,13 @@ public class SessionService {
         List<String> failedImports = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
+        EventDTO event = eventService.getEventById(eventId);
+        if (event == null) {
+            throw new IllegalArgumentException("Event not found: " + eventId);
+        }
+
+        eventService.updateEventDatesFromSessions(eventId, importDataList);
+
         for (SessionScheduleImportDataDTO scheduleData : importDataList) {
             String sessionId = null;
             try {
@@ -85,7 +97,9 @@ public class SessionService {
                     Session newSession = createSessionFromScheduleData(scheduleData, eventId);
                     sessionRepository.saveSession(newSession);
                 }
+
                 successfulImports.add(sessionId);
+
             } catch (Exception e) {
                 String finalSessionId = sessionId != null ? sessionId :
                         (scheduleData.proposal() != null ? scheduleData.proposal().id() : scheduleData.id());
