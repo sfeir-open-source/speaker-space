@@ -2,13 +2,13 @@ package com.speakerspace.dto.session;
 
 import lombok.Builder;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Builder
 public record SessionScheduleImportDataDTO (
         String id,
-        Date start,
-        Date end,
+        LocalDateTime start,
+        LocalDateTime end,
         String track,
         String title,
         String languages,

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import {BehaviorSubject, from, Observable, of, switchMap, throwError} from 'rxjs';
-import {catchError, tap} from 'rxjs/operators';
+import {BehaviorSubject, forkJoin, from, Observable, of, switchMap, throwError} from 'rxjs';
+import {catchError, map, tap} from 'rxjs/operators';
 import {HttpClient, HttpErrorResponse, HttpHeaders} from '@angular/common/http';
 import { environment } from '../../../../../environments/environment.development';
 import { Event } from '../../type/event/event';
@@ -215,5 +215,32 @@ export class EventService {
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     });
+  }
+
+  getUserSpeakerEvents(): Observable<Event[]> {
+    return this.executeAuthenticatedRequest(headers =>
+      this.http.get<Event[]>(
+        `${environment.apiUrl}/event/speaker-events`,
+        { headers, withCredentials: true }
+      )
+    ).pipe(
+      catchError(this.handleError('Error loading speaker events'))
+    );
+  }
+
+  getAllUserRelatedEvents(): Observable<Event[]> {
+    return forkJoin({
+      ownEvents: this.http.get<Event[]>(`${environment.apiUrl}/event/my-events`, { withCredentials: true }),
+      speakerEvents: this.getUserSpeakerEvents()
+    }).pipe(
+      map(({ ownEvents, speakerEvents }) => {
+        const allEvents = [...ownEvents, ...speakerEvents];
+        const uniqueEvents = allEvents.filter((event, index, self) =>
+          index === self.findIndex(e => e.idEvent === event.idEvent)
+        );
+        return uniqueEvents;
+      }),
+      catchError(this.handleError('Error loading all user related events'))
+    );
   }
 }

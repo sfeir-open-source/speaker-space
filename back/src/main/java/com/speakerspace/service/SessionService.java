@@ -7,12 +7,18 @@ import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.session.*;
 import com.speakerspace.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.speakerspace.utils.date.EventDateCalculator;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SessionService {
@@ -21,6 +27,7 @@ public class SessionService {
     private final SessionMapper sessionMapper;
     private final SpeakerService speakerService;
     private final SpeakerMapper speakerMapper;
+    private final Clock clock;
 
     @Autowired
     private EventService eventService;
@@ -53,8 +60,10 @@ public class SessionService {
 
                 sessionRepository.saveSession(session);
                 successfulImports.add(importData.id());
+                log.info("Successfully imported session {}, ", importData.id());
 
             } catch (Exception e) {
+                log.error("Failed to import session {}", importData.id(), e);
                 failedImports.add(importData.id());
                 errors.add("Failed to import session " + importData.id() + ": " + e.getMessage());
             }
@@ -79,9 +88,13 @@ public class SessionService {
             throw new IllegalArgumentException("Event not found: " + eventId);
         }
 
-        eventService.updateEventDatesFromSessions(eventId, importDataList);
+        List<SessionScheduleImportDataDTO> convertedSessions = importDataList.stream()
+                .map(this::convertUtcToLocalDateTime)
+                .collect(Collectors.toList());
 
-        for (SessionScheduleImportDataDTO scheduleData : importDataList) {
+        eventService.updateEventDatesFromSessions(eventId, convertedSessions);
+
+        for (SessionScheduleImportDataDTO scheduleData : convertedSessions) {
             String sessionId = null;
             try {
                 sessionId = scheduleData.proposal() != null && scheduleData.proposal().id() != null
@@ -93,9 +106,11 @@ public class SessionService {
                 if (existingSession != null) {
                     enrichExistingSessionWithScheduleData(existingSession, scheduleData);
                     sessionRepository.saveSession(existingSession);
+                    log.info("Successfully updated session {} ", existingSession.getId());
                 } else {
                     Session newSession = createSessionFromScheduleData(scheduleData, eventId);
                     sessionRepository.saveSession(newSession);
+                    log.info("Successfully created new session {} ", newSession.getId());
                 }
 
                 successfulImports.add(sessionId);
@@ -115,6 +130,32 @@ public class SessionService {
                 .successCount(successfulImports.size())
                 .errors(errors)
                 .build();
+    }
+
+    private SessionScheduleImportDataDTO convertUtcToLocalDateTime(SessionScheduleImportDataDTO original) {
+        try {
+            LocalDateTime convertedStart = convertUtcStringToLocalDateTime(original.start());
+            LocalDateTime convertedEnd = convertUtcStringToLocalDateTime(original.end());
+
+            return SessionScheduleImportDataDTO.builder()
+                    .id(original.id())
+                    .start(convertedStart)
+                    .end(convertedEnd)
+                    .track(original.track())
+                    .title(original.title())
+                    .languages(original.languages())
+                    .proposal(original.proposal())
+                    .eventId(original.eventId())
+                    .build();
+
+        } catch (Exception e) {
+            return original;
+        }
+    }
+
+    private LocalDateTime convertUtcStringToLocalDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) return null;
+        return dateTime;
     }
 
     public List<SessionReviewImportData> getSessionsReviewAsImportData(String eventId) {
@@ -184,10 +225,12 @@ public class SessionService {
             throw new IllegalArgumentException("Session not found or does not belong to the specified event");
         }
 
+        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+
         Session updatedSession = sessionRepository.updateScheduleFields(
                 sessionId,
-                scheduleUpdate.getStart(),
-                scheduleUpdate.getEnd(),
+                EventDateCalculator.convertLocalDateTimeToDate(scheduleUpdate.getStart(), eventZone),
+                EventDateCalculator.convertLocalDateTimeToDate(scheduleUpdate.getEnd(), eventZone),
                 scheduleUpdate.getTrack()
         );
 
@@ -201,18 +244,20 @@ public class SessionService {
     private Session createSessionFromScheduleData(SessionScheduleImportDataDTO scheduleData, String eventId) {
         Session session = new Session();
 
+        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+
         String sessionId = scheduleData.proposal() != null && scheduleData.proposal().id() != null
                 ? scheduleData.proposal().id()
                 : scheduleData.id();
 
         session.setId(sessionId);
         session.setTitle(scheduleData.title());
-        session.setStart(scheduleData.start());
-        session.setEnd(scheduleData.end());
+        session.setStart(EventDateCalculator.convertLocalDateTimeToDate(scheduleData.start(), eventZone));
+        session.setEnd(EventDateCalculator.convertLocalDateTimeToDate(scheduleData.end(), eventZone));
         session.setTrack(scheduleData.track());
         session.setEventId(eventId);
 
-        if (scheduleData.languages() != null) {
+        if (scheduleData.languages() != null && !scheduleData.languages().trim().isEmpty()) {
             session.setLanguages(List.of(scheduleData.languages()));
         }
 
@@ -238,10 +283,23 @@ public class SessionService {
         return session;
     }
 
-    private void enrichExistingSessionWithScheduleData(Session session, SessionScheduleImportDataDTO scheduleData) {
-        session.setStart(scheduleData.start());
-        session.setEnd(scheduleData.end());
-        session.setTrack(scheduleData.track());
+    private void enrichExistingSessionWithScheduleData(Session existingSession, SessionScheduleImportDataDTO scheduleData) {
+        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+        Date now = EventDateCalculator.convertLocalDateTimeToDate(LocalDateTime.now(clock), eventZone);
+
+        existingSession.setStart(EventDateCalculator.convertLocalDateTimeToDate(scheduleData.start(), eventZone));
+        existingSession.setEnd(EventDateCalculator.convertLocalDateTimeToDate(scheduleData.end(), eventZone));
+        existingSession.setTrack(scheduleData.track());
+
+        if (scheduleData.title() != null && !scheduleData.title().trim().isEmpty()) {
+            existingSession.setTitle(scheduleData.title());
+        }
+
+        if (scheduleData.languages() != null && !scheduleData.languages().trim().isEmpty()) {
+            existingSession.setLanguages(List.of(scheduleData.languages()));
+        }
+
+        existingSession.setUpdatedAt(now);
     }
 
     private List<String> processSpeakersForSession(List<SpeakerDTO> speakerDTOs, String eventId) {

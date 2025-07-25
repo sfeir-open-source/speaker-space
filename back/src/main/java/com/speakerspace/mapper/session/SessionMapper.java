@@ -6,9 +6,11 @@ import com.speakerspace.dto.session.SessionDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
 import com.speakerspace.model.session.*;
 import com.speakerspace.service.SpeakerService;
+import com.speakerspace.utils.date.EventDateCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +34,8 @@ public class SessionMapper {
     public SessionDTO convertToDTO(Session session) {
         if(session  == null) return null;
 
+        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+
         return new SessionDTO(
             session.getId(),
             session.getTitle(),
@@ -47,8 +51,8 @@ public class SessionMapper {
             convertSpeakerIdsToDTO(session.getSpeakerIds()),
             reviewsMapper.convertToDTO(session.getReviews()),
             session.getEventId(),
-            session.getStart(),
-            session.getEnd(),
+            EventDateCalculator.convertLocalDateTimeToDate(session.getStart(), eventZone),
+            EventDateCalculator.convertLocalDateTimeToDate(session.getEnd(), eventZone),
             session.getTrack(),
             session.getCreatedAt(),
             session.getUpdatedAt()
@@ -57,6 +61,8 @@ public class SessionMapper {
 
     public Session convertToEntity(SessionDTO sessionDTO) {
         if(sessionDTO  == null) return null;
+
+        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
 
         Session session = new Session();
         session.setId(sessionDTO.id());
@@ -73,8 +79,8 @@ public class SessionMapper {
         session.setSpeakerIds(extractSpeakerIds(sessionDTO.speakers()));
         session.setReviews(reviewsMapper.convertToEntity(sessionDTO.reviews()));
         session.setEventId(sessionDTO.eventId());
-        session.setStart(sessionDTO.start());
-        session.setEnd(sessionDTO.end());
+        session.setStart(EventDateCalculator.convertLocalDateTimeToDate(sessionDTO.start(), eventZone));
+        session.setEnd(EventDateCalculator.convertLocalDateTimeToDate(sessionDTO.end(), eventZone));
         session.setTrack(sessionDTO.track());
         session.setCreatedAt(sessionDTO.createdAt());
         session.setUpdatedAt(sessionDTO.updatedAt());

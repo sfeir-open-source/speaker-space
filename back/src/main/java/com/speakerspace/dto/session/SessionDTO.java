@@ -2,6 +2,7 @@ package com.speakerspace.dto.session;
 
 import lombok.Builder;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -21,8 +22,8 @@ public record SessionDTO (
         List<SpeakerDTO> speakers,
         ReviewDTO reviews,
         String eventId,
-        Date start,
-        Date end,
+        LocalDateTime start,
+        LocalDateTime end,
         String track,
         Date createdAt,
         Date updatedAt

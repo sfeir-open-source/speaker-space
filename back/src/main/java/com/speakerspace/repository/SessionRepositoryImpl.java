@@ -2,8 +2,12 @@ package com.speakerspace.repository;
 
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.session.Session;
+import com.speakerspace.utils.date.EventDateCalculator;
 import org.springframework.stereotype.Repository;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -11,8 +15,11 @@ import java.util.concurrent.ExecutionException;
 public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, String>
         implements SessionRepository {
 
-    public SessionRepositoryImpl(Firestore firestore) {
+    private final Clock clock;
+
+    public SessionRepositoryImpl(Firestore firestore, Clock clock) {
         super(firestore, Session.class, "sessions");
+        this.clock = clock;
     }
 
     @Override
@@ -27,7 +34,9 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
 
     @Override
     public void saveSession(Session session) {
-        Date now = new Date();
+        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+
+        Date now = EventDateCalculator.convertLocalDateTimeToDate(LocalDateTime.now(clock), eventZone);
         if (session.getCreatedAt() == null) {
             session.setCreatedAt(now);
         }
@@ -63,15 +72,18 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
     }
 
     @Override
-    public Session updateScheduleFields(String sessionId, Date start, Date end, String track) {
+    public Session updateScheduleFields(String sessionId, LocalDateTime start, LocalDateTime end, String track) {
         try {
+            ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+
+            Date now = EventDateCalculator.convertLocalDateTimeToDate(LocalDateTime.now(clock), eventZone);
             DocumentReference docRef = getCollection().document(sessionId);
             Map<String, Object> updates = new HashMap<>();
 
             if (start != null) updates.put("start", start);
             if (end != null) updates.put("end", end);
             if (track != null) updates.put("track", track);
-            updates.put("updatedAt", new Date());
+            updates.put("updatedAt", now);
 
             docRef.update(updates).get();
             return docRef.get().get().toObject(Session.class);

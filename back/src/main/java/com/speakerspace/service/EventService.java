@@ -1,12 +1,16 @@
 package com.speakerspace.service;
 
 import com.speakerspace.dto.EventDTO;
+import com.speakerspace.dto.UserDTO;
 import com.speakerspace.dto.session.SessionScheduleImportDataDTO;
 import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
+import com.speakerspace.model.Team;
+import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
+import com.speakerspace.repository.TeamRepository;
 import com.speakerspace.utils.date.EventDateCalculator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -15,10 +19,8 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
 import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +34,7 @@ public class EventService {
     private final UserService userService;
     private final SessionRepository sessionRepository;
     private final SpeakerRepository speakerRepository;
+    private final TeamRepository teamRepository;
 
     public EventDTO createEvent(EventDTO eventDTO) {
         String currentUserId = userService.getCurrentUserId();
@@ -303,6 +306,130 @@ public class EventService {
                     eventId, newStartDate, newEndDate);
         } else {
             logger.debug("Event {} dates are already up to date", eventId);
+        }
+    }
+
+    public List<EventDTO> getEventsBySpeakerEmail() {
+        try {
+            String currentUserId = userService.getCurrentUserId();
+            UserDTO currentUser = userService.getUserByUid(currentUserId);
+
+            if (currentUser == null || currentUser.email() == null) {
+                logger.debug("No current user or email found for speaker events");
+                return Collections.emptyList();
+            }
+
+            List<Speaker> userSpeakers = speakerRepository.findByEmail(currentUser.email());
+
+            if (userSpeakers.isEmpty()) {
+                logger.debug("No speaker records found for email: {}", currentUser.email());
+                return Collections.emptyList();
+            }
+
+            Set<String> eventIds = userSpeakers.stream()
+                    .map(Speaker::getEventId)
+                    .filter(Objects::nonNull)
+                    .filter(id -> !id.trim().isEmpty())
+                    .collect(Collectors.toSet());
+
+            if (eventIds.isEmpty()) {
+                logger.debug("No valid event IDs found in speaker records");
+                return Collections.emptyList();
+            }
+
+            List<EventDTO> speakerEvents = eventIds.stream()
+                    .map(this::getEventById)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            speakerEvents.sort((e1, e2) -> {
+                if (e1.startDate() != null && e2.startDate() != null) {
+                    return e2.startDate().compareTo(e1.startDate());
+                }
+                return e2.idEvent().compareTo(e1.idEvent());
+            });
+
+            logger.debug("Found {} speaker events for user {}", speakerEvents.size(), currentUser.email());
+            return speakerEvents;
+
+        } catch (Exception e) {
+            logger.error("Error retrieving events by speaker email", e);
+            return Collections.emptyList();
+        }
+    }
+
+    public boolean isUserSpeakerOfEvent(String eventId) {
+        try {
+            String currentUserId = userService.getCurrentUserId();
+            UserDTO currentUser = userService.getUserByUid(currentUserId);
+
+            if (currentUser == null || currentUser.email() == null || eventId == null) {
+                return false;
+            }
+
+            List<Speaker> speakers = speakerRepository.findByEmailAndEventId(
+                    currentUser.email(), eventId);
+
+            return !speakers.isEmpty();
+
+        } catch (Exception e) {
+            logger.error("Error checking if user is speaker of event: {}", eventId, e);
+            return false;
+        }
+    }
+
+    public List<EventDTO> getAllUserRelatedEventsComplete() {
+        Set<EventDTO> allEvents = new LinkedHashSet<>();
+
+        try {
+            List<EventDTO> createdEvents = getEventsForCurrentUser();
+            allEvents.addAll(createdEvents);
+            logger.debug("Found {} created events", createdEvents.size());
+
+            String currentUserId = userService.getCurrentUserId();
+            List<EventDTO> teamEvents = getEventsFromUserTeams(currentUserId);
+            allEvents.addAll(teamEvents);
+            logger.debug("Found {} team events", teamEvents.size());
+
+            List<EventDTO> speakerEvents = getEventsBySpeakerEmail();
+            allEvents.addAll(speakerEvents);
+            logger.debug("Found {} speaker events", speakerEvents.size());
+
+            List<EventDTO> result = new ArrayList<>(allEvents);
+            result.sort((e1, e2) -> {
+                if (e1.startDate() != null && e2.startDate() != null) {
+                    return e2.startDate().compareTo(e1.startDate());
+                }
+                return e2.idEvent().compareTo(e1.idEvent());
+            });
+            return result;
+
+        } catch (Exception e) {
+            logger.error("Error retrieving all user related events", e);
+            return Collections.emptyList();
+        }
+    }
+
+    private List<EventDTO> getEventsFromUserTeams(String userId) {
+        try {
+            List<Team> userTeams = teamRepository.findTeamsByMemberId(userId);
+
+            if (userTeams.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            Set<EventDTO> teamEvents = new HashSet<>();
+
+            for (Team team : userTeams) {
+                List<EventDTO> events = getEventsByTeamId(team.getId());
+                teamEvents.addAll(events);
+            }
+
+            return new ArrayList<>(teamEvents);
+
+        } catch (Exception e) {
+            logger.error("Error retrieving events from user teams for user: {}", userId, e);
+            return Collections.emptyList();
         }
     }
 }

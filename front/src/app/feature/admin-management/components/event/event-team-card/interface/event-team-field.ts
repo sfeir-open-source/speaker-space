@@ -4,6 +4,6 @@ export type EventTeamField = {
   type: string;
   img: string;
   link: string;
-  statusText: string;
+  statusText: 'Open' | 'Closed';
   logoBase64?: string | null;
 }

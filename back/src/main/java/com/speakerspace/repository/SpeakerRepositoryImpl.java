@@ -5,8 +5,10 @@ import com.speakerspace.model.session.Speaker;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Repository
 public class SpeakerRepositoryImpl extends AbstractFirestoreRepository<Speaker, String>
@@ -78,6 +80,57 @@ public class SpeakerRepositoryImpl extends AbstractFirestoreRepository<Speaker, 
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Failed to batch delete", e);
+        }
+    }
+
+    @Override
+    public List<Speaker> findByEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        try {
+            String normalizedEmail = email.toLowerCase().trim();
+
+            return getCollection()
+                    .whereEqualTo("email", normalizedEmail)
+                    .get().get().getDocuments().stream()
+                    .map(doc -> {
+                        Speaker speaker = doc.toObject(Speaker.class);
+                        speaker.setId(doc.getId());
+                        return speaker;
+                    })
+                    .collect(Collectors.toList());
+
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to find speakers by email: " + email, e);
+        }
+    }
+
+    @Override
+    public List<Speaker> findByEmailAndEventId(String email, String eventId) {
+        if (email == null || email.trim().isEmpty() || eventId == null || eventId.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        try {
+            String normalizedEmail = email.toLowerCase().trim();
+
+            return getCollection()
+                    .whereEqualTo("email", normalizedEmail)
+                    .whereEqualTo("eventId", eventId)
+                    .get().get().getDocuments().stream()
+                    .map(doc -> {
+                        Speaker speaker = doc.toObject(Speaker.class);
+                        speaker.setId(doc.getId());
+                        return speaker;
+                    })
+                    .collect(Collectors.toList());
+
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Failed to find speakers by email and eventId", e);
         }
     }
 }

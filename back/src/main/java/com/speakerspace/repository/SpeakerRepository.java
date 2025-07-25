@@ -14,4 +14,6 @@ public interface SpeakerRepository {
     boolean speakerExistsById(String id);
     boolean deleteSpeaker(String id);
     int deleteByEventId(String eventId);
+    List<Speaker> findByEmail(String email);
+    List<Speaker> findByEmailAndEventId(String email, String eventId);
 }

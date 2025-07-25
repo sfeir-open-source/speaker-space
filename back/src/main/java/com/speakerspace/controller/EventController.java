@@ -141,4 +141,37 @@ public class EventController {
         );
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/user-events")
+    public ResponseEntity<List<EventDTO>> getUserEvents(Authentication authentication) {
+        if (authentication == null) {
+            throw new UnauthorizedException("Authentication required");
+        }
+
+        List<EventDTO> userEvents = eventService.getAllUserRelatedEventsComplete();
+        return ResponseEntity.ok(userEvents);
+    }
+
+    @GetMapping("/speaker-events")
+    public ResponseEntity<List<EventDTO>> getUserSpeakerEvents(Authentication authentication) {
+        if (authentication == null) {
+            throw new UnauthorizedException("Authentication required");
+        }
+
+        List<EventDTO> speakerEvents = eventService.getEventsBySpeakerEmail();
+        return ResponseEntity.ok(speakerEvents);
+    }
+
+    @GetMapping("/{eventId}/is-speaker")
+    public ResponseEntity<Map<String, Boolean>> isUserSpeakerOfEvent(
+            @PathVariable String eventId,
+            Authentication authentication) {
+
+        if (authentication == null) {
+            throw new UnauthorizedException("Authentication required");
+        }
+
+        boolean isSpeaker = eventService.isUserSpeakerOfEvent(eventId);
+        return ResponseEntity.ok(Map.of("isSpeaker", isSpeaker));
+    }
 }

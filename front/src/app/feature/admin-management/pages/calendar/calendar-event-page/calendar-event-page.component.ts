@@ -30,7 +30,7 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
 
   readonly HOUR_HEIGHT: number = 120;
   readonly START_HOUR: number = 9;
-  readonly END_HOUR: number = 20;
+  readonly END_HOUR: number = 19;
 
   constructor(
     route: ActivatedRoute,
