@@ -132,6 +132,71 @@ public class SessionService {
                 .build();
     }
 
+    public SessionDTO createSession(String eventId, SessionCreateRequestDTO createRequest) {
+        EventDTO event = eventService.getEventById(eventId);
+        if (event == null) {
+            throw new IllegalArgumentException("Event not found: " + eventId);
+        }
+
+        String sessionId = generateSessionId();
+
+        Session session = new Session();
+        session.setId(sessionId);
+        session.setTitle(createRequest.title().trim());
+        session.setAbstractText(createRequest.abstractText() != null ? createRequest.abstractText().trim() : null);
+        session.setReferences(createRequest.references() != null ? createRequest.references().trim() : null);
+        session.setLevel(createRequest.level());
+        session.setTrack(createRequest.track());
+        session.setEventId(eventId);
+
+        session.setDeliberationStatus(createRequest.deliberationStatus() != null ?
+                createRequest.deliberationStatus() : "ACCEPTED");
+        session.setConfirmationStatus(createRequest.confirmationStatus() != null ?
+                createRequest.confirmationStatus() : "CONFIRMED");
+
+        if (createRequest.start() != null) {
+            session.setStart(createRequest.start());
+        }
+        if (createRequest.end() != null) {
+            session.setEnd(createRequest.end());
+        }
+
+        session.setLanguages(createRequest.languages() != null ? createRequest.languages() : new ArrayList<>());
+        session.setTags(new ArrayList<>());
+
+        if (createRequest.formats() != null) {
+            session.setFormats(createRequest.formats().stream()
+                    .map(this::convertFormatDTOToEntity)
+                    .collect(Collectors.toList()));
+        } else {
+            session.setFormats(new ArrayList<>());
+        }
+
+        if (createRequest.categories() != null) {
+            session.setCategories(createRequest.categories().stream()
+                    .map(this::convertCategoryDTOToEntity)
+                    .collect(Collectors.toList()));
+        } else {
+            session.setCategories(new ArrayList<>());
+        }
+
+        if (createRequest.speakers() != null && !createRequest.speakers().isEmpty()) {
+            List<String> speakerIds = createRequest.speakers().stream()
+                    .map(SpeakerDTO::id)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            session.setSpeakerIds(speakerIds);
+        } else {
+            session.setSpeakerIds(new ArrayList<>());
+        }
+
+        sessionRepository.saveSession(session);
+
+        log.info("Successfully created session {} '{}' for event {}",
+                sessionId, createRequest.title(), eventId);
+        return sessionMapper.convertToDTO(session);
+    }
+
     private SessionScheduleImportDataDTO convertUtcToLocalDateTime(SessionScheduleImportDataDTO original) {
         try {
             LocalDateTime convertedStart = convertUtcStringToLocalDateTime(original.start());
@@ -225,13 +290,18 @@ public class SessionService {
             throw new IllegalArgumentException("Session not found or does not belong to the specified event");
         }
 
-        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+        Date startDate = scheduleUpdate.getStart();
+        Date endDate = scheduleUpdate.getEnd();
+        String track = scheduleUpdate.getTrack();
+
+        log.debug("Updating session {} with start: {}, end: {}, track: {}",
+                sessionId, startDate, endDate, track);
 
         Session updatedSession = sessionRepository.updateScheduleFields(
                 sessionId,
-                EventDateCalculator.convertLocalDateTimeToDate(scheduleUpdate.getStart(), eventZone),
-                EventDateCalculator.convertLocalDateTimeToDate(scheduleUpdate.getEnd(), eventZone),
-                scheduleUpdate.getTrack()
+                startDate,
+                endDate,
+                track
         );
 
         if (updatedSession == null) {
@@ -385,5 +455,25 @@ public class SessionService {
                 .replaceAll("[^a-z0-9]", "_")
                 .replaceAll("_+", "_")
                 .replaceAll("^_|_$", "");
+    }
+
+    private String generateSessionId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    }
+
+    private Format convertFormatDTOToEntity(FormatDTO formatDTO) {
+        Format format = new Format();
+        format.setId(formatDTO.id());
+        format.setName(formatDTO.name());
+        format.setDescription(formatDTO.description());
+        return format;
+    }
+
+    private Category convertCategoryDTOToEntity(CategoryDTO categoryDTO) {
+        Category category = new Category();
+        category.setId(categoryDTO.id());
+        category.setName(categoryDTO.name());
+        category.setDescription(categoryDTO.description());
+        return category;
     }
 }

@@ -42,7 +42,8 @@
 
                   <app-button-green-actions
                     type="button"
-                    [materialIcon]="'add'">
+                    [materialIcon]="'add'"
+                    (click)="onCreateSession()">
                     Create session
                   </app-button-green-actions>
 
@@ -55,8 +56,8 @@
                     Filters
                     @if (hasActiveFilters) {
                       <span class="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {{ activeFiltersCount }}
-                    </span>
+                        {{ activeFiltersCount }}
+                      </span>
                     }
                   </app-button-grey>
 
@@ -203,6 +204,18 @@
             }
           </article>
         </form>
+        @if (showCreatePopup) {
+          <app-session-create-popup
+            [eventId]="eventId"
+            [availableFormats]="availableFormats"
+            [availableCategories]="availableCategories"
+            [availableTracks]="availableTracks"
+            [eventStartDate]="eventStartDate"
+            [eventEndDate]="eventEndDate"
+            (sessionCreated)="onSessionCreated()"
+            (popupClosed)="onCloseCreatePopup()">
+          </app-session-create-popup>
+        }
       }
     </section>
   </main>

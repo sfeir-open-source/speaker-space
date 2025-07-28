@@ -24,4 +24,11 @@ export class SpeakerService {
   getSpeakersWithSessionsByEventId(eventId: string): Observable<SpeakerWithSessionsDTO[]> {
     return this.http.get<SpeakerWithSessionsDTO[]>(`${environment.apiUrl}/session/event/${eventId}/speakers-with-sessions`);
   }
+
+  getSpeakersByEventId(eventId: string): Observable<Speaker[]> {
+    return this.http.get<Speaker[]>(
+      `${environment.apiUrl}/session/event/${eventId}/speakers`,
+      { withCredentials: true }
+    );
+  }
 }

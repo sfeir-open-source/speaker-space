@@ -1,10 +1,11 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {Injectable} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {Observable} from 'rxjs';
 import {environment} from '../../../../../environments/environment.development';
 import {CalendarDayData, CalendarSession, CalendarSessionData, TrackColumn} from '../../type/calendar/calendar';
 
 const HOUR_HEIGHT : number = 120;
+const DEFAULT_START_HOUR: number = 9;
 
 @Injectable({
   providedIn: 'root'
@@ -57,6 +58,7 @@ export class CalendarService {
   private getCalendarSessionsForTrack(
     sessions: CalendarSessionData[],
     track: string,
+    startHour: number = DEFAULT_START_HOUR
   ): CalendarSession[] {
     const trackSessions = sessions.filter(session =>
       (session.track || 'Main Track') === track &&
@@ -75,17 +77,17 @@ export class CalendarService {
         endTime,
         duration,
         track,
-        topPosition: this.calculateTopPosition(startTime),
+        topPosition: this.calculateTopPosition(startTime, startHour),
         height: this.calculateHeight(duration)
       };
     }).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }
 
-  private calculateTopPosition(startTime: Date, startHour: number = 8): number {
-    const hours : number = startTime.getHours();
+  private calculateTopPosition(startTime: Date, startHour: number = DEFAULT_START_HOUR): number {
+    const hours: number = startTime.getHours();
     const minutes: number = startTime.getMinutes();
     const totalMinutes: number = (hours - startHour) * 60 + minutes;
-    return (totalMinutes / 60) * HOUR_HEIGHT;
+    return Math.max(0, (totalMinutes / 60) * HOUR_HEIGHT);
   }
 
   private calculateHeight(durationMinutes: number): number {

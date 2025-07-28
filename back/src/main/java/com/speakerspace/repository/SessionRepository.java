@@ -14,7 +14,7 @@ public interface SessionRepository {
     List<Session> findByEventId(String eventId);
     List<String> findDistinctTracksByEventId(String eventId);
     Session findByIdAndEventId(String sessionId, String eventId);
-    Session updateScheduleFields(String sessionId, LocalDateTime start, LocalDateTime end, String track);
+    Session updateScheduleFields(String sessionId, Date start, Date end, String track);
     boolean existsByIdAndEventId(String id, String eventId);
     boolean deleteSession(String id);
     int deleteByEventId(String eventId);

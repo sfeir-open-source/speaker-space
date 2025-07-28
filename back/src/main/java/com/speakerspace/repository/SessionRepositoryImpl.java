@@ -72,24 +72,31 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
     }
 
     @Override
-    public Session updateScheduleFields(String sessionId, LocalDateTime start, LocalDateTime end, String track) {
+    public Session updateScheduleFields(String sessionId, Date start, Date end, String track) {
         try {
-            ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
-
-            Date now = EventDateCalculator.convertLocalDateTimeToDate(LocalDateTime.now(clock), eventZone);
             DocumentReference docRef = getCollection().document(sessionId);
             Map<String, Object> updates = new HashMap<>();
-
             if (start != null) updates.put("start", start);
             if (end != null) updates.put("end", end);
             if (track != null) updates.put("track", track);
-            updates.put("updatedAt", now);
+
+            updates.put("updatedAt", new Date());
 
             docRef.update(updates).get();
-            return docRef.get().get().toObject(Session.class);
+
+            DocumentSnapshot snapshot = docRef.get().get();
+            if (snapshot.exists()) {
+                Session session = snapshot.toObject(Session.class);
+                if (session != null) {
+                    session.setId(snapshot.getId());
+                }
+                return session;
+            }
+            return null;
+
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Failed to update session", e);
+            throw new RuntimeException("Failed to update session schedule", e);
         }
     }
 

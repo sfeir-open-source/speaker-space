@@ -49,6 +49,19 @@ public class SessionController {
         });
     }
 
+    @PostMapping("/event/{eventId}")
+    public ResponseEntity<SessionDTO> createSession(
+            @PathVariable String eventId,
+            @RequestBody
+            SessionCreateRequestDTO createRequest,
+            Authentication authentication) throws AccessDeniedException {
+
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
+            validateCreateRequest(createRequest);
+            return sessionService.createSession(eventId, createRequest);
+        });
+    }
+
     @GetMapping("/event/{eventId}")
     public ResponseEntity<List<SessionReviewImportData>> getSessionsByEventId(
             @PathVariable String eventId,
@@ -175,6 +188,18 @@ public class SessionController {
     private void validateSessionsData(List<SessionScheduleImportDataDTO> sessions) {
         if (sessions == null || sessions.isEmpty()) {
             throw new IllegalArgumentException("No sessions data provided");
+        }
+    }
+
+    private void validateCreateRequest(SessionCreateRequestDTO request) {
+        if (request.title() == null || request.title().trim().isEmpty()) {
+            throw new IllegalArgumentException("Session title is required");
+        }
+        if (request.title().length() > 200) {
+            throw new IllegalArgumentException("Session title must not exceed 200 characters");
+        }
+        if (request.abstractText() != null && request.abstractText().length() > 2000) {
+            throw new IllegalArgumentException("Abstract must not exceed 2000 characters");
         }
     }
 }
