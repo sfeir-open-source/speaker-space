@@ -16,6 +16,9 @@ import {
   SpeakerFilterPopupComponent
 } from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {
+  SpeakerCreatePopupComponent
+} from '../../../components/speaker/speaker-create-popup/speaker-create-popup.component';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -26,6 +29,8 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
     ButtonGreyComponent,
     ButtonGreenActionsComponent,
     SpeakerFilterPopupComponent,
+    SpeakerCreatePopupComponent,
+    SpeakerCreatePopupComponent,
   ],
   templateUrl: './speaker-list-page.component.html',
   styleUrl: './speaker-list-page.component.scss'
@@ -34,6 +39,7 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
   @Input() icon: string = 'person';
 
   showFilterPopup: boolean = false;
+  showCreatePopup: boolean = false;
   availableFormats: Format[] = [];
   availableCategories: Category[] = [];
   speakersWithSessions: SpeakerWithSessionsDTO[] = [];
@@ -262,5 +268,18 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
 
     this.filteredItems = filtered;
     this.updateItemsAfterFilter();
+  }
+
+  onCreateSession(): void {
+    this.showCreatePopup = true;
+  }
+
+  onCloseCreatePopup(): void {
+    this.showCreatePopup = false;
+  }
+
+  onSpeakerCreated(): void {
+    this.showCreatePopup = false;
+    this.loadItems();
   }
 }

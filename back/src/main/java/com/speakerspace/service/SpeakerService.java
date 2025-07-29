@@ -1,21 +1,30 @@
 package com.speakerspace.service;
 
+import com.speakerspace.dto.EventDTO;
+import com.speakerspace.dto.session.SpeakerCreateRequestDTO;
+import com.speakerspace.dto.session.SpeakerDTO;
+import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.SpeakerRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SpeakerService {
 
+    @Autowired
+    private EventService eventService;
+
     private final SpeakerRepository speakerRepository;
+
+    private final SpeakerMapper speakerMapper;
 
     public Speaker saveSpeaker(Speaker speaker) {
         return speakerRepository.saveSpeaker(speaker);
@@ -39,6 +48,20 @@ public class SpeakerService {
             return false;
         }
         return speakerRepository.deleteSpeaker(id);
+    }
+
+    public SpeakerDTO createSpeaker(String eventId, SpeakerCreateRequestDTO createRequest) {
+        validateBusinessRules(eventId, createRequest);
+
+        String speakerId = generateSpeakerId();
+        Speaker speaker = speakerMapper.convertFromCreateRequest(speakerId, eventId, createRequest);
+
+        Speaker savedSpeaker = speakerRepository.saveSpeaker(speaker);
+
+        log.info("Successfully created speaker {} '{}' for event {}",
+                speakerId, createRequest.name(), eventId);
+
+        return speakerMapper.convertToDTO(savedSpeaker);
     }
 
     public String saveOrUpdateSpeaker(Speaker speaker, String eventId) {
@@ -90,5 +113,25 @@ public class SpeakerService {
 
     private boolean isNotEmpty(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private void validateBusinessRules(String eventId, SpeakerCreateRequestDTO createRequest) {
+        EventDTO event = eventService.getEventById(eventId);
+        if (event == null) {
+            throw new IllegalArgumentException("Event not found: " + eventId);
+        }
+
+        List<Speaker> existingSpeakers = speakerRepository.findByEmailAndEventId(
+                createRequest.email().toLowerCase().trim(), eventId);
+
+        if (!existingSpeakers.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "A speaker with email '" + createRequest.email() +
+                            "' already exists in this event");
+        }
+    }
+
+    private String generateSpeakerId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 }

@@ -42,7 +42,8 @@
 
                   <app-button-green-actions
                     type="button"
-                    [materialIcon]="'add'">
+                    [materialIcon]="'add'"
+                    (click)="onCreateSession()">
                     Create speaker
                   </app-button-green-actions>
 
@@ -209,6 +210,13 @@
             }
           </article>
         </form>
+        @if (showCreatePopup) {
+          <app-speaker-create-popup
+            [eventId]="eventId"
+            (speakerCreated)="onSpeakerCreated()"
+            (popupClosed)="onCloseCreatePopup()">
+          </app-speaker-create-popup>
+        }
       }
     </section>
   </main>

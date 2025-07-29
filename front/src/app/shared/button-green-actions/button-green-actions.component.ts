@@ -13,14 +13,18 @@ export class ButtonGreenActionsComponent {
   @Input() materialIcon: string = '';
   @Input() buttonHandler: (() => void) | null = null;
   @Input() route: string = '';
+  @Input() disabled: boolean = false;
 
   @Output() itemClick = new EventEmitter<string>();
 
-  navigate() {
+  navigate(): void {
+    if (this.disabled) return;
     this.itemClick.emit(this.route);
   }
 
-  handleButtonClick() {
+  handleButtonClick(): void {
+    if (this.disabled) return;
+
     if (this.buttonHandler) {
       this.buttonHandler();
     } else if (this.route) {
