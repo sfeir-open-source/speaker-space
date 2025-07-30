@@ -37,6 +37,9 @@ import {
 import {
   CalendarEventPageComponent
 } from './feature/admin-management/pages/calendar/calendar-event-page/calendar-event-page.component';
+import {
+  SpeakerSessionListPageComponent
+} from './feature/speaker-session/pages/speaker-session-list-page/speaker-session-list-page.component';
 
 export const routes: Routes = [
   { path:'', component: HomePageComponent},
@@ -56,6 +59,7 @@ export const routes: Routes = [
   { path: 'event/:eventId/session/:sessionId', component: SessionDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'event/:eventId/speaker/:speakerId', component: SpeakerDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
+  { path: 'speaker/event/:eventId/sessions', component: SpeakerSessionListPageComponent },
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }
 ];

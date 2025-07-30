@@ -6,4 +6,5 @@ export type EventTeamField = {
   link: string;
   statusText: 'Open' | 'Closed';
   logoBase64?: string | null;
+  userRole?: 'admin' | 'speaker';
 }

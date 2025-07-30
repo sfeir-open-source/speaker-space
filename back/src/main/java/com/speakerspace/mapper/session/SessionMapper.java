@@ -5,7 +5,7 @@ import com.speakerspace.dto.session.FormatDTO;
 import com.speakerspace.dto.session.SessionDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
 import com.speakerspace.model.session.*;
-import com.speakerspace.service.SpeakerService;
+import com.speakerspace.repository.SpeakerRepository;
 import com.speakerspace.utils.date.EventDateCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -29,38 +29,41 @@ public class SessionMapper {
     private ReviewsMapper reviewsMapper;
 
     @Autowired
-    private SpeakerService speakerService;
+    private SpeakerRepository speakerRepository;
+
+    @Autowired
+    private SpeakerMapper speakerMapper;
 
     public SessionDTO convertToDTO(Session session) {
-        if(session  == null) return null;
+        if(session == null) return null;
 
         ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
 
         return new SessionDTO(
-            session.getId(),
-            session.getTitle(),
-            session.getAbstractText(),
-            session.getDeliberationStatus(),
-            session.getConfirmationStatus(),
-            session.getLevel(),
-            session.getReferences(),
-            convertFormatsToDTO(session.getFormats()),
-            convertCategoriesToDTO(session.getCategories()),
-            session.getTags(),
-            session.getLanguages(),
-            convertSpeakerIdsToDTO(session.getSpeakerIds()),
-            reviewsMapper.convertToDTO(session.getReviews()),
-            session.getEventId(),
-            EventDateCalculator.convertLocalDateTimeToDate(session.getStart(), eventZone),
-            EventDateCalculator.convertLocalDateTimeToDate(session.getEnd(), eventZone),
-            session.getTrack(),
-            session.getCreatedAt(),
-            session.getUpdatedAt()
+                session.getId(),
+                session.getTitle(),
+                session.getAbstractText(),
+                session.getDeliberationStatus(),
+                session.getConfirmationStatus(),
+                session.getLevel(),
+                session.getReferences(),
+                convertFormatsToDTO(session.getFormats()),
+                convertCategoriesToDTO(session.getCategories()),
+                session.getTags(),
+                session.getLanguages(),
+                convertSpeakerIdsToDTO(session.getSpeakerIds()),
+                reviewsMapper.convertToDTO(session.getReviews()),
+                session.getEventId(),
+                EventDateCalculator.convertLocalDateTimeToDate(session.getStart(), eventZone),
+                EventDateCalculator.convertLocalDateTimeToDate(session.getEnd(), eventZone),
+                session.getTrack(),
+                session.getCreatedAt(),
+                session.getUpdatedAt()
         );
     }
 
     public Session convertToEntity(SessionDTO sessionDTO) {
-        if(sessionDTO  == null) return null;
+        if(sessionDTO == null) return null;
 
         ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
 
@@ -89,7 +92,7 @@ public class SessionMapper {
     }
 
     public SessionReviewImportData toSessionImportData(Session session) {
-        if (session  == null) return null;
+        if (session == null) return null;
 
         SessionReviewImportData importData = new SessionReviewImportData();
         importData.setId(session.getId());
@@ -107,7 +110,7 @@ public class SessionMapper {
         importData.setLanguages(session.getLanguages() != null ? session.getLanguages() : new ArrayList<>());
 
         if (session.getSpeakerIds() != null && !session.getSpeakerIds().isEmpty()) {
-            List<Speaker> speakers = speakerService.findByIds(session.getSpeakerIds());
+            List<Speaker> speakers = speakerRepository.findByIds(session.getSpeakerIds());
             importData.setSpeakers(speakers != null ? speakers : new ArrayList<>());
         } else {
             importData.setSpeakers(new ArrayList<>());
@@ -125,9 +128,9 @@ public class SessionMapper {
             return new ArrayList<>();
         }
 
-        List<Speaker> speakers = speakerService.findByIds(speakerIds);
+        List<Speaker> speakers = speakerRepository.findByIds(speakerIds);
         return speakers.stream()
-                .map(this::convertSpeakerToDTO)
+                .map(speakerMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
@@ -140,24 +143,6 @@ public class SessionMapper {
                 .map(SpeakerDTO::id)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-    }
-
-    private SpeakerDTO convertSpeakerToDTO(Speaker speaker) {
-        if (speaker == null) {
-            return null;
-        }
-
-        return new SpeakerDTO(
-            speaker.getId(),
-            speaker.getName(),
-            speaker.getBio(),
-            speaker.getCompany(),
-            speaker.getReferences(),
-            speaker.getPicture(),
-            speaker.getLocation(),
-            speaker.getEmail(),
-            speaker.getSocialLinks()
-        );
     }
 
     private List<FormatDTO> convertFormatsToDTO(List<Format> formats) {

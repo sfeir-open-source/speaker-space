@@ -2,6 +2,7 @@ import {Component, Input} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {EventTeamField} from './interface/event-team-field';
 import {Router} from '@angular/router';
+import {UserRoleService} from '../../../../../core/services/user-services/user-role.service';
 
 @Component({
   selector: 'app-event-team-card',
@@ -12,12 +13,27 @@ import {Router} from '@angular/router';
 })
 export class EventTeamCardComponent {
   @Input() field!: EventTeamField;
+  @Input() userRole: 'admin' | 'speaker' = 'speaker';
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private userRoleService: UserRoleService
+  ) {}
 
-  navigateToEvent(eventUrl: string): void {
-    if (eventUrl) {
-      this.router.navigate(['/event-sessions', eventUrl]);
+  async navigateToEvent(eventId: string): Promise<void> {
+    if (!eventId) return;
+
+    try {
+      const role = await this.userRoleService.getUserRoleForEvent(eventId);
+
+      if (role === 'admin') {
+        this.router.navigate(['/event-sessions', eventId]);
+      } else {
+        this.router.navigate(['/speaker/event', eventId, 'sessions']);
+      }
+    } catch (error) {
+      console.error('Error determining user role:', error);
+      this.router.navigate(['/speaker/event', eventId, 'sessions']);
     }
   }
 

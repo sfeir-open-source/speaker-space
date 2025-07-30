@@ -108,6 +108,13 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
     }
 
     @Override
+    public List<Session> findByEventIdAndSpeakerId(String eventId, String speakerId) {
+        return executeQuery(getCollection()
+                .whereEqualTo("eventId", eventId)
+                .whereArrayContains("speakerIds", speakerId));
+    }
+
+    @Override
     public boolean deleteSession(String id) {
         return deleteByIdSync(id);
     }

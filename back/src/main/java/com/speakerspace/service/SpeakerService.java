@@ -1,10 +1,13 @@
 package com.speakerspace.service;
 
 import com.speakerspace.dto.EventDTO;
-import com.speakerspace.dto.session.SpeakerCreateRequestDTO;
-import com.speakerspace.dto.session.SpeakerDTO;
+import com.speakerspace.dto.session.*;
+import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.mapper.session.SpeakerMapper;
+import com.speakerspace.model.session.Session;
+import com.speakerspace.model.session.SessionReviewImportData;
 import com.speakerspace.model.session.Speaker;
+import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +28,10 @@ public class SpeakerService {
     private final SpeakerRepository speakerRepository;
 
     private final SpeakerMapper speakerMapper;
+
+    private final SessionRepository sessionRepository;
+    @Autowired
+    private SessionMapper sessionMapper;
 
     public Speaker saveSpeaker(Speaker speaker) {
         return speakerRepository.saveSpeaker(speaker);
@@ -109,6 +116,41 @@ public class SpeakerService {
         merged.setSocialLinks(new ArrayList<>(mergedSocialLinks));
 
         return merged;
+    }
+
+    public List<SessionReviewImportData> getSessionsByEventAndSpeakerEmail(String eventId, String speakerEmail) {
+        List<Speaker> speakers = speakerRepository.findByEmailAndEventId(speakerEmail, eventId);
+
+        if (speakers.isEmpty()) {
+            log.warn("No speaker found with email {} for event {}", speakerEmail, eventId);
+            return Collections.emptyList();
+        }
+
+        Speaker speaker = speakers.getFirst();
+        List<Session> sessions = sessionRepository.findByEventIdAndSpeakerId(eventId, speaker.getId());
+
+        return sessions.stream()
+                .map(sessionMapper::toSessionImportData)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    public SessionReviewImportData getSessionByIdForSpeaker(String eventId, String sessionId, String speakerEmail) {
+        List<Speaker> speakers = speakerRepository.findByEmailAndEventId(speakerEmail, eventId);
+
+        if (speakers.isEmpty()) {
+            return null;
+        }
+
+        Speaker speaker = speakers.getFirst();
+
+        List<Session> sessions = sessionRepository.findByEventIdAndSpeakerId(eventId, speaker.getId());
+        Session targetSession = sessions.stream()
+                .filter(session -> sessionId.equals(session.getId()))
+                .findFirst()
+                .orElse(null);
+
+        return targetSession != null ? sessionMapper.toSessionImportData(targetSession) : null;
     }
 
     private boolean isNotEmpty(String value) {

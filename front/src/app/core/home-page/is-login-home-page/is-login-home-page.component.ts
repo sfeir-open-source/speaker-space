@@ -11,6 +11,7 @@ import {
   EventTeamField
 } from '../../../feature/admin-management/components/event/event-team-card/interface/event-team-field';
 import {Event} from '../../../feature/admin-management/type/event/event';
+import {UserRoleService} from '../../services/user-services/user-role.service';
 
 @Component({
   selector: 'app-is-login-home-page',
@@ -31,7 +32,8 @@ export class IsLoginHomePageComponent implements OnInit {
 
   constructor(
     private eventService: EventService,
-    private eventStatusService: EventStatusService
+    private eventStatusService: EventStatusService,
+    private userRoleService: UserRoleService
   ) {}
 
   ngOnInit(): void {
@@ -81,6 +83,7 @@ export class IsLoginHomePageComponent implements OnInit {
   private transformEventsToFields(events: Event[]): EventTeamField[] {
     return events.map(event => {
       const status = this.eventStatusService.getEventStatus(event);
+      const userRole = this.userRoleService.getUserRoleFromContext(event);
 
       return {
         idEvent: event.idEvent ?? '',
@@ -93,7 +96,8 @@ export class IsLoginHomePageComponent implements OnInit {
         publicUrl: event.url ?? '',
         logoBase64: event.logoBase64,
         daysRemaining: status.daysRemaining,
-        isFinished: status.isFinished
+        isFinished: status.isFinished,
+        userRole: userRole
       };
     });
   }

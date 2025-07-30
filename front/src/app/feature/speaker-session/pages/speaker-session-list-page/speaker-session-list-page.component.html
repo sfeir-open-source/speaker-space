@@ -1,0 +1,39 @@
+<div class="px-0 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
+  <main class="flex">
+    <section class="flex-1 p-4">
+      <h1 class="text-2xl font-medium text-gray-900 mb-6">My Sessions</h1>
+
+      @if (isLoading) {
+        <div class="flex justify-center items-center h-40">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      }
+
+      @if (!isLoading && !error) {
+        <form class="mx-auto" (ngSubmit)="onSubmit($event)">
+          <article class="w-full items-center bg-white shadow-md rounded-lg py-4">
+            @if (totalSessions !== 0) {
+              <section class="px-4 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="relative flex-1">
+                    <input
+                      type="text"
+                      name="searchInput"
+                      placeholder="Search in your sessions..."
+                      class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      (input)="onSearch($event)"
+                      [value]="searchTerm"
+                    />
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <i class="material-icons text-lg">search</i>
+                    </span>
+                  </div>
+                </div>
+              </section>
+            }
+          </article>
+        </form>
+      }
+    </section>
+  </main>
+</div>

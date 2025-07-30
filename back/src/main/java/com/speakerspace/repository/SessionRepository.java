@@ -3,7 +3,6 @@ package com.speakerspace.repository;
 import com.speakerspace.model.session.Session;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -16,6 +15,7 @@ public interface SessionRepository {
     Session findByIdAndEventId(String sessionId, String eventId);
     Session updateScheduleFields(String sessionId, Date start, Date end, String track);
     boolean existsByIdAndEventId(String id, String eventId);
+    List<Session> findByEventIdAndSpeakerId(String eventId, String speakerId);
     boolean deleteSession(String id);
     int deleteByEventId(String eventId);
 }
