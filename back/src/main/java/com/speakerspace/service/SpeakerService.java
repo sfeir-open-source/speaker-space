@@ -41,10 +41,6 @@ public class SpeakerService {
         return speakerRepository.findSpeakerById(id);
     }
 
-    public List<Speaker> findByIds(List<String> ids) {
-        return speakerRepository.findByIds(ids);
-    }
-
     public List<Speaker> findByEventId(String eventId) {
         return speakerRepository.findByEventId(eventId);
     }
@@ -151,6 +147,18 @@ public class SpeakerService {
                 .orElse(null);
 
         return targetSession != null ? sessionMapper.toSessionImportData(targetSession) : null;
+    }
+
+    public Speaker getSpeakerByEmailAndEventId(String email, String eventId) {
+        List<Speaker> speakers = speakerRepository.findByEmailAndEventId(email, eventId);
+
+        if (speakers.isEmpty()) {
+            log.warn("No speaker found with email {} for event {}", email, eventId);
+            return null;
+        }
+
+        Speaker speaker = speakers.getFirst();
+        return speaker;
     }
 
     private boolean isNotEmpty(String value) {

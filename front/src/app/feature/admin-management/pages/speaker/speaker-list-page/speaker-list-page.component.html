@@ -88,12 +88,6 @@
                     <tr>
                       <th scope="col" class="p-4">
                         <div class="flex items-center">
-                          <input
-                            id="checkbox-all-search"
-                            type="checkbox"
-                            [checked]="selectAll"
-                            (change)="toggleSelectAll()"
-                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500">
                           <label for="checkbox-all-search" class="sr-only">checkbox</label>
                         </div>
                       </th>
@@ -124,17 +118,10 @@
                       </tr>
                     } @else {
                       @for (speaker of paginatedSpeakers; track speaker.email) {
-                        <tr class="bg-white border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                        <tr class="bg-white border-b border-gray-200 hover:bg-gray-100 cursor-pointer"
                             (click)="openItemDetail(speaker.id)">
                           <td class="w-4 p-4" (click)="$event.stopPropagation()">
                             <div class="flex items-center">
-                              <input
-                                [id]="'checkbox-speaker-' + speaker.name"
-                                type="checkbox"
-                                [checked]="isSpeakerSelected(speaker.name)"
-                                (change)="toggleSpeakerSelection(speaker.name!)"
-                                (click)="$event.stopPropagation()"
-                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500">
                               <label [for]="'checkbox-speaker-' + speaker.name" class="sr-only">checkbox</label>
                             </div>
                           </td>

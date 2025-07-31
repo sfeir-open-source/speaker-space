@@ -10,13 +10,12 @@
     <section class="flex-1 p-4">
       <header class="mb-6">
         <h1 class="text-2xl font-medium text-gray-900">
-          Your Sessions
+          Your Session{{ totalSessions > 1 ? 's' : '' }}
         </h1>
-        <p class="text-gray-600 mt-2">Sessions where you are speaking</p>
       </header>
 
       <form class="mx-auto" (ngSubmit)="onSubmit($event)">
-        <article class="w-full items-center bg-white shadow-md rounded-lg py-4 pb-10">
+        <article class="w-full items-center bg-white shadow-md rounded-lg">
           @if (isLoadingSessions) {
             <div class="flex justify-center items-center h-32 px-4">
               <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
@@ -27,16 +26,16 @@
               <table class="w-full text-sm text-left rtl:text-right text-gray-500">
                 <thead class="text-xs text-gray-700 bg-gray-50">
                 <tr>
-                  <th scope="col" class="px-2 py-3 font-normal">
+                  <th scope="col" class="pl-10 py-3 font-normal">
                     {{ totalSessions }} session{{ totalSessions > 1 ? 's' : '' }}
                   </th>
                 </tr>
                 </thead>
                 <tbody>
                   @for (session of paginatedSessions; track session.id) {
-                    <tr class="bg-white border border-gray-200 hover:bg-gray-50 cursor-pointer h-15"
+                    <tr class="bg-white border-t border-gray-200 hover:bg-gray-100 cursor-pointer h-15"
                         (click)="onRowClick(session, $event)">
-                      <th scope="row" class="px-2 py-2 font-medium text-gray-900 whitespace-nowrap">
+                      <th scope="row" class="pl-10 py-2 font-medium text-gray-900 whitespace-nowrap">
                         <div class="flex min-w-0">
                           <div class="min-w-0 flex-auto">
                             <p class="text-sm text-gray-900 font-medium mb-1">

@@ -20,7 +20,7 @@ export class UserRoleService {
 
   async getUserRoleForEvent(eventId: string): Promise<'admin' | 'speaker'> {
     try {
-      const isSpeaker = await firstValueFrom(
+      const isSpeaker : boolean = await firstValueFrom(
         this.userContextService.isUserSpeakerOfEvent(eventId)
       );
 

@@ -95,7 +95,7 @@ export class NavbarSpeakerSectionComponent implements OnInit, OnChanges, OnDestr
           id: 'speaker',
           label: 'Your Profile',
           materialIcon: 'person',
-          route: `/speaker/event/${this.eventId}/sessions`,
+          route: `/event/${this.eventId}/my-profile`,
           handler: this.speaker.bind(this)
         }
       ],
@@ -123,7 +123,7 @@ export class NavbarSpeakerSectionComponent implements OnInit, OnChanges, OnDestr
       case currentRoute.includes('session'):
         this.activePage = 'session';
         break;
-      case currentRoute.includes('speaker'):
+      case currentRoute.includes('/my-profile'):
         this.activePage = 'speaker';
         break;
       default:
@@ -144,8 +144,7 @@ export class NavbarSpeakerSectionComponent implements OnInit, OnChanges, OnDestr
     if (!this.eventId) {
       return;
     }
-
-    this.router.navigate(['/event-speakers', this.eventId]);
+    this.router.navigate(['/event', this.eventId , 'my-profile']);
   }
 
   private goToHomePage(): void {

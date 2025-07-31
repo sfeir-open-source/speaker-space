@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.EventAuthorizationHelper;
 import com.speakerspace.model.session.SessionReviewImportData;
+import com.speakerspace.model.session.Speaker;
 import com.speakerspace.service.SpeakerService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,25 @@ public class SpeakerSessionController {
             }
 
             return session;
+        });
+    }
+
+    @GetMapping("/event/{eventId}/my-profile")
+    public ResponseEntity<Speaker> getMyProfile(
+            @PathVariable String eventId,
+            HttpServletRequest request,
+            Authentication authentication) {
+
+        return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
+            String userEmail = extractEmailFromAuthentication(authentication);
+
+            Speaker speaker = speakerService.getSpeakerByEmailAndEventId(userEmail, eventId);
+
+            if (speaker == null) {
+                throw new EntityNotFoundException("Speaker profile not found for current user in this event");
+            }
+
+            return speaker;
         });
     }
 

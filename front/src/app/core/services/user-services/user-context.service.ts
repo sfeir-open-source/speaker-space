@@ -3,7 +3,7 @@ import {HttpClient} from '@angular/common/http';
 import {Observable, of, switchMap} from 'rxjs';
 import {environment} from '../../../../environments/environment.development';
 import {catchError, map} from 'rxjs/operators';
-import {SessionImportData} from '../../../feature/admin-management/type/session/session';
+import {SessionImportData, Speaker} from '../../../feature/admin-management/type/session/session';
 import {convertToDate} from '../../../feature/admin-management/utils/date.utils';
 
 @Injectable({
@@ -46,6 +46,18 @@ export class UserContextService {
       catchError(error => {
         console.error('Error loading sessions for current user:', error);
         return of([]);
+      })
+    );
+  }
+
+  getMyProfileForEvent(eventId: string): Observable<Speaker> {
+    return this.http.get<Speaker>(
+      `${environment.apiUrl}/speaker-sessions/event/${eventId}/my-profile`,
+      { withCredentials: true }
+    ).pipe(
+      catchError(error => {
+        console.error('Error loading speaker profile:', error);
+        throw error;
       })
     );
   }
