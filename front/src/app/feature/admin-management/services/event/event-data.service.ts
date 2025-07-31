@@ -13,7 +13,6 @@ export class EventDataService {
   eventId$: Observable<string> = this.eventIdSubject.asObservable();
 
   private teamIdSubject : BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
-  teamId$ : Observable<string | null> = this.teamIdSubject.asObservable();
 
   private eventSubject: BehaviorSubject<EventDTO> = new BehaviorSubject<EventDTO>({} as EventDTO);
   event$: Observable<EventDTO> = this.eventSubject.asObservable();
@@ -31,11 +30,6 @@ export class EventDataService {
     this.updateEventData({ idEvent: idEvent });
   }
 
-  setTeamId(teamId: string): void {
-    this.teamIdSubject.next(teamId);
-    this.updateEventData({ teamId: teamId });
-  }
-
   updateEventData(partial: Partial<EventDTO>) {
     const current : EventDTO = this.eventSubject.getValue();
     this.eventSubject.next({ ...current, ...partial });
@@ -47,13 +41,6 @@ export class EventDataService {
 
   goToNextStep(): void {
     this.nextStepSubject.next();
-  }
-
-  resetEventData(): void {
-    this.eventSubject.next({} as EventDTO);
-    this.eventNameSubject.next('');
-    this.eventIdSubject.next('');
-    this.teamIdSubject.next(null);
   }
 
   loadEvent(event: EventDTO): void {

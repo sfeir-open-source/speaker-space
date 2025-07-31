@@ -1,5 +1,5 @@
 export type SessionImportData = {
-  id?: string;
+  id: string;
   title: string;
   abstractText: string;
   deliberationStatus: string;
@@ -11,7 +11,7 @@ export type SessionImportData = {
   tags: string[];
   languages: string[];
   speakers: Speaker[];
-  reviews: Reviews | null;
+  reviews: Reviews;
   eventId?: string;
   createdAt?: string;
   updatedAt?: string;

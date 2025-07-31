@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { SpeakerSessionListPageComponent } from './speaker-session-list-page.component';
 
-describe('SpeakerSessionListPageComponent', () => {
+describe('EventSessionsUnifiedComponent', () => {
   let component: SpeakerSessionListPageComponent;
   let fixture: ComponentFixture<SpeakerSessionListPageComponent>;
 

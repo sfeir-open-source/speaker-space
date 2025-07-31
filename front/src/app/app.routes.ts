@@ -59,7 +59,8 @@ export const routes: Routes = [
   { path: 'event/:eventId/session/:sessionId', component: SessionDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'event/:eventId/speaker/:speakerId', component: SpeakerDetailPageComponent, canActivate: [AuthGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
-  { path: 'speaker/event/:eventId/sessions', component: SpeakerSessionListPageComponent },
+  { path: 'event/:eventId/sessions', component: SpeakerSessionListPageComponent, canActivate: [AuthGuard]},
+  { path: 'speaker/event/:eventId/sessions', redirectTo: 'event/:eventId/sessions'},
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }
 ];

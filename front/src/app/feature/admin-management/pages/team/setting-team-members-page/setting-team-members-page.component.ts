@@ -24,9 +24,9 @@ import {FormSubmitData} from '../../../type/team/form-submit-data';
 import {TeamService} from '../../../services/team/team.service';
 import {TeamMemberService} from '../../../services/team/team-member.service';
 import {AuthService} from '../../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../../services/team/user-role.service';
 import {FormField} from '../../../../../shared/input/interface/form-field';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {UserRoleService} from '../../../../../core/services/user-services/user-role.service';
 
 @Component({
   selector: 'app-setting-team-members-page',

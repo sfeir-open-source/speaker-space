@@ -80,6 +80,15 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsForCurrentUser());
     }
 
+    @GetMapping("/{id}/for-current-user")
+    public ResponseEntity<EventDTO> getEventForCurrentUser(@PathVariable String id) {
+        EventDTO event = eventService.getEventByIdForCurrentUser(id);
+        if (event == null) {
+            throw new EntityNotFoundException("Event not found with id: " + id);
+        }
+        return ResponseEntity.ok(event);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<EventDTO> updateEvent(
             @PathVariable String id,

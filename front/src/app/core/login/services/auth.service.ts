@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import {BehaviorSubject, firstValueFrom, Observable, of} from 'rxjs';
+import {BehaviorSubject, firstValueFrom, Observable, of, take} from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
 import {
   Auth,
@@ -404,4 +404,18 @@ export class AuthService {
     }
   }
 
+  getCurrentUserSync(): { uid: string; email?: string } | null {
+    let currentUser: { uid: string; email?: string } | null = null;
+
+    this.user$.pipe(take(1)).subscribe(user => {
+      if (user) {
+        currentUser = {
+          uid: user.uid,
+          email: user.email || undefined
+        };
+      }
+    });
+
+    return currentUser;
+  }
 }

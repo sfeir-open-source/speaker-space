@@ -1,23 +1,24 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import {Subscription} from 'rxjs';
-import {AuthService} from '../../../../../core/login/services/auth.service';
-import {EventService} from '../../../services/event/event.service';
-import {NavbarAdminPageComponent} from '../../navbar-admin-page/navbar-admin-page.component';
-import {NavbarConfig} from '../../../type/components/navbar-config';
-import {UserRoleService} from '../../../../../core/services/user-services/user-role.service';
+import {
+  NavbarAdminPageComponent
+} from '../../../admin-management/components/navbar-admin-page/navbar-admin-page.component';
+import {NavbarConfig} from '../../../admin-management/type/components/navbar-config';
+import {AuthService} from '../../../../core/login/services/auth.service';
+import {UserRoleService} from '../../../../core/services/user-services/user-role.service';
 
 @Component({
-  selector: 'app-navbar-event-page',
+  selector: 'app-navbar-speaker-section',
   standalone: true,
   imports: [
     NavbarAdminPageComponent,
   ],
-  templateUrl: './navbar-event-page.component.html',
-  styleUrl: './navbar-event-page.component.scss'
+  templateUrl: './navbar-speaker-section.component.html',
+  styleUrl: './navbar-speaker-section.component.scss'
 })
 
-export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
+export class NavbarSpeakerSectionComponent implements OnInit, OnChanges, OnDestroy {
   @Input() eventId: string = '';
   @Input() eventUrl: string = '';
   @Input() eventName: string = '';
@@ -37,7 +38,6 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     private router: Router,
     private authService: AuthService,
     private userRoleService: UserRoleService,
-    private eventService: EventService,
   ) {}
 
   ngOnInit(): void {
@@ -88,40 +88,22 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
           id: 'session',
           label: 'Sessions',
           materialIcon: 'lists',
-          route: `/event-sessions/${this.eventId}`,
+          route: `/speaker/event/${this.eventId}/sessions`,
           handler: this.session.bind(this)
         },
         {
-          id: 'speakers',
-          label: 'Speakers',
-          materialIcon: 'group',
-          route: `/event-speakers/${this.eventId}`,
+          id: 'speaker',
+          label: 'Your Profile',
+          materialIcon: 'person',
+          route: `/speaker/event/${this.eventId}/sessions`,
           handler: this.speaker.bind(this)
-        },{
-          id: 'calendar',
-          label: 'Schedule',
-          materialIcon: 'calendar_today',
-          handler: this.calendar.bind(this)
-        },
-        {
-          id: 'settings',
-          label: 'Settings',
-          materialIcon: 'settings',
-          handler: this.settings.bind(this)
-        },
-        {
-          id: 'customize',
-          label: 'Customize',
-          materialIcon: 'brush',
-          cssClass: 'lg:hidden',
-          handler: this.customize.bind(this)
         }
       ],
       rightContent: 'custom-button',
       rightButtonConfig: {
-        label: 'Event page',
+        label: 'Home page',
         icon: 'arrow_forward',
-        handler: this.goToEventPage.bind(this),
+        handler: this.goToHomePage.bind(this),
         cssClass: 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'
       }
     };
@@ -141,17 +123,8 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
       case currentRoute.includes('session'):
         this.activePage = 'session';
         break;
-      case currentRoute.includes('speakers'):
-        this.activePage = 'speakers';
-        break;
-      case currentRoute.includes('calendar'):
-        this.activePage = 'calendar';
-        break;
-      case currentRoute.includes('event-detail'):
-        this.activePage = 'settings';
-        break;
-      case currentRoute.includes('event-customize'):
-        this.activePage = isMobile ? 'customize' : 'settings';
+      case currentRoute.includes('speaker'):
+        this.activePage = 'speaker';
         break;
       default:
         this.activePage = '';
@@ -164,7 +137,7 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/event-sessions', this.eventId]);
+    this.router.navigate(['/speaker/event', this.eventId, 'sessions']);
   }
 
   private speaker(): void {
@@ -175,48 +148,7 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     this.router.navigate(['/event-speakers', this.eventId]);
   }
 
-  private calendar(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/event-calendar', this.eventId]);
-  }
-
-  private settings(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/event-detail', this.eventId]);
-  }
-
-  private customize(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/event-customize', this.eventId]);
-  }
-
-  private goToEventPage(): void {
-    if (this.teamId) {
-      this.router.navigate(['/team', this.teamId]);
-    } else if (this.eventId) {
-      this.eventService.getEventById(this.eventId).subscribe({
-        next: (event) => {
-          if (!event) {
-            return;
-          }
-
-          if (event.teamId && typeof event.teamId === 'string' && event.teamId.trim() !== '') {
-            this.router.navigate(['/team', event.teamId]);
-          }
-        },
-        error: (err) => {
-          console.error('Error fetching event details for team navigation:', err);
-        }
-      });
-    }
+  private goToHomePage(): void {
+    this.router.navigate(['/']);
   }
 }

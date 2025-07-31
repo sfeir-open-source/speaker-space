@@ -3,9 +3,9 @@ import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import {TeamMemberService} from '../../../services/team/team-member.service';
 import {AuthService} from '../../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../../services/team/user-role.service';
 import {NavbarAdminPageComponent} from '../../navbar-admin-page/navbar-admin-page.component';
 import {NavbarConfig} from '../../../type/components/navbar-config';
+import {UserRoleService} from '../../../../../core/services/user-services/user-role.service';
 
 @Component({
   selector: 'app-navbar-team-page',

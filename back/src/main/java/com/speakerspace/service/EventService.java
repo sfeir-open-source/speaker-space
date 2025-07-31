@@ -3,6 +3,7 @@ package com.speakerspace.service;
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.dto.session.SessionScheduleImportDataDTO;
+import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.model.Team;
@@ -107,6 +108,37 @@ public class EventService {
         return events.stream()
                 .map(eventMapper::convertToDTO)
                 .toList();
+    }
+
+    public EventDTO getEventByIdForCurrentUser(String id) {
+        EventDTO event = getEventById(id);
+        if (event == null) {
+            throw new EntityNotFoundException("Event not found with id: " + id);
+        }
+
+        if (isUserSpeakerOfEvent(id)) {
+            return EventDTO.builder()
+                    .idEvent(event.idEvent())
+                    .eventName(event.eventName())
+                    .description(event.description())
+                    .endDate(event.endDate())
+                    .url(event.url())
+                    .startDate(event.startDate())
+                    .isOnline(event.isOnline())
+                    .location(event.location())
+                    .isPrivate(event.isPrivate())
+                    .webLinkUrl(event.webLinkUrl())
+                    .isFinish(event.isFinish())
+                    .userCreateId(event.userCreateId())
+                    .conferenceHallUrl(event.conferenceHallUrl())
+                    .teamId(event.teamId())
+                    .timeZone(event.timeZone())
+                    .logoBase64(event.logoBase64())
+                    .type(event.type())
+                    .build();
+        }
+
+        return event;
     }
 
     public EventDTO updateEvent(EventDTO eventDTO) {

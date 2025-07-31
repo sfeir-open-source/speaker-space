@@ -1,10 +1,10 @@
 import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {NavigationEnd, Router} from '@angular/router';
-import {UserRoleService} from '../../services/team/user-role.service';
 import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
 import {NgClass} from '@angular/common';
 import {NavbarButton, NavbarConfig} from '../../type/components/navbar-config';
+import {UserRoleService} from '../../../../core/services/user-services/user-role.service';
 
 @Component({
   selector: 'app-navbar-admin-page',

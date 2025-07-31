@@ -175,7 +175,6 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
     this.toggleItemSelection(sessionId);
   }
 
-
   private extractAvailableFilters(sessions: SessionImportData[]): void {
     const formatMap = new Map<string, Format>();
     sessions.forEach(session => {

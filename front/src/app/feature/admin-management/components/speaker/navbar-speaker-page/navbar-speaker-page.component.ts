@@ -2,9 +2,9 @@ import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@an
 import { Router } from '@angular/router';
 import {Subscription} from 'rxjs';
 import {AuthService} from '../../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../../services/team/user-role.service';
 import {NavbarAdminPageComponent} from '../../navbar-admin-page/navbar-admin-page.component';
 import {NavbarConfig} from '../../../type/components/navbar-config';
+import {UserRoleService} from '../../../../../core/services/user-services/user-role.service';
 
 @Component({
   selector: 'app-navbar-speaker-page',
