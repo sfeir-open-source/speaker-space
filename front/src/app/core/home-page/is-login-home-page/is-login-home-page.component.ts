@@ -103,12 +103,12 @@ export class IsLoginHomePageComponent implements OnInit {
   }
 
   private updateDisplayedEvents(): void {
-    const filteredEvents = this.eventStatusService.filterEventsByStatus(
+    const filteredEvents : Event[] = this.eventStatusService.filterEventsByStatus(
       this.userEvents,
       this.activeTab === 'passed'
     );
 
-    const sortedEvents = this.sortEventsByDate(filteredEvents);
+    const sortedEvents : Event[] = this.sortEventsByDate(filteredEvents);
     this.displayedEvents = this.transformEventsToFields(sortedEvents);
   }
 

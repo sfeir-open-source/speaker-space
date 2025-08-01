@@ -36,7 +36,7 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   eventForm: FormGroup;
   private nameChangeSubscription?: Subscription;
   private routeSubscription?: Subscription;
-  readonly BASE_URL = 'https://speaker-space.io/event/';
+  readonly BASE_URL : string = 'https://speaker-space.io/event/';
 
   selectedImageUrl: string | null = null;
   selectedFile: File | null = null;

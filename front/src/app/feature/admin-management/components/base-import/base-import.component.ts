@@ -17,7 +17,7 @@ export abstract class BaseImportComponent {
   importResult: ImportResult | null = null;
   fileError: string | null = null;
 
-  protected readonly MAX_FILE_SIZE = 10 * 1024 * 1024;
+  protected readonly MAX_FILE_SIZE : number = 10 * 1024 * 1024;
 
   constructor(protected eventService: EventService) {}
 

@@ -24,28 +24,24 @@ import {
   CreateEventPageComponent
 } from './feature/admin-management/pages/events/create-event-page/create-event-page.component';
 import {ListEventPageComponent} from './feature/admin-management/pages/team/list-event-page/list-event-page.component';
-import {SessionListPageComponent} from './feature/admin-management/pages/session/session-list-page/session-list-page.component';
-import {
-  SessionDetailPageComponent
-} from './feature/admin-management/pages/session/session-detail-page/session-detail-page.component';
 import {
   SpeakerListPageComponent
 } from './feature/admin-management/pages/speaker/speaker-list-page/speaker-list-page.component';
 import {
-  SpeakerDetailPageComponent
-} from './feature/admin-management/pages/speaker/speaker-detail-page/speaker-detail-page.component';
-import {
   CalendarEventPageComponent
 } from './feature/admin-management/pages/calendar/calendar-event-page/calendar-event-page.component';
 import {
-  SpeakerSessionListPageComponent
-} from './feature/speaker-session/pages/speaker-session-list-page/speaker-session-list-page.component';
+  SessionListUnifiedComponent
+} from './feature/admin-management/components/session/session-list-unified/session-list-unified.component';
 import {
-  SpeakerMyProfilePageComponent
-} from './feature/speaker-session/pages/speaker-profile-page/speaker-profile-page.component';
+  SpeakerProfileUnifiedComponent
+} from './feature/admin-management/components/speaker/speaker-profile-unified/speaker-profile-unified.component';
+import {
+  SessionDetailUnifiedComponent
+} from './feature/admin-management/components/session/session-detail-unified/session-detail-unified.component';
 
 export const routes: Routes = [
-  { path:'', component: HomePageComponent},
+  { path: '', component: HomePageComponent },
   { path: 'system-info', component: TestConnectionBackFrontComponent, canActivate: [AuthGuard] },
   { path: 'login', component: LoginPageComponent },
   { path: 'create-team', component: CreateTeamPageComponent, canActivate: [AuthGuard]},
@@ -56,15 +52,17 @@ export const routes: Routes = [
   { path: 'settings-members/:teamId', component: SettingTeamMembersPageComponent, canActivate: [AuthGuard] },
   { path: 'event-detail/:eventId', component: SettingEventPageComponent, canActivate: [AuthGuard] },
   { path: 'event-customize/:eventId', component: CustomizeEventComponent, canActivate: [AuthGuard] },
-  { path: 'event-sessions/:eventId', component: SessionListPageComponent, canActivate: [AuthGuard] },
-  { path: 'event-speakers/:eventId', component: SpeakerListPageComponent, canActivate: [AuthGuard] },
   { path: 'event-calendar/:eventId', component: CalendarEventPageComponent, canActivate: [AuthGuard] },
-  { path: 'event/:eventId/session/:sessionId', component: SessionDetailPageComponent, canActivate: [AuthGuard] },
-  { path: 'event/:eventId/speaker/:speakerId', component: SpeakerDetailPageComponent, canActivate: [AuthGuard] },
-  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard]},
-  { path: 'event/:eventId/sessions', component: SpeakerSessionListPageComponent, canActivate: [AuthGuard]},
-  { path: 'speaker/event/:eventId/sessions', redirectTo: 'event/:eventId/sessions'},
-  { path: 'event/:eventId/my-profile', component: SpeakerMyProfilePageComponent, canActivate: [AuthGuard]},
+  { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] },
+  { path: 'event-speakers/:eventId', component: SpeakerListPageComponent, canActivate: [AuthGuard] },
+  { path: 'event-sessions/:eventId', component: SessionListUnifiedComponent, canActivate: [AuthGuard] },
+  { path: 'event/:eventId/sessions', component: SessionListUnifiedComponent, canActivate: [AuthGuard] },
+  { path: 'event/:eventId/speaker/:speakerId', component: SpeakerProfileUnifiedComponent, canActivate: [AuthGuard] },
+  { path: 'event/:eventId/session/:sessionId', component: SessionDetailUnifiedComponent, canActivate: [AuthGuard] },
+  { path: 'speaker/event/:eventId/session/:sessionId', redirectTo: 'event/:eventId/session/:sessionId' },
+  { path: 'event/:eventId/my-profile', component: SpeakerProfileUnifiedComponent, canActivate: [AuthGuard] },
+  { path: 'speaker/event/:eventId/sessions', redirectTo: 'event/:eventId/sessions' },
+  { path: 'speaker/event/:eventId/session/:sessionId', redirectTo: 'event/:eventId/session/:sessionId' },
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }
 ];

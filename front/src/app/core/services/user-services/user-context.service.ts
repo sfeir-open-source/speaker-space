@@ -62,6 +62,19 @@ export class UserContextService {
     );
   }
 
+  getMySessionById(eventId: string, sessionId: string): Observable<SessionImportData> {
+    return this.http.get<SessionImportData>(
+      `${environment.apiUrl}/speaker-sessions/event/${eventId}/session/${sessionId}`,
+      { withCredentials: true }
+    ).pipe(
+      map(session => this.convertSessionDates(session)),
+      catchError(error => {
+        console.error('Error loading speaker session:', error);
+        throw error;
+      })
+    );
+  }
+
   private convertSessionDates(sessionData: any): SessionImportData {
     return {
       ...sessionData,

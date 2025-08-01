@@ -42,10 +42,10 @@ export class SpeakerCreatePopupComponent implements OnInit {
   private readonly speakerService = inject(SpeakerService);
 
   speakerForm!: FormGroup;
-  isCreating = false;
+  isCreating : boolean = false;
   errorMessage: string | null = null;
   socialLinks: string[] = [];
-  newSocialLink = '';
+  newSocialLink : string = '';
 
   ngOnInit(): void {
     this.initializeForm();
@@ -92,7 +92,7 @@ export class SpeakerCreatePopupComponent implements OnInit {
   }
 
   addSocialLink(): void {
-    const link = this.newSocialLink.trim();
+    const link : string = this.newSocialLink.trim();
     if (!link) return;
 
     if (this.socialLinks.includes(link)) {

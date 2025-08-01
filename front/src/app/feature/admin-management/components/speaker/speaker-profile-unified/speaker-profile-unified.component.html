@@ -1,0 +1,138 @@
+@if (isMyProfile) {
+  <app-navbar-speaker-section
+    [eventUrl]="eventUrl"
+    [eventId]="eventId"
+    [eventName]="eventName"
+    [teamId]="teamId">
+  </app-navbar-speaker-section>
+} @else {
+  <app-navbar-speaker-page
+    [eventUrl]="eventUrl"
+    [eventId]="eventId"
+    [eventName]="eventName"
+    [speakerEmail]="speaker?.email || ''">
+  </app-navbar-speaker-page>
+}
+
+<div class="px-5 sm:px-5 md:px-5 lg:px-5 xl:px-20 2xl:px-70 w-full">
+  <main class="flex justify-center p-4">
+    @if (isLoading) {
+      <div class="flex justify-center items-center h-64">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    }
+
+    @if (error) {
+      <div class="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full">
+        <div class="flex items-center">
+          <svg class="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          </svg>
+          <p class="text-red-800 font-medium">{{ error }}</p>
+        </div>
+      </div>
+    }
+
+    @if (speaker && !isLoading && !error) {
+      <div class="relative bg-white rounded-lg shadow-xl max-w-7xl w-full">
+        <section class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between p-3 mb-6">
+            <div class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-1 py-1 pr-4 bg-white shadow-sm">
+              <div class="flex-shrink-0">
+                <img
+                  [src]="speaker.picture || 'img/profil-picture.svg'"
+                  class="h-10 w-10 rounded-full object-cover border-2 border-gray-100"
+                  [alt]="'Photo de ' + speaker.name"
+                  referrerpolicy="no-referrer"
+                  (error)="onImageError($event)">
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <h4 class="font-medium text-gray-900 text-sm truncate">
+                  {{ speaker.name }}
+                </h4>
+                <p class="text-gray-600 text-xs truncate">
+                  {{ speaker.company }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-3 pb-2">
+            @if (speaker.email) {
+              <div class="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <p class="text-gray-900 text-sm">{{ speaker.email }}</p>
+              </div>
+            } @else {
+              <div class="flex items-center gap-2">
+                <p class="text-gray-500 italic text-sm">No email available</p>
+              </div>
+            }
+          </div>
+
+          <div class="px-3 pb-6">
+            @if (speaker.socialLinks && speaker.socialLinks.length > 0) {
+              <div class="space-y-3">
+                @for (socialLink of getParsedSocialLinks(); track socialLink.fullUrl) {
+                  <div class="flex items-center gap-3">
+                    <div class="flex-shrink-0 text-gray-600" [innerHTML]="socialLink.iconSvg"></div>
+                    <div class="flex-1 min-w-0">
+                      <a
+                        [href]="socialLink.fullUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="block group">
+                        <div class="text-sm text-gray-900 group-hover:underline transition-colors duration-200 truncate">
+                          {{ socialLink.displayUrl }}
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="flex items-center gap-2 mt-2">
+                <p class="text-sm text-gray-500 italic">No social links available</p>
+              </div>
+            }
+          </div>
+
+          <div class="p-3">
+            <h4 class="font-base font-medium text-gray-900 mb-3">Biography</h4>
+            @if (speaker.bio) {
+              <p class="whitespace-pre-wrap text-gray-600">{{ speaker.bio }}</p>
+            } @else {
+              <p class="text-gray-500 italic">No biography available</p>
+            }
+          </div>
+        </section>
+
+        <section class="p-6 border-b border-gray-200">
+          <div class="p-3">
+            <h4 class="font-base font-medium text-gray-900 mb-3">References</h4>
+            @if (speaker.references) {
+              <p class="whitespace-pre-wrap text-gray-600">{{ speaker.references }}</p>
+            } @else {
+              <p class="text-gray-500 italic">No references available</p>
+            }
+          </div>
+        </section>
+
+        <section class="p-6 border-b border-gray-200">
+          <div class="p-3">
+            <h4 class="font-base font-medium text-gray-900 mb-3">Location</h4>
+            @if (speaker.location) {
+              <p class="whitespace-pre-wrap text-gray-600">{{ speaker.location }}</p>
+            } @else {
+              <p class="text-gray-500 italic">No location available</p>
+            }
+          </div>
+        </section>
+      </div>
+    }
+  </main>
+</div>

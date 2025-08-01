@@ -1,7 +1,7 @@
 import {SafeHtml} from '@angular/platform-browser';
 
 export type SocialLinkInfo = {
-  platform: string;
+  platform?: string;
   iconSvg: SafeHtml;
   displayUrl: string;
   fullUrl: string;

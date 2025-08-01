@@ -1,0 +1,256 @@
+@if (userRole === 'admin') {
+  <app-navbar-event-page
+    [eventUrl]="eventUrl"
+    [eventId]="eventId"
+    [eventName]="eventName"
+    [teamId]="teamId">
+  </app-navbar-event-page>
+} @else {
+  <app-navbar-speaker-section
+    [eventUrl]="eventUrl"
+    [eventId]="eventId"
+    [eventName]="eventName"
+    [teamId]="teamId">
+  </app-navbar-speaker-section>
+}
+
+<div class="px-0 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
+  <main class="flex">
+    <section class="flex-1 p-4">
+      @if (userRole === 'speaker') {
+        <header class="mb-6">
+          <h1 class="text-2xl font-medium text-gray-900">
+            Your Session{{ totalSessions > 1 ? 's' : '' }}
+          </h1>
+        </header>
+      }
+
+      @if (isLoading) {
+        <div class="flex justify-center items-center h-40">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      }
+
+      @if (error) {
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <p>{{ error }}</p>
+        </div>
+      }
+
+      @if (!isLoading && !error) {
+        <form class="mx-auto" (ngSubmit)="onSubmit($event)">
+          <article class="w-full items-center bg-white shadow-md rounded-lg"
+                   [class.py-4]="userRole === 'admin'">
+
+            @if (totalSessions !== 0 && userRole === 'admin') {
+              <section class="px-4 pb-4">
+                <div class="flex items-center gap-3">
+                  <div class="relative flex-1">
+                    <input
+                      type="text"
+                      name="searchInput"
+                      placeholder="Search for proposals..."
+                      class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      (input)="onSearch($event)"
+                      [value]="searchTerm"
+                    />
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                          <i class="material-icons text-lg">search</i>
+                        </span>
+                  </div>
+
+                  <app-button-green-actions
+                    type="button"
+                    [materialIcon]="'add'"
+                    (click)="onCreateSession()">
+                    Create session
+                  </app-button-green-actions>
+
+                  <app-button-grey
+                    type="button"
+                    [materialIcon]="'tune'"
+                    customTextClass="text-gray-600 hover:text-gray-600"
+                    class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm relative"
+                    (click)="openFilterPopup()">
+                    Filters
+                    @if (hasActiveFilters) {
+                      <span class="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {{ activeFiltersCount }}
+                          </span>
+                    }
+                  </app-button-grey>
+
+                  @if (showFilterPopup) {
+                    <app-session-filter-popup
+                      [availableFormats]="availableFormats"
+                      [availableCategories]="availableCategories"
+                      [currentFilters]="currentFilters"
+                      (filtersApplied)="onFiltersApplied($event)"
+                      (filtersReset)="onFiltersReset()"
+                      (popupClosed)="closeFilterPopup()">
+                    </app-session-filter-popup>
+                  }
+                </div>
+              </section>
+            }
+
+            @if (isLoadingSessions) {
+              <div class="flex justify-center items-center h-32 px-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                <span class="ml-2 text-gray-600">Loading sessions...</span>
+              </div>
+            } @else {
+              <div class="relative overflow-x-auto sm:rounded-lg">
+                <table class="w-full text-sm text-left rtl:text-right text-gray-500">
+                  @if (totalSessions !== 0) {
+                    <thead class="text-xs text-gray-700 bg-gray-50">
+                    <tr>
+                      @if (userRole === 'admin') {
+                        <th scope="col" class="p-4">
+                          <div class="flex items-center">
+                            <label for="checkbox-all-search" class="sr-only">checkbox</label>
+                          </div>
+                        </th>
+                        <th scope="col" class="px-2 py-3 font-normal">
+                          {{ totalSessions }} proposal{{ totalSessions > 1 ? 's' : '' }}
+                        </th>
+                      } @else {
+                        <th scope="col" class="pl-10 py-3 font-normal">
+                          {{ totalSessions }} session{{ totalSessions > 1 ? 's' : '' }}
+                        </th>
+                      }
+                    </tr>
+                    </thead>
+                  }
+                  <tbody>
+                    @if (paginatedSessions.length === 0) {
+                      <tr class="bg-white">
+                        <td [attr.colspan]="userRole === 'admin' ? 2 : 1"
+                            class="px-4 py-8 text-center text-gray-500">
+                          @if (searchTerm && userRole === 'admin') {
+                            <div class="flex flex-col items-center">
+                              <i class="material-icons text-4xl text-gray-300 mb-2">search_off</i>
+                              <p class="text-lg font-medium text-gray-600">No sessions found</p>
+                              <p class="text-sm text-gray-500">for "{{ searchTerm }}"</p>
+                            </div>
+                          } @else {
+                            <div class="flex flex-col items-center">
+                              <i class="material-icons text-4xl text-gray-300 mb-2">event_note</i>
+                              <p class="text-lg font-medium text-gray-600">
+                                {{ userRole === 'admin' ? 'No session available' : 'No sessions assigned' }}
+                              </p>
+                              <p class="text-sm text-gray-500">
+                                {{ userRole === 'admin' ? 'Import sessions to get started' : 'Contact the event organizer' }}
+                              </p>
+                            </div>
+                          }
+                        </td>
+                      </tr>
+                    } @else {
+                      @for (session of paginatedSessions; track session.id) {
+                        <tr class="bg-white border-b border-gray-200 hover:bg-gray-100 cursor-pointer"
+                            [class.border-t]="userRole === 'speaker'"
+                            [class.h-15]="userRole === 'speaker'"
+                            (click)="onRowClick(session, $event)">
+
+                          @if (userRole === 'admin') {
+                            <td class="w-4 p-4" (click)="$event.stopPropagation()">
+                              <div class="flex items-center">
+                                <label [for]="'checkbox-table-search-' + session.id" class="sr-only">checkbox</label>
+                              </div>
+                            </td>
+                            <th scope="row" class="px-2 py-2 font-medium text-gray-900 whitespace-nowrap">
+                              <div class="flex min-w-0 gap-x-2">
+                                <div class="min-w-0 flex-auto">
+                                  <p class="text-sm/6 text-gray-900 font-medium">
+                                    {{ session.title || 'Titre non défini' }}
+                                  </p>
+                                  <p class="truncate text-xs/5 text-gray-500">
+                                    by {{ formatSpeakers(session.speakers) }}
+                                  </p>
+                                </div>
+                              </div>
+                            </th>
+                          } @else {
+                            <th scope="row" class="pl-10 py-2 font-medium text-gray-900 whitespace-nowrap">
+                              <div class="flex min-w-0">
+                                <div class="min-w-0 flex-auto">
+                                  <p class="text-sm text-gray-900 font-medium mb-1">
+                                    {{ session.title }}
+                                  </p>
+                                </div>
+                              </div>
+                            </th>
+                          }
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+
+                @if (totalPages > 1 && userRole === 'admin') {
+                  <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4" aria-label="Table navigation">
+                        <span class="text-sm font-normal text-gray-600 mb-4 md:mb-0 block w-full md:inline md:w-auto">
+                          Showing {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalSessions) }} of {{ totalSessions }} results
+                        </span>
+                    <ul class="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8">
+                      <li>
+                        <button
+                          type="button"
+                          (click)="goToPage(currentPage - 1)"
+                          [disabled]="currentPage === 1"
+                          [class]="currentPage === 1 ?
+                                'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-s-lg cursor-not-allowed' :
+                                'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer'">
+                          Previous
+                        </button>
+                      </li>
+
+                      @for (pageNum of pageNumbers; track pageNum) {
+                        <li>
+                          <button
+                            type="button"
+                            (click)="goToPage(pageNum)"
+                            [class]="pageNum === currentPage ?
+                                  'flex items-center justify-center px-3 h-8 text-blue-600 border border-gray-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700' :
+                                  'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 cursor-pointer'">
+                            {{ pageNum }}
+                          </button>
+                        </li>
+                      }
+
+                      <li>
+                        <button
+                          type="button"
+                          (click)="goToPage(currentPage + 1)"
+                          [disabled]="currentPage === totalPages"
+                          [class]="currentPage === totalPages ?
+                                'flex items-center justify-center px-3 h-8 leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-e-lg cursor-not-allowed' :
+                                'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer'">
+                          Next
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
+                }
+              </div>
+            }
+          </article>
+        </form>
+
+        @if (showCreatePopup && userRole === 'admin') {
+          <app-session-create-popup
+            [eventId]="eventId"
+            [availableFormats]="availableFormats"
+            [availableCategories]="availableCategories"
+            [availableTracks]="availableTracks"
+            [eventStartDate]="eventStartDate"
+            [eventEndDate]="eventEndDate"
+            (sessionCreated)="onSessionCreated()"
+            (popupClosed)="onCloseCreatePopup()">
+          </app-session-create-popup>
+        }
+      }
+    </section>
+  </main>
+</div>

@@ -172,15 +172,6 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
     this.router.navigate(['event', this.eventId, 'speaker', speakerId]);
   }
 
-  isSpeakerSelected(speakerName: string | undefined): boolean {
-    if (!speakerName) return false;
-    return this.selectedItems.includes(speakerName);
-  }
-
-  toggleSpeakerSelection(speakerName: string): void {
-    this.toggleItemSelection(speakerName);
-  }
-
   openFilterPopup(): void {
     this.showFilterPopup = true;
   }

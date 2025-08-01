@@ -67,8 +67,8 @@ export class SidebarAdminPageComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   getButtonClasses(button: SidebarButton): string {
-    const baseClasses = button.cssClass || '';
-    const activeClasses = this.isButtonActive(button) ? 'bg-gray-100' : '';
+    const baseClasses : string = button.cssClass || '';
+    const activeClasses : string = this.isButtonActive(button) ? 'bg-gray-100' : '';
 
     return `${baseClasses} ${activeClasses}`.trim();
   }

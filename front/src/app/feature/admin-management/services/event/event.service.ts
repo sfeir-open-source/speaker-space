@@ -14,7 +14,7 @@ import {SessionScheduleImportDataDTO} from '../../type/session/schedule-json-dat
 })
 export class EventService {
   private eventsSubject = new BehaviorSubject<Event[]>([]);
-  private readonly CACHE_DURATION = 5 * 60 * 1000;
+  private readonly CACHE_DURATION : number = 5 * 60 * 1000;
   private eventCache = new Map<string, { data: EventDTO; timestamp: number }>();
 
   constructor(
@@ -79,7 +79,7 @@ export class EventService {
   }
 
   private buildHeaders(token: string | null): HttpHeaders {
-    let headers = new HttpHeaders({
+    let headers : HttpHeaders = new HttpHeaders({
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     });
