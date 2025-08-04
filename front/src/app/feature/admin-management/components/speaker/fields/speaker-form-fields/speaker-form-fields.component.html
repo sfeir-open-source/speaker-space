@@ -1,0 +1,83 @@
+<fieldset class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <app-input
+    name="name"
+    label="Full name"
+    type="text"
+    [control]="form.get('name')!"
+    [required]="true"
+    placeholder="Enter full name"
+    errorMessage="Name is required (2-100 characters)">
+  </app-input>
+
+  <app-input
+    name="email"
+    label="Email"
+    type="email"
+    [control]="form.get('email')!"
+    [required]="true"
+    placeholder="Enter email address"
+    errorMessage="Valid email is required">
+  </app-input>
+</fieldset>
+
+<fieldset class="space-y-4">
+  <app-input
+    name="bio"
+    label="Biography"
+    type="textarea"
+    [control]="form.get('bio')!"
+    [rows]="4"
+    placeholder="Enter biography"
+    errorMessage="Biography must not exceed 2000 characters">
+    <div paragraphSuffix class="text-xs text-gray-500 mt-1">
+      {{ form.get('bio')?.value?.length || 0 }}/2000 characters
+    </div>
+  </app-input>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <app-input
+      name="company"
+      label="Company"
+      type="text"
+      [control]="form.get('company')!"
+      placeholder="Enter company name"
+      errorMessage="Company name must not exceed 100 characters">
+    </app-input>
+
+    <app-input
+      name="location"
+      label="Location"
+      type="text"
+      [control]="form.get('location')!"
+      placeholder="Enter location"
+      errorMessage="Location must not exceed 100 characters">
+    </app-input>
+  </div>
+
+  <app-input
+    name="picture"
+    label="Picture URL"
+    type="url"
+    [control]="form.get('picture')!"
+    placeholder="https://example.com/photo.jpg"
+    errorMessage="Please enter a valid URL">
+  </app-input>
+
+  <app-input
+    name="references"
+    label="References"
+    type="textarea"
+    [control]="form.get('references')!"
+    [rows]="3"
+    placeholder="Previous talks, achievements, etc."
+    errorMessage="References must not exceed 2000 characters">
+    <div paragraphSuffix class="text-xs text-gray-500 mt-1">
+      {{ form.get('references')?.value?.length || 0 }}/2000 characters
+    </div>
+  </app-input>
+</fieldset>
+
+<app-social-links-field
+  [socialLinks]="socialLinks"
+  (socialLinksChange)="onSocialLinksChange($event)">
+</app-social-links-field>

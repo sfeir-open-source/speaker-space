@@ -8,7 +8,7 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import {FormControl, FormsModule, ReactiveFormsModule, ValidatorFn, Validators} from '@angular/forms';
+import {AbstractControl, FormControl, FormsModule, ReactiveFormsModule, ValidatorFn, Validators} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 
@@ -30,7 +30,7 @@ export class InputComponent implements OnInit, OnChanges {
   @Input() paragraph?: string = '';
   @Input() placeholder?: string = '';
   @Input() type: string = 'text';
-  @Input() control!: FormControl;
+  @Input() control!: AbstractControl;
   @Input({transform: booleanAttribute}) required: boolean = false;
   @Input() name: string = '';
   @Input() errorMessage: string = 'This field is required';
@@ -45,9 +45,9 @@ export class InputComponent implements OnInit, OnChanges {
   @Input() serverErrors: Record<string, string> | null = null;
   @Input() options: { value: string; label: string }[] = [];
 
-  @Output() blur : EventEmitter<void> = new EventEmitter<void>();
+  @Output() blur: EventEmitter<void> = new EventEmitter<void>();
 
-  private isInitialized : boolean = false;
+  private isInitialized: boolean = false;
 
   constructor(private sanitizer: DomSanitizer) {}
 
@@ -81,7 +81,7 @@ export class InputComponent implements OnInit, OnChanges {
       return;
     }
 
-    if (this.control === null || this.control === undefined) {
+    if (!(this.control instanceof FormControl)) {
       return;
     }
 
@@ -110,7 +110,7 @@ export class InputComponent implements OnInit, OnChanges {
       this.control.updateValueAndValidity();
 
     } catch (error) {
-      console.error(`Erreur lors de l'application des validateurs pour le champ '${this.name}':`, error);
+      console.error(`Error applying validators for field '${this.name}':`, error);
     }
   }
 

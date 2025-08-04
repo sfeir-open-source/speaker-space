@@ -2,3 +2,30 @@
   content: ' *';
   color: var(--color-text-invalidated-form);
 }
+
+input, select {
+  height: 42px !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+textarea {
+  min-height: auto;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.block {
+  display: block;
+}
+
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.character-count {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  text-align: right;
+  margin-top: 0.25rem;
+}

@@ -1,0 +1,84 @@
+<app-input
+  name="title"
+  label="Title"
+  type="text"
+  [control]="form.get('title')!"
+  [required]="true"
+  placeholder="Enter session title"
+  errorMessage="Title is required (3-200 characters)">
+</app-input>
+
+<app-input
+  name="abstractText"
+  label="Abstract"
+  type="textarea"
+  [control]="form.get('abstractText')!"
+  [rows]="4"
+  placeholder="Enter session abstract"
+  errorMessage="Abstract must not exceed 2000 characters">
+  <div paragraphSuffix class="text-xs text-gray-500 mt-1">
+    {{ form.get('abstractText')?.value?.length || 0 }}/2000 characters
+  </div>
+</app-input>
+
+<app-input
+  name="references"
+  label="References"
+  type="textarea"
+  [control]="form.get('references')!"
+  [rows]="3"
+  placeholder="Enter references, links, or additional resources"
+  errorMessage="References must not exceed 1000 characters">
+  <div paragraphSuffix class="text-xs text-gray-500 mt-1">
+    {{ form.get('references')?.value?.length || 0 }}/1000 characters
+  </div>
+</app-input>
+
+<fieldset class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <app-input
+    name="level"
+    label="Level"
+    type="select"
+    [control]="form.get('level')!"
+    [options]="levelOptions"
+    placeholder="Select level...">
+  </app-input>
+
+  <app-input
+    name="track"
+    label="Track"
+    [type]="availableTracks.length > 0 ? 'select' : 'text'"
+    [control]="form.get('track')!"
+    [options]="trackOptions"
+    [placeholder]="availableTracks.length > 0 ? 'Select track...' : 'Enter track name'">
+  </app-input>
+
+  <app-session-duration-field
+    [selectedDuration]="selectedDuration"
+    (durationChange)="onDurationChange($event)">
+  </app-session-duration-field>
+</fieldset>
+
+<app-session-datetime-fields
+  [form]="form"
+  [eventStartDate]="eventStartDate"
+  [eventEndDate]="eventEndDate">
+</app-session-datetime-fields>
+
+<app-session-speakers-field
+  [selectedSpeakers]="selectedSpeakers"
+  [availableSpeakers]="availableSpeakers"
+  [isLoading]="isLoadingSpeakers"
+  (speakersChange)="onSpeakersChange($event)">
+</app-session-speakers-field>
+
+<app-session-categories-formats-field
+  [availableFormats]="availableFormats"
+  [availableCategories]="availableCategories"
+  [selectedFormats]="selectedFormats"
+  [selectedCategories]="selectedCategories"
+  (formatsChange)="onFormatsChange($event)"
+  (categoriesChange)="onCategoriesChange($event)">
+</app-session-categories-formats-field>
+
+<app-session-languages-field></app-session-languages-field>

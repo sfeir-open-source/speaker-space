@@ -25,7 +25,7 @@
       <select
         [id]="name"
         [name]="name"
-        [formControl]="control"
+        [formControl]="$any(control)"
         [disabled]="disabled"
         [attr.aria-required]="required"
         [attr.aria-invalid]="hasError"
@@ -33,24 +33,24 @@
         class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6 resize-none"
         [class.border-red-300]="hasError"
         [class.outline-red-500]="hasError"
-        [class.bg-gray-100]="disabled"
-        >
-      <option value="" disabled [selected]="!control.value">
-        {{ effectivePlaceholder || 'Select an option' }}
-      </option>
+        [class.bg-gray-100]="disabled">
 
-      @for(option of options; track option.value) {
-        <option [value]="option.value">
-          {{ option.label }}
+        <option value="" disabled [selected]="!control.value">
+          {{ effectivePlaceholder || 'Select an option' }}
         </option>
-      }
+
+        @for(option of options; track option.value) {
+          <option [value]="option.value">
+            {{ option.label }}
+          </option>
+        }
       </select>
     } @else if(isTextarea) {
       <textarea
         [id]="name"
         [name]="name"
         [placeholder]="effectivePlaceholder"
-        [formControl]="control"
+        [formControl]="$any(control)"
         [disabled]="disabled"
         [attr.rows]="rows"
         [attr.aria-required]="required"
@@ -60,15 +60,15 @@
         [class.pl-10]="hasIcon || iconPath"
         [class.border-red-300]="hasError"
         [class.outline-red-500]="hasError"
-        [class.bg-gray-100]="disabled"
-      ></textarea>
+        [class.bg-gray-100]="disabled">
+      </textarea>
     } @else {
       <input
         [type]="type"
         [id]="name"
         [name]="name"
         [placeholder]="effectivePlaceholder"
-        [formControl]="control"
+        [formControl]="$any(control)"
         [disabled]="disabled"
         [attr.aria-required]="required"
         [attr.aria-invalid]="hasError"
@@ -77,8 +77,7 @@
         [class.pl-10]="hasIcon || iconPath"
         [class.border-red-300]="hasError"
         [class.outline-red-500]="hasError"
-        [class.bg-gray-100]="disabled"
-      />
+        [class.bg-gray-100]="disabled" />
     }
   </div>
 
