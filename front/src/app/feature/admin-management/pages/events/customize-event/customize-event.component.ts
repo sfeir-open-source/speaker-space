@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import {Component, ViewChild, ElementRef, OnInit, OnDestroy, DestroyRef, inject} from '@angular/core';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
 import { finalize, Subscription } from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -6,6 +6,7 @@ import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-customize-event',
@@ -46,6 +47,7 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
 
   private readonly MAX_FILE_SIZE : number = 300 * 1024;
   private readonly ALLOWED_TYPES : string[] = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+  protected readonly _destroyRef = inject(DestroyRef);
 
   constructor(
     private route: ActivatedRoute,
@@ -216,7 +218,9 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     this.isLoading = true;
 
     this.eventService.updateEvent(updatedEvent)
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoading = false))
       .subscribe({
         next: (response) => {
           this.handleEventUpdated(response);
@@ -257,7 +261,9 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     }
 
     this.eventService.getEventById(this.eventId)
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoading = false))
       .subscribe({
         next: (event) => {
           this.handleEventDataLoaded(event);

@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {Observable} from 'rxjs';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {Observable, throwError} from 'rxjs';
 import {Speaker} from '../../type/session/session';
 import {environment} from '../../../../../environments/environment.development';
 import {SpeakerWithSessionsDTO} from '../../type/speaker/speaker-with-sessions';
-import {map} from 'rxjs/operators';
+import {catchError, map} from 'rxjs/operators';
 import {SpeakerCreateRequest, SpeakerImportData} from '../../type/speaker/speaker-create';
 import {convertToDate} from '../../utils/date.utils';
 
@@ -41,7 +41,11 @@ export class SpeakerService {
       speakerData,
       { withCredentials: true }
     ).pipe(
-      map(speakerData => this.convertSpeakerDates(speakerData))
+      map(speakerData => this.convertSpeakerDates(speakerData)),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Speaker creation failed:', error);
+        return throwError(() => error);
+      })
     );
   }
 

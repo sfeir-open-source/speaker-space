@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {Component, OnInit, OnDestroy, inject, DestroyRef} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, FormsModule, Validators} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Subscription } from 'rxjs';
@@ -16,6 +16,7 @@ import {
 } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
 import {DeleteConfirmationConfig} from '../../../type/components/delete-confirmation';
 import {DangerZoneConfig} from '../../../type/components/danger-zone';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -47,6 +48,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   teamForm: FormGroup;
   private nameChangeSubscription?: Subscription;
   private routeSubscription?: Subscription;
+  protected readonly _destroyRef = inject(DestroyRef);
 
   formFields: FormField[] = [
     {
@@ -129,7 +131,9 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   loadTeamData(): void {
 
     this.teamService.getTeamByUrl(this.teamId)
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoading = false))
       .subscribe({
         next: this.handleTeamDataLoaded.bind(this),
         error: this.handleTeamDataError.bind(this)
@@ -240,7 +244,9 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     this.isLoading = true;
 
     this.teamService.updateTeam(this.teamId, updatedTeam)
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoading = false))
       .subscribe({
         next: this.handleTeamUpdated.bind(this),
         error: this.handleTeamUpdateError.bind(this)
@@ -274,6 +280,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
 
     this.teamService.deleteTeam(this.teamId)
       .pipe(
+        takeUntilDestroyed(this._destroyRef),
         finalize(() => {
           this.isDeleting = false;
           this.showDeleteConfirmation = false;

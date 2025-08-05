@@ -1,8 +1,9 @@
-import {inject, Injectable} from '@angular/core';
+import {DestroyRef, inject, Injectable} from '@angular/core';
 import {AbstractControl, FormBuilder, FormGroup} from '@angular/forms';
 import {Observable} from 'rxjs';
 import {HttpErrorResponse} from '@angular/common/http';
 import {finalize} from 'rxjs/operators';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +20,7 @@ export abstract class FormModalService<TForm extends { [K in keyof TForm]: Abstr
   protected abstract submitRequest(request: TCreateRequest): Observable<TResponse>;
   protected abstract onSuccess(response: TResponse): void;
   protected abstract extractErrorMessage(error: HttpErrorResponse): string;
+  protected readonly _destroyRef = inject(DestroyRef);
 
   onSubmit(): void {
     if (this.isSubmitting || this.form.invalid) {
@@ -33,6 +35,7 @@ export abstract class FormModalService<TForm extends { [K in keyof TForm]: Abstr
 
     this.submitRequest(request)
       .pipe(
+        takeUntilDestroyed(this._destroyRef),
         finalize(() => this.isSubmitting = false)
       )
       .subscribe({

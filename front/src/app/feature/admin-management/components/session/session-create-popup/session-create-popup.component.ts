@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, OnDestroy, Output, inject } from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, OnDestroy, Output, inject, DestroyRef} from '@angular/core';
 import { FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs/operators';
@@ -11,6 +11,7 @@ import {SessionCreateRequest} from '../../../type/session/session-create';
 import {Observable} from 'rxjs';
 import {HttpErrorResponse} from '@angular/common/http';
 import {SessionFormFieldsComponent} from '../fields/session-form-fields/session-form-fields.component';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-session-create-popup',
@@ -32,6 +33,7 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
 
   private readonly sessionService = inject(SessionService);
   private readonly speakerService = inject(SpeakerService);
+  protected override readonly _destroyRef = inject(DestroyRef);
 
   sessionForm!: FormGroup;
   isSubmitting: boolean = false;
@@ -56,7 +58,6 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
   }
 
   ngOnDestroy(): void {
-// Cleanup logic if needed
   }
 
   protected initializeForm(): void {
@@ -138,7 +139,9 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
   private loadAvailableSpeakers(): void {
     this.isLoadingSpeakers = true;
     this.speakerService.getSpeakersByEventId(this.eventId)
-      .pipe(finalize(() => this.isLoadingSpeakers = false))
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoadingSpeakers = false))
       .subscribe({
         next: (speakers) => {
           this.availableSpeakers = speakers.sort((a, b) => a.name.localeCompare(b.name));

@@ -30,11 +30,10 @@ export abstract class BaseListComponent<T> implements OnInit, OnDestroy {
   selectAll: boolean = false;
   currentUserRole: string = 'Owner';
 
-  protected destroy$ = new Subject<void>();
   protected routeSubscription?: Subscription;
   protected readonly _destroyRef = inject(DestroyRef);
 
-  constructor(
+  protected constructor(
     protected route: ActivatedRoute,
     protected router: Router,
     protected eventService: EventService,
@@ -48,8 +47,6 @@ export abstract class BaseListComponent<T> implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
     this.routeSubscription?.unsubscribe();
   }
 

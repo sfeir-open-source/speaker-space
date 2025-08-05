@@ -3,9 +3,10 @@
   submitText="Create Session"
   submittingText="Creating..."
   [isSubmitting]="isSubmitting"
-  (closed)="onClose()">
+  (closed)="onClose()"
+  (submitted)="onSubmit()">
 
-  <form id="modal-form" [formGroup]="sessionForm" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
+  <form [formGroup]="sessionForm" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
     <app-session-form-fields
       [form]="sessionForm"
       [availableFormats]="availableFormats"

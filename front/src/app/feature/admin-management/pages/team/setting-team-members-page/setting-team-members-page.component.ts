@@ -181,6 +181,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
         this.isSearching = true;
 
         return this.teamMemberService.searchUsersByEmail(query).pipe(
+          takeUntilDestroyed(this._destroyRef),
           finalize(() => this.isSearching = false)
         );
       })
@@ -227,6 +228,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
       this.teamMemberService.addTeamMember(this.teamId, newMember, this.teamName)
         .pipe(
+          takeUntilDestroyed(this._destroyRef),
           finalize(() => this.isAddingMember = false),
           switchMap(addedMember => {
             return this.authService.user$.pipe(
@@ -296,7 +298,9 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
   loadTeamMembers(): void {
     this.teamMemberService.getTeamMembers(this.teamId)
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoading = false))
       .subscribe({
         next: (members: TeamMember[]) => {
           this.teamMembers = members;
@@ -329,7 +333,9 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     const userId : string = member.userId;
 
     this.teamMemberService.removeTeamMember(this.teamId, userId)
-      .pipe(finalize(() => {
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => {
         this.isDeleting = false;
         this.selectedUser = null;
       }))
@@ -374,7 +380,9 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
     this.isLoading = true;
 
     this.teamMemberService.updateMemberRole(this.teamId, member.userId, newRole)
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoading = false))
       .subscribe({
         next: (updatedMember: TeamMember) => {
           this.currentTeamMembers = this.currentTeamMembers.map(m =>
@@ -422,6 +430,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
     this.teamMemberService.inviteMemberByEmail(this.teamId, normalizedEmail, this.teamName)
       .pipe(
+        takeUntilDestroyed(this._destroyRef),
         finalize(() => this.isAddingMember = false)
       )
       .subscribe({

@@ -97,6 +97,7 @@ export class AutoSaveService {
 
     saveFunction(data)
       .pipe(
+        takeUntilDestroyed(this._destroyRef),
         finalize(() => {
           if (saveStatusSubject.value === 'saved') {
             setTimeout(() => {

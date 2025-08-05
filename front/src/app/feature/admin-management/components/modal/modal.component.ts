@@ -17,11 +17,18 @@ export class ModalComponent {
   @Input() submittingText!: string;
   @Input() isSubmitting: boolean = false;
   @Output() closed = new EventEmitter<void>();
+  @Output() submitted = new EventEmitter<void>();
 
   readonly titleId : string = `modal-title-${Math.random().toString(36).substr(2, 9)}`;
 
   onClose(): void {
     if (this.isSubmitting) return;
+    this.closed.emit();
+  }
+
+  onSubmit(): void {
+    if(this.isSubmitting) return;
+    this.submitted.emit();
     this.closed.emit();
   }
 

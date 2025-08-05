@@ -3,8 +3,9 @@
   submitText="Create Speaker"
   submittingText="Creating..."
   [isSubmitting]="isSubmitting"
-  (closed)="onClose()">
-  <form id="modal-form" [formGroup]="speakerForm" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
+  (closed)="onClose()"
+  (submitted)="onSubmit()">
+  <form  [formGroup]="speakerForm" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
     <app-speaker-form-fields
       [form]="speakerForm"
       [socialLinks]="socialLinks"
