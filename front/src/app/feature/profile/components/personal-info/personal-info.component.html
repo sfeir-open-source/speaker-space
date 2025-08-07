@@ -23,23 +23,25 @@
     </app-input>
   }
 
-  <div class="mt-5 flex items-center">
+  <div class="mt-5 flex items-center gap-4">
     <div class="flex-grow">
-      <app-input
-        [label]="additionalFields[0].label"
-        [paragraph]="additionalFields[0].paragraph"
-        [type]="additionalFields[0].type"
-        [control]="getFormControl(additionalFields[0].name)"
-        [errorMessage]="additionalFields[0].errorMessage || ''"
-        [name]="additionalFields[0].name"
-        (blur)="getFormControl(additionalFields[0].name).markAsTouched()">
-      </app-input>
+      <app-image-upload
+        [config]="avatarUploadConfig"
+        [initialImageUrl]="userPhotoURL()"
+        [formControl]="getFormControl('avatarPictureURL')"
+        [allowRemove]="true"
+        (imageSelected)="onAvatarSelected($event)"
+        (imageRemoved)="onAvatarRemoved()">
+      </app-image-upload>
     </div>
-    <div class="ml-4 flex flex-col items-center">
+
+    <div class="flex flex-col items-center">
       <img [src]="userPhotoURL()"
            alt="Profile Picture"
            class="w-20 h-20 rounded-md border-3 border-white shadow-md object-cover"
-           (error)="handlePictureError($event)" referrerpolicy="no-referrer" >
+           (error)="handlePictureError($event)"
+           referrerpolicy="no-referrer">
+      <p class="text-xs text-gray-500 mt-1">Current</p>
     </div>
   </div>
 
@@ -48,13 +50,13 @@
 
   <div class="mt-3">
     <app-input
-      [label]="additionalFields[1].label"
-      [paragraph]="additionalFields[1].paragraph"
-      [type]="additionalFields[1].type"
-      [control]="getFormControl(additionalFields[1].name)"
-      [errorMessage]="additionalFields[1].errorMessage || ''"
-      [name]="additionalFields[1].name"
-      (blur)="getFormControl(additionalFields[1].name).markAsTouched()">
+      [label]="additionalFields[0].label"
+      [paragraph]="additionalFields[0].paragraph"
+      [type]="additionalFields[0].type"
+      [control]="getFormControl(additionalFields[0].name)"
+      [errorMessage]="additionalFields[0].errorMessage || ''"
+      [name]="additionalFields[0].name"
+      (blur)="getFormControl(additionalFields[0].name).markAsTouched()">
       <span labelSuffix class="font-normal text-gray-500 text-xs"> (not coming from Conference Hall)</span>
     </app-input>
   </div>

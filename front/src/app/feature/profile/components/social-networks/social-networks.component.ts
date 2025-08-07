@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormControl } from '@angular/forms';
 import {InputComponent} from '../../../../shared/input/input.component';
-import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
 import {ProfileService} from '../../services/profile.service';
 
@@ -11,7 +10,6 @@ import {ProfileService} from '../../services/profile.service';
   standalone: true,
   imports: [
     InputComponent,
-    ButtonWithIconComponent
   ],
   templateUrl: './social-networks.component.html',
   styleUrl: './social-networks.component.scss'

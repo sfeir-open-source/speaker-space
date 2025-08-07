@@ -25,31 +25,6 @@ export class UserContextService {
     );
   }
 
-  getSessionsForCurrentUser(eventId: string): Observable<SessionImportData[]> {
-    return this.isUserSpeakerOfEvent(eventId).pipe(
-      switchMap(isSpeaker => {
-        if (isSpeaker) {
-          return this.http.get<SessionImportData[]>(
-            `${environment.apiUrl}/speaker-sessions/event/${eventId}`,
-            { withCredentials: true }
-          );
-        } else {
-          return this.http.get<SessionImportData[]>(
-            `${environment.apiUrl}/session/event/${eventId}`,
-            { withCredentials: true }
-          );
-        }
-      }),
-      map(sessions => {
-        return sessions.map(session => this.convertSessionDates(session));
-      }),
-      catchError(error => {
-        console.error('Error loading sessions for current user:', error);
-        return of([]);
-      })
-    );
-  }
-
   getMyProfileForEvent(eventId: string): Observable<Speaker> {
     return this.http.get<Speaker>(
       `${environment.apiUrl}/speaker-sessions/event/${eventId}/my-profile`,
@@ -67,11 +42,16 @@ export class UserContextService {
       `${environment.apiUrl}/speaker-sessions/event/${eventId}/session/${sessionId}`,
       { withCredentials: true }
     ).pipe(
-      map(session => this.convertSessionDates(session)),
-      catchError(error => {
-        console.error('Error loading speaker session:', error);
-        throw error;
-      })
+      map(sessionData => this.convertSessionDates(sessionData))
+    );
+  }
+
+  getSessionsForCurrentUser(eventId: string): Observable<SessionImportData[]> {
+    return this.http.get<SessionImportData[]>(
+      `${environment.apiUrl}/speaker-sessions/event/${eventId}`,
+      { withCredentials: true }
+    ).pipe(
+      map(sessions => sessions.map(session => this.convertSessionDates(session)))
     );
   }
 

@@ -20,6 +20,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
   NavbarSpeakerSectionComponent
 } from '../../../../speaker-section/components/navbar-speaker-section/navbar-speaker-section.component';
+import {SessionFormatService} from '../../../services/sessions/session-format.service';
 
 @Component({
   selector: 'app-session-list-unified',
@@ -53,6 +54,7 @@ export class SessionListUnifiedComponent extends BaseListComponent<SessionImport
   private readonly sessionService = inject(SessionService);
   private readonly userRoleService = inject(UserRoleService);
   private readonly userContextService = inject(UserContextService);
+  private readonly sessionFormatService = inject(SessionFormatService);
 
   get totalSessions(): number { return this.totalItems; }
   get isLoadingSessions(): boolean { return this.isLoadingItems; }
@@ -178,6 +180,17 @@ export class SessionListUnifiedComponent extends BaseListComponent<SessionImport
   formatSpeakers(speakers: Speaker[] | undefined): string {
     if (!speakers || speakers.length === 0) return 'No speaker';
     return speakers.map(speaker => speaker.name).filter(name => name).join(', ');
+  }
+
+  formatSessionScheduleInfo(session: SessionImportData): string {
+    return this.sessionFormatService.formatCompleteScheduleInfo(
+      session.start,
+      session.track,
+      {
+        includeHtml: true,
+        trackPrefix: 'in room'
+      }
+    );
   }
 
   openFilterPopup(): void {

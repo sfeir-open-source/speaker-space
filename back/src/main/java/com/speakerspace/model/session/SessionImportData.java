@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -36,4 +37,7 @@ public class SessionReviewImportData {
     private List<String> languages = new ArrayList<>();
     private List<Speaker> speakers = new ArrayList<>();
     private Reviews reviews;
+    private Date start;
+    private Date end;
+    private String track;
 }

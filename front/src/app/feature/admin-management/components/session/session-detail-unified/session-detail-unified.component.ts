@@ -23,6 +23,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {
   NavbarSpeakerSectionComponent
 } from '../../../../speaker-section/components/navbar-speaker-section/navbar-speaker-section.component';
+import {SessionFormatService} from '../../../services/sessions/session-format.service';
 
 @Component({
   selector: 'app-session-detail-unified',
@@ -70,6 +71,7 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
   private readonly userContextService = inject(UserContextService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly sessionFormatService = inject(SessionFormatService);
 
   constructor(
     route: ActivatedRoute,
@@ -217,7 +219,7 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
   getStartTimeValue(): string {
     if (this.session?.start) {
       try {
-        return this.formatTimeForInput(new Date(this.session.start));
+        return this.sessionFormatService.formatTimeForInput(new Date(this.session.start));
       } catch (error) {
         console.warn('Error formatting start time:', error);
         return '';
@@ -229,7 +231,7 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
   getStartDateValue(): string {
     if (this.session?.start) {
       try {
-        return this.formatDateForInput(new Date(this.session.start));
+        return this.sessionFormatService.formatDateForInput(new Date(this.session.start));
       } catch (error) {
         console.warn('Error formatting start date:', error);
         return '';
@@ -238,18 +240,29 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
     return '';
   }
 
-  public formatDateForInput(date: Date): string {
-    if (!date || isNaN(date.getTime())) {
-      return '';
-    }
-    return date.toISOString().split('T')[0];
+  hasScheduleInfo(): boolean {
+    return !!(this.session?.start || this.session?.track);
   }
 
-  public formatTimeForInput(date: Date): string {
-    if (!date || isNaN(date.getTime())) {
-      return '';
-    }
-    return date.toTimeString().slice(0, 5);
+  formatCompleteSessionInfo(): string {
+    if (!this.session) return '';
+
+    return this.sessionFormatService.formatCompleteScheduleInfo(
+      this.session.start,
+      this.session.track,
+      {
+        includeHtml: true,
+        trackPrefix: 'in room'
+      }
+    );
+  }
+
+  formatLevel(level: string): string {
+    return this.sessionFormatService.formatLevel(level);
+  }
+
+  formatLanguage(languageCode: string): string {
+    return this.sessionFormatService.formatLanguage(languageCode);
   }
 
   onDurationSelect(duration: number): void {
@@ -315,79 +328,6 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
     this.scheduleError = null;
     if (this.scheduleForm) {
       this.scheduleForm.reset();
-    }
-  }
-
-  hasScheduleInfo(): boolean {
-    return !!(this.session?.start || this.session?.track);
-  }
-
-  formatCompleteSessionInfo(): string {
-    if (!this.session) return '';
-    const parts: string[] = [];
-
-    if (this.session.start) {
-      try {
-        const options: Intl.DateTimeFormatOptions = {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        };
-
-        const dateStr: string = this.session.start.toLocaleDateString('en-US', options);
-        const timeStr: string = this.session.start.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        });
-
-        parts.push(`<strong class="font-medium"> ${dateStr} </strong> at <strong class="font-medium">${timeStr}</strong>`);
-      } catch (error) {
-        console.error('Error formatting date:', error);
-      }
-    }
-
-    if (this.session.track) {
-      parts.push(`in room <strong class="font-medium">${this.getTrackName()}</strong>`);
-    }
-
-    return parts.join(' ');
-  }
-
-  getTrackName(): string {
-    if (!this.session?.track) return '';
-
-    if (this.session.track.includes(' ')) {
-      return this.session.track;
-    }
-
-    return this.session.track
-      .replace(/_/g, ' ')
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  }
-
-  formatLevel(level: string): string {
-    if (!level) return '';
-    return level.charAt(0).toUpperCase() + level.slice(1).toLowerCase();
-  }
-
-  formatLanguage(languageCode: string): string {
-    if (!languageCode) return '';
-
-    try {
-      const displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
-      const languageName: string | undefined = displayNames.of(languageCode.toLowerCase());
-
-      return languageName ?
-        languageName.charAt(0).toUpperCase() + languageName.slice(1) :
-        languageCode.toUpperCase();
-
-    } catch (error) {
-      console.warn(`Unable to format language code: ${languageCode}`, error);
-      return languageCode.toUpperCase();
     }
   }
 
