@@ -17,7 +17,7 @@ import {
 import {SpeakerService} from '../../../services/speaker/speaker.service';
 import {SpeakerCreateRequest, SpeakerImportData} from '../../../type/speaker/speaker-create';
 import {HttpErrorResponse} from '@angular/common/http';
-import {ModalComponent} from '../../modal/modal.component';
+import {ModalPopupCreateComponent} from '../../modal/modal-popup-create.component';
 import {Observable} from 'rxjs';
 import {FormModalService} from '../../services/form-modal.service';
 import {SpeakerFormFieldsComponent} from '../fields/speaker-form-fields/speaker-form-fields.component';
@@ -27,8 +27,8 @@ import {SpeakerFormFieldsComponent} from '../fields/speaker-form-fields/speaker-
   imports: [
     ReactiveFormsModule,
     FormsModule,
-    ModalComponent,
     SpeakerFormFieldsComponent,
+    ModalPopupCreateComponent,
   ],
   templateUrl: './speaker-create-popup.component.html',
   styleUrl: './speaker-create-popup.component.scss'

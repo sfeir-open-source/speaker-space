@@ -9,9 +9,6 @@ import {
   ValidationErrors,
   Validators
 } from '@angular/forms';
-import {
-  NavbarSpeakerSectionComponent
-} from '../../../../speaker-session/components/navbar-speaker-section/navbar-speaker-section.component';
 import {NavbarSessionPageComponent} from '../navbar-session-page/navbar-session-page.component';
 import {BaseDetailComponent} from '../../class/base-detail-component';
 import {Category, Format, SessionImportData} from '../../../type/session/session';
@@ -23,6 +20,9 @@ import {EventService} from '../../../services/event/event.service';
 import {finalize, of} from 'rxjs';
 import {SessionScheduleUpdate} from '../../../type/session/schedule-json-data';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {
+  NavbarSpeakerSectionComponent
+} from '../../../../speaker-section/components/navbar-speaker-section/navbar-speaker-section.component';
 
 @Component({
   selector: 'app-session-detail-unified',

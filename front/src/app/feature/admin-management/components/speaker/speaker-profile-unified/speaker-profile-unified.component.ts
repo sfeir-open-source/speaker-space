@@ -1,7 +1,4 @@
 import {Component, inject, Input} from '@angular/core';
-import {
-  NavbarSpeakerSectionComponent
-} from '../../../../speaker-session/components/navbar-speaker-section/navbar-speaker-section.component';
 import {NavbarSpeakerPageComponent} from '../navbar-speaker-page/navbar-speaker-page.component';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Speaker} from '../../../type/session/session';
@@ -12,6 +9,9 @@ import {SocialLinkService} from '../../../../../core/services/social-link-servic
 import {ActivatedRoute} from '@angular/router';
 import {EventService} from '../../../services/event/event.service';
 import {SocialLinkInfo} from '../../../../../core/types/social-link-info';
+import {
+  NavbarSpeakerSectionComponent
+} from '../../../../speaker-section/components/navbar-speaker-section/navbar-speaker-section.component';
 
 @Component({
   selector: 'app-speaker-profile-unified',

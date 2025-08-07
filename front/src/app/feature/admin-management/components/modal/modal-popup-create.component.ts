@@ -3,15 +3,15 @@ import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.co
 import {ButtonGreenActionsComponent} from '../../../../shared/button-green-actions/button-green-actions.component';
 
 @Component({
-  selector: 'app-modal',
+  selector: 'app-modal-popup-create',
   imports: [
     ButtonGreyComponent,
     ButtonGreenActionsComponent
   ],
-  templateUrl: './modal.component.html',
-  styleUrl: './modal.component.scss'
+  templateUrl: './modal-popup-create.component.html',
+  styleUrl: './modal-popup-create.component.scss'
 })
-export class ModalComponent {
+export class ModalPopupCreateComponent {
   @Input() title!: string;
   @Input() submitText!: string;
   @Input() submittingText!: string;

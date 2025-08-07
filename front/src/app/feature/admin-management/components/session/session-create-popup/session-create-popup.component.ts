@@ -5,7 +5,7 @@ import { finalize } from 'rxjs/operators';
 import {SessionService} from '../../../services/sessions/session.service';
 import {SpeakerService} from '../../../services/speaker/speaker.service';
 import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
-import {ModalComponent} from '../../modal/modal.component';
+import {ModalPopupCreateComponent} from '../../modal/modal-popup-create.component';
 import {FormModalService} from '../../services/form-modal.service';
 import {SessionCreateRequest} from '../../../type/session/session-create';
 import {Observable} from 'rxjs';
@@ -16,7 +16,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-session-create-popup',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, ModalComponent, SessionFormFieldsComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, ModalPopupCreateComponent, SessionFormFieldsComponent],
   templateUrl: './session-create-popup.component.html',
   styleUrl: './session-create-popup.component.scss'
 })

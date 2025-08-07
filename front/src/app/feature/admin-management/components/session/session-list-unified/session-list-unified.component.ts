@@ -1,9 +1,6 @@
 import {Component, inject, Input} from '@angular/core';
 import {SessionCreatePopupComponent} from '../session-create-popup/session-create-popup.component';
 import {NavbarEventPageComponent} from '../../event/navbar-event-page/navbar-event-page.component';
-import {
-  NavbarSpeakerSectionComponent
-} from '../../../../speaker-session/components/navbar-speaker-section/navbar-speaker-section.component';
 import {FormsModule} from '@angular/forms';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
@@ -20,6 +17,9 @@ import {SpeakerService} from '../../../services/speaker/speaker.service';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {finalize} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {
+  NavbarSpeakerSectionComponent
+} from '../../../../speaker-section/components/navbar-speaker-section/navbar-speaker-section.component';
 
 @Component({
   selector: 'app-session-list-unified',
