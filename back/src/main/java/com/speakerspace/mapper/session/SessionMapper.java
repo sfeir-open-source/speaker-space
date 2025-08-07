@@ -91,10 +91,10 @@ public class SessionMapper {
         return session;
     }
 
-    public SessionReviewImportData toSessionImportData(Session session) {
+    public SessionImportData toSessionImportData(Session session) {
         if (session == null) return null;
 
-        SessionReviewImportData importData = new SessionReviewImportData();
+        SessionImportData importData = new SessionImportData();
         importData.setId(session.getId());
         importData.setTitle(session.getTitle());
         importData.setAbstractText(session.getAbstractText());
@@ -103,7 +103,9 @@ public class SessionMapper {
         importData.setLevel(session.getLevel());
         importData.setReferences(session.getReferences());
         importData.setEventId(session.getEventId());
-
+        importData.setStart(session.getStart());
+        importData.setEnd(session.getEnd());
+        importData.setTrack(session.getTrack());
         importData.setFormats(session.getFormats() != null ? session.getFormats() : new ArrayList<>());
         importData.setCategories(session.getCategories() != null ? session.getCategories() : new ArrayList<>());
         importData.setTags(session.getTags() != null ? session.getTags() : new ArrayList<>());

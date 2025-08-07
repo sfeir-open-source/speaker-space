@@ -3,7 +3,7 @@ package com.speakerspace.controller;
 import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.EventAuthorizationHelper;
-import com.speakerspace.model.session.SessionReviewImportData;
+import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.service.SpeakerService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,7 +29,7 @@ public class SpeakerSessionController {
     private final EventAuthorizationHelper authorizationHelper;
 
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<SessionReviewImportData>> getMySessions(
+    public ResponseEntity<List<SessionImportData>> getMySessions(
             @PathVariable String eventId,
             HttpServletRequest request,
             Authentication authentication) {
@@ -37,9 +37,9 @@ public class SpeakerSessionController {
         return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
             String userEmail = extractEmailFromAuthentication(authentication);
 
-            List<SessionReviewImportData> sessions = speakerService.getSessionsByEventAndSpeakerEmail(eventId, userEmail);
+            List<SessionImportData> sessions = speakerService.getSessionsByEventAndSpeakerEmail(eventId, userEmail);
 
-            List<SessionReviewImportData> mutableSessions = new ArrayList<>(sessions);
+            List<SessionImportData> mutableSessions = new ArrayList<>(sessions);
             mutableSessions.sort(Comparator.comparing(s ->
                     s.getTitle() != null ? s.getTitle().toLowerCase() : ""
             ));
@@ -48,7 +48,7 @@ public class SpeakerSessionController {
     }
 
     @GetMapping("/event/{eventId}/session/{sessionId}")
-    public ResponseEntity<SessionReviewImportData> getMySessionById(
+    public ResponseEntity<SessionImportData> getMySessionById(
             @PathVariable String eventId,
             @PathVariable String sessionId,
             HttpServletRequest request,
@@ -57,7 +57,7 @@ public class SpeakerSessionController {
         return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
             String userEmail = extractEmailFromAuthentication(authentication);
 
-            SessionReviewImportData session = speakerService.getSessionByIdForSpeaker(eventId, sessionId, userEmail);
+            SessionImportData session = speakerService.getSessionByIdForSpeaker(eventId, sessionId, userEmail);
 
             if (session == null) {
                 throw new EntityNotFoundException("Session not found or not accessible");

@@ -4,7 +4,7 @@ import com.speakerspace.dto.session.*;
 import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.EventAuthorizationHelper;
 import com.speakerspace.model.session.Session;
-import com.speakerspace.model.session.SessionReviewImportData;
+import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.service.SessionService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,14 +63,14 @@ public class SessionController {
     }
 
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<SessionReviewImportData>> getSessionsByEventId(
+    public ResponseEntity<List<SessionImportData>> getSessionsByEventId(
             @PathVariable String eventId,
             HttpServletRequest request,
             Authentication authentication) {
 
         return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
-            List<SessionReviewImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
-            List<SessionReviewImportData> mutableSessions = new ArrayList<>(sessions);
+            List<SessionImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
+            List<SessionImportData> mutableSessions = new ArrayList<>(sessions);
             mutableSessions.sort(Comparator.comparing(s ->
                     s.getTitle() != null ? s.getTitle().toLowerCase() : ""
             ));
@@ -79,7 +79,7 @@ public class SessionController {
     }
 
     @GetMapping("/event/{eventId}/session/{sessionId}/review")
-    public ResponseEntity<SessionReviewImportData> getSessionReviewById(
+    public ResponseEntity<SessionImportData> getSessionReviewById(
             @PathVariable String eventId,
             @PathVariable String sessionId,
             HttpServletRequest request,

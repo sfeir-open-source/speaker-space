@@ -223,7 +223,7 @@ public class SessionService {
         return dateTime;
     }
 
-    public List<SessionReviewImportData> getSessionsReviewAsImportData(String eventId) {
+    public List<SessionImportData> getSessionsReviewAsImportData(String eventId) {
         List<Session> sessions = sessionRepository.findByEventId(eventId);
 
         return sessions.stream()
@@ -232,7 +232,7 @@ public class SessionService {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    public SessionReviewImportData getSessionById(String eventId, String sessionId) {
+    public SessionImportData getSessionById(String eventId, String sessionId) {
         Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
         return session != null ? sessionMapper.toSessionImportData(session) : null;
     }
@@ -270,7 +270,7 @@ public class SessionService {
 
         List<SpeakerWithSessionsDTO> result = speakers.stream()
                 .map(speaker -> {
-                    List<SessionReviewImportData> speakerSessions = sessions.stream()
+                    List<SessionImportData> speakerSessions = sessions.stream()
                             .filter(session -> session.getSpeakerIds() != null &&
                                     session.getSpeakerIds().contains(speaker.getId()))
                             .map(sessionMapper::toSessionImportData)

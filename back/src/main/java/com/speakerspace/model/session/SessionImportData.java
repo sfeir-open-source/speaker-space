@@ -16,7 +16,7 @@ import java.util.List;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @Document
-public class SessionReviewImportData {
+public class SessionImportData {
 
     @NotBlank(message = "ID is required")
     @EqualsAndHashCode.Include

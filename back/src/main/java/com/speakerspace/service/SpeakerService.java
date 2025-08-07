@@ -5,7 +5,7 @@ import com.speakerspace.dto.session.*;
 import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.session.Session;
-import com.speakerspace.model.session.SessionReviewImportData;
+import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
@@ -114,7 +114,7 @@ public class SpeakerService {
         return merged;
     }
 
-    public List<SessionReviewImportData> getSessionsByEventAndSpeakerEmail(String eventId, String speakerEmail) {
+    public List<SessionImportData> getSessionsByEventAndSpeakerEmail(String eventId, String speakerEmail) {
         List<Speaker> speakers = speakerRepository.findByEmailAndEventId(speakerEmail, eventId);
 
         if (speakers.isEmpty()) {
@@ -131,7 +131,7 @@ public class SpeakerService {
                 .collect(Collectors.toList());
     }
 
-    public SessionReviewImportData getSessionByIdForSpeaker(String eventId, String sessionId, String speakerEmail) {
+    public SessionImportData getSessionByIdForSpeaker(String eventId, String sessionId, String speakerEmail) {
         List<Speaker> speakers = speakerRepository.findByEmailAndEventId(speakerEmail, eventId);
 
         if (speakers.isEmpty()) {
