@@ -54,12 +54,14 @@
     </app-input>
   </div>
 
-  <app-image-upload
-    [config]="speakerPhotoConfig"
-    [allowRemove]="true"
-    (imageSelected)="onSpeakerPhotoSelected($event)"
-    (imageRemoved)="onSpeakerPhotoRemoved()">
-  </app-image-upload>
+  <app-input
+    name="picture"
+    label="Picture URL"
+    type="url"
+    [control]="form.get('picture')!"
+    placeholder="https://example.com/photo.jpg"
+    errorMessage="Please enter a valid URL">
+  </app-input>
 
   <app-input
     name="references"
