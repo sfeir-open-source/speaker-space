@@ -1,9 +1,10 @@
+import {DestroyRef, inject, Injectable, OnDestroy, OnInit} from '@angular/core';
+import {EventDTO} from '../../type/event/eventDTO';
 import {Subject, Subscription} from 'rxjs';
 import {ActivatedRoute} from '@angular/router';
 import {EventService} from '../../services/event/event.service';
-import {OnDestroy, OnInit, Injectable, DestroyRef, inject} from '@angular/core';
-import {EventDTO} from '../../type/event/eventDTO';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+
 
 @Injectable()
 export abstract class BaseDetailComponent implements OnInit, OnDestroy {
@@ -18,7 +19,7 @@ export abstract class BaseDetailComponent implements OnInit, OnDestroy {
   protected destroy$ = new Subject<void>();
   protected routeSubscription?: Subscription;
 
-  protected readonly _destroyRef = inject(DestroyRef);
+  protected readonly destroyRef = inject(DestroyRef);
 
   constructor(
     protected route: ActivatedRoute,
@@ -51,7 +52,9 @@ export abstract class BaseDetailComponent implements OnInit, OnDestroy {
   protected loadEventData(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.eventService.getEventById(this.eventId)
-        .pipe(takeUntilDestroyed(this._destroyRef),)
+        .pipe(
+          takeUntilDestroyed()
+        )
         .subscribe({
           next: (event) => {
             this.event = event;

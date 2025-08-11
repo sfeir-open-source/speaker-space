@@ -56,11 +56,11 @@ class UserServiceTest {
     void setUp() {
         testUser = new User();
         testUser.setUid(TEST_UID);
-        testUser.setDisplayName("Test User");
+        testUser.setName("Test User");
         testUser.setEmail("test@example.com");
         testUserDTO = UserDTO.builder()
                 .uid(TEST_UID)
-                .displayName("Test User")
+                .name("Test User")
                 .email("test@example.com")
                 .build();
     }
@@ -85,7 +85,7 @@ class UserServiceTest {
             // Then
             assertNotNull(savedUserDTO);
             assertEquals(TEST_UID, savedUserDTO.uid());
-            assertEquals("Test User", savedUserDTO.displayName());
+            assertEquals("Test User", savedUserDTO.name());
             assertEquals("test@example.com", savedUserDTO.email());
 
             verify(userMapper).convertToEntity(testUserDTO);
@@ -104,7 +104,7 @@ class UserServiceTest {
             // Given
             User existingUser = new User();
             existingUser.setUid(TEST_UID);
-            existingUser.setDisplayName("Existing User");
+            existingUser.setName("Existing User");
             existingUser.setEmail("existing@example.com");
             existingUser.setCompany("Test Company");
 
@@ -214,15 +214,15 @@ class UserServiceTest {
             // Given
             User existingUser = new User();
             existingUser.setUid(TEST_UID);
-            existingUser.setDisplayName("Existing User");
+            existingUser.setName("Existing User");
 
             User updatedUser = new User();
             updatedUser.setUid(TEST_UID);
-            updatedUser.setDisplayName("Updated User");
+            updatedUser.setName("Updated User");
 
             UserDTO updatedUserDTO = UserDTO.builder()
                     .uid(TEST_UID)
-                    .displayName("Updated User")
+                    .name("Updated User")
                     .build();
 
             mockedFirestoreClient.when(FirestoreClient::getFirestore).thenReturn(firestore);
@@ -244,7 +244,7 @@ class UserServiceTest {
 
             // Then
             assertNotNull(result);
-            assertEquals("Updated User", result.displayName());
+            assertEquals("Updated User", result.name());
 
             verify(userMapper).updateEntityFromDTO(testUserDTO, existingUser);
             verify(userMapper).convertToDTO(updatedUser);

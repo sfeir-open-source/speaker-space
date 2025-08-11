@@ -11,10 +11,10 @@ import {User} from '../../../core/models/user.model';
   providedIn: 'root'
 })
 export class ProfileService {
-  private fb : FormBuilder = inject(FormBuilder);
-  private http : HttpClient = inject(HttpClient);
-  private userState : UserStateService = inject(UserStateService);
-  private authService : AuthService = inject(AuthService);
+  private fb = inject(FormBuilder);
+  private http = inject(HttpClient);
+  private userState = inject(UserStateService);
+  private authService = inject(AuthService);
 
   private profileForm: FormGroup;
 
@@ -84,7 +84,7 @@ export class ProfileService {
     return this.profileForm;
   }
 
-  private async fetchUserData(uid: string): Promise<void> {
+  async fetchUserData(uid: string): Promise<void> {
     try {
       const userData: User = await firstValueFrom(
         this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
@@ -110,6 +110,7 @@ export class ProfileService {
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
+      throw error;
     }
   }
 

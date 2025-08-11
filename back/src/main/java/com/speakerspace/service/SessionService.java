@@ -27,7 +27,9 @@ public class SessionService {
     private final SessionImportMapper sessionImportMapper;
     private final SessionScheduleMapper sessionScheduleMapper;
     private final SessionCreateMapper sessionCreateMapper;
-    private final Clock clock;
+
+    @Autowired
+    private UserSpeakerLinkService userSpeakerLinkService;
 
     @Autowired
     private EventService eventService;
@@ -63,6 +65,13 @@ public class SessionService {
                 session.setSpeakers(processedSpeakers);
 
                 sessionRepository.saveSession(session);
+
+                if (session.getSpeakers() != null) {
+                    for (Speaker speaker : session.getSpeakers()) {
+                        userSpeakerLinkService.linkSpeakerToUser(speaker, eventId);
+                    }
+                }
+
                 successfulImports.add(importData.id());
                 log.info("Successfully imported session {} with app ID {}", importData.id(), appId);
 
@@ -72,6 +81,7 @@ public class SessionService {
                 errors.add("Failed to import session " + importData.id() + ": " + e.getMessage());
             }
         }
+        userSpeakerLinkService.updateUserSessionLinks(eventId);
 
         return ImportResultDTO.builder()
                 .successfulImports(successfulImports)
@@ -108,11 +118,21 @@ public class SessionService {
                 if (existingSession != null) {
                     sessionScheduleMapper.enrichExistingSessionWithScheduleData(existingSession, scheduleData);
                     sessionRepository.saveSession(existingSession);
+                    if (existingSession.getSpeakers() != null) {
+                        for (Speaker speaker : existingSession.getSpeakers()) {
+                            userSpeakerLinkService.linkSpeakerToUser(speaker, eventId);
+                        }
+                    }
                     log.info("Successfully updated session with ConferenceHall ID {} (app ID: {})",
                             conferenceHallId, existingSession.getId());
                 } else {
                     Session newSession = sessionScheduleMapper.createSessionFromScheduleData(scheduleData, eventId);
                     sessionRepository.saveSession(newSession);
+                    if (newSession.getSpeakers() != null) {
+                        for (Speaker speaker : newSession.getSpeakers()) {
+                            userSpeakerLinkService.linkSpeakerToUser(speaker, eventId);
+                        }
+                    }
                     log.info("Successfully created new session with ConferenceHall ID {} (app ID: {})",
                             conferenceHallId, newSession.getId());
                 }
@@ -126,6 +146,7 @@ public class SessionService {
                 errors.add("Failed to import schedule for session " + finalSessionId + ": " + e.getMessage());
             }
         }
+        userSpeakerLinkService.updateUserSessionLinks(eventId);
 
         return ImportResultDTO.builder()
                 .successfulImports(successfulImports)

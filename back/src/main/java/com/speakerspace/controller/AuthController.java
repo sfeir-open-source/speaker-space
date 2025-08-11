@@ -8,23 +8,28 @@ import com.speakerspace.config.FirebaseTokenRequest;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.exception.*;
 import com.speakerspace.service.UserService;
+import com.speakerspace.service.UserSpeakerLinkService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
+import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
+@Slf4j
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final UserService userService;
+    private final UserSpeakerLinkService userSpeakerLinkService;
     private final CookieService cookieService;
     private final FirebaseAuth firebaseAuth;
 
@@ -36,6 +41,7 @@ public class AuthController {
 
         FirebaseToken decodedToken = verifyFirebaseToken(request.getIdToken());
         String uid = decodedToken.getUid();
+        String email = decodedToken.getEmail();
 
         cookieService.setAuthCookie(response, request.getIdToken());
 
@@ -43,6 +49,10 @@ public class AuthController {
 
         if (existingUser == null) {
             existingUser = createNewUser(decodedToken);
+
+            if (email != null) {
+                linkExistingSpeakersToNewUser(uid, email);
+            }
         } else {
             existingUser = updateExistingUserIfNeeded(existingUser, decodedToken);
         }
@@ -58,7 +68,7 @@ public class AuthController {
 
     @PostMapping
     public ResponseEntity<UserDTO> createUser(@RequestBody UserDTO userDTO) {
-        logger.info("Creating/updating user: {}", userDTO.uid());
+        log.info("Creating/updating user: {}", userDTO.uid());
         UserDTO savedUser = userService.saveUser(userDTO);
         return ResponseEntity.ok(savedUser);
     }
@@ -101,7 +111,7 @@ public class AuthController {
         try {
             return firebaseAuth.verifyIdToken(idToken);
         } catch (FirebaseAuthException e) {
-            logger.error("Firebase token verification failed: {}", e.getMessage());
+            log.error("Firebase token verification failed: {}", e.getMessage());
             throw new FirebaseAuthenticationException("Invalid token");
         }
     }
@@ -110,8 +120,12 @@ public class AuthController {
         UserDTO userDTO = UserDTO.builder()
                 .uid(decodedToken.getUid())
                 .email(decodedToken.getEmail())
-                .displayName(decodedToken.getName())
+                .name(decodedToken.getName())
                 .photoURL(decodedToken.getPicture())
+                .socialLinks(new ArrayList<>())
+                .speakerIds(new ArrayList<>())
+                .eventIds(new ArrayList<>())
+                .sessionIds(new ArrayList<>())
                 .build();
 
         UserDTO createdUser = userService.saveUser(userDTO);
@@ -126,26 +140,25 @@ public class AuthController {
         UserDTO.UserDTOBuilder builder = UserDTO.builder()
                 .uid(existingUser.uid())
                 .email(existingUser.email())
-                .displayName(existingUser.displayName())
+                .name(existingUser.name())
                 .photoURL(existingUser.photoURL())
                 .company(existingUser.company())
-                .city(existingUser.city())
+                .location(existingUser.location())
                 .phoneNumber(existingUser.phoneNumber())
-                .githubLink(existingUser.githubLink())
-                .twitterLink(existingUser.twitterLink())
-                .blueSkyLink(existingUser.blueSkyLink())
-                .linkedInLink(existingUser.linkedInLink())
-                .biography(existingUser.biography())
-                .otherLink(existingUser.otherLink());
+                .bio(existingUser.bio())
+                .socialLinks(existingUser.socialLinks())
+                .speakerIds(existingUser.speakerIds())
+                .eventIds(existingUser.eventIds())
+                .sessionIds(existingUser.sessionIds());
 
         if (existingUser.email() == null && decodedToken.getEmail() != null) {
             builder.email(decodedToken.getEmail());
             needsUpdate = true;
         }
 
-        if ((existingUser.displayName() == null || existingUser.displayName().isEmpty())
+        if ((existingUser.name() == null || existingUser.name().isEmpty())
                 && decodedToken.getName() != null) {
-            builder.displayName(decodedToken.getName());
+            builder.name(decodedToken.getName());
             needsUpdate = true;
         }
 
@@ -161,6 +174,20 @@ public class AuthController {
         }
 
         return existingUser;
+    }
+
+    private void linkExistingSpeakersToNewUser(String uid, String email) {
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    userSpeakerLinkService.linkExistingSpeakersToUser(uid, email);
+                } catch (Exception e) {
+                    log.error("Failed to link existing speakers to new user {}: {}", uid, e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            log.warn("Could not initiate speaker linking for user {}: {}", uid, e.getMessage());
+        }
     }
 
     private String authenticateAndAuthorize(HttpServletRequest request, String targetUid) {

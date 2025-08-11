@@ -5,52 +5,47 @@ import {environment} from '../../../../environments/environment.development';
 import {catchError, map} from 'rxjs/operators';
 import {SessionImportData, Speaker} from '../../../feature/admin-management/type/session/session';
 import {convertToDate} from '../../../feature/admin-management/utils/date.utils';
+import {SpeakerProfile} from '../../models/user.model';
+import {UserSpeakerService} from './user-speaker.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserContextService {
-
   constructor(
     private http: HttpClient,
+    private userSpeakerService: UserSpeakerService
   ) {}
 
   isUserSpeakerOfEvent(eventId: string): Observable<boolean> {
-    return this.http.get<{isSpeaker: boolean}>(
-      `${environment.apiUrl}/event/${eventId}/is-speaker`,
-      { withCredentials: true }
-    ).pipe(
-      map(response => response.isSpeaker),
-      catchError(() => of(false))
-    );
+    return this.userSpeakerService.isSpeakerForEvent(eventId);
   }
 
-  getMyProfileForEvent(eventId: string): Observable<Speaker> {
-    return this.http.get<Speaker>(
-      `${environment.apiUrl}/speaker-sessions/event/${eventId}/my-profile`,
-      { withCredentials: true }
-    ).pipe(
+  getMyProfileForEvent(eventId: string): Observable<SpeakerProfile | null> {
+    return this.userSpeakerService.getProfile(eventId).pipe(
+      map(profile => profile.speakers.length > 0 ? profile.speakers[0] : null),
       catchError(error => {
         console.error('Error loading speaker profile:', error);
-        throw error;
+        return of(null);
       })
     );
   }
 
-  getMySessionById(eventId: string, sessionId: string): Observable<SessionImportData> {
-    return this.http.get<SessionImportData>(
-      `${environment.apiUrl}/speaker-sessions/event/${eventId}/session/${sessionId}`,
-      { withCredentials: true }
-    ).pipe(
-      map(sessionData => this.convertSessionDates(sessionData))
+  getMySessionById(eventId: string, sessionId: string): Observable<SessionImportData | null> {
+    return this.userSpeakerService.getProfile(eventId).pipe(
+      map(profile => {
+        const session = profile.sessions.find(s => s.id === sessionId);
+        return session ? this.convertSessionDates(session) : null;
+      }),
+      catchError(error => {
+        console.error('Error loading session:', error);
+        return of(null);
+      })
     );
   }
 
   getSessionsForCurrentUser(eventId: string): Observable<SessionImportData[]> {
-    return this.http.get<SessionImportData[]>(
-      `${environment.apiUrl}/speaker-sessions/event/${eventId}`,
-      { withCredentials: true }
-    ).pipe(
+    return this.userSpeakerService.getUserSessions(eventId).pipe(
       map(sessions => sessions.map(session => this.convertSessionDates(session)))
     );
   }

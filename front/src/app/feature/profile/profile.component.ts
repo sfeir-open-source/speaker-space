@@ -1,7 +1,7 @@
 import {Component, ElementRef, inject, OnInit, AfterViewInit, signal, OnDestroy, DestroyRef} from '@angular/core';
 import { ReactiveFormsModule} from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import {Subject, debounceTime, distinctUntilChanged, firstValueFrom} from 'rxjs';
 import { ProfileSidebarComponent } from './components/profile-sidebar/profile-sidebar.component';
 import { PersonalInfoComponent } from './components/personal-info/personal-info.component';
 import { BiographyComponent } from './components/biography/biography.component';
@@ -14,6 +14,7 @@ import {User} from '../../core/models/user.model';
 import {SaveIndicatorComponent} from '../../core/save-indicator/save-indicator.component';
 import {SaveStatus} from '../../core/types/save-status.types';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {UserSpeakerService} from '../../core/services/user-services/user-speaker.service';
 
 @Component({
   selector: 'app-profile',
@@ -32,15 +33,17 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
   styleUrl: './profile.component.scss'
 })
 export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
-  private profileService :ProfileService = inject(ProfileService);
-  private elementRef : ElementRef= inject(ElementRef);
-  private snackBar : MatSnackBar = inject(MatSnackBar);
-  private userState : UserStateService = inject(UserStateService);
-  private destroy$ : Subject<void> = new Subject<void>();
+  private profileService = inject(ProfileService);
+  private userSpeakerService = inject(UserSpeakerService);
+  private elementRef = inject(ElementRef);
+  private snackBar = inject(MatSnackBar);
+  protected userState = inject(UserStateService);
+  private destroy$ = new Subject<void>();
   private readonly _destroyRef = inject(DestroyRef);
 
   activeSection = signal('personal-info');
   saveStatus = signal<SaveStatus>('idle');
+  syncingAll = signal(false);
 
   profileForm = this.profileService.getForm();
 
@@ -73,7 +76,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   setupSectionObserver() {
-    const sections : string[] = ['personal-info', 'biography', 'social-networks'];
+    const sections: string[] = ['personal-info', 'biography', 'social-networks'];
     const options = {
       root: null,
       rootMargin: '0px 0px -50% 0px',
@@ -89,9 +92,68 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     }, options);
 
     sections.forEach(id => {
-      const element : any = this.elementRef.nativeElement.querySelector(`#${id}`);
+      const element: any = this.elementRef.nativeElement.querySelector(`#${id}`);
       if (element) observer.observe(element);
     });
+  }
+
+  async syncAllSpeakerData() {
+    if (this.syncingAll()) return;
+
+    this.syncingAll.set(true);
+
+    try {
+      const eventIds = this.userState.eventIds();
+
+      if (eventIds.length === 0) {
+        this.showInfoMessage('Aucun événement speaker trouvé à synchroniser.');
+        return;
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const eventId of eventIds) {
+        try {
+          await firstValueFrom(this.userSpeakerService.syncSpeakerData(eventId));
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to sync data for event ${eventId}:`, error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        this.showSuccessMessage(
+          `Synchronisation réussie pour ${successCount} événement(s).`
+        );
+
+        await this.reloadUserData();
+      }
+
+      if (errorCount > 0) {
+        this.showWarningMessage(
+          `${errorCount} événement(s) n'ont pas pu être synchronisés.`
+        );
+      }
+
+    } catch (error) {
+      console.error('Error during speaker data sync:', error);
+      this.showErrorMessage('Erreur lors de la synchronisation des données speaker.');
+    } finally {
+      this.syncingAll.set(false);
+    }
+  }
+
+  private async reloadUserData() {
+    const currentUser = this.userState.user();
+    if (currentUser?.uid) {
+      try {
+        await this.profileService.fetchUserData(currentUser.uid);
+      } catch (error) {
+        console.error('Error reloading user data:', error);
+      }
+    }
   }
 
   async saveProfile() {
@@ -100,8 +162,8 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     this.saveStatus.set('saving');
 
     try {
-      const validFields : Partial<User> = this.extractValidFields();
-      const success : boolean = await this.profileService.savePartialProfile(validFields);
+      const validFields: Partial<User> = this.extractValidFields();
+      const success: boolean = await this.profileService.savePartialProfile(validFields);
 
       if (success) {
         this.saveStatus.set('saved');
@@ -121,7 +183,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private extractValidFields(): Partial<User> {
-    const user : User | null = this.userState.user();
+    const user: User | null = this.userState.user();
     const result: Partial<User> = { uid: user?.uid, email: user?.email };
 
     Object.keys(this.profileForm.controls).forEach(key => {
@@ -132,7 +194,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
           'emailAddress': 'email'
         };
 
-        const userField : string = fieldMapping[key] || key;
+        const userField: string = fieldMapping[key] || key;
         result[userField as keyof User] = control.value;
       }
     });
@@ -140,8 +202,29 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     return result;
   }
 
+  private showSuccessMessage(message: string) {
+    this.snackBar.open(message, 'Fermer', {
+      duration: 5000,
+      panelClass: ['success-snackbar']
+    });
+  }
+
+  private showInfoMessage(message: string) {
+    this.snackBar.open(message, 'Fermer', {
+      duration: 3000,
+      panelClass: ['info-snackbar']
+    });
+  }
+
+  private showWarningMessage(message: string) {
+    this.snackBar.open(message, 'Fermer', {
+      duration: 5000,
+      panelClass: ['warning-snackbar']
+    });
+  }
+
   showErrorMessage(message: string) {
-    this.snackBar.open(message, 'Close', {
+    this.snackBar.open(message, 'Fermer', {
       duration: 5000,
       panelClass: ['error-snackbar']
     });

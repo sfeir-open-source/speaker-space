@@ -4,6 +4,7 @@ import { EventService } from '../../../feature/admin-management/services/event/e
 import {BehaviorSubject, firstValueFrom, Observable} from 'rxjs';
 import { Event } from '../../../feature/admin-management/type/event/event';
 import { UserContextService } from './user-context.service';
+import {UserSpeakerService} from './user-speaker.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,13 +16,13 @@ export class UserRoleService {
   constructor(
     private authService: AuthService,
     private eventService: EventService,
-    private userContextService: UserContextService
+    private userSpeakerService: UserSpeakerService
   ) {}
 
   async getUserRoleForEvent(eventId: string): Promise<'admin' | 'speaker'> {
     try {
-      const isSpeaker : boolean = await firstValueFrom(
-        this.userContextService.isUserSpeakerOfEvent(eventId)
+      const isSpeaker = await firstValueFrom(
+        this.userSpeakerService.isSpeakerForEvent(eventId)
       );
 
       if (isSpeaker) {
@@ -48,6 +49,22 @@ export class UserRoleService {
     }
 
     return 'speaker';
+  }
+
+  async hasAnySpeakerRole(): Promise<boolean> {
+    try {
+      return await firstValueFrom(this.authService.hasAnySpeakerRole());
+    } catch {
+      return false;
+    }
+  }
+
+  async getUserSpeakerEvents(): Promise<string[]> {
+    try {
+      return await firstValueFrom(this.userSpeakerService.getSpeakerEvents());
+    } catch {
+      return [];
+    }
   }
 
   setRole(role: string): void {

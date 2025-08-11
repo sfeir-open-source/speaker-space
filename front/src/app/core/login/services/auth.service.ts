@@ -19,9 +19,10 @@ import {
   signOut, authState
 } from '@angular/fire/auth';
 import {UserStateService} from '../../services/user-services/user-state.service';
-import {User} from '../../models/user.model';
+import {User, UserSpeakerProfile} from '../../models/user.model';
 import {environment} from '../../../../environments/environment.development';
 import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
+import {catchError, map} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -76,7 +77,10 @@ export class AuthService {
           blueSkyLink: userData.blueSkyLink || '',
           linkedInLink: userData.linkedInLink || '',
           biography: userData.biography || '',
-          otherLink: userData.otherLink || ''
+          otherLink: userData.otherLink || '',
+          speakerIds: userData.speakerIds || [],
+          eventIds: userData.eventIds || [],
+          sessionIds: userData.sessionIds || []
         };
 
         this.userState.updateUser(mergedUser);
@@ -87,8 +91,36 @@ export class AuthService {
     }
   }
 
-  private fetchAndStoreUserData(uid: string): void {
-    this.fetchAndMergeUserData(this.auth.currentUser as FirebaseUser);
+  getUserSpeakerProfile(eventId: string): Observable<UserSpeakerProfile> {
+    return this.http.get<UserSpeakerProfile>(`${environment.apiUrl}/user-speaker/profile/event/${eventId}`, {
+      withCredentials: true
+    });
+  }
+
+  getUserSpeakerEvents(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/user-speaker/events`, {
+      withCredentials: true
+    });
+  }
+
+  syncSpeakerData(eventId: string): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/user-speaker/sync/event/${eventId}`, {}, {
+      withCredentials: true
+    });
+  }
+
+  isUserSpeakerForEvent(eventId: string): Observable<boolean> {
+    return this.getUserSpeakerEvents().pipe(
+      map(eventIds => eventIds.includes(eventId)),
+      catchError(() => of(false))
+    );
+  }
+
+  hasAnySpeakerRole(): Observable<boolean> {
+    return this.getUserSpeakerEvents().pipe(
+      map(eventIds => eventIds.length > 0),
+      catchError(() => of(false))
+    );
   }
 
   async loginWithProvider(providerType: 'google' | 'github' | 'email', email?: string) {

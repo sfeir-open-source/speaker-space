@@ -4,6 +4,7 @@ import com.google.cloud.firestore.*;
 import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.utils.date.EventDateCalculator;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.time.Clock;
@@ -13,6 +14,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Repository
 public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, String>
         implements SessionRepository {
@@ -168,4 +170,149 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
 
         return new ArrayList<>(uniqueSpeakers.values());
     }
+
+    @Override
+    public List<Session> findAll() {
+        try {
+            log.debug("Fetching all sessions from Firestore");
+
+            List<QueryDocumentSnapshot> documents = getCollection()
+                    .get()
+                    .get()
+                    .getDocuments();
+
+            List<Session> sessions = documents.stream()
+                    .map(doc -> {
+                        Session session = doc.toObject(Session.class);
+                        session.setId(doc.getId());
+                        return session;
+                    })
+                    .collect(Collectors.toList());
+
+            log.info("Successfully retrieved {} sessions", sessions.size());
+            return sessions;
+
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            log.error("Failed to retrieve all sessions", e);
+            throw new RuntimeException("Failed to retrieve all sessions", e);
+        }
+    }
+
+    @Override
+    public List<Session> findAll(int limit, String startAfter) {
+        try {
+            log.debug("Fetching sessions with limit {} starting after {}", limit, startAfter);
+
+            Query query = getCollection().limit(limit);
+
+            if (startAfter != null && !startAfter.trim().isEmpty()) {
+                DocumentSnapshot startAfterDoc = getCollection()
+                        .document(startAfter)
+                        .get()
+                        .get();
+
+                if (startAfterDoc.exists()) {
+                    query = query.startAfter(startAfterDoc);
+                }
+            }
+
+            List<QueryDocumentSnapshot> documents = query.get().get().getDocuments();
+
+            List<Session> sessions = documents.stream()
+                    .map(doc -> {
+                        Session session = doc.toObject(Session.class);
+                        session.setId(doc.getId());
+                        return session;
+                    })
+                    .collect(Collectors.toList());
+
+            log.info("Successfully retrieved {} sessions with pagination", sessions.size());
+            return sessions;
+
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            log.error("Failed to retrieve sessions with pagination", e);
+            throw new RuntimeException("Failed to retrieve sessions with pagination", e);
+        }
+    }
+
+    @Override
+    public long countAll() {
+        try {
+            log.debug("Counting all sessions");
+
+            AggregateQuerySnapshot snapshot = getCollection()
+                    .count()
+                    .get()
+                    .get();
+
+            long count = snapshot.getCount();
+            log.info("Total sessions count: {}", count);
+            return count;
+
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            log.error("Failed to count sessions", e);
+            throw new RuntimeException("Failed to count sessions", e);
+        }
+    }
+
+    public List<Session> findAllWithSpeakers() {
+        try {
+            log.debug("Fetching all sessions with speakers for user-speaker linking");
+
+            List<QueryDocumentSnapshot> documents = getCollection()
+                    .whereNotEqualTo("speakers", null)
+                    .get()
+                    .get()
+                    .getDocuments();
+
+            List<Session> sessions = documents.stream()
+                    .map(doc -> {
+                        Session session = doc.toObject(Session.class);
+                        session.setId(doc.getId());
+                        return session;
+                    })
+                    .filter(session -> session.getSpeakers() != null && !session.getSpeakers().isEmpty())
+                    .collect(Collectors.toList());
+
+            log.info("Successfully retrieved {} sessions with speakers", sessions.size());
+            return sessions;
+
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            log.error("Failed to retrieve sessions with speakers", e);
+            throw new RuntimeException("Failed to retrieve sessions with speakers", e);
+        }
+    }
+
+    public List<Session> findAllByBatch(int batchSize) {
+        List<Session> allSessions = new ArrayList<>();
+        String lastDocumentId = null;
+
+        try {
+            do {
+                List<Session> batch = findAll(batchSize, lastDocumentId);
+                allSessions.addAll(batch);
+
+                if (batch.size() < batchSize) {
+                    break;
+                }
+
+                if (!batch.isEmpty()) {
+                    lastDocumentId = batch.get(batch.size() - 1).getId();
+                }
+
+            } while (true);
+
+            log.info("Successfully retrieved {} sessions in batches", allSessions.size());
+            return allSessions;
+
+        } catch (Exception e) {
+            log.error("Failed to retrieve sessions by batch", e);
+            throw new RuntimeException("Failed to retrieve sessions by batch", e);
+        }
+    }
+
 }

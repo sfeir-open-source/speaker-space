@@ -35,6 +35,28 @@
 
     @if (speaker && !isLoading && !error) {
       <div class="relative bg-white rounded-lg shadow-xl max-w-7xl w-full">
+        <!-- Bouton de synchronisation pour mon profil -->
+        @if (isMyProfile) {
+          <div class="p-4 border-b border-gray-200 bg-gray-50">
+            <button
+              (click)="syncSpeakerData()"
+              [disabled]="syncing()"
+              class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              @if (syncing()) {
+                <svg class="animate-spin h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Synchronisation...
+              } @else {
+                <span class="material-icons mr-2">sync</span>
+                Synchroniser avec Conference Hall
+              }
+            </button>
+          </div>
+        }
+
         <section class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between p-3 mb-6">
             <div class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-1 py-1 pr-4 bg-white shadow-sm">
@@ -56,8 +78,17 @@
                 </p>
               </div>
             </div>
+
+            <!-- Indicateur de liaison user-speaker pour mon profil -->
+            @if (isMyProfile && isLinkedToUser()) {
+              <div class="flex items-center text-green-600 bg-green-50 px-3 py-1 rounded-full">
+                <span class="material-icons text-sm mr-1">link</span>
+                <span class="text-xs font-medium">Lié au compte</span>
+              </div>
+            }
           </div>
 
+          <!-- Reste du template existant... -->
           <div class="px-3 pb-2">
             @if (speaker.email) {
               <div class="flex items-center gap-2">
@@ -132,6 +163,40 @@
             }
           </div>
         </section>
+
+        <!-- Nouvelle section pour les sessions si c'est mon profil -->
+        @if (isMyProfile && userSessions().length > 0) {
+          <section class="p-6">
+            <div class="p-3">
+              <h4 class="font-base font-medium text-gray-900 mb-3">Mes Sessions ({{ userSessions().length }})</h4>
+              <div class="space-y-3">
+                @for (session of userSessions(); track session.id) {
+                  <div class="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                    <h5 class="font-medium text-gray-900">{{ session.title }}</h5>
+                    @if (session.start && session.end) {
+                      <p class="text-sm text-gray-600 mt-1">
+                        {{ formatSessionTime(session.start, session.end) }}
+                      </p>
+                    }
+                    @if (session.track) {
+                      <span class="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                        {{ session.track }}
+                      </span>
+                    }
+                    @if (session.deliberationStatus) {
+                      <span
+                        class="inline-block mt-2 ml-2 px-2 py-1 text-xs rounded-full"
+                        [class]="getStatusClass(session.deliberationStatus)"
+                      >
+                        {{ getStatusLabel(session.deliberationStatus) }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </section>
+        }
       </div>
     }
   </main>

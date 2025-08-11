@@ -17,7 +17,7 @@ public class TeamMember {
     @EqualsAndHashCode.Include
     private String userId;
     private String role;
-    private String displayName;
+    private String name;
     private String email;
     private String photoURL;
     private String status;

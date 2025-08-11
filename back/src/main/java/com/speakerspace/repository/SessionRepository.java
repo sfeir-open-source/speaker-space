@@ -21,4 +21,7 @@ public interface SessionRepository {
     Session findByIdConferenceHallAndEventId(String idConferenceHall, String eventId);
     List<Session> findByEventIdAndSpeakerEmail(String eventId, String speakerEmail);
     List<Speaker> findUniqueSpeekersByEventId(String eventId);
+    List<Session> findAll();
+    List<Session> findAll(int limit, String startAfter);
+    long countAll();
 }

@@ -2,11 +2,37 @@
 <main class="flex min-h-screen">
   <app-profile-sidebar [activeSection]="activeSection()"></app-profile-sidebar>
   <section class="flex-1 p-4">
-    <article class="flex justify-start items-center bg-white shadow-md p-4 rounded-md">
-      <button class="bg-action hover:bg-action-hover text-white mr-3 px-2 py-2 rounded-md flex items-center gap-2 cursor-pointer">
-        <span class="material-icons">cached</span>
-      </button>
-      <h1 class="text-xl">Refresh data with datas in Conference Hall</h1>
+    <article class="flex justify-between items-center bg-white shadow-md p-4 rounded-md mb-4">
+      <div class="flex items-center">
+        <button
+          (click)="syncAllSpeakerData()"
+          [disabled]="syncingAll()"
+          class="bg-action hover:bg-action-hover text-white mr-3 px-2 py-2 rounded-md flex items-center gap-2 cursor-pointer disabled:opacity-50">
+          @if (syncingAll()) {
+            <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          } @else {
+            <span class="material-icons">cached</span>
+          }
+        </button>
+        <div>
+          <h1 class="text-xl">Synchroniser avec Conference Hall</h1>
+          @if (userState.hasSpeakerRole()) {
+            <p class="text-sm text-gray-600">
+              Speaker dans {{ userState.eventIds().length }} événement(s)
+            </p>
+          }
+        </div>
+      </div>
+
+      @if (userState.hasSpeakerRole()) {
+        <div class="flex items-center text-green-600">
+          <span class="material-icons mr-1">verified_user</span>
+          <span class="text-sm">Speaker actif</span>
+        </div>
+      }
     </article>
 
     <app-save-indicator
