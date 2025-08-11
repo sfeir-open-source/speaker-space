@@ -2,6 +2,7 @@ package com.speakerspace.repository;
 
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.session.Session;
+import com.speakerspace.model.session.Speaker;
 import com.speakerspace.utils.date.EventDateCalculator;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Repository
 public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, String>
@@ -34,8 +36,7 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
 
     @Override
     public void saveSession(Session session) {
-        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
-
+        ZoneId eventZone = ZoneId.of("Europe/Paris");
         Date now = EventDateCalculator.convertLocalDateTimeToDate(LocalDateTime.now(clock), eventZone);
         if (session.getCreatedAt() == null) {
             session.setCreatedAt(now);
@@ -72,6 +73,13 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
     }
 
     @Override
+    public boolean existsByIdAndEventId(String id, String eventId) {
+        return executeQuerySingle(getCollection()
+                .whereEqualTo("id", id)
+                .whereEqualTo("eventId", eventId)).isPresent();
+    }
+
+    @Override
     public Session updateScheduleFields(String sessionId, Date start, Date end, String track) {
         try {
             DocumentReference docRef = getCollection().document(sessionId);
@@ -101,20 +109,6 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
     }
 
     @Override
-    public boolean existsByIdAndEventId(String id, String eventId) {
-        return executeQuerySingle(getCollection()
-                .whereEqualTo("id", id)
-                .whereEqualTo("eventId", eventId)).isPresent();
-    }
-
-    @Override
-    public List<Session> findByEventIdAndSpeakerId(String eventId, String speakerId) {
-        return executeQuery(getCollection()
-                .whereEqualTo("eventId", eventId)
-                .whereArrayContains("speakerIds", speakerId));
-    }
-
-    @Override
     public boolean deleteSession(String id) {
         return deleteByIdSync(id);
     }
@@ -135,5 +129,43 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
             Thread.currentThread().interrupt();
             throw new RuntimeException("Failed to batch delete", e);
         }
+    }
+
+    public Session findByIdConferenceHallAndEventId(String idConferenceHall, String eventId) {
+        return executeQuerySingle(getCollection()
+                .whereEqualTo("idConferenceHall", idConferenceHall)
+                .whereEqualTo("eventId", eventId)).orElse(null);
+    }
+
+    public List<Session> findByEventIdAndSpeakerEmail(String eventId, String speakerEmail) {
+        try {
+            List<Session> allSessions = findByEventId(eventId);
+
+            return allSessions.stream()
+                    .filter(session -> session.getSpeakers() != null &&
+                            session.getSpeakers().stream()
+                                    .anyMatch(speaker -> speakerEmail.equalsIgnoreCase(speaker.getEmail())))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to find sessions by speaker email", e);
+        }
+    }
+
+    public List<Speaker> findUniqueSpeekersByEventId(String eventId) {
+        List<Session> sessions = findByEventId(eventId);
+
+        Map<String, Speaker> uniqueSpeakers = new HashMap<>();
+
+        sessions.forEach(session -> {
+            if (session.getSpeakers() != null) {
+                session.getSpeakers().forEach(speaker -> {
+                    String key = speaker.getEmail() != null ?
+                            speaker.getEmail().toLowerCase() : speaker.getId();
+                    uniqueSpeakers.put(key, speaker);
+                });
+            }
+        });
+
+        return new ArrayList<>(uniqueSpeakers.values());
     }
 }

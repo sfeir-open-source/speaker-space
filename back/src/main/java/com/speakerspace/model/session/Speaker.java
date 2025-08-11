@@ -14,10 +14,10 @@ import java.util.List;
 @Builder
 @Document
 public class Speaker {
-
     @NotBlank(message = "ID is required")
     @EqualsAndHashCode.Include
     private String id;
+    private String idConferenceHall;
     private String name;
     private String bio;
     private String company;

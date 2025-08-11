@@ -1,5 +1,6 @@
 export type SessionImportData = {
   id: string;
+  idConferenceHall?: string;
   title: string;
   abstractText: string;
   deliberationStatus: string;
@@ -45,6 +46,7 @@ export type Category = {
 
 export type Speaker = {
   id: string;
+  idConferenceHall?: string;
   name: string;
   bio: string;
   company: string;

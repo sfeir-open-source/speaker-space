@@ -2,9 +2,7 @@ package com.speakerspace.service;
 
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.*;
-import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.mapper.session.SpeakerMapper;
-import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.SessionRepository;
@@ -22,28 +20,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SpeakerService {
 
-    @Autowired
-    private EventService eventService;
-
+    private final SessionRepository sessionRepository;
+    private final SessionService sessionService;
+    private final SpeakerMapper speakerMapper;
     private final SpeakerRepository speakerRepository;
 
-    private final SpeakerMapper speakerMapper;
 
-    private final SessionRepository sessionRepository;
     @Autowired
-    private SessionMapper sessionMapper;
-
-    public Speaker saveSpeaker(Speaker speaker) {
-        return speakerRepository.saveSpeaker(speaker);
-    }
-
-    public Speaker findById(String id) {
-        return speakerRepository.findSpeakerById(id);
-    }
-
-    public List<Speaker> findByEventId(String eventId) {
-        return speakerRepository.findByEventId(eventId);
-    }
+    private EventService eventService;
 
     public boolean deleteSpeaker(String id) {
         Speaker existingSpeaker = speakerRepository.findSpeakerById(id);
@@ -57,112 +41,60 @@ public class SpeakerService {
         validateBusinessRules(eventId, createRequest);
 
         String speakerId = generateSpeakerId();
-        Speaker speaker = speakerMapper.convertFromCreateRequest(speakerId, eventId, createRequest);
 
-        Speaker savedSpeaker = speakerRepository.saveSpeaker(speaker);
+        Speaker speaker = new Speaker();
+        speaker.setId(speakerId);
+        speaker.setName(createRequest.name().trim());
+        speaker.setBio(trimOrNull(createRequest.bio()));
+        speaker.setCompany(trimOrNull(createRequest.company()));
+        speaker.setReferences(trimOrNull(createRequest.references()));
+        speaker.setEmail(createRequest.email().toLowerCase().trim());
+        speaker.setEventId(eventId);
+        speaker.setPicture(trimOrNull(createRequest.picture()));
+        speaker.setLocation(trimOrNull(createRequest.location()));
+
+        List<String> socialLinks = createRequest.socialLinks() != null ?
+                createRequest.socialLinks().stream()
+                        .filter(link -> link != null && !link.trim().isEmpty())
+                        .map(String::trim)
+                        .distinct()
+                        .collect(Collectors.toList()) :
+                new ArrayList<>();
+        speaker.setSocialLinks(socialLinks);
 
         log.info("Successfully created speaker {} '{}' for event {}",
                 speakerId, createRequest.name(), eventId);
 
-        return speakerMapper.convertToDTO(savedSpeaker);
+        return speakerMapper.convertToDTO(speaker);
     }
 
-    public String saveOrUpdateSpeaker(Speaker speaker, String eventId) {
-        speaker.setEventId(eventId);
-
-        if (speaker.getId() != null && speakerRepository.speakerExistsById(speaker.getId())) {
-            Speaker existingSpeaker = speakerRepository.findSpeakerById(speaker.getId());
-            Speaker mergedSpeaker = mergeSpeakerData(existingSpeaker, speaker);
-            return speakerRepository.saveSpeaker(mergedSpeaker).getId();
-        } else {
-            return speakerRepository.saveSpeaker(speaker).getId();
-        }
+    public List<Speaker> findByEventId(String eventId) {
+        return sessionRepository.findUniqueSpeekersByEventId(eventId);
     }
 
-    public List<String> processSpeakers(List<Speaker> speakers, String eventId) {
-        if (speakers == null || speakers.isEmpty()) {
-            return new ArrayList<>();
-        }
+    public Speaker findById(String speakerId) {
+        throw new UnsupportedOperationException(
+                "Use findByIdAndEventId instead - speaker lookup requires eventId");
+    }
 
+    public Speaker findByIdAndEventId(String speakerId, String eventId) {
+        List<Speaker> speakers = findByEventId(eventId);
         return speakers.stream()
-                .map(speaker -> saveOrUpdateSpeaker(speaker, eventId))
-                .collect(Collectors.toList());
-    }
-
-    private Speaker mergeSpeakerData(Speaker existing, Speaker incoming) {
-        Speaker merged = new Speaker();
-        merged.setId(existing.getId());
-        merged.setEventId(existing.getEventId());
-
-        merged.setName(isNotEmpty(incoming.getName()) ? incoming.getName() : existing.getName());
-        merged.setBio(isNotEmpty(incoming.getBio()) ? incoming.getBio() : existing.getBio());
-        merged.setCompany(isNotEmpty(incoming.getCompany()) ? incoming.getCompany() : existing.getCompany());
-        merged.setPicture(isNotEmpty(incoming.getPicture()) ? incoming.getPicture() : existing.getPicture());
-        merged.setLocation(isNotEmpty(incoming.getLocation()) ? incoming.getLocation() : existing.getLocation());
-        merged.setEmail(isNotEmpty(incoming.getEmail()) ? incoming.getEmail() : existing.getEmail());
-        merged.setReferences(incoming.getReferences() != null ? incoming.getReferences() : existing.getReferences());
-
-        Set<String> mergedSocialLinks = new HashSet<>();
-        if (existing.getSocialLinks() != null) {
-            mergedSocialLinks.addAll(existing.getSocialLinks());
-        }
-        if (incoming.getSocialLinks() != null) {
-            mergedSocialLinks.addAll(incoming.getSocialLinks());
-        }
-        merged.setSocialLinks(new ArrayList<>(mergedSocialLinks));
-
-        return merged;
+                .filter(speaker -> speakerId.equals(speaker.getId()))
+                .findFirst()
+                .orElse(null);
     }
 
     public List<SessionImportData> getSessionsByEventAndSpeakerEmail(String eventId, String speakerEmail) {
-        List<Speaker> speakers = speakerRepository.findByEmailAndEventId(speakerEmail, eventId);
-
-        if (speakers.isEmpty()) {
-            log.warn("No speaker found with email {} for event {}", speakerEmail, eventId);
-            return Collections.emptyList();
-        }
-
-        Speaker speaker = speakers.getFirst();
-        List<Session> sessions = sessionRepository.findByEventIdAndSpeakerId(eventId, speaker.getId());
-
-        return sessions.stream()
-                .map(sessionMapper::toSessionImportData)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        return sessionService.getSessionsByEventAndSpeakerEmail(eventId, speakerEmail);
     }
 
     public SessionImportData getSessionByIdForSpeaker(String eventId, String sessionId, String speakerEmail) {
-        List<Speaker> speakers = speakerRepository.findByEmailAndEventId(speakerEmail, eventId);
-
-        if (speakers.isEmpty()) {
-            return null;
-        }
-
-        Speaker speaker = speakers.getFirst();
-
-        List<Session> sessions = sessionRepository.findByEventIdAndSpeakerId(eventId, speaker.getId());
-        Session targetSession = sessions.stream()
-                .filter(session -> sessionId.equals(session.getId()))
-                .findFirst()
-                .orElse(null);
-
-        return targetSession != null ? sessionMapper.toSessionImportData(targetSession) : null;
+        return sessionService.getSessionByIdForSpeaker(eventId, sessionId, speakerEmail);
     }
 
     public Speaker getSpeakerByEmailAndEventId(String email, String eventId) {
-        List<Speaker> speakers = speakerRepository.findByEmailAndEventId(email, eventId);
-
-        if (speakers.isEmpty()) {
-            log.warn("No speaker found with email {} for event {}", email, eventId);
-            return null;
-        }
-
-        Speaker speaker = speakers.getFirst();
-        return speaker;
-    }
-
-    private boolean isNotEmpty(String value) {
-        return value != null && !value.trim().isEmpty();
+        return sessionService.getSpeakerByEmailAndEventId(email, eventId);
     }
 
     private void validateBusinessRules(String eventId, SpeakerCreateRequestDTO createRequest) {
@@ -171,10 +103,10 @@ public class SpeakerService {
             throw new IllegalArgumentException("Event not found: " + eventId);
         }
 
-        List<Speaker> existingSpeakers = speakerRepository.findByEmailAndEventId(
+        Speaker existingSpeaker = getSpeakerByEmailAndEventId(
                 createRequest.email().toLowerCase().trim(), eventId);
 
-        if (!existingSpeakers.isEmpty()) {
+        if (existingSpeaker != null) {
             throw new IllegalArgumentException(
                     "A speaker with email '" + createRequest.email() +
                             "' already exists in this event");
@@ -183,5 +115,9 @@ public class SpeakerService {
 
     private String generateSpeakerId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    }
+
+    private String trimOrNull(String value) {
+        return value != null && !value.trim().isEmpty() ? value.trim() : null;
     }
 }

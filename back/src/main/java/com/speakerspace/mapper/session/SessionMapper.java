@@ -5,7 +5,6 @@ import com.speakerspace.dto.session.FormatDTO;
 import com.speakerspace.dto.session.SessionDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
 import com.speakerspace.model.session.*;
-import com.speakerspace.repository.SpeakerRepository;
 import com.speakerspace.utils.date.EventDateCalculator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Component;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Component
@@ -29,15 +27,12 @@ public class SessionMapper {
     private ReviewsMapper reviewsMapper;
 
     @Autowired
-    private SpeakerRepository speakerRepository;
-
-    @Autowired
     private SpeakerMapper speakerMapper;
 
     public SessionDTO convertToDTO(Session session) {
         if(session == null) return null;
 
-        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+        ZoneId eventZone = ZoneId.of("Europe/Paris");
 
         return new SessionDTO(
                 session.getId(),
@@ -51,7 +46,7 @@ public class SessionMapper {
                 convertCategoriesToDTO(session.getCategories()),
                 session.getTags(),
                 session.getLanguages(),
-                convertSpeakerIdsToDTO(session.getSpeakerIds()),
+                convertSpeakersToDTO(session.getSpeakers()),
                 reviewsMapper.convertToDTO(session.getReviews()),
                 session.getEventId(),
                 EventDateCalculator.convertLocalDateTimeToDate(session.getStart(), eventZone),
@@ -65,7 +60,7 @@ public class SessionMapper {
     public Session convertToEntity(SessionDTO sessionDTO) {
         if(sessionDTO == null) return null;
 
-        ZoneId eventZone = ZoneId.of("Europe/Paris"); // TODO : get zone from Event object
+        ZoneId eventZone = ZoneId.of("Europe/Paris");
 
         Session session = new Session();
         session.setId(sessionDTO.id());
@@ -79,7 +74,7 @@ public class SessionMapper {
         session.setCategories(convertCategoriesToEntity(sessionDTO.categories()));
         session.setTags(sessionDTO.tags());
         session.setLanguages(sessionDTO.languages());
-        session.setSpeakerIds(extractSpeakerIds(sessionDTO.speakers()));
+        session.setSpeakers(convertSpeakersToEntity(sessionDTO.speakers()));
         session.setReviews(reviewsMapper.convertToEntity(sessionDTO.reviews()));
         session.setEventId(sessionDTO.eventId());
         session.setStart(EventDateCalculator.convertLocalDateTimeToDate(sessionDTO.start(), eventZone));
@@ -111,12 +106,7 @@ public class SessionMapper {
         importData.setTags(session.getTags() != null ? session.getTags() : new ArrayList<>());
         importData.setLanguages(session.getLanguages() != null ? session.getLanguages() : new ArrayList<>());
 
-        if (session.getSpeakerIds() != null && !session.getSpeakerIds().isEmpty()) {
-            List<Speaker> speakers = speakerRepository.findByIds(session.getSpeakerIds());
-            importData.setSpeakers(speakers != null ? speakers : new ArrayList<>());
-        } else {
-            importData.setSpeakers(new ArrayList<>());
-        }
+        importData.setSpeakers(session.getSpeakers() != null ? session.getSpeakers() : new ArrayList<>());
 
         if (session.getReviews() != null) {
             importData.setReviews(session.getReviews());
@@ -125,25 +115,23 @@ public class SessionMapper {
         return importData;
     }
 
-    private List<SpeakerDTO> convertSpeakerIdsToDTO(List<String> speakerIds) {
-        if (speakerIds == null || speakerIds.isEmpty()) {
+    private List<SpeakerDTO> convertSpeakersToDTO(List<Speaker> speakers) {
+        if (speakers == null || speakers.isEmpty()) {
             return new ArrayList<>();
         }
 
-        List<Speaker> speakers = speakerRepository.findByIds(speakerIds);
         return speakers.stream()
                 .map(speakerMapper::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    private List<String> extractSpeakerIds(List<SpeakerDTO> speakerDTOs) {
+    private List<Speaker> convertSpeakersToEntity(List<SpeakerDTO> speakerDTOs) {
         if (speakerDTOs == null || speakerDTOs.isEmpty()) {
             return new ArrayList<>();
         }
 
         return speakerDTOs.stream()
-                .map(SpeakerDTO::id)
-                .filter(Objects::nonNull)
+                .map(speakerMapper::convertToEntity)
                 .collect(Collectors.toList());
     }
 

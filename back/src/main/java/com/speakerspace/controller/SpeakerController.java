@@ -28,21 +28,6 @@ public class SpeakerController {
     private final SpeakerMapper speakerMapper;
     private final EventAuthorizationHelper authorizationHelper;
 
-    @PostMapping("/event/{eventId}")
-    public ResponseEntity<SpeakerDTO> createSpeaker(
-            @PathVariable String eventId,
-            @RequestBody SpeakerDTO speakerDTO,
-            Authentication authentication) throws AccessDeniedException {
-
-        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
-            Speaker speaker = speakerMapper.convertToEntity(speakerDTO);
-            speaker.setEventId(eventId);
-
-            Speaker savedSpeaker = speakerService.saveSpeaker(speaker);
-            return speakerMapper.convertToDTO(savedSpeaker);
-        });
-    }
-
     @PostMapping("/event/{eventId}/new-speaker")
     public ResponseEntity<ResponseEntity<SpeakerDTO>> createNewSpeaker(
             @PathVariable @NotBlank String eventId,
@@ -68,19 +53,21 @@ public class SpeakerController {
         });
     }
 
-    @GetMapping("/{speakerId}")
+    @GetMapping("/{speakerId}/event/{eventId}")
     public ResponseEntity<SpeakerDTO> getSpeaker(
             @PathVariable String speakerId,
+            @PathVariable String eventId,
             Authentication authentication) throws AccessDeniedException {
 
-        Speaker speaker = speakerService.findById(speakerId);
-        if (speaker == null) {
-            throw new EntityNotFoundException("Speaker not found with id: " + speakerId);
-        }
-
-        return authorizationHelper.executeWithEventAuthorization(speaker.getEventId(), authentication, () ->
-                speakerMapper.convertToDTO(speaker));
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
+            Speaker speaker = speakerService.findByIdAndEventId(speakerId, eventId);
+            if (speaker == null) {
+                throw new EntityNotFoundException("Speaker not found with id: " + speakerId);
+            }
+            return speakerMapper.convertToDTO(speaker);
+        });
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSpeaker(@PathVariable String id) {
