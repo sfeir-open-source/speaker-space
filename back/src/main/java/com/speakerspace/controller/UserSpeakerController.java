@@ -2,7 +2,7 @@ package com.speakerspace.controller;
 
 import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.exception.EventAuthorizationHelper;
-import com.speakerspace.model.session.UserSpeakerProfileDTO;
+import com.speakerspace.dto.UserSpeakerProfileDTO;
 import com.speakerspace.service.UserSpeakerLinkService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

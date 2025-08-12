@@ -88,34 +88,40 @@ export class SpeakerProfileUnifiedComponent extends BaseDetailComponent implemen
 
       observable
         .pipe(
-          // takeUntilDestroyed() fonctionne automatiquement dans le contexte d'injection
           takeUntilDestroyed(this.destroyRef)
         )
         .subscribe({
-          next: (speaker: Speaker) => {
-            this.speaker = speaker;
-            if (this.isMyProfile) {
-              this.loadUserSessions();
+          next: (speaker: Speaker | null) => {
+            if (speaker) {
+              this.speaker = speaker;
+              if (this.isMyProfile) {
+                this.loadUserSessions();
+              }
+              resolve();
+            } else {
+              this.error = this.isMyProfile
+                ? 'Aucun profil speaker trouvé pour cet événement. Vérifiez que vous êtes bien enregistré comme speaker.'
+                : 'Speaker introuvable.';
+              reject(new Error('Speaker not found'));
             }
-            resolve();
           },
           error: (err: any) => {
+            console.error('Error loading speaker data:', err);
             this.error = this.isMyProfile
-              ? 'Failed to load your profile. Please check if you are registered as a speaker for this event.'
-              : 'Failed to load speaker data. Please check if the speaker exists.';
+              ? 'Erreur lors du chargement de votre profil speaker.'
+              : 'Erreur lors du chargement des données du speaker.';
             reject(err);
           }
         });
     });
   }
 
-
   private loadUserSessions(): void {
     if (!this.isMyProfile || !this.eventId) return;
 
     this.userSpeakerService.getUserSessions(this.eventId)
       .pipe(
-        takeUntilDestroyed()
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: (sessions) => {
@@ -135,10 +141,10 @@ export class SpeakerProfileUnifiedComponent extends BaseDetailComponent implemen
     this.userSpeakerService.syncSpeakerData(this.eventId)
       .pipe(
         finalize(() => this.syncing.set(false)),
-        takeUntilDestroyed()
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
-        next: (result) => {
+        next: () => {
           this.snackBar.open('Données synchronisées avec succès', 'Fermer', {
             duration: 3000,
             panelClass: ['success-snackbar']

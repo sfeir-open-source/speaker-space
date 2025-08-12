@@ -13,8 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.Clock;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,54 +34,45 @@ public class SessionService {
     @Autowired
     private EventService eventService;
 
-    public boolean deleteSession(String id) {
-        Session existingSession = sessionRepository.findSessionById(id);
-        if (existingSession == null) {
-            return false;
-        }
-        return sessionRepository.deleteSession(id);
-    }
-
-    public List<String> getDistinctTracksByEventId(String eventId) {
-        return sessionRepository.findDistinctTracksByEventId(eventId);
-    }
-
     public ImportResultDTO importSessionsReview(String eventId, List<SessionDTO> importDataList) {
         List<String> successfulImports = new ArrayList<>();
         List<String> failedImports = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
+        log.info("Starting import of {} sessions for event {}", importDataList.size(), eventId);
+
         for (SessionDTO importData : importDataList) {
+            String sessionConferenceId = importData.id();
             try {
                 String appId = generateSessionId();
 
                 SessionDTO sessionDTO = sessionImportMapper.convertImportDataToSessionDTO(importData, eventId, appId);
 
                 List<Speaker> processedSpeakers = sessionImportMapper.processSpeakersForImport(
-                        sessionDTO.speakers(), eventId, importData.id());
+                        sessionDTO.speakers(), eventId, sessionConferenceId);
 
                 Session session = sessionMapper.convertToEntity(sessionDTO);
-                session.setIdConferenceHall(importData.id());
-                session.setSpeakers(processedSpeakers);
+                session.setIdConferenceHall(sessionConferenceId);
+                session.setSpeakers(processedSpeakers != null ? processedSpeakers : new ArrayList<>());
 
                 sessionRepository.saveSession(session);
 
-                if (session.getSpeakers() != null) {
-                    for (Speaker speaker : session.getSpeakers()) {
-                        userSpeakerLinkService.linkSpeakerToUser(speaker, eventId);
-                    }
-                }
+                linkSpeakersToUsersNonBlocking(session.getSpeakers(), eventId, session.getId());
 
-                successfulImports.add(importData.id());
-                log.info("Successfully imported session {} with app ID {}", importData.id(), appId);
+                successfulImports.add(sessionConferenceId);
+                log.debug("Successfully imported session {} with app ID {}", sessionConferenceId, appId);
 
             } catch (Exception e) {
-                log.error("Failed to import session {}", importData.id(), e);
-                failedImports.add(importData.id());
-                errors.add("Failed to import session " + importData.id() + ": " + e.getMessage());
+                log.error("Failed to import session {}: {}", sessionConferenceId, e.getMessage(), e);
+                failedImports.add(sessionConferenceId);
+                errors.add("Failed to import session " + sessionConferenceId + ": " + e.getMessage());
             }
         }
-        userSpeakerLinkService.updateUserSessionLinks(eventId);
+
+        updateUserSessionLinksNonBlocking(eventId);
+
+        log.info("Import completed for event {}: {} successful, {} failed",
+                eventId, successfulImports.size(), failedImports.size());
 
         return ImportResultDTO.builder()
                 .successfulImports(successfulImports)
@@ -97,6 +88,8 @@ public class SessionService {
         List<String> failedImports = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
+        log.info("Starting schedule import of {} sessions for event {}", importDataList.size(), eventId);
+
         EventDTO event = eventService.getEventById(eventId);
         if (event == null) {
             throw new IllegalArgumentException("Event not found: " + eventId);
@@ -106,7 +99,11 @@ public class SessionService {
                 .map(sessionScheduleMapper::convertUtcToLocalDateTime)
                 .collect(Collectors.toList());
 
-        eventService.updateEventDatesFromSessions(eventId, convertedSessions);
+        try {
+            eventService.updateEventDatesFromSessions(eventId, convertedSessions);
+        } catch (Exception e) {
+            log.warn("Failed to update event dates for {}: {}", eventId, e.getMessage());
+        }
 
         for (SessionScheduleImportDataDTO scheduleData : convertedSessions) {
             String conferenceHallId = null;
@@ -118,22 +115,18 @@ public class SessionService {
                 if (existingSession != null) {
                     sessionScheduleMapper.enrichExistingSessionWithScheduleData(existingSession, scheduleData);
                     sessionRepository.saveSession(existingSession);
-                    if (existingSession.getSpeakers() != null) {
-                        for (Speaker speaker : existingSession.getSpeakers()) {
-                            userSpeakerLinkService.linkSpeakerToUser(speaker, eventId);
-                        }
-                    }
-                    log.info("Successfully updated session with ConferenceHall ID {} (app ID: {})",
+
+                    linkSpeakersToUsersNonBlocking(existingSession.getSpeakers(), eventId, existingSession.getId());
+
+                    log.debug("Successfully updated session with ConferenceHall ID {} (app ID: {})",
                             conferenceHallId, existingSession.getId());
                 } else {
                     Session newSession = sessionScheduleMapper.createSessionFromScheduleData(scheduleData, eventId);
                     sessionRepository.saveSession(newSession);
-                    if (newSession.getSpeakers() != null) {
-                        for (Speaker speaker : newSession.getSpeakers()) {
-                            userSpeakerLinkService.linkSpeakerToUser(speaker, eventId);
-                        }
-                    }
-                    log.info("Successfully created new session with ConferenceHall ID {} (app ID: {})",
+
+                    linkSpeakersToUsersNonBlocking(newSession.getSpeakers(), eventId, newSession.getId());
+
+                    log.debug("Successfully created new session with ConferenceHall ID {} (app ID: {})",
                             conferenceHallId, newSession.getId());
                 }
 
@@ -142,11 +135,17 @@ public class SessionService {
             } catch (Exception e) {
                 String finalSessionId = conferenceHallId != null ? conferenceHallId :
                         (scheduleData.proposal() != null ? scheduleData.proposal().id() : scheduleData.id());
+
+                log.error("Failed to import schedule for session {}: {}", finalSessionId, e.getMessage(), e);
                 failedImports.add(finalSessionId);
                 errors.add("Failed to import schedule for session " + finalSessionId + ": " + e.getMessage());
             }
         }
-        userSpeakerLinkService.updateUserSessionLinks(eventId);
+
+        updateUserSessionLinksNonBlocking(eventId);
+
+        log.info("Schedule import completed for event {}: {} successful, {} failed",
+                eventId, successfulImports.size(), failedImports.size());
 
         return ImportResultDTO.builder()
                 .successfulImports(successfulImports)
@@ -169,9 +168,56 @@ public class SessionService {
 
         sessionRepository.saveSession(session);
 
+        linkSpeakersToUsersNonBlocking(session.getSpeakers(), eventId, session.getId());
+
         log.info("Successfully created session {} '{}' for event {}",
                 sessionId, createRequest.title(), eventId);
         return sessionMapper.convertToDTO(session);
+    }
+
+    private void linkSpeakersToUsersNonBlocking(List<Speaker> speakers, String eventId, String sessionId) {
+        if (speakers == null || speakers.isEmpty()) {
+            return;
+        }
+
+        CompletableFuture.runAsync(() -> {
+            for (Speaker speaker : speakers) {
+                try {
+                    userSpeakerLinkService.linkSpeakerToUserOnImport(speaker, eventId, sessionId);
+                } catch (Exception e) {
+                    log.warn("Failed to link speaker {} to user for session {}: {}",
+                            speaker.getId(), sessionId, e.getMessage());
+                }
+            }
+        }).exceptionally(throwable -> {
+            log.error("Error in speaker linking for session {}: {}", sessionId, throwable.getMessage());
+            return null;
+        });
+    }
+
+    private void updateUserSessionLinksNonBlocking(String eventId) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                userSpeakerLinkService.updateUserSessionLinks(eventId);
+            } catch (Exception e) {
+                log.error("Failed to update user session links for event {}: {}", eventId, e.getMessage());
+            }
+        }).exceptionally(throwable -> {
+            log.error("Error in user session links update for event {}: {}", eventId, throwable.getMessage());
+            return null;
+        });
+    }
+
+    public boolean deleteSession(String id) {
+        Session existingSession = sessionRepository.findSessionById(id);
+        if (existingSession == null) {
+            return false;
+        }
+        return sessionRepository.deleteSession(id);
+    }
+
+    public List<String> getDistinctTracksByEventId(String eventId) {
+        return sessionRepository.findDistinctTracksByEventId(eventId);
     }
 
     public List<Speaker> getUniqueSpeekersByEventId(String eventId) {

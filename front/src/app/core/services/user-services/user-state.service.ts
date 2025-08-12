@@ -9,9 +9,8 @@ export class UserStateService {
   private userSubject = new BehaviorSubject<User | null>(null);
   public user$ = this.userSubject.asObservable();
 
-  // Signals pour un accès réactif
   user = signal<User | null>(null);
-  displayName = computed(() => this.user()?.displayName || '');
+  name = computed(() => this.user()?.name || '');
   email = computed(() => this.user()?.email || '');
   photoURL = computed(() => this.user()?.photoURL || '');
   company = computed(() => this.user()?.company || '');
@@ -24,20 +23,14 @@ export class UserStateService {
   otherLink = computed(() => this.user()?.otherLink || '');
   biography = computed(() => this.user()?.biography || '');
 
-  // Nouveaux champs pour la liaison speaker
-  speakerIds = computed(() => this.user()?.speakerIds || []);
   eventIds = computed(() => this.user()?.eventIds || []);
-  sessionIds = computed(() => this.user()?.sessionIds || []);
-
-  // Computed pour vérifier les rôles
   hasSpeakerRole = computed(() => this.eventIds().length > 0);
 
   loadFromStorage(): void {
     const userData: Partial<User> = {};
 
-    // Définition des mappings avec types explicites
-    const stringKeys: Record<string, keyof Pick<User, 'displayName' | 'photoURL' | 'email' | 'company' | 'city' | 'phoneNumber' | 'githubLink' | 'twitterLink' | 'blueSkyLink' | 'linkedInLink' | 'otherLink' | 'biography'>> = {
-      'userDisplayName': 'displayName',
+    const stringKeys: Record<string, keyof Pick<User, 'name' | 'photoURL' | 'email' | 'company' | 'city' | 'phoneNumber' | 'githubLink' | 'twitterLink' | 'blueSkyLink' | 'linkedInLink' | 'otherLink' | 'biography'>> = {
+      'userName': 'name',
       'userPhotoURL': 'photoURL',
       'userEmail': 'email',
       'userCompany': 'company',
@@ -57,7 +50,6 @@ export class UserStateService {
       'userSessionIds': 'sessionIds'
     };
 
-    // Traitement des champs string
     Object.entries(stringKeys).forEach(([storageKey, userKey]) => {
       const value = localStorage.getItem(storageKey);
       if (value) {
@@ -65,7 +57,6 @@ export class UserStateService {
       }
     });
 
-    // Traitement des champs array
     Object.entries(arrayKeys).forEach(([storageKey, userKey]) => {
       const value = localStorage.getItem(storageKey);
       if (value) {
@@ -90,7 +81,7 @@ export class UserStateService {
     if (!user) return;
 
     const storageMapping = {
-      displayName: 'userDisplayName',
+      name: 'userName',
       photoURL: 'userPhotoURL',
       email: 'userEmail',
       company: 'userCompany',
@@ -121,11 +112,23 @@ export class UserStateService {
 
   updateUser(userData: Partial<User>): void {
     const currentUser = this.user();
+    const previousEventCount = currentUser?.eventIds?.length || 0;
+
     const updatedUser = { ...currentUser, ...userData } as User;
 
     this.user.set(updatedUser);
     this.userSubject.next(updatedUser);
+
+    const newEventCount = updatedUser.eventIds?.length || 0;
+    if (newEventCount > previousEventCount) {
+      this.notifySpeakerRoleChange(newEventCount - previousEventCount);
+    }
   }
+
+  private notifySpeakerRoleChange(newEventCount: number): void {
+    console.log(`${newEventCount} nouveaux rôles speaker détectés`);
+  }
+
 
   clearUser(): void {
     this.user.set(null);
@@ -135,7 +138,7 @@ export class UserStateService {
 
   private clearStorage(): void {
     const keysToRemove = [
-      'userDisplayName', 'userPhotoURL', 'userEmail', 'userCompany',
+      'userName', 'userPhotoURL', 'userEmail', 'userCompany',
       'userCity', 'userPhoneNumber', 'userGithubLink', 'userTwitterLink',
       'userBlueSkyLink', 'userLinkedInLink', 'userOtherLink', 'userBiography',
       'userSpeakerIds', 'userEventIds', 'userSessionIds'

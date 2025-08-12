@@ -1,4 +1,4 @@
-import {Component, HostListener, inject, Input, OnInit} from '@angular/core';
+import {Component, DestroyRef, HostListener, inject, Input, OnInit} from '@angular/core';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {
@@ -49,7 +49,7 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
   scheduleForm!: FormGroup;
   scheduleError: string | null = null;
   showDurationDropdown: boolean = false;
-
+  protected override readonly destroyRef = inject(DestroyRef);
   availableTracks: string[] = [];
   selectedDuration: number = 60;
   durations = [20, 30, 40, 45, 50, 60, 75, 90, 105, 110, 120, 130].map(val => {
@@ -308,7 +308,7 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
     this.sessionService.updateSessionSchedule(this.eventId, this.sessionId, scheduleUpdate)
       .pipe(
         finalize(() => this.isUpdatingSchedule = false),
-        takeUntilDestroyed(this._destroyRef),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (updatedSession) => {

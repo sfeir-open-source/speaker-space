@@ -59,7 +59,7 @@ export class ProfileService {
 
   private initializeForm(): void {
     this.profileForm.patchValue({
-      displayName: this.userState.displayName(),
+      displayName: this.userState.name(),
       emailAddress: this.userState.email(),
       avatarPictureURL: this.userState.photoURL(),
       company: this.userState.company(),
@@ -94,7 +94,7 @@ export class ProfileService {
         this.userState.updateUser(userData);
 
         this.profileForm.patchValue({
-          displayName: userData.displayName || '',
+          displayName: userData.name || '',
           emailAddress: userData.email || '',
           avatarPictureURL: userData.photoURL || '',
           company: userData.company || '',

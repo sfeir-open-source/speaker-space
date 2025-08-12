@@ -52,13 +52,4 @@ export abstract class FormModalService<TForm extends { [K in keyof TForm]: Abstr
       this.form.get(key)?.markAsTouched();
     });
   }
-
-  protected showTemporaryError(message: string, duration: number = 3000): void {
-    this.errorMessage = message;
-    setTimeout(() => {
-      if (this.errorMessage === message) {
-        this.errorMessage = null;
-      }
-    }, duration);
-  }
 }

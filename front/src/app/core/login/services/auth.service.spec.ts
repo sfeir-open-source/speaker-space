@@ -17,7 +17,7 @@ jest.mock('@angular/fire/auth', () => {
         user: {
           uid: 'test-uid',
           email: 'test@example.com',
-          displayName: 'Test User',
+          name: 'Test User',
           photoURL: 'https://example.com/photo.jpg',
           emailVerified: true,
           isAnonymous: false,
@@ -45,7 +45,7 @@ jest.mock('@angular/fire/auth', () => {
         user: {
           uid: 'test-uid',
           email: 'test@example.com',
-          displayName: 'Test User',
+          name: 'Test User',
           photoURL: 'https://example.com/photo.jpg',
           emailVerified: true,
           isAnonymous: false,
@@ -89,7 +89,7 @@ import { FIREBASE_OPTIONS } from '@angular/fire/compat';
 const createMockUser = () => ({
   uid: 'test-uid',
   email: 'test@example.com',
-  displayName: 'Test User',
+  name: 'Test User',
   photoURL: 'https://example.com/photo.jpg',
   emailVerified: true,
   isAnonymous: false,

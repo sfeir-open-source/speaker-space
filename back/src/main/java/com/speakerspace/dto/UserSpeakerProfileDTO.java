@@ -1,7 +1,7 @@
-package com.speakerspace.model.session;
+package com.speakerspace.dto;
 
-import com.speakerspace.dto.UserDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
+import com.speakerspace.model.session.SessionImportData;
 import lombok.Builder;
 
 import java.util.List;

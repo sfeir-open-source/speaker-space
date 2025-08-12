@@ -31,7 +31,7 @@ describe('UserDataService', () => {
 
   it('should open sidebar with user data', () => {
     const mockUser = {
-      displayName: 'Test User',
+      name: 'Test User',
       photoURL: 'test-photo.jpg',
       email: 'test@example.com'
     };
@@ -44,7 +44,7 @@ describe('UserDataService', () => {
     expect(service.userEmail).toBe('test@example.com');
   });
 
-  it('should handle user without displayName', () => {
+  it('should handle user without name', () => {
     const mockUser = {
       email: 'test@example.com'
     };
@@ -57,7 +57,7 @@ describe('UserDataService', () => {
   });
 
   it('should close sidebar', () => {
-    service.toggleSidebar(true, { displayName: 'Test User' });
+    service.toggleSidebar(true, { name: 'Test User' });
     expect(service.isSidebarOpen).toBeTruthy();
 
     service.toggleSidebar(false);

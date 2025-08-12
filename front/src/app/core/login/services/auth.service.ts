@@ -60,14 +60,15 @@ export class AuthService {
   private async fetchAndMergeUserData(firebaseUser: FirebaseUser): Promise<void> {
     try {
       const userData = await firstValueFrom(
-        this.http.get<User>(`${environment.apiUrl}/auth/user/${firebaseUser.uid}`, { withCredentials: true })
+        this.http.get<User>(`${environment.apiUrl}/auth/user/${firebaseUser.uid}`,
+          { withCredentials: true })
       );
 
       if (userData) {
         const mergedUser: User = {
           uid: firebaseUser.uid,
           email: userData.email || firebaseUser.email || '',
-          displayName: userData.displayName || firebaseUser.displayName || '',
+          name: userData.name || firebaseUser.displayName || '',
           photoURL: userData.photoURL || firebaseUser.photoURL || '',
           company: userData.company || '',
           city: userData.city || '',
@@ -78,6 +79,7 @@ export class AuthService {
           linkedInLink: userData.linkedInLink || '',
           biography: userData.biography || '',
           otherLink: userData.otherLink || '',
+          // Nouveaux champs pour la liaison speaker
           speakerIds: userData.speakerIds || [],
           eventIds: userData.eventIds || [],
           sessionIds: userData.sessionIds || []
@@ -85,26 +87,35 @@ export class AuthService {
 
         this.userState.updateUser(mergedUser);
         this.userState.saveToStorage();
+
+        // Vérifier si l'utilisateur a des rôles speaker
+        this.checkAndNotifySpeakerRole(mergedUser);
       }
     } catch (error) {
       console.error('Error fetching and merging user data:', error);
     }
   }
 
-  getUserSpeakerProfile(eventId: string): Observable<UserSpeakerProfile> {
-    return this.http.get<UserSpeakerProfile>(`${environment.apiUrl}/user-speaker/profile/event/${eventId}`, {
-      withCredentials: true
-    });
+  private checkAndNotifySpeakerRole(user: User): void {
+    if (user.eventIds && user.eventIds.length > 0) {
+      this.userState.updateUser(user);
+
+      console.log(`User has speaker role in ${user.eventIds.length} event(s)`);
+
+      this.showSpeakerRoleNotification(user.eventIds.length);
+    }
+  }
+
+  private showSpeakerRoleNotification(eventCount: number): void {
+    const message = eventCount === 1
+      ? 'Vous avez été identifié comme speaker pour un événement'
+      : `Vous avez été identifié comme speaker pour ${eventCount} événements`;
+
+    console.log(message);
   }
 
   getUserSpeakerEvents(): Observable<string[]> {
     return this.http.get<string[]>(`${environment.apiUrl}/user-speaker/events`, {
-      withCredentials: true
-    });
-  }
-
-  syncSpeakerData(eventId: string): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/user-speaker/sync/event/${eventId}`, {}, {
       withCredentials: true
     });
   }
@@ -159,7 +170,7 @@ export class AuthService {
           ...userData,
           uid: result.user.uid,
           email: result.user.email,
-          displayName: result.user.displayName,
+          name: result.user.displayName,
           photoURL: result.user.photoURL
         };
 
@@ -260,7 +271,7 @@ export class AuthService {
             await this.saveUserToBackend({
               uid: result.user.uid,
               email: result.user.email,
-              displayName: result.user.displayName,
+              name: result.user.displayName,
               photoURL: result.user.photoURL
             });
             this.router.navigate(['/']);
@@ -308,7 +319,7 @@ export class AuthService {
                 await this.saveUserToBackend({
                   uid: result.user.uid,
                   email: result.user.email,
-                  displayName: result.user.displayName,
+                  name: result.user.displayName,
                   photoURL: result.user.photoURL
                 });
               } catch (error) {

@@ -21,7 +21,7 @@ export class UserDataService {
   toggleSidebar(open: boolean, user: any = null) {
     this.isSidebarOpen = open;
     if (user) {
-      this.userName = user.displayName || null;
+      this.userName = user.name || null;
       this.userPhotoURL = user.photoURL || 'img/profil-picture.svg';
       this.userEmail = user.email || 'No email';
       this.userCompany = user.company || '';
@@ -36,7 +36,7 @@ export class UserDataService {
     }
   }
 
-  get displayName(): string {
+  get name(): string {
     return this.userName || this.userEmail || 'Unknown User';
   }
 }

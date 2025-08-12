@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @Component
 public class UserMapper {
@@ -53,33 +52,6 @@ public class UserMapper {
         return user;
     }
 
-    /**
-     * Convertit les anciens champs vers le nouveau format
-     */
-    public User migrateFromOldFormat(User oldUser) {
-        User newUser = new User();
-        newUser.setUid(oldUser.getUid());
-        newUser.setEmail(oldUser.getEmail());
-        newUser.setName(oldUser.getName()); // displayName -> name
-        newUser.setPhotoURL(oldUser.getPhotoURL());
-        newUser.setCompany(oldUser.getCompany());
-        newUser.setLocation(oldUser.getLocation()); // city -> location
-        newUser.setPhoneNumber(oldUser.getPhoneNumber());
-        newUser.setBio(oldUser.getBio()); // biography -> bio
-
-        // Migration des liens sociaux
-        List<String> socialLinks = new ArrayList<>();
-        // Ici tu peux ajouter la logique pour convertir les anciens champs individuels
-        // vers la liste socialLinks si nécessaire
-
-        newUser.setSocialLinks(socialLinks);
-        newUser.setSpeakerIds(new ArrayList<>());
-        newUser.setEventIds(new ArrayList<>());
-        newUser.setSessionIds(new ArrayList<>());
-
-        return newUser;
-    }
-
     public User updateEntityFromDTO(UserDTO dto, User existingUser) {
         if (dto == null || existingUser == null) {
             return existingUser;
@@ -112,10 +84,6 @@ public class UserMapper {
         if (dto.socialLinks() != null) {
             existingUser.setSocialLinks(new ArrayList<>(dto.socialLinks()));
         }
-
-        // Les IDs de liaison ne sont généralement pas mis à jour via ce mapper
-        // Ils sont gérés par le UserSpeakerLinkService
-
         existingUser.setUpdatedAt(new Date());
         return existingUser;
     }

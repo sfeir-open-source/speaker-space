@@ -70,7 +70,7 @@ public class User {
         return "User{" +
                 "uid='" + uid + '\'' +
                 ", email='" + email + '\'' +
-                ", displayName='" + name + '\'' +
+                ", name='" + name + '\'' +
                 ", company='" + company + '\'' +
                 ", city='" + location + '\'' +
                 '}';

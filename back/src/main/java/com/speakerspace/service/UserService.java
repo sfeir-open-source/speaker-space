@@ -9,7 +9,6 @@ import com.speakerspace.model.User;
 import com.speakerspace.repository.TeamRepository;
 import com.speakerspace.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -170,7 +169,7 @@ public class UserService {
         }
 
         if (user.getName() != null && user.getName().length() == 1) {
-            validationErrors.put("displayName", "Display name must be at least 2 characters");
+            validationErrors.put("name", "Display name must be at least 2 characters");
         }
 
         if (!validationErrors.isEmpty()) {
@@ -191,7 +190,7 @@ public class UserService {
             validationErrors.put("email", "Invalid email format");
         }
 
-        validateOptionalField(user.getName(), "displayName",
+        validateOptionalField(user.getName(), "name",
                 "Name must be at least 2 characters", validationErrors);
         validateOptionalField(user.getCompany(), "company",
                 "Company name must be at least 2 characters", validationErrors);

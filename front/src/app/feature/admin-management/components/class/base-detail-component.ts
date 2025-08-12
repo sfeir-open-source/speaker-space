@@ -18,7 +18,6 @@ export abstract class BaseDetailComponent implements OnInit, OnDestroy {
 
   protected destroy$ = new Subject<void>();
   protected routeSubscription?: Subscription;
-
   protected readonly destroyRef = inject(DestroyRef);
 
   constructor(
@@ -53,7 +52,7 @@ export abstract class BaseDetailComponent implements OnInit, OnDestroy {
     return new Promise((resolve, reject) => {
       this.eventService.getEventById(this.eventId)
         .pipe(
-          takeUntilDestroyed()
+          takeUntilDestroyed(this.destroyRef)
         )
         .subscribe({
           next: (event) => {

@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {Observable, of, switchMap} from 'rxjs';
-import {environment} from '../../../../environments/environment.development';
+import {Observable, of} from 'rxjs';
 import {catchError, map} from 'rxjs/operators';
 import {SessionImportData, Speaker} from '../../../feature/admin-management/type/session/session';
 import {convertToDate} from '../../../feature/admin-management/utils/date.utils';
-import {SpeakerProfile} from '../../models/user.model';
+import {SpeakerProfile, UserSpeakerProfile} from '../../models/user.model';
 import {UserSpeakerService} from './user-speaker.service';
+import {SpeakerMapperService} from '../../../feature/admin-management/services/speaker/speaker-mapper.service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,16 +14,20 @@ import {UserSpeakerService} from './user-speaker.service';
 export class UserContextService {
   constructor(
     private http: HttpClient,
-    private userSpeakerService: UserSpeakerService
+    private userSpeakerService: UserSpeakerService,
+    private speakerMapper: SpeakerMapperService
   ) {}
 
-  isUserSpeakerOfEvent(eventId: string): Observable<boolean> {
-    return this.userSpeakerService.isSpeakerForEvent(eventId);
-  }
-
-  getMyProfileForEvent(eventId: string): Observable<SpeakerProfile | null> {
+  getMyProfileForEvent(eventId: string): Observable<Speaker | null> {
     return this.userSpeakerService.getProfile(eventId).pipe(
-      map(profile => profile.speakers.length > 0 ? profile.speakers[0] : null),
+      map((profile: UserSpeakerProfile) => {
+        if (!this.isValidUserSpeakerProfile(profile)) {
+          return null;
+        }
+
+        const speakerProfile = profile.speakers[0];
+        return this.speakerMapper.mapSpeakerProfileToSpeaker(speakerProfile);
+      }),
       catchError(error => {
         console.error('Error loading speaker profile:', error);
         return of(null);
@@ -42,6 +46,20 @@ export class UserContextService {
         return of(null);
       })
     );
+  }
+
+  private isValidUserSpeakerProfile(profile: UserSpeakerProfile): boolean {
+    return profile &&
+      Array.isArray(profile.speakers) &&
+      profile.speakers.length > 0 &&
+      this.isValidSpeakerProfile(profile.speakers[0]);
+  }
+
+  private isValidSpeakerProfile(speaker: SpeakerProfile): boolean {
+    return speaker &&
+      typeof speaker.id === 'string' &&
+      typeof speaker.name === 'string' &&
+      typeof speaker.email === 'string';
   }
 
   getSessionsForCurrentUser(eventId: string): Observable<SessionImportData[]> {

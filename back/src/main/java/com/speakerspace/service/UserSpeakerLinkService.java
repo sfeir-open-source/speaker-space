@@ -7,15 +7,17 @@ import com.speakerspace.model.User;
 import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
-import com.speakerspace.model.session.UserSpeakerProfileDTO;
+import com.speakerspace.dto.UserSpeakerProfileDTO;
 import com.speakerspace.repository.SessionRepository;
-import com.speakerspace.repository.SessionRepositoryImpl;
 import com.speakerspace.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,99 +30,140 @@ public class UserSpeakerLinkService {
     private final UserMapper userMapper;
     private final SpeakerMapper speakerMapper;
 
-    public void linkSpeakerToUser(Speaker speaker, String eventId) {
-        if (speaker.getEmail() == null || speaker.getEmail().trim().isEmpty()) {
-            log.warn("Cannot link speaker {} - no email provided", speaker.getId());
+    public void linkSpeakerToUserOnImport(Speaker speaker, String eventId, String sessionId) {
+        if (!isValidSpeakerEmail(speaker)) {
+            log.debug("Speaker {} has invalid email, skipping user linking", speaker.getId());
             return;
         }
 
-        String normalizedEmail = speaker.getEmail().toLowerCase().trim();
+        String normalizedEmail = normalizeEmail(speaker.getEmail());
         Optional<User> userOpt = userRepository.findByEmail(normalizedEmail);
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            updateUserWithSpeakerInfo(user, speaker, eventId);
-            userRepository.saveUser(user);
-
-            log.info("Successfully linked speaker {} to user {} for event {}",
-                    speaker.getId(), user.getUid(), eventId);
+            if (updateUserWithSpeakerLinks(user, speaker, eventId, sessionId)) {
+                try {
+                    userRepository.saveUser(user);
+                    log.info("Linked speaker {} to existing user {} for event {}",
+                            speaker.getId(), user.getUid(), eventId);
+                } catch (Exception e) {
+                    log.error("Failed to save user {} after linking speaker {}: {}",
+                            user.getUid(), speaker.getId(), e.getMessage());
+                }
+            }
         } else {
-            log.debug("No user found with email {} for speaker {}",
-                    normalizedEmail, speaker.getId());
+            log.debug("No existing user found for speaker email: {}", normalizedEmail);
         }
     }
 
-    private boolean updateUserWithSpeakerInfo(User user, Speaker speaker, String eventId) {
-        boolean updated = false;
+    @Async
+    public CompletableFuture<Void> linkExistingSpeakersToNewUser(String userUid, String email) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                if (!isValidEmail(email)) {
+                    log.warn("Invalid email for user linking: {}", email);
+                    return;
+                }
 
-        if (shouldUpdateField(user.getName(), speaker.getName())) {
-            user.setName(speaker.getName());
-            updated = true;
-        }
+                String normalizedEmail = normalizeEmail(email);
+                SpeakerUserLinkResult linkResult = findAllSpeakerLinksForEmail(normalizedEmail);
 
-        if (shouldUpdateField(user.getBio(), speaker.getBio())) {
-            user.setBio(speaker.getBio());
-            updated = true;
-        }
-
-        if (shouldUpdateField(user.getCompany(), speaker.getCompany())) {
-            user.setCompany(speaker.getCompany());
-            updated = true;
-        }
-
-        if (shouldUpdateField(user.getLocation(), speaker.getLocation())) {
-            user.setLocation(speaker.getLocation());
-            updated = true;
-        }
-
-        if (shouldUpdateField(user.getPhotoURL(), speaker.getPicture())) {
-            user.setPhotoURL(speaker.getPicture());
-            updated = true;
-        }
-
-        if (speaker.getSocialLinks() != null && !speaker.getSocialLinks().isEmpty()) {
-            List<String> mergedSocialLinks = mergeSocialLinks(user.getSocialLinks(), speaker.getSocialLinks());
-            if (!Objects.equals(user.getSocialLinks(), mergedSocialLinks)) {
-                user.setSocialLinks(mergedSocialLinks);
-                updated = true;
+                if (linkResult.hasLinks()) {
+                    updateUserWithAllLinks(userUid, linkResult);
+                    log.info("Successfully linked {} speakers across {} events to user {}",
+                            linkResult.getSpeakerIds().size(),
+                            linkResult.getEventIds().size(),
+                            userUid);
+                } else {
+                    log.debug("No existing speakers found for user {} with email {}", userUid, normalizedEmail);
+                }
+            } catch (Exception e) {
+                log.error("Failed to link existing speakers to user {}: {}", userUid, e.getMessage(), e);
             }
+        });
+    }
+
+    private SpeakerUserLinkResult findAllSpeakerLinksForEmail(String normalizedEmail) {
+        SpeakerUserLinkResult result = new SpeakerUserLinkResult();
+
+        try {
+            List<Session> allSessions = sessionRepository.findAll();
+
+            for (Session session : allSessions) {
+                List<Speaker> speakers = session.getSpeakers();
+                if (speakers == null || speakers.isEmpty()) {
+                    continue;
+                }
+
+                for (Speaker speaker : speakers) {
+                    if (isMatchingEmail(normalizedEmail, speaker.getEmail())) {
+                        result.addLink(speaker.getId(), session.getEventId(), session.getId());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error finding speaker links for email {}: {}", normalizedEmail, e.getMessage());
         }
 
-        addSpeakerIdToUser(user, speaker.getId());
-        addEventIdToUser(user, eventId);
+        return result;
+    }
 
-        if (updated) {
+    private void updateUserWithAllLinks(String userUid, SpeakerUserLinkResult linkResult) {
+        try {
+            User user = userRepository.findUserById(userUid);
+            if (user == null) {
+                log.warn("User not found for linking: {}", userUid);
+                return;
+            }
+
+            user.setSpeakerIds(mergeUniqueIds(user.getSpeakerIds(), linkResult.getSpeakerIds()));
+            user.setEventIds(mergeUniqueIds(user.getEventIds(), linkResult.getEventIds()));
+            user.setSessionIds(mergeUniqueIds(user.getSessionIds(), linkResult.getSessionIds()));
             user.setUpdatedAt(new Date());
-        }
 
-        return updated;
+            userRepository.saveUser(user);
+        } catch (Exception e) {
+            log.error("Failed to update user {} with speaker links: {}", userUid, e.getMessage());
+        }
     }
 
     public void updateUserSessionLinks(String eventId) {
-        List<Session> sessions = sessionRepository.findByEventId(eventId);
-        Map<String, Set<String>> userSessionMap = new HashMap<>();
+        try {
+            List<Session> sessions = sessionRepository.findByEventId(eventId);
+            Map<String, Set<String>> userSessionMap = new HashMap<>();
 
-        for (Session session : sessions) {
-            if (session.getSpeakers() != null) {
-                for (Speaker speaker : session.getSpeakers()) {
-                    if (speaker.getEmail() != null) {
-                        String normalizedEmail = speaker.getEmail().toLowerCase().trim();
+            for (Session session : sessions) {
+                List<Speaker> speakers = session.getSpeakers();
+                if (speakers == null || speakers.isEmpty()) {
+                    continue;
+                }
+
+                for (Speaker speaker : speakers) {
+                    if (isValidSpeakerEmail(speaker)) {
+                        String normalizedEmail = normalizeEmail(speaker.getEmail());
                         userSessionMap.computeIfAbsent(normalizedEmail, k -> new HashSet<>())
                                 .add(session.getId());
                     }
                 }
             }
-        }
 
-        for (Map.Entry<String, Set<String>> entry : userSessionMap.entrySet()) {
-            Optional<User> userOpt = userRepository.findByEmail(entry.getKey());
+            userSessionMap.forEach(this::updateUserSessionsForEmail);
+
+        } catch (Exception e) {
+            log.error("Failed to update user session links for event {}: {}", eventId, e.getMessage());
+        }
+    }
+
+    private void updateUserSessionsForEmail(String email, Set<String> sessionIds) {
+        try {
+            Optional<User> userOpt = userRepository.findByEmail(email);
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 List<String> currentSessionIds = user.getSessionIds() != null ?
                         new ArrayList<>(user.getSessionIds()) : new ArrayList<>();
 
                 boolean updated = false;
-                for (String sessionId : entry.getValue()) {
+                for (String sessionId : sessionIds) {
                     if (!currentSessionIds.contains(sessionId)) {
                         currentSessionIds.add(sessionId);
                         updated = true;
@@ -131,11 +174,99 @@ public class UserSpeakerLinkService {
                     user.setSessionIds(currentSessionIds);
                     user.setUpdatedAt(new Date());
                     userRepository.saveUser(user);
-
-                    log.info("Updated session links for user {} in event {}",
-                            user.getUid(), eventId);
+                    log.info("Updated session links for user {} with {} sessions",
+                            user.getUid(), sessionIds.size());
                 }
             }
+        } catch (Exception e) {
+            log.error("Failed to update sessions for user with email {}: {}", email, e.getMessage());
+        }
+    }
+
+    private boolean isValidSpeakerEmail(Speaker speaker) {
+        return speaker != null && isValidEmail(speaker.getEmail());
+    }
+
+    private boolean isValidEmail(String email) {
+        return email != null && !email.trim().isEmpty() && email.contains("@");
+    }
+
+    private String normalizeEmail(String email) {
+        return email.toLowerCase().trim();
+    }
+
+    private boolean isMatchingEmail(String normalizedEmail, String speakerEmail) {
+        return isValidEmail(speakerEmail) && normalizedEmail.equals(normalizeEmail(speakerEmail));
+    }
+
+    private boolean updateUserWithSpeakerLinks(User user, Speaker speaker, String eventId, String sessionId) {
+        boolean updated = false;
+
+        updated |= addToListIfNotExists(user.getSpeakerIds(), speaker.getId(), user::setSpeakerIds);
+        updated |= addToListIfNotExists(user.getEventIds(), eventId, user::setEventIds);
+        updated |= addToListIfNotExists(user.getSessionIds(), sessionId, user::setSessionIds);
+
+        if (updated) {
+            user.setUpdatedAt(new Date());
+        }
+
+        return updated;
+    }
+
+    private boolean addToListIfNotExists(List<String> list, String item, Consumer<List<String>> setter) {
+        if (list == null) {
+            setter.accept(new ArrayList<>(List.of(item)));
+            return true;
+        }
+
+        if (!list.contains(item)) {
+            List<String> newList = new ArrayList<>(list);
+            newList.add(item);
+            setter.accept(newList);
+            return true;
+        }
+
+        return false;
+    }
+
+    private List<String> mergeUniqueIds(List<String> existing, Set<String> newIds) {
+        Set<String> merged = new LinkedHashSet<>();
+        if (existing != null) {
+            merged.addAll(existing);
+        }
+        merged.addAll(newIds);
+        return new ArrayList<>(merged);
+    }
+
+    public void syncSpeakerDataToUser(String userUid, String eventId) {
+        try {
+            User user = userRepository.findUserById(userUid);
+            if (user == null) {
+                throw new EntityNotFoundException("User not found: " + userUid);
+            }
+
+            if (!isValidEmail(user.getEmail())) {
+                log.warn("Cannot sync speaker data - user {} has invalid email", userUid);
+                return;
+            }
+
+            List<Speaker> matchingSpeakers = findSpeakersByEmailAndEvent(user.getEmail(), eventId);
+
+            boolean profileUpdated = false;
+            for (Speaker speaker : matchingSpeakers) {
+                if (updateUserProfileFromSpeaker(user, speaker)) {
+                    profileUpdated = true;
+                }
+            }
+
+            if (profileUpdated) {
+                user.setUpdatedAt(new Date());
+                userRepository.saveUser(user);
+                log.info("Synchronized speaker profile data to user {} for event {}", userUid, eventId);
+            }
+        } catch (Exception e) {
+            log.error("Failed to sync speaker data for user {} and event {}: {}", userUid, eventId, e.getMessage());
+            throw e;
         }
     }
 
@@ -148,28 +279,10 @@ public class UserSpeakerLinkService {
         List<Speaker> speakers = sessionRepository.findUniqueSpeekersByEventId(eventId)
                 .stream()
                 .filter(speaker -> user.getEmail() != null &&
-                        user.getEmail().equalsIgnoreCase(speaker.getEmail()))
+                        isMatchingEmail(normalizeEmail(user.getEmail()), speaker.getEmail()))
                 .collect(Collectors.toList());
 
-        List<SessionImportData> sessions = new ArrayList<>();
-        if (user.getSessionIds() != null) {
-            sessions = sessionRepository.findByEventId(eventId)
-                    .stream()
-                    .filter(session -> user.getSessionIds().contains(session.getId()))
-                    .map(session -> {
-                        SessionImportData importData = new SessionImportData();
-                        importData.setId(session.getId());
-                        importData.setTitle(session.getTitle());
-                        importData.setAbstractText(session.getAbstractText());
-                        importData.setStart(session.getStart());
-                        importData.setEnd(session.getEnd());
-                        importData.setTrack(session.getTrack());
-                        importData.setLevel(session.getLevel());
-                        importData.setSpeakers(session.getSpeakers());
-                        return importData;
-                    })
-                    .collect(Collectors.toList());
-        }
+        List<SessionImportData> sessions = getUserSessionsForEvent(user, eventId);
 
         return UserSpeakerProfileDTO.builder()
                 .user(userMapper.convertToDTO(user))
@@ -179,129 +292,104 @@ public class UserSpeakerLinkService {
                 .build();
     }
 
-    private boolean shouldUpdateField(String currentValue, String newValue) {
-        return (currentValue == null || currentValue.trim().isEmpty()) &&
-                (newValue != null && !newValue.trim().isEmpty());
-    }
-
-    private List<String> mergeSocialLinks(List<String> userLinks, List<String> speakerLinks) {
-        Set<String> mergedLinks = new LinkedHashSet<>();
-
-        if (userLinks != null) {
-            mergedLinks.addAll(userLinks);
-        }
-
-        if (speakerLinks != null) {
-            mergedLinks.addAll(speakerLinks);
-        }
-
-        return new ArrayList<>(mergedLinks);
-    }
-
-    private void addSpeakerIdToUser(User user, String speakerId) {
-        if (user.getSpeakerIds() == null) {
-            user.setSpeakerIds(new ArrayList<>());
-        }
-
-        if (!user.getSpeakerIds().contains(speakerId)) {
-            user.getSpeakerIds().add(speakerId);
-        }
-    }
-
-    private void addEventIdToUser(User user, String eventId) {
-        if (user.getEventIds() == null) {
-            user.setEventIds(new ArrayList<>());
-        }
-
-        if (!user.getEventIds().contains(eventId)) {
-            user.getEventIds().add(eventId);
-        }
-    }
-
-    public void linkExistingSpeakersToUser(String userUid, String email) {
-        if (email == null || email.trim().isEmpty()) {
-            return;
-        }
-
-        String normalizedEmail = email.toLowerCase().trim();
-
-        List<Session> sessionsWithSpeakers = ((SessionRepositoryImpl) sessionRepository).findAllWithSpeakers();
-
-        Set<String> linkedEventIds = new HashSet<>();
-        Set<String> linkedSpeakerIds = new HashSet<>();
-        Set<String> linkedSessionIds = new HashSet<>();
-
-        for (Session session : sessionsWithSpeakers) {
-            for (Speaker speaker : session.getSpeakers()) {
-                if (normalizedEmail.equals(speaker.getEmail())) {
-                    linkedEventIds.add(session.getEventId());
-                    linkedSpeakerIds.add(speaker.getId());
-                    linkedSessionIds.add(session.getId());
-
-                    log.debug("Found existing speaker {} for user {} in event {}",
-                            speaker.getId(), userUid, session.getEventId());
-                }
-            }
-        }
-
-        if (!linkedSpeakerIds.isEmpty()) {
-            updateUserWithLinks(userUid, linkedSpeakerIds, linkedEventIds, linkedSessionIds);
-
-            log.info("Successfully linked {} speakers, {} events, {} sessions to user {}",
-                    linkedSpeakerIds.size(), linkedEventIds.size(), linkedSessionIds.size(), userUid);
-        } else {
-            log.debug("No existing speakers found for user {} with email {}", userUid, normalizedEmail);
-        }
-    }
-
-    public void syncSpeakerDataToUser(String userUid, String eventId) {
+    public List<String> getUserSpeakerEventIds(String userUid) {
         User user = userRepository.findUserById(userUid);
-        if (user == null) {
-            throw new EntityNotFoundException("User not found: " + userUid);
-        }
+        return user != null && user.getEventIds() != null ?
+                new ArrayList<>(user.getEventIds()) : new ArrayList<>();
+    }
 
-        if (user.getEmail() == null) {
-            log.warn("Cannot sync speaker data - user {} has no email", userUid);
-            return;
-        }
-
-        List<Speaker> speakers = sessionRepository.findUniqueSpeekersByEventId(eventId)
-                .stream()
-                .filter(speaker -> user.getEmail().equalsIgnoreCase(speaker.getEmail()))
-                .collect(Collectors.toList());
-
+    private boolean updateUserProfileFromSpeaker(User user, Speaker speaker) {
         boolean updated = false;
-        for (Speaker speaker : speakers) {
-            if (updateUserWithSpeakerInfo(user, speaker, eventId)) {
+
+        updated |= updateFieldIfEmpty(user.getName(), speaker.getName(), user::setName);
+        updated |= updateFieldIfEmpty(user.getBio(), speaker.getBio(), user::setBio);
+        updated |= updateFieldIfEmpty(user.getCompany(), speaker.getCompany(), user::setCompany);
+        updated |= updateFieldIfEmpty(user.getLocation(), speaker.getLocation(), user::setLocation);
+        updated |= updateFieldIfEmpty(user.getPhotoURL(), speaker.getPicture(), user::setPhotoURL);
+
+        if (speaker.getSocialLinks() != null && !speaker.getSocialLinks().isEmpty()) {
+            List<String> mergedLinks = mergeSocialLinks(user.getSocialLinks(), speaker.getSocialLinks());
+            if (!Objects.equals(user.getSocialLinks(), mergedLinks)) {
+                user.setSocialLinks(mergedLinks);
                 updated = true;
             }
         }
 
-        if (updated) {
-            userRepository.saveUser(user);
-            log.info("Synchronized speaker data to user {} for event {}", userUid, eventId);
-        }
+        return updated;
     }
 
-    public List<String> getUserSpeakerEventIds(String userUid) {
-        User user = userRepository.findUserById(userUid);
-        if (user == null) {
+    private boolean updateFieldIfEmpty(String currentValue, String newValue, Consumer<String> setter) {
+        if (isEmptyOrNull(currentValue) && !isEmptyOrNull(newValue)) {
+            setter.accept(newValue.trim());
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isEmptyOrNull(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private List<String> mergeSocialLinks(List<String> userLinks, List<String> speakerLinks) {
+        Set<String> merged = new LinkedHashSet<>();
+        if (userLinks != null) merged.addAll(userLinks);
+        if (speakerLinks != null) merged.addAll(speakerLinks);
+        return new ArrayList<>(merged);
+    }
+
+    private List<Speaker> findSpeakersByEmailAndEvent(String email, String eventId) {
+        return sessionRepository.findByEventId(eventId)
+                .stream()
+                .filter(session -> session.getSpeakers() != null)
+                .flatMap(session -> session.getSpeakers().stream())
+                .filter(speaker -> isMatchingEmail(normalizeEmail(email), speaker.getEmail()))
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private List<SessionImportData> getUserSessionsForEvent(User user, String eventId) {
+        if (user.getSessionIds() == null) {
             return new ArrayList<>();
         }
 
-        return user.getEventIds() != null ? new ArrayList<>(user.getEventIds()) : new ArrayList<>();
+        return sessionRepository.findByEventId(eventId)
+                .stream()
+                .filter(session -> user.getSessionIds().contains(session.getId()))
+                .map(this::convertSessionToImportData)
+                .collect(Collectors.toList());
     }
 
-    private void updateUserWithLinks(String userUid, Set<String> speakerIds,
-                                     Set<String> eventIds, Set<String> sessionIds) {
-        User user = userRepository.findUserById(userUid);
-        if (user != null) {
-            user.setSpeakerIds(new ArrayList<>(speakerIds));
-            user.setEventIds(new ArrayList<>(eventIds));
-            user.setSessionIds(new ArrayList<>(sessionIds));
-            user.setUpdatedAt(new Date());
+    private SessionImportData convertSessionToImportData(Session session) {
+        SessionImportData importData = new SessionImportData();
+        importData.setId(session.getId());
+        importData.setTitle(session.getTitle());
+        importData.setAbstractText(session.getAbstractText());
+        importData.setStart(session.getStart());
+        importData.setEnd(session.getEnd());
+        importData.setTrack(session.getTrack());
+        importData.setLevel(session.getLevel());
+        importData.setSpeakers(session.getSpeakers() != null ? session.getSpeakers() : new ArrayList<>());
+        return importData;
+    }
 
-            userRepository.saveUser(user);
+    private static class SpeakerUserLinkResult {
+        private final Set<String> speakerIds = new HashSet<>();
+        private final Set<String> eventIds = new HashSet<>();
+        private final Set<String> sessionIds = new HashSet<>();
+
+        public void addLink(String speakerId, String eventId, String sessionId) {
+            speakerIds.add(speakerId);
+            eventIds.add(eventId);
+            sessionIds.add(sessionId);
         }
+
+        public boolean hasLinks() {
+            return !speakerIds.isEmpty();
+        }
+
+        public Set<String> getSpeakerIds() { return speakerIds; }
+        public Set<String> getEventIds() { return eventIds; }
+        public Set<String> getSessionIds() { return sessionIds; }
     }
 }
+

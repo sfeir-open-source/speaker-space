@@ -51,10 +51,27 @@ public class AuthController {
             existingUser = createNewUser(decodedToken);
 
             if (email != null) {
-                linkExistingSpeakersToNewUser(uid, email);
+                userSpeakerLinkService.linkExistingSpeakersToNewUser(uid, email)
+                        .whenComplete((result, throwable) -> {
+                            if (throwable != null) {
+                                log.error("Failed to link speakers for new user {}: {}", uid, throwable.getMessage());
+                            } else {
+                                log.info("Successfully completed speaker linking for new user {}", uid);
+                            }
+                        });
             }
         } else {
             existingUser = updateExistingUserIfNeeded(existingUser, decodedToken);
+
+            if (existingUser.email() != null &&
+                    (email == null || !email.equalsIgnoreCase(existingUser.email()))) {
+                userSpeakerLinkService.linkExistingSpeakersToNewUser(uid, existingUser.email())
+                        .whenComplete((result, throwable) -> {
+                            if (throwable != null) {
+                                log.error("Failed to re-link speakers for user {}: {}", uid, throwable.getMessage());
+                            }
+                        });
+            }
         }
 
         return ResponseEntity.ok(existingUser);
@@ -105,6 +122,29 @@ public class AuthController {
 
         UserDTO updatedUser = userService.partialUpdateUser(userDTO, existingUser);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    private String authenticateAndAuthorize(HttpServletRequest request, String targetUid) {
+        String token = cookieService.getAuthTokenFromCookies(request);
+        if (token == null) {
+            throw new UnauthorizedException("Authentication required");
+        }
+
+        try {
+            FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
+            String tokenUid = decodedToken.getUid();
+
+            if (!tokenUid.equals(targetUid)) {
+                throw new AccessDeniedException("Not authorized to access this profile");
+            }
+
+            return tokenUid;
+        } catch (FirebaseAuthException | AccessDeniedException e) {
+            if (e.getMessage().contains("expired")) {
+                throw new TokenExpiredException("Token expired, please refresh");
+            }
+            throw new FirebaseAuthenticationException("Token verification failed", e);
+        }
     }
 
     private FirebaseToken verifyFirebaseToken(String idToken) {
@@ -174,42 +214,5 @@ public class AuthController {
         }
 
         return existingUser;
-    }
-
-    private void linkExistingSpeakersToNewUser(String uid, String email) {
-        try {
-            CompletableFuture.runAsync(() -> {
-                try {
-                    userSpeakerLinkService.linkExistingSpeakersToUser(uid, email);
-                } catch (Exception e) {
-                    log.error("Failed to link existing speakers to new user {}: {}", uid, e.getMessage());
-                }
-            });
-        } catch (Exception e) {
-            log.warn("Could not initiate speaker linking for user {}: {}", uid, e.getMessage());
-        }
-    }
-
-    private String authenticateAndAuthorize(HttpServletRequest request, String targetUid) {
-        String token = cookieService.getAuthTokenFromCookies(request);
-        if (token == null) {
-            throw new UnauthorizedException("Authentication required");
-        }
-
-        try {
-            FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
-            String tokenUid = decodedToken.getUid();
-
-            if (!tokenUid.equals(targetUid)) {
-                throw new AccessDeniedException("Not authorized to access this profile");
-            }
-
-            return tokenUid;
-        } catch (FirebaseAuthException | AccessDeniedException e) {
-            if (e.getMessage().contains("expired")) {
-                throw new TokenExpiredException("Token expired, please refresh");
-            }
-            throw new FirebaseAuthenticationException("Token verification failed", e);
-        }
     }
 }

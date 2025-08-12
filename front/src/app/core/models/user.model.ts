@@ -4,7 +4,7 @@ export type User = {
   token?: string;
   uid: string;
   email?: string | null;
-  displayName?: string | null;
+  name?: string | null;
   photoURL?: string | null;
   company?: string | null;
   city?: string | null;
@@ -31,10 +31,11 @@ export interface SpeakerProfile {
   readonly id: string;
   readonly conferenceHallId?: string;
   readonly name: string;
-  readonly email?: string;
+  readonly email: string;
   readonly bio?: string;
   readonly company?: string;
   readonly location?: string;
   readonly picture?: string;
-  readonly socialLinks: readonly string[];
+  readonly socialLinks?: string[];
+  readonly references?: string;
 }

@@ -48,13 +48,13 @@ export type Speaker = {
   id: string;
   idConferenceHall?: string;
   name: string;
-  bio: string;
-  company: string;
-  references: string;
-  picture: string;
-  location: string;
+  bio?: string;
+  company?: string;
+  references?: string;
+  picture?: string;
+  location?: string;
   email: string;
-  socialLinks: string[];
+  socialLinks?: string[];
 }
 
 export type Reviews = {
