@@ -24,10 +24,9 @@ export class EventTeamCardComponent {
     if (!eventId) return;
 
     try {
-      const role = await this.userRoleService.getUserRoleForEvent(eventId);
-
+      const role = this.field.userRole || await this.userRoleService.getUserRoleForEvent(eventId);
       if (role === 'admin') {
-        this.router.navigate(['/event-sessions', eventId]);
+        this.router.navigate(['/event', eventId, 'sessions']);
       } else {
         this.router.navigate(['/speaker/event', eventId, 'sessions']);
       }

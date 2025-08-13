@@ -7,7 +7,7 @@ import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.model.Team;
-import com.speakerspace.model.session.Speaker;
+import com.speakerspace.model.session.Session;
 import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
@@ -110,34 +110,11 @@ public class EventService {
                 .toList();
     }
 
-    public EventDTO getEventByIdForCurrentUser(String id) {
+    public Record getEventByIdForCurrentUser(String id) {
         EventDTO event = getEventById(id);
         if (event == null) {
             throw new EntityNotFoundException("Event not found with id: " + id);
         }
-
-        if (isUserSpeakerOfEvent(id)) {
-            return EventDTO.builder()
-                    .idEvent(event.idEvent())
-                    .eventName(event.eventName())
-                    .description(event.description())
-                    .endDate(event.endDate())
-                    .url(event.url())
-                    .startDate(event.startDate())
-                    .isOnline(event.isOnline())
-                    .location(event.location())
-                    .isPrivate(event.isPrivate())
-                    .webLinkUrl(event.webLinkUrl())
-                    .isFinish(event.isFinish())
-                    .userCreateId(event.userCreateId())
-                    .conferenceHallUrl(event.conferenceHallUrl())
-                    .teamId(event.teamId())
-                    .timeZone(event.timeZone())
-                    .logoBase64(event.logoBase64())
-                    .type(event.type())
-                    .build();
-        }
-
         return event;
     }
 
@@ -351,41 +328,59 @@ public class EventService {
                 return Collections.emptyList();
             }
 
-            List<Speaker> userSpeakers = speakerRepository.findByEmail(currentUser.email());
+            String userEmail = currentUser.email().toLowerCase().trim();
+            logger.debug("Looking for speaker events for email: {}", userEmail);
 
-            if (userSpeakers.isEmpty()) {
-                logger.debug("No speaker records found for email: {}", currentUser.email());
-                return Collections.emptyList();
+            if (currentUser.eventIds() != null && !currentUser.eventIds().isEmpty()) {
+                logger.debug("Found {} event IDs in user profile", currentUser.eventIds().size());
+
+                List<EventDTO> speakerEvents = currentUser.eventIds().stream()
+                        .map(this::getEventById)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                List<EventDTO> validSpeakerEvents = speakerEvents.stream()
+                        .filter(event -> isUserSpeakerOfEvent(event.idEvent()))
+                        .collect(Collectors.toList());
+
+                logger.debug("Found {} valid speaker events for user {}", validSpeakerEvents.size(), userEmail);
+                return validSpeakerEvents;
+            }
+            return findEventsBySpeakerEmailInSessions(userEmail);
+
+        } catch (Exception e) {
+            logger.error("Error retrieving events by speaker email", e);
+            return Collections.emptyList();
+        }
+    }
+
+    private List<EventDTO> findEventsBySpeakerEmailInSessions(String email) {
+        try {
+            List<Session> allSessions = sessionRepository.findAll();
+
+            Set<String> eventIds = new HashSet<>();
+
+            for (Session session : allSessions) {
+                if (session.getSpeakers() != null) {
+                    boolean isUserSpeaker = session.getSpeakers().stream()
+                            .anyMatch(speaker -> speaker.getEmail() != null &&
+                                    speaker.getEmail().toLowerCase().trim().equals(email));
+
+                    if (isUserSpeaker && session.getEventId() != null) {
+                        eventIds.add(session.getEventId());
+                    }
+                }
             }
 
-            Set<String> eventIds = userSpeakers.stream()
-                    .map(Speaker::getEventId)
-                    .filter(Objects::nonNull)
-                    .filter(id -> !id.trim().isEmpty())
-                    .collect(Collectors.toSet());
+            logger.debug("Found {} event IDs from sessions for email: {}", eventIds.size(), email);
 
-            if (eventIds.isEmpty()) {
-                logger.debug("No valid event IDs found in speaker records");
-                return Collections.emptyList();
-            }
-
-            List<EventDTO> speakerEvents = eventIds.stream()
+            return eventIds.stream()
                     .map(this::getEventById)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
-            speakerEvents.sort((e1, e2) -> {
-                if (e1.startDate() != null && e2.startDate() != null) {
-                    return e2.startDate().compareTo(e1.startDate());
-                }
-                return e2.idEvent().compareTo(e1.idEvent());
-            });
-
-            logger.debug("Found {} speaker events for user {}", speakerEvents.size(), currentUser.email());
-            return speakerEvents;
-
         } catch (Exception e) {
-            logger.error("Error retrieving events by speaker email", e);
+            logger.error("Error finding events by speaker email in sessions", e);
             return Collections.emptyList();
         }
     }
@@ -399,10 +394,22 @@ public class EventService {
                 return false;
             }
 
-            List<Speaker> speakers = speakerRepository.findByEmailAndEventId(
-                    currentUser.email(), eventId);
+            if (currentUser.eventIds() != null && currentUser.eventIds().contains(eventId)) {
+                logger.debug("User {} is speaker in event {} (from user profile)", currentUser.email(), eventId);
+                return true;
+            }
 
-            return !speakers.isEmpty();
+            List<Session> eventSessions = sessionRepository.findByEventId(eventId);
+            String userEmail = currentUser.email().toLowerCase().trim();
+
+            boolean isSpeaker = eventSessions.stream()
+                    .filter(session -> session.getSpeakers() != null)
+                    .flatMap(session -> session.getSpeakers().stream())
+                    .anyMatch(speaker -> speaker.getEmail() != null &&
+                            speaker.getEmail().toLowerCase().trim().equals(userEmail));
+
+            logger.debug("User {} speaker status in event {}: {}", userEmail, eventId, isSpeaker);
+            return isSpeaker;
 
         } catch (Exception e) {
             logger.error("Error checking if user is speaker of event: {}", eventId, e);

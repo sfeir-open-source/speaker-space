@@ -38,6 +38,15 @@ import {
 import {
   SessionDetailUnifiedComponent
 } from './feature/admin-management/components/session/session-detail-unified/session-detail-unified.component';
+import {
+  SpeakerSessionListPageComponent
+} from './feature/speaker-section/pages/speaker-session-list-page/speaker-session-list-page.component';
+import {
+  SpeakerSessionDetailPageComponent
+} from './feature/speaker-section/pages/speaker-session-detail-page/speaker-session-detail-page.component';
+import {
+  SpeakerMyProfilePageComponent
+} from './feature/speaker-section/pages/speaker-profile-page/speaker-profile-page.component';
 
 export const routes: Routes = [
   { path: '', component: HomePageComponent },
@@ -57,10 +66,15 @@ export const routes: Routes = [
   { path: 'event/:eventId/sessions', component: SessionListUnifiedComponent, canActivate: [AuthGuard] },
   { path: 'event/:eventId/speaker/:speakerId', component: SpeakerProfileUnifiedComponent, canActivate: [AuthGuard] },
   { path: 'event/:eventId/session/:sessionId', component: SessionDetailUnifiedComponent, canActivate: [AuthGuard] },
-  { path: 'speaker/event/:eventId/session/:sessionId', redirectTo: 'event/:eventId/session/:sessionId' },
   { path: 'event/:eventId/my-profile', component: SpeakerProfileUnifiedComponent, canActivate: [AuthGuard] },
-  { path: 'speaker/event/:eventId/sessions', redirectTo: 'event/:eventId/sessions' },
-  { path: 'speaker/event/:eventId/session/:sessionId', redirectTo: 'event/:eventId/session/:sessionId' },
+  { path: 'speaker/event/:eventId', canActivate: [AuthGuard],
+    children: [
+      { path: '', redirectTo: 'sessions', pathMatch: 'full' },
+      { path: 'sessions', component: SpeakerSessionListPageComponent },
+      { path: 'session/:sessionId', component: SpeakerSessionDetailPageComponent },
+      { path: 'my-profile', component: SpeakerMyProfilePageComponent }
+    ]
+  },
   { path: 'not-found', component: NotFoundPageComponent },
   { path: '**', redirectTo: '/not-found' }
 ];

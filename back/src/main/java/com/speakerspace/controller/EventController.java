@@ -5,6 +5,7 @@ import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.UnauthorizedException;
 import com.speakerspace.security.AuthenticationHelper;
 import com.speakerspace.service.EventService;
+import com.speakerspace.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,7 @@ public class EventController {
 
     private final EventService eventService;
     private final AuthenticationHelper authHelper;
+    private final UserService userService;
 
     @PostMapping("/create")
     public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO, Authentication authentication) {
@@ -81,12 +83,25 @@ public class EventController {
     }
 
     @GetMapping("/{id}/for-current-user")
-    public ResponseEntity<EventDTO> getEventForCurrentUser(@PathVariable String id) {
-        EventDTO event = eventService.getEventByIdForCurrentUser(id);
+    public ResponseEntity<Map<String, Object>> getEventForCurrentUser(@PathVariable String id) {
+        EventDTO event = (EventDTO) eventService.getEventByIdForCurrentUser(id);
         if (event == null) {
             throw new EntityNotFoundException("Event not found with id: " + id);
         }
-        return ResponseEntity.ok(event);
+
+        String currentUserId = userService.getCurrentUserId();
+        boolean isAdmin = currentUserId.equals(event.userCreateId());
+        boolean isSpeaker = eventService.isUserSpeakerOfEvent(id);
+
+        String userRole = isAdmin ? "admin" : (isSpeaker ? "speaker" : "none");
+
+        Map<String, Object> response = Map.of(
+                "event", event,
+                "userRole", userRole,
+                "hasAccess", isAdmin || isSpeaker
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")

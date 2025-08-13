@@ -106,7 +106,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
       const eventIds = this.userState.eventIds();
 
       if (eventIds.length === 0) {
-        this.showInfoMessage('Aucun événement speaker trouvé à synchroniser.');
+        this.showInfoMessage('No speaker events found to sync');
         return;
       }
 
@@ -125,7 +125,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (successCount > 0) {
         this.showSuccessMessage(
-          `Synchronisation réussie pour ${successCount} événement(s).`
+          `Synchronization successful for ${successCount} event(s)`
         );
 
         await this.reloadUserData();
@@ -133,13 +133,13 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (errorCount > 0) {
         this.showWarningMessage(
-          `${errorCount} événement(s) n'ont pas pu être synchronisés.`
+          `${errorCount} event(s) could not be synchronized`
         );
       }
 
     } catch (error) {
       console.error('Error during speaker data sync:', error);
-      this.showErrorMessage('Erreur lors de la synchronisation des données speaker.');
+      this.showErrorMessage('Error synchronizing speaker data');
     } finally {
       this.syncingAll.set(false);
     }
@@ -174,11 +174,11 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         }, 3000);
       } else {
         this.saveStatus.set('error');
-        this.showErrorMessage('Erreur lors de la sauvegarde.');
+        this.showErrorMessage('Error while saving');
       }
     } catch (error) {
       this.saveStatus.set('error');
-      this.showErrorMessage('Une erreur est survenue lors de la sauvegarde.');
+      this.showErrorMessage('An error occurred while saving\n');
     }
   }
 

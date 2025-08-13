@@ -95,7 +95,7 @@ export class NavbarSpeakerSectionComponent implements OnInit, OnChanges, OnDestr
           id: 'speaker',
           label: 'Your Profile',
           materialIcon: 'person',
-          route: `/event/${this.eventId}/my-profile`,
+          route: `/speaker/event/${this.eventId}/my-profile`,
           handler: this.speaker.bind(this)
         }
       ],
@@ -107,6 +107,16 @@ export class NavbarSpeakerSectionComponent implements OnInit, OnChanges, OnDestr
         cssClass: 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'
       }
     };
+  }
+
+  private session(): void {
+    if (!this.eventId) return;
+    this.router.navigate(['/speaker/event', this.eventId, 'sessions']);
+  }
+
+  private speaker(): void {
+    if (!this.eventId) return;
+    this.router.navigate(['/speaker/event', this.eventId, 'my-profile']);
   }
 
   private loadUserRole(userId: string): void {
@@ -130,21 +140,6 @@ export class NavbarSpeakerSectionComponent implements OnInit, OnChanges, OnDestr
         this.activePage = '';
         break;
     }
-  }
-
-  private session(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/speaker/event', this.eventId, 'sessions']);
-  }
-
-  private speaker(): void {
-    if (!this.eventId) {
-      return;
-    }
-    this.router.navigate(['/event', this.eventId , 'my-profile']);
   }
 
   private goToHomePage(): void {

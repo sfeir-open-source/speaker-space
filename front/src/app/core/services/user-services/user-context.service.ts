@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
-import {HttpClient} from '@angular/common/http';
 import {Observable, of} from 'rxjs';
 import {catchError, map} from 'rxjs/operators';
 import {SessionImportData, Speaker} from '../../../feature/admin-management/type/session/session';
 import {convertToDate} from '../../../feature/admin-management/utils/date.utils';
-import {SpeakerProfile, UserSpeakerProfile} from '../../models/user.model';
+import {UserSpeakerProfile} from '../../models/user.model';
 import {UserSpeakerService} from './user-speaker.service';
 import {SpeakerMapperService} from '../../../feature/admin-management/services/speaker/speaker-mapper.service';
 
@@ -13,7 +12,6 @@ import {SpeakerMapperService} from '../../../feature/admin-management/services/s
 })
 export class UserContextService {
   constructor(
-    private http: HttpClient,
     private userSpeakerService: UserSpeakerService,
     private speakerMapper: SpeakerMapperService
   ) {}
@@ -21,12 +19,14 @@ export class UserContextService {
   getMyProfileForEvent(eventId: string): Observable<Speaker | null> {
     return this.userSpeakerService.getProfile(eventId).pipe(
       map((profile: UserSpeakerProfile) => {
+
         if (!this.isValidUserSpeakerProfile(profile)) {
+          console.warn('Invalid profile structure:', profile);
           return null;
         }
-
         const speakerProfile = profile.speakers[0];
-        return this.speakerMapper.mapSpeakerProfileToSpeaker(speakerProfile);
+        const mappedSpeaker = this.speakerMapper.mapSpeakerProfileToSpeaker(speakerProfile);
+        return mappedSpeaker;
       }),
       catchError(error => {
         console.error('Error loading speaker profile:', error);
@@ -39,7 +39,12 @@ export class UserContextService {
     return this.userSpeakerService.getProfile(eventId).pipe(
       map(profile => {
         const session = profile.sessions.find(s => s.id === sessionId);
-        return session ? this.convertSessionDates(session) : null;
+        if (!session) {
+          console.warn(`Session ${sessionId} not found in profile`);
+          return null;
+        }
+
+        return this.convertSessionDates(session);
       }),
       catchError(error => {
         console.error('Error loading session:', error);
@@ -49,22 +54,28 @@ export class UserContextService {
   }
 
   private isValidUserSpeakerProfile(profile: UserSpeakerProfile): boolean {
-    return profile &&
+    const isValid : boolean = profile &&
       Array.isArray(profile.speakers) &&
       profile.speakers.length > 0 &&
-      this.isValidSpeakerProfile(profile.speakers[0]);
-  }
+      Array.isArray(profile.sessions);
 
-  private isValidSpeakerProfile(speaker: SpeakerProfile): boolean {
-    return speaker &&
-      typeof speaker.id === 'string' &&
-      typeof speaker.name === 'string' &&
-      typeof speaker.email === 'string';
+    return isValid;
   }
 
   getSessionsForCurrentUser(eventId: string): Observable<SessionImportData[]> {
-    return this.userSpeakerService.getUserSessions(eventId).pipe(
-      map(sessions => sessions.map(session => this.convertSessionDates(session)))
+    return this.userSpeakerService.getProfile(eventId).pipe(
+      map(profile => {
+        if (!profile.sessions || !Array.isArray(profile.sessions)) {
+          console.warn('No sessions found in profile');
+          return [];
+        }
+
+        return profile.sessions.map(session => this.convertSessionDates(session));
+      }),
+      catchError(error => {
+        console.error('Error loading user sessions:', error);
+        return of([]);
+      })
     );
   }
 

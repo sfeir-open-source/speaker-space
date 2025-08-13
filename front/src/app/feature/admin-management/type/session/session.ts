@@ -46,7 +46,7 @@ export type Category = {
 
 export type Speaker = {
   id: string;
-  idConferenceHall?: string;
+  idConferenceHall: string;
   name: string;
   bio?: string;
   company?: string;

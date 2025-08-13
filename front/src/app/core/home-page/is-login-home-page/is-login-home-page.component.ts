@@ -44,7 +44,7 @@ export class IsLoginHomePageComponent implements OnInit {
     this.isLoading = true;
     this.error = null;
 
-    this.eventService.getAllUserRelatedEvents()
+    this.eventService.getAllUserEvents()
       .pipe(
         takeUntilDestroyed(this._destroyRef),
         finalize(() => this.isLoading = false)
@@ -83,7 +83,7 @@ export class IsLoginHomePageComponent implements OnInit {
   private transformEventsToFields(events: Event[]): EventTeamField[] {
     return events.map(event => {
       const status = this.eventStatusService.getEventStatus(event);
-      const userRole = this.userRoleService.getUserRoleFromContext(event);
+      const userRole = event.userRole || this.userRoleService.getUserRoleFromContext(event);
 
       return {
         idEvent: event.idEvent ?? '',

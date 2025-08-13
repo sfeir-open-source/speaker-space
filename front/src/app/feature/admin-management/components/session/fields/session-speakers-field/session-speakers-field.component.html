@@ -50,8 +50,8 @@
               <div class="flex items-center space-x-3">
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-gray-900">{{ speaker.name }}</p>
-                  @if (speaker.company) {
-                    <p class="text-xs text-gray-500">{{ speaker.company }}</p>
+                  @if (speaker.email) {
+                    <p class="text-xs text-gray-500">{{ speaker.email }}</p>
                   }
                 </div>
                 @if (isSpeakerSelected(speaker)) {

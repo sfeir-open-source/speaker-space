@@ -18,21 +18,14 @@
           }
         </button>
         <div>
-          <h1 class="text-xl">Synchroniser avec Conference Hall</h1>
+          <h1 class="text-xl">Refresh data with datas in Conference Hall</h1>
           @if (userState.hasSpeakerRole()) {
             <p class="text-sm text-gray-600">
-              Speaker dans {{ userState.eventIds().length }} événement(s)
+              Speaker in {{ userState.eventIds().length }} event(s)
             </p>
           }
         </div>
       </div>
-
-      @if (userState.hasSpeakerRole()) {
-        <div class="flex items-center text-green-600">
-          <span class="material-icons mr-1">verified_user</span>
-          <span class="text-sm">Speaker actif</span>
-        </div>
-      }
     </article>
 
     <app-save-indicator

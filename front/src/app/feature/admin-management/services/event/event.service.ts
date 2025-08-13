@@ -217,30 +217,45 @@ export class EventService {
     });
   }
 
-  getUserSpeakerEvents(): Observable<Event[]> {
-    return this.executeAuthenticatedRequest(headers =>
-      this.http.get<Event[]>(
-        `${environment.apiUrl}/event/speaker-events`,
-        { headers, withCredentials: true }
-      )
-    ).pipe(
-      catchError(this.handleError('Error loading speaker events'))
-    );
-  }
-
-  getAllUserRelatedEvents(): Observable<Event[]> {
+  getAllUserEvents(): Observable<Event[]> {
     return forkJoin({
-      ownEvents: this.http.get<Event[]>(`${environment.apiUrl}/event/my-events`, { withCredentials: true }),
-      speakerEvents: this.getUserSpeakerEvents()
+      adminEvents: this.http.get<Event[]>(`${environment.apiUrl}/event/my-events`, {
+        withCredentials: true
+      }).pipe(
+        map(events => events.map(event => ({ ...event, userRole: 'admin' as const }))),
+        catchError(() => of([]))
+      ),
+      speakerEvents: this.executeAuthenticatedRequest(headers =>
+        this.http.get<Event[]>(
+          `${environment.apiUrl}/event/speaker-events`,
+          { headers, withCredentials: true }
+        )
+      ).pipe(
+        map(events => events.map(event => ({ ...event, userRole: 'speaker' as const }))),
+        catchError(() => of([]))
+      )
     }).pipe(
-      map(({ ownEvents, speakerEvents }) => {
-        const allEvents = [...ownEvents, ...speakerEvents];
-        const uniqueEvents = allEvents.filter((event, index, self) =>
-          index === self.findIndex(e => e.idEvent === event.idEvent)
-        );
-        return uniqueEvents;
+      map(({ adminEvents, speakerEvents }) => {
+        const eventMap = new Map<string, Event>();
+
+        adminEvents.forEach(event => {
+          if (event.idEvent) {
+            eventMap.set(event.idEvent, event);
+          }
+        });
+
+        speakerEvents.forEach(event => {
+          if (event.idEvent && !eventMap.has(event.idEvent)) {
+            eventMap.set(event.idEvent, event);
+          }
+        });
+
+        return Array.from(eventMap.values());
       }),
-      catchError(this.handleError('Error loading all user related events'))
+      catchError(error => {
+        console.error('Error loading all user events:', error);
+        return of([]);
+      })
     );
   }
 }

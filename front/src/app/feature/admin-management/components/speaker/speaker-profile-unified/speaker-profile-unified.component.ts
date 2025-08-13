@@ -10,10 +10,6 @@ import { ActivatedRoute } from '@angular/router';
 import { EventService } from '../../../services/event/event.service';
 import { SocialLinkInfo } from '../../../../../core/types/social-link-info';
 import { NavbarSpeakerSectionComponent } from '../../../../speaker-section/components/navbar-speaker-section/navbar-speaker-section.component';
-import { finalize } from 'rxjs/operators';
-import { UserSpeakerService } from '../../../../../core/services/user-services/user-speaker.service';
-import { UserStateService } from '../../../../../core/services/user-services/user-state.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-speaker-profile-unified',
@@ -34,10 +30,7 @@ export class SpeakerProfileUnifiedComponent extends BaseDetailComponent implemen
 
   private readonly speakerService = inject(SpeakerService);
   private readonly userContextService = inject(UserContextService);
-  private readonly userSpeakerService = inject(UserSpeakerService);
   private readonly socialLinkService = inject(SocialLinkService);
-  private readonly userState = inject(UserStateService);
-  private readonly snackBar = inject(MatSnackBar);
 
   constructor(
     route: ActivatedRoute,
@@ -100,7 +93,7 @@ export class SpeakerProfileUnifiedComponent extends BaseDetailComponent implemen
               resolve();
             } else {
               this.error = this.isMyProfile
-                ? 'Aucun profil speaker trouvé pour cet événement. Vérifiez que vous êtes bien enregistré comme speaker.'
+                ? 'Profil speaker non trouvé. Les données sont en cours de synchronisation.'
                 : 'Speaker introuvable.';
               reject(new Error('Speaker not found'));
             }
@@ -119,101 +112,20 @@ export class SpeakerProfileUnifiedComponent extends BaseDetailComponent implemen
   private loadUserSessions(): void {
     if (!this.isMyProfile || !this.eventId) return;
 
-    this.userSpeakerService.getUserSessions(this.eventId)
+    this.userContextService.getSessionsForCurrentUser(this.eventId)
       .pipe(
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: (sessions) => {
+          console.log('User sessions loaded:', sessions);
           this.userSessions.set(sessions);
         },
         error: (error) => {
           console.error('Error loading user sessions:', error);
+          this.userSessions.set([]);
         }
       });
-  }
-
-  syncSpeakerData(): void {
-    if (!this.isMyProfile || this.syncing()) return;
-
-    this.syncing.set(true);
-
-    this.userSpeakerService.syncSpeakerData(this.eventId)
-      .pipe(
-        finalize(() => this.syncing.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe({
-        next: () => {
-          this.snackBar.open('Données synchronisées avec succès', 'Fermer', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-
-          this.loadDetailData();
-          this.loadUserSessions();
-        },
-        error: (error) => {
-          console.error('Error syncing speaker data:', error);
-          this.snackBar.open('Erreur lors de la synchronisation', 'Fermer', {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
-        }
-      });
-  }
-
-  isLinkedToUser(): boolean {
-    if (!this.isMyProfile || !this.speaker?.email) return false;
-
-    const userEmail = this.userState.email();
-    return userEmail.toLowerCase() === this.speaker.email.toLowerCase();
-  }
-
-  formatSessionTime(start: Date, end: Date): string {
-    if (!start || !end) return '';
-
-    const startTime = new Date(start).toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    const endTime = new Date(end).toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    const startDate = new Date(start).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short'
-    });
-
-    return `${startDate} • ${startTime} - ${endTime}`;
-  }
-
-  getStatusClass(status: string): string {
-    switch (status?.toLowerCase()) {
-      case 'accepted':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  }
-
-  getStatusLabel(status: string): string {
-    switch (status?.toLowerCase()) {
-      case 'accepted':
-        return 'Accepté';
-      case 'rejected':
-        return 'Rejeté';
-      case 'pending':
-        return 'En attente';
-      default:
-        return status || 'Inconnu';
-    }
   }
 
   override onImageError(event: Event): void {

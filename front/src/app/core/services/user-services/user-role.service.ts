@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { AuthService } from '../../login/services/auth.service';
-import { EventService } from '../../../feature/admin-management/services/event/event.service';
 import {BehaviorSubject, firstValueFrom, Observable} from 'rxjs';
 import { Event } from '../../../feature/admin-management/type/event/event';
-import { UserContextService } from './user-context.service';
-import {UserSpeakerService} from './user-speaker.service';
+import {HttpClient} from '@angular/common/http';
+import {environment} from '../../../../environments/environment.development';
 
 @Injectable({
   providedIn: 'root'
@@ -15,26 +14,23 @@ export class UserRoleService {
 
   constructor(
     private authService: AuthService,
-    private eventService: EventService,
-    private userSpeakerService: UserSpeakerService
+    private http: HttpClient
   ) {}
 
   async getUserRoleForEvent(eventId: string): Promise<'admin' | 'speaker'> {
     try {
-      const isSpeaker = await firstValueFrom(
-        this.userSpeakerService.isSpeakerForEvent(eventId)
+      const response = await firstValueFrom(
+        this.http.get<{event: any, userRole: string, hasAccess: boolean}>(
+          `${environment.apiUrl}/event/${eventId}/for-current-user`,
+          { withCredentials: true }
+        )
       );
 
-      if (isSpeaker) {
-        return 'speaker';
+      if (!response.hasAccess) {
+        throw new Error('No access to this event');
       }
 
-      try {
-        await firstValueFrom(this.eventService.getEventById(eventId));
-        return 'admin';
-      } catch {
-        return 'speaker';
-      }
+      return response.userRole as 'admin' | 'speaker';
     } catch (error) {
       console.warn('Error determining user role, defaulting to speaker:', error);
       return 'speaker';
@@ -42,29 +38,15 @@ export class UserRoleService {
   }
 
   getUserRoleFromContext(event: Event): 'admin' | 'speaker' {
+    if (event.userRole) {
+      return event.userRole;
+    }
     const currentUser = this.authService.getCurrentUserSync();
-
     if (event.userCreateId && currentUser?.uid === event.userCreateId) {
       return 'admin';
     }
 
     return 'speaker';
-  }
-
-  async hasAnySpeakerRole(): Promise<boolean> {
-    try {
-      return await firstValueFrom(this.authService.hasAnySpeakerRole());
-    } catch {
-      return false;
-    }
-  }
-
-  async getUserSpeakerEvents(): Promise<string[]> {
-    try {
-      return await firstValueFrom(this.userSpeakerService.getSpeakerEvents());
-    } catch {
-      return [];
-    }
   }
 
   setRole(role: string): void {

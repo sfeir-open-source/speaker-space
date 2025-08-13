@@ -79,7 +79,6 @@ export class AuthService {
           linkedInLink: userData.linkedInLink || '',
           biography: userData.biography || '',
           otherLink: userData.otherLink || '',
-          // Nouveaux champs pour la liaison speaker
           speakerIds: userData.speakerIds || [],
           eventIds: userData.eventIds || [],
           sessionIds: userData.sessionIds || []
@@ -88,7 +87,6 @@ export class AuthService {
         this.userState.updateUser(mergedUser);
         this.userState.saveToStorage();
 
-        // Vérifier si l'utilisateur a des rôles speaker
         this.checkAndNotifySpeakerRole(mergedUser);
       }
     } catch (error) {
@@ -101,17 +99,7 @@ export class AuthService {
       this.userState.updateUser(user);
 
       console.log(`User has speaker role in ${user.eventIds.length} event(s)`);
-
-      this.showSpeakerRoleNotification(user.eventIds.length);
     }
-  }
-
-  private showSpeakerRoleNotification(eventCount: number): void {
-    const message = eventCount === 1
-      ? 'Vous avez été identifié comme speaker pour un événement'
-      : `Vous avez été identifié comme speaker pour ${eventCount} événements`;
-
-    console.log(message);
   }
 
   getUserSpeakerEvents(): Observable<string[]> {
@@ -123,13 +111,6 @@ export class AuthService {
   isUserSpeakerForEvent(eventId: string): Observable<boolean> {
     return this.getUserSpeakerEvents().pipe(
       map(eventIds => eventIds.includes(eventId)),
-      catchError(() => of(false))
-    );
-  }
-
-  hasAnySpeakerRole(): Observable<boolean> {
-    return this.getUserSpeakerEvents().pipe(
-      map(eventIds => eventIds.length > 0),
       catchError(() => of(false))
     );
   }
@@ -146,7 +127,7 @@ export class AuthService {
     try {
       if (email) {
         try {
-          const methods = await fetchSignInMethodsForEmail(this.auth, email);
+          const methods : string[] = await fetchSignInMethodsForEmail(this.auth, email);
           if (methods.length > 0 &&
             ((providerType === 'google' && !methods.includes('google.com')) ||
               (providerType === 'github' && !methods.includes('github.com')))) {
@@ -163,9 +144,9 @@ export class AuthService {
       this.user$.next(result.user);
       if (result.user) {
         await this.processInvitations(result.user);
-        const token = await result.user.getIdToken();
+        const token : string = await result.user.getIdToken();
         await this.sendTokenToBackend(token);
-        const userData = await this.fetchUserData(result.user.uid);
+        const userData : User | null = await this.fetchUserData(result.user.uid);
         const mergedUserData: Partial<User> = {
           ...userData,
           uid: result.user.uid,
@@ -210,7 +191,7 @@ export class AuthService {
     };
 
     try {
-      const methods = await fetchSignInMethodsForEmail(this.auth, email);
+      const methods : string[] = await fetchSignInMethodsForEmail(this.auth, email);
       if (methods.length > 0 && !methods.includes('emailLink')) {
         this.showAuthErrorDialog(email);
         return null;
@@ -263,7 +244,7 @@ export class AuthService {
         sessionStorage.removeItem('emailForSignIn');
 
         if (result.user) {
-          const token = await result.user.getIdToken();
+          const token : string = await result.user.getIdToken();
 
           try {
             await this.sendTokenToBackend(token);
@@ -300,7 +281,7 @@ export class AuthService {
 
   checkEmailLink() {
     if (isSignInWithEmailLink(this.auth, window.location.href)) {
-      let email = sessionStorage.getItem('emailForSignIn');
+      let email : string |null = sessionStorage.getItem('emailForSignIn');
       if (!email) {
         const params = new URLSearchParams(window.location.search);
         email = params.get('email');
@@ -312,7 +293,7 @@ export class AuthService {
             this.user$.next(result.user);
 
             if (result.user) {
-              const token = await result.user.getIdToken();
+              const token : string = await result.user.getIdToken();
 
               try {
                 await this.sendTokenToBackend(token);
@@ -382,7 +363,7 @@ export class AuthService {
         return null;
       }
 
-      const token = await this.auth.currentUser.getIdToken(forceRefresh);
+      const token : string = await this.auth.currentUser.getIdToken(forceRefresh);
       await this.sendTokenToBackend(token);
 
       return token;
@@ -415,11 +396,22 @@ export class AuthService {
           {
             email: user.email.toLowerCase(),
             uid: user.uid
+          },
+          {
+            withCredentials: true,
           }
+        ).pipe(
+          catchError(error => {
+            if (error.status === 403) {
+              console.warn('Invitations endpoint not accessible, continuing authentication');
+              return of(null);
+            }
+            throw error;
+          })
         )
       );
     } catch (error) {
-      console.error('Error processing invitations:', error);
+      console.warn('Error processing invitations (non-blocking):', error);
     }
   }
 

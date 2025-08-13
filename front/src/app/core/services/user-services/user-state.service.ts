@@ -51,14 +51,14 @@ export class UserStateService {
     };
 
     Object.entries(stringKeys).forEach(([storageKey, userKey]) => {
-      const value = localStorage.getItem(storageKey);
+      const value : string | null = localStorage.getItem(storageKey);
       if (value) {
         (userData as any)[userKey] = value;
       }
     });
 
     Object.entries(arrayKeys).forEach(([storageKey, userKey]) => {
-      const value = localStorage.getItem(storageKey);
+      const value : string | null = localStorage.getItem(storageKey);
       if (value) {
         try {
           const parsedValue = JSON.parse(value);
@@ -77,7 +77,7 @@ export class UserStateService {
   }
 
   saveToStorage(): void {
-    const user = this.user();
+    const user : User |null = this.user();
     if (!user) return;
 
     const storageMapping = {
@@ -112,23 +112,11 @@ export class UserStateService {
 
   updateUser(userData: Partial<User>): void {
     const currentUser = this.user();
-    const previousEventCount = currentUser?.eventIds?.length || 0;
-
     const updatedUser = { ...currentUser, ...userData } as User;
 
     this.user.set(updatedUser);
     this.userSubject.next(updatedUser);
-
-    const newEventCount = updatedUser.eventIds?.length || 0;
-    if (newEventCount > previousEventCount) {
-      this.notifySpeakerRoleChange(newEventCount - previousEventCount);
-    }
   }
-
-  private notifySpeakerRoleChange(newEventCount: number): void {
-    console.log(`${newEventCount} nouveaux rôles speaker détectés`);
-  }
-
 
   clearUser(): void {
     this.user.set(null);
@@ -137,7 +125,7 @@ export class UserStateService {
   }
 
   private clearStorage(): void {
-    const keysToRemove = [
+    const keysToRemove : string[] = [
       'userName', 'userPhotoURL', 'userEmail', 'userCompany',
       'userCity', 'userPhoneNumber', 'userGithubLink', 'userTwitterLink',
       'userBlueSkyLink', 'userLinkedInLink', 'userOtherLink', 'userBiography',

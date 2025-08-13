@@ -29,7 +29,7 @@ export interface UserSpeakerProfile {
 
 export interface SpeakerProfile {
   readonly id: string;
-  readonly conferenceHallId?: string;
+  readonly idConferenceHall: string;
   readonly name: string;
   readonly email: string;
   readonly bio?: string;
