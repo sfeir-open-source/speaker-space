@@ -133,12 +133,6 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
         }
     }
 
-    public Session findByIdConferenceHallAndEventId(String idConferenceHall, String eventId) {
-        return executeQuerySingle(getCollection()
-                .whereEqualTo("idConferenceHall", idConferenceHall)
-                .whereEqualTo("eventId", eventId)).orElse(null);
-    }
-
     public List<Session> findByEventIdAndSpeakerEmail(String eventId, String speakerEmail) {
         try {
             List<Session> allSessions = findByEventId(eventId);
@@ -197,5 +191,29 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
             log.error("Failed to retrieve all sessions", e);
             throw new RuntimeException("Failed to retrieve all sessions", e);
         }
+    }
+
+    public Set<String> findAllExistingConferenceHallIds() {
+        try {
+            return getCollection()
+                    .select("idConferenceHall")
+                    .get()
+                    .get()
+                    .getDocuments()
+                    .stream()
+                    .map(doc -> doc.getString("idConferenceHall"))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            log.error("Failed to fetch all ConferenceHall IDs", e);
+            return new HashSet<>();
+        }
+    }
+
+    public Session findByIdConferenceHall(String idConferenceHall) {
+        return executeQuerySingle(getCollection()
+                .whereEqualTo("idConferenceHall", idConferenceHall)
+                .limit(1)).orElse(null);
     }
 }

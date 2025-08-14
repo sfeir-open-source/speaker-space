@@ -1,0 +1,32 @@
+input[type="date"] {
+  color: #111827 !important;
+  color-scheme: light;
+}
+
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  color: #111827 !important;
+}
+
+input[type="date"]::-webkit-datetime-edit-text {
+  color: #111827 !important;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field {
+  color: #111827 !important;
+}
+
+input[type="date"]::-webkit-datetime-edit-day-field {
+  color: #111827 !important;
+}
+
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #111827 !important;
+}
+
+input[type="date"]:focus {
+  color: #111827 !important;
+}
+
+input[type="date"]:invalid {
+  color: #111827 !important;
+}

@@ -62,7 +62,8 @@
                 @for (speaker of session.speakers; track speaker.name) {
                   <div
                     (click)="openSpeakerDetail(speaker.id)"
-                    class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-2 py-1 bg-white shadow-sm cursor-pointer">
+                    class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-2 py-1 bg-white shadow-sm"
+                    [class.cursor-pointer]="userRole === 'admin'">
                     <div class="flex-shrink-0">
                       <img
                         [src]="speaker.picture || 'img/profil-picture.svg'"
@@ -154,7 +155,15 @@
                     id="start-date"
                     type="date"
                     formControlName="startDate"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    [min]="getEventStartDateForInput()"
+                    [max]="getEventEndDateForInput()"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
+                    [class.border-red-500]="scheduleForm.get('startDate')?.errors?.['eventDateOutOfRange']" />
+                  @if (scheduleForm.get('startDate')?.errors?.['eventDateOutOfRange']) {
+                    <p class="mt-1 text-xs text-red-600">
+                      Date must be within event dates ({{ getEventDateRangeDisplay() }})
+                    </p>
+                  }
                 </div>
 
                 <div>
@@ -171,14 +180,17 @@
                         class="w-full inline-flex justify-between items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-100 text-sm hover:bg-gray-200"
                         (click)="showDurationDropdown = !showDurationDropdown">
                         {{ selectedDuration }} min
-                        <svg class="w-4 h-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5 5 5-5H5z"/></svg>
+                        <svg class="w-4 h-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M5 8l5 5 5-5H5z"/>
+                        </svg>
                       </button>
 
                       @if (showDurationDropdown) {
                         <ul class="absolute z-10 bg-white border rounded-md shadow-md w-full max-h-60 overflow-y-auto">
                           @for (duration of durations; track duration.value) {
                             <li>
-                              <button type="button" (click)="onDurationSelect(duration.value); showDurationDropdown = false"
+                              <button type="button"
+                                      (click)="onDurationSelect(duration.value); showDurationDropdown = false"
                                       class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm">
                                 {{ duration.label }}
                               </button>
@@ -211,13 +223,6 @@
                   }
                 </div>
               </div>
-
-              @if (scheduleError) {
-                <div class="bg-red-50 border border-red-200 rounded-md p-3">
-                  <p class="text-sm text-red-600">{{ scheduleError }}</p>
-                </div>
-              }
-
               <div class="flex justify-end gap-2 pt-4">
                 <app-button-grey
                   type="button"
@@ -231,7 +236,7 @@
                   type="button"
                   (click)="onSaveSchedule()"
                   [materialIcon]="'check'"
-                  [disabled]="isUpdatingSchedule">
+                  [disabled]="isUpdatingSchedule || scheduleForm.invalid">
                   @if (isUpdatingSchedule) {
                     <span>Saving...</span>
                   } @else {

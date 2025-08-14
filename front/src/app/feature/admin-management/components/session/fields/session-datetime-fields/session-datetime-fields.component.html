@@ -1,15 +1,13 @@
 <fieldset class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
   <div>
-    <app-input
-      name="startDate"
-      label="Start Date"
+    <label for="start-date" class="mt-5 block text-start text-md" [class.required]="required">Start Date</label>
+    <input
+      id="start-date"
       type="date"
-      [control]="form.get('startDate')!"
-      [attr.min]="getEventStartDate()"
-      [attr.max]="getEventEndDate()"
-      errorMessage="Please select a valid date within the event range">
-
-    </app-input>
+      formControlName="startDate"
+      [min]="getEventStartDateForInput()"
+      [max]="getEventEndDateForInput()"
+      class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6"/>
     @if (getEventDateRange()) {
       <p class="mt-1 text-xs text-gray-500">Event dates: {{ getEventDateRange() }}</p>
     }

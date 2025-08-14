@@ -42,6 +42,8 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
 
   sessionId: string = '';
   session: SessionImportData | null = null;
+  eventStartDate?: Date;
+  eventEndDate?: Date;
   format: Format | null = null;
   category: Category | null = null;
   isEditingSchedule: boolean = false;
@@ -100,7 +102,7 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
 
   private initializeScheduleForm(): void {
     this.scheduleForm = this.fb.group({
-      startDate: ['', Validators.required],
+      startDate: ['', [Validators.required, this.eventDateRangeValidator.bind(this)]],
       startTime: ['', Validators.required],
       duration: [60, [Validators.required, Validators.min(15)]],
       track: ['', [Validators.maxLength(50)]]
@@ -157,14 +159,23 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
         ? this.sessionService.getAvailableTracksForEvent(this.eventId)
         : of([]);
 
+      const eventObservable = this.eventService.getEventById(this.eventId);
+
       Promise.all([
         sessionObservable.toPromise(),
-        tracksObservable.toPromise()
-      ]).then(([session, tracks]) => {
+        tracksObservable.toPromise(),
+        eventObservable.toPromise()
+      ]).then(([session, tracks, event]) => {
         this.session = session!;
         this.availableTracks = tracks || [];
         this.format = session!.formats?.[0] || null;
         this.category = session!.categories?.[0] || null;
+
+        if (event) {
+          this.eventStartDate = event.startDate ? new Date(event.startDate) : undefined;
+          this.eventEndDate = event.endDate ? new Date(event.endDate) : undefined;
+        }
+
         resolve();
       }).catch(err => {
         console.error('Error loading session data:', err);
@@ -337,5 +348,55 @@ export class SessionDetailUnifiedComponent extends BaseDetailComponent implement
         this.router.navigate(['event', this.eventId, 'speaker', speakerId]);
       }
     }
+  }
+
+  private eventDateRangeValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value || !this.eventStartDate || !this.eventEndDate) {
+      return null;
+    }
+
+    const selectedDate = new Date(control.value);
+    const eventStart = new Date(this.eventStartDate);
+    const eventEnd = new Date(this.eventEndDate);
+
+    eventStart.setHours(0, 0, 0, 0);
+    eventEnd.setHours(23, 59, 59, 999);
+    selectedDate.setHours(12, 0, 0, 0);
+
+    if (selectedDate < eventStart || selectedDate > eventEnd) {
+      return {
+        eventDateOutOfRange: {
+          selectedDate: selectedDate.toISOString().split('T')[0],
+          eventStart: eventStart.toISOString().split('T')[0],
+          eventEnd: eventEnd.toISOString().split('T')[0]
+        }
+      };
+    }
+
+    return null;
+  }
+
+  getEventStartDateForInput(): string {
+    return this.eventStartDate ? this.eventStartDate.toISOString().split('T')[0] : '';
+  }
+
+  getEventEndDateForInput(): string {
+    return this.eventEndDate ? this.eventEndDate.toISOString().split('T')[0] : '';
+  }
+
+  getEventDateRangeDisplay(): string {
+    if (this.eventStartDate && this.eventEndDate) {
+      const startStr = this.eventStartDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      });
+      const endStr = this.eventEndDate.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+      return `${startStr} - ${endStr}`;
+    }
+    return '';
   }
 }

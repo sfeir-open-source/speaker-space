@@ -27,6 +27,7 @@ public class SessionService {
     private final SessionImportMapper sessionImportMapper;
     private final SessionScheduleMapper sessionScheduleMapper;
     private final SessionCreateMapper sessionCreateMapper;
+    private final UserReferenceCleanupService userReferenceCleanupService;
 
     @Autowired
     private UserSpeakerLinkService userSpeakerLinkService;
@@ -37,15 +38,27 @@ public class SessionService {
     public ImportResultDTO importSessionsReview(String eventId, List<SessionDTO> importDataList) {
         List<String> successfulImports = new ArrayList<>();
         List<String> failedImports = new ArrayList<>();
+        List<String> skippedImports = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
-        log.info("Starting import of {} sessions for event {}", importDataList.size(), eventId);
+        Set<String> allExistingConferenceHallIds = sessionRepository.findAllExistingConferenceHallIds();
 
         for (SessionDTO importData : importDataList) {
             String sessionConferenceId = importData.id();
+            String sessionName = importData.title();
             try {
-                String appId = generateSessionId();
+                if (allExistingConferenceHallIds.contains(sessionConferenceId)) {
+                    Session existingSession = sessionRepository.findByIdConferenceHall(sessionConferenceId);
+                    String existingEventId = existingSession != null ? existingSession.getEventId() : "unknown";
 
+                    log.debug("Session {} already exists in event {}, skipping import",
+                            sessionConferenceId, existingEventId);
+                    skippedImports.add(sessionConferenceId);
+                    errors.add("Session \"" + sessionName + "\" already exists in event other event");
+                    continue;
+                }
+
+                String appId = generateSessionId();
                 SessionDTO sessionDTO = sessionImportMapper.convertImportDataToSessionDTO(importData, eventId, appId);
 
                 List<Speaker> processedSpeakers = sessionImportMapper.processSpeakersForImport(
@@ -56,6 +69,8 @@ public class SessionService {
                 session.setSpeakers(processedSpeakers != null ? processedSpeakers : new ArrayList<>());
 
                 sessionRepository.saveSession(session);
+
+                allExistingConferenceHallIds.add(sessionConferenceId);
 
                 linkSpeakersToUsersNonBlocking(session.getSpeakers(), eventId, session.getId());
 
@@ -71,12 +86,10 @@ public class SessionService {
 
         updateUserSessionLinksNonBlocking(eventId);
 
-        log.info("Import completed for event {}: {} successful, {} failed",
-                eventId, successfulImports.size(), failedImports.size());
-
         return ImportResultDTO.builder()
                 .successfulImports(successfulImports)
                 .failedImports(failedImports)
+                .skippedImports(skippedImports)
                 .totalCount(importDataList.size())
                 .successCount(successfulImports.size())
                 .errors(errors)
@@ -86,6 +99,7 @@ public class SessionService {
     public ImportResultDTO importSessionsSchedule(String eventId, List<SessionScheduleImportDataDTO> importDataList) {
         List<String> successfulImports = new ArrayList<>();
         List<String> failedImports = new ArrayList<>();
+        List<String> skippedImports = new ArrayList<>();
         List<String> errors = new ArrayList<>();
 
         log.info("Starting schedule import of {} sessions for event {}", importDataList.size(), eventId);
@@ -110,12 +124,25 @@ public class SessionService {
             try {
                 conferenceHallId = sessionScheduleMapper.extractConferenceHallId(scheduleData);
 
-                Session existingSession = sessionRepository.findByIdConferenceHallAndEventId(conferenceHallId, eventId);
+                Session existingSession = sessionRepository.findByIdConferenceHall(conferenceHallId);
 
                 if (existingSession != null) {
+                    if (!eventId.equals(existingSession.getEventId())) {
+                        log.debug("Session {} exists in different event {}, skipping schedule import",
+                                conferenceHallId, existingSession.getEventId());
+                        skippedImports.add(conferenceHallId);
+                        errors.add("Session " + conferenceHallId + " exists in other event ");
+                        continue;
+                    }
+
+                    if (hasScheduleData(existingSession)) {
+                        log.debug("Session {} already has schedule data, skipping", conferenceHallId);
+                        skippedImports.add(conferenceHallId);
+                        continue;
+                    }
+
                     sessionScheduleMapper.enrichExistingSessionWithScheduleData(existingSession, scheduleData);
                     sessionRepository.saveSession(existingSession);
-
                     linkSpeakersToUsersNonBlocking(existingSession.getSpeakers(), eventId, existingSession.getId());
 
                     log.debug("Successfully updated session with ConferenceHall ID {} (app ID: {})",
@@ -123,7 +150,6 @@ public class SessionService {
                 } else {
                     Session newSession = sessionScheduleMapper.createSessionFromScheduleData(scheduleData, eventId);
                     sessionRepository.saveSession(newSession);
-
                     linkSpeakersToUsersNonBlocking(newSession.getSpeakers(), eventId, newSession.getId());
 
                     log.debug("Successfully created new session with ConferenceHall ID {} (app ID: {})",
@@ -144,12 +170,10 @@ public class SessionService {
 
         updateUserSessionLinksNonBlocking(eventId);
 
-        log.info("Schedule import completed for event {}: {} successful, {} failed",
-                eventId, successfulImports.size(), failedImports.size());
-
         return ImportResultDTO.builder()
                 .successfulImports(successfulImports)
                 .failedImports(failedImports)
+                .skippedImports(skippedImports)
                 .totalCount(importDataList.size())
                 .successCount(successfulImports.size())
                 .errors(errors)
@@ -213,7 +237,27 @@ public class SessionService {
         if (existingSession == null) {
             return false;
         }
-        return sessionRepository.deleteSession(id);
+
+        List<String> speakerIds = new ArrayList<>();
+        if (existingSession.getSpeakers() != null) {
+            for (Speaker speaker : existingSession.getSpeakers()) {
+                if (speaker.getId() != null) {
+                    speakerIds.add(speaker.getId());
+                }
+            }
+        }
+
+        boolean deleted = sessionRepository.deleteSession(id);
+
+        if (deleted) {
+            userReferenceCleanupService.removeSessionIdFromAllUsers(id);
+
+            for (String speakerId : speakerIds) {
+                userReferenceCleanupService.removeSpeakerIdFromAllUsers(speakerId);
+            }
+        }
+
+        return deleted;
     }
 
     public List<String> getDistinctTracksByEventId(String eventId) {
@@ -346,5 +390,9 @@ public class SessionService {
 
     private String generateSessionId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
+    }
+
+    private boolean hasScheduleData(Session session) {
+        return session.getStart() != null && session.getEnd() != null;
     }
 }

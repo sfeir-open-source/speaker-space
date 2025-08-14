@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface SessionRepository {
@@ -18,8 +19,9 @@ public interface SessionRepository {
     boolean existsByIdAndEventId(String id, String eventId);
     boolean deleteSession(String id);
     int deleteByEventId(String eventId);
-    Session findByIdConferenceHallAndEventId(String idConferenceHall, String eventId);
     List<Session> findByEventIdAndSpeakerEmail(String eventId, String speakerEmail);
     List<Speaker> findUniqueSpeekersByEventId(String eventId);
     List<Session> findAll();
+    Set<String> findAllExistingConferenceHallIds();
+    Session findByIdConferenceHall(String idConferenceHall);
 }

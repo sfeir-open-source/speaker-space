@@ -1,5 +1,12 @@
 import {Component, EventEmitter, Input, OnInit, OnDestroy, Output, inject, DestroyRef} from '@angular/core';
-import { FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import {
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+  FormsModule,
+  AbstractControl,
+  ValidationErrors
+} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs/operators';
 import {SessionService} from '../../../services/sessions/session.service';
@@ -67,7 +74,7 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
       references: ['', [Validators.maxLength(1000)]],
       level: [''],
       track: ['', [Validators.maxLength(50)]],
-      startDate: [''],
+      startDate: ['', [Validators.required, this.eventDateRangeValidator.bind(this)]],
       startTime: ['']
     });
   }
@@ -192,5 +199,32 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
     return this.availableCategories.filter(category =>
       this.selectedCategories.includes(category.id)
     );
+  }
+
+
+  private eventDateRangeValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value || !this.eventStartDate || !this.eventEndDate) {
+      return null;
+    }
+
+    const selectedDate = new Date(control.value);
+    const eventStart = new Date(this.eventStartDate);
+    const eventEnd = new Date(this.eventEndDate);
+
+    eventStart.setHours(0, 0, 0, 0);
+    eventEnd.setHours(23, 59, 59, 999);
+    selectedDate.setHours(12, 0, 0, 0);
+
+    if (selectedDate < eventStart || selectedDate > eventEnd) {
+      return {
+        eventDateOutOfRange: {
+          selectedDate: selectedDate.toISOString().split('T')[0],
+          eventStart: eventStart.toISOString().split('T')[0],
+          eventEnd: eventEnd.toISOString().split('T')[0]
+        }
+      };
+    }
+
+    return null;
   }
 }

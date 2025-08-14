@@ -24,6 +24,7 @@ public class SpeakerService {
     private final SessionService sessionService;
     private final SpeakerMapper speakerMapper;
     private final SpeakerRepository speakerRepository;
+    private final UserReferenceCleanupService userReferenceCleanupService;
 
 
     @Autowired
@@ -34,7 +35,14 @@ public class SpeakerService {
         if (existingSpeaker == null) {
             return false;
         }
-        return speakerRepository.deleteSpeaker(id);
+
+        boolean deleted = speakerRepository.deleteSpeaker(id);
+
+        if (deleted) {
+            userReferenceCleanupService.removeSpeakerIdFromAllUsers(id);
+        }
+
+        return deleted;
     }
 
     public SpeakerDTO createSpeaker(String eventId, SpeakerCreateRequestDTO createRequest) {

@@ -13,4 +13,7 @@ public interface UserRepository {
     Optional<User> findUserByIdOptional(String uid);
     Optional<User> findByEmail(String email);
     List<User> searchUsersByEmail(String emailQuery, int limit);
+    List<User> findUsersByEventId(String eventId);
+    List<User> findUsersBySessionId(String sessionId);
+    List<User> findUsersBySpeakerId(String speakerId);
 }

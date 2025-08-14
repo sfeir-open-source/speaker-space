@@ -69,8 +69,4 @@ export class SessionFormFieldsComponent {
   onCategoriesChange(categories: string[]): void {
     this.categoriesChange.emit(categories);
   }
-
-  onLanguagesChange(languages: string[]): void {
-    this.languagesChange.emit(languages);
-  }
 }

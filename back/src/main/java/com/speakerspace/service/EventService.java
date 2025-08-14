@@ -8,14 +8,14 @@ import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.session.Session;
+import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
 import com.speakerspace.repository.TeamRepository;
 import com.speakerspace.utils.date.EventDateCalculator;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -25,10 +25,10 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EventService {
 
     private static final String BASE_URL = "https://speaker-space.io/event/";
-    private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     private final EventMapper eventMapper;
     private final EventRepository eventRepository;
@@ -36,6 +36,7 @@ public class EventService {
     private final SessionRepository sessionRepository;
     private final SpeakerRepository speakerRepository;
     private final TeamRepository teamRepository;
+    private final UserReferenceCleanupService userReferenceCleanupService;
 
     public EventDTO createEvent(EventDTO eventDTO) {
         String currentUserId = userService.getCurrentUserId();
@@ -167,17 +168,44 @@ public class EventService {
     }
 
     private boolean deleteEventWithDependencies(String eventId) {
-        int deletedSessionsCount = sessionRepository.deleteByEventId(eventId);
-        int deletedSpeakersCount = speakerRepository.deleteByEventId(eventId);
+        List<Session> sessionsToDelete = sessionRepository.findByEventId(eventId);
 
+        List<String> sessionIds = new ArrayList<>();
+        List<String> speakerIds = new ArrayList<>();
+
+        for (Session session : sessionsToDelete) {
+            sessionIds.add(session.getId());
+
+            if (session.getSpeakers() != null) {
+                for (Speaker speaker : session.getSpeakers()) {
+                    if (speaker.getId() != null) {
+                        speakerIds.add(speaker.getId());
+                        log.debug("Found speaker {} in session {}", speaker.getId(), session.getId());
+                    }
+                }
+            }
+        }
+
+        int deletedSessionsCount = sessionRepository.deleteByEventId(eventId);
+        int deletedSpeakersCount = speakerIds.size();
         boolean eventDeleted = eventRepository.deleteEvent(eventId);
 
         if (eventDeleted) {
-            logger.info("Event deleted successfully: {} (with {} sessions and {} speakers)",
+            userReferenceCleanupService.removeEventIdFromAllUsers(eventId);
+
+            for (String sessionId : sessionIds) {
+                userReferenceCleanupService.removeSessionIdFromAllUsers(sessionId);
+            }
+
+            for (String speakerId : speakerIds) {
+                userReferenceCleanupService.removeSpeakerIdFromAllUsers(speakerId);
+            }
+
+            log.info("Event deleted successfully: {} (with {} sessions and {} speakers). Cleaned user references.",
                     eventId, deletedSessionsCount, deletedSpeakersCount);
             return true;
         } else {
-            logger.error("Failed to delete event: {}", eventId);
+            log.error("Failed to delete event: {}", eventId);
             return false;
         }
     }
@@ -273,7 +301,7 @@ public class EventService {
         EventDateCalculator.DateRange dateRange = EventDateCalculator.calculateEventDateRange(sessions);
 
         if (dateRange == null) {
-            logger.debug("No valid date range found in sessions for event: {}", eventId);
+            log.debug("No valid date range found in sessions for event: {}", eventId);
             return;
         }
 
@@ -311,10 +339,10 @@ public class EventService {
 
             updateEvent(updatedEvent);
 
-            logger.info("Updated event {} dates from sessions: start={}, end={}",
+            log.info("Updated event {} dates from sessions: start={}, end={}",
                     eventId, newStartDate, newEndDate);
         } else {
-            logger.debug("Event {} dates are already up to date", eventId);
+            log.debug("Event {} dates are already up to date", eventId);
         }
     }
 
@@ -324,15 +352,15 @@ public class EventService {
             UserDTO currentUser = userService.getUserByUid(currentUserId);
 
             if (currentUser == null || currentUser.email() == null) {
-                logger.debug("No current user or email found for speaker events");
+                log.debug("No current user or email found for speaker events");
                 return Collections.emptyList();
             }
 
             String userEmail = currentUser.email().toLowerCase().trim();
-            logger.debug("Looking for speaker events for email: {}", userEmail);
+            log.debug("Looking for speaker events for email: {}", userEmail);
 
             if (currentUser.eventIds() != null && !currentUser.eventIds().isEmpty()) {
-                logger.debug("Found {} event IDs in user profile", currentUser.eventIds().size());
+                log.debug("Found {} event IDs in user profile", currentUser.eventIds().size());
 
                 List<EventDTO> speakerEvents = currentUser.eventIds().stream()
                         .map(this::getEventById)
@@ -343,13 +371,13 @@ public class EventService {
                         .filter(event -> isUserSpeakerOfEvent(event.idEvent()))
                         .collect(Collectors.toList());
 
-                logger.debug("Found {} valid speaker events for user {}", validSpeakerEvents.size(), userEmail);
+                log.debug("Found {} valid speaker events for user {}", validSpeakerEvents.size(), userEmail);
                 return validSpeakerEvents;
             }
             return findEventsBySpeakerEmailInSessions(userEmail);
 
         } catch (Exception e) {
-            logger.error("Error retrieving events by speaker email", e);
+            log.error("Error retrieving events by speaker email", e);
             return Collections.emptyList();
         }
     }
@@ -372,7 +400,7 @@ public class EventService {
                 }
             }
 
-            logger.debug("Found {} event IDs from sessions for email: {}", eventIds.size(), email);
+            log.debug("Found {} event IDs from sessions for email: {}", eventIds.size(), email);
 
             return eventIds.stream()
                     .map(this::getEventById)
@@ -380,7 +408,7 @@ public class EventService {
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
-            logger.error("Error finding events by speaker email in sessions", e);
+            log.error("Error finding events by speaker email in sessions", e);
             return Collections.emptyList();
         }
     }
@@ -395,7 +423,7 @@ public class EventService {
             }
 
             if (currentUser.eventIds() != null && currentUser.eventIds().contains(eventId)) {
-                logger.debug("User {} is speaker in event {} (from user profile)", currentUser.email(), eventId);
+                log.debug("User {} is speaker in event {} (from user profile)", currentUser.email(), eventId);
                 return true;
             }
 
@@ -408,11 +436,11 @@ public class EventService {
                     .anyMatch(speaker -> speaker.getEmail() != null &&
                             speaker.getEmail().toLowerCase().trim().equals(userEmail));
 
-            logger.debug("User {} speaker status in event {}: {}", userEmail, eventId, isSpeaker);
+            log.debug("User {} speaker status in event {}: {}", userEmail, eventId, isSpeaker);
             return isSpeaker;
 
         } catch (Exception e) {
-            logger.error("Error checking if user is speaker of event: {}", eventId, e);
+            log.error("Error checking if user is speaker of event: {}", eventId, e);
             return false;
         }
     }
@@ -423,16 +451,16 @@ public class EventService {
         try {
             List<EventDTO> createdEvents = getEventsForCurrentUser();
             allEvents.addAll(createdEvents);
-            logger.debug("Found {} created events", createdEvents.size());
+            log.debug("Found {} created events", createdEvents.size());
 
             String currentUserId = userService.getCurrentUserId();
             List<EventDTO> teamEvents = getEventsFromUserTeams(currentUserId);
             allEvents.addAll(teamEvents);
-            logger.debug("Found {} team events", teamEvents.size());
+            log.debug("Found {} team events", teamEvents.size());
 
             List<EventDTO> speakerEvents = getEventsBySpeakerEmail();
             allEvents.addAll(speakerEvents);
-            logger.debug("Found {} speaker events", speakerEvents.size());
+            log.debug("Found {} speaker events", speakerEvents.size());
 
             List<EventDTO> result = new ArrayList<>(allEvents);
             result.sort((e1, e2) -> {
@@ -444,7 +472,7 @@ public class EventService {
             return result;
 
         } catch (Exception e) {
-            logger.error("Error retrieving all user related events", e);
+            log.error("Error retrieving all user related events", e);
             return Collections.emptyList();
         }
     }
@@ -467,7 +495,7 @@ public class EventService {
             return new ArrayList<>(teamEvents);
 
         } catch (Exception e) {
-            logger.error("Error retrieving events from user teams for user: {}", userId, e);
+            log.error("Error retrieving events from user teams for user: {}", userId, e);
             return Collections.emptyList();
         }
     }

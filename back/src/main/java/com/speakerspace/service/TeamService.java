@@ -6,13 +6,13 @@ import com.speakerspace.mapper.TeamMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
+import com.speakerspace.model.session.Session;
+import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.EventRepository;
 import com.speakerspace.repository.SessionRepository;
-import com.speakerspace.repository.SpeakerRepository;
 import com.speakerspace.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -22,17 +22,16 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class TeamService {
-
-    private static final Logger logger = LoggerFactory.getLogger(TeamService.class);
 
     private final TeamMapper teamMapper;
     private final EventRepository eventRepository;
     private final TeamRepository teamRepository;
     private final UserService userService;
     private final SessionRepository sessionRepository;
-    private final SpeakerRepository speakerRepository;
+    private final UserReferenceCleanupService userReferenceCleanupService;
 
     public TeamDTO createTeam(TeamDTO teamDTO) {
         String currentUserId = userService.getCurrentUserId();
@@ -152,22 +151,56 @@ public class TeamService {
             int totalDeletedSessions = 0;
             int totalDeletedSpeakers = 0;
 
+            List<String> allEventIds = new ArrayList<>();
+            List<String> allSessionIds = new ArrayList<>();
+            List<String> allSpeakerIds = new ArrayList<>();
+
             for (Event event : eventsToDelete) {
-                totalDeletedSessions += sessionRepository.deleteByEventId(event.getIdEvent());
-                totalDeletedSpeakers += speakerRepository.deleteByEventId(event.getIdEvent());
+                String eventId = event.getIdEvent();
+                allEventIds.add(eventId);
+
+                List<Session> sessionsToDelete = sessionRepository.findByEventId(eventId);
+
+                for (Session session : sessionsToDelete) {
+                    allSessionIds.add(session.getId());
+
+                    if (session.getSpeakers() != null) {
+                        for (Speaker speaker : session.getSpeakers()) {
+                            if (speaker.getId() != null) {
+                                allSpeakerIds.add(speaker.getId());
+                                log.debug("Found speaker {} in session {} for event {}",
+                                        speaker.getId(), session.getId(), eventId);
+                            }
+                        }
+                    }
+                }
+
+                totalDeletedSessions += sessionRepository.deleteByEventId(eventId);
+                totalDeletedSpeakers += allSpeakerIds.size();
             }
 
             int deletedEventsCount = eventRepository.deleteByTeamId(teamId);
-
             teamRepository.deleteTeam(teamId);
 
-            logger.info("Team deleted successfully: {} (with {} events, {} sessions, {} speakers)",
+            for (String eventId : allEventIds) {
+                userReferenceCleanupService.removeEventIdFromAllUsers(eventId);
+            }
+
+            for (String sessionId : allSessionIds) {
+                userReferenceCleanupService.removeSessionIdFromAllUsers(sessionId);
+            }
+
+            for (String speakerId : allSpeakerIds) {
+                userReferenceCleanupService.removeSpeakerIdFromAllUsers(speakerId);
+            }
+
+            log.info("Team deleted successfully: {} (with {} events, {} sessions, {} speakers). Cleaned user references.",
                     teamId, deletedEventsCount, totalDeletedSessions, totalDeletedSpeakers);
 
             return true;
 
         } catch (Exception e) {
-            logger.error("Error in Firestore transaction for team deletion: {}", e.getMessage(), e);
+            log.error("Error in Firestore transaction for team deletion: {}", e.getMessage(), e);
             throw e;
         }
     }

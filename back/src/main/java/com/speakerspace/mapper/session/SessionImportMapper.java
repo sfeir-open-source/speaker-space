@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -61,6 +62,11 @@ public class SessionImportMapper {
         speaker.setSocialLinks(speakerDTO.socialLinks() != null ?
                 speakerDTO.socialLinks() : new ArrayList<>());
         speaker.setEventId(eventId);
+
+        Date now = new Date();
+        speaker.setCreatedAt(now);
+        speaker.setUpdatedAt(now);
+
         return speaker;
     }
 
