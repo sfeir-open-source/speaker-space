@@ -20,6 +20,11 @@ public class TeamRepositoryImpl extends AbstractFirestoreRepository<Team, String
         if (team.getId() == null || team.getId().isEmpty()) {
             DocumentReference docRef = getCollection().document();
             team.setId(docRef.getId());
+
+            if (team.getUrl() == null || team.getUrl().isEmpty()) {
+                team.setUrl("https://speaker-space.io/team/" + docRef.getId());
+            }
+
             return docRef;
         }
         return getCollection().document(team.getId());

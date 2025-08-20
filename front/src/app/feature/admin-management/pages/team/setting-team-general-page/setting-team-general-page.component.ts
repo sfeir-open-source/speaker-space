@@ -33,7 +33,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
   styleUrl: './setting-team-general-page.component.scss'
 })
 export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
-  readonly BASE_URL = 'https://speaker-space.io/team/';
+  readonly BASE_URL : string = 'https://speaker-space.io/team/';
 
   activeSection: string = 'settings-general';
   teamUrl: string = '';
@@ -167,12 +167,11 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   private handleTeamDataLoaded(team: any): void {
     this.teamId = team.id || '';
     this.teamName = team.name;
-
-    const urlSuffix = this.extractOrGenerateUrlSuffix(team);
+    this.teamUrl = team.url || '';
 
     this.teamForm.patchValue({
       teamName: team.name,
-      teamURL: team.id
+      teamURL: team.url || `${this.BASE_URL}${team.id}`
     });
 
     this.setupNameChangeListener();
@@ -184,17 +183,6 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     } else {
       this.teamForm.get('teamName')?.disable();
     }
-  }
-
-  private extractOrGenerateUrlSuffix(team: any): string {
-    if (team.id) {
-      if (team.id.startsWith(this.teamId)) {
-        return team.id.substring(this.teamId.length);
-      }
-      return team.id;
-    }
-
-    return this.formatUrlFromName(team.name);
   }
 
   private formatUrlFromName(name: string): string {
@@ -218,7 +206,7 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     if (nameControl) {
       this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
         if (value) {
-          const urlSuffix = this.formatUrlFromName(value);
+          const urlSuffix : string = this.formatUrlFromName(value);
           this.teamForm.get('teamId')?.setValue(urlSuffix);
         }
       });
@@ -236,9 +224,15 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     }
 
     const formValues = this.teamForm.getRawValue();
+
+    let fullUrl = formValues.teamURL;
+    if (fullUrl && !fullUrl.startsWith('http')) {
+      fullUrl = this.BASE_URL + fullUrl;
+    }
+
     const updatedTeam = {
       name: formValues.teamName,
-      url: formValues.teamURL
+      url: fullUrl || this.teamUrl
     };
 
     this.isLoading = true;
@@ -256,7 +250,12 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   private handleTeamUpdated(team: any): void {
     this.teamName = team.name;
     this.teamUrl = team.url || '';
+
+    this.teamForm.patchValue({
+      teamURL: team.url || ''
+    });
   }
+
 
   private handleTeamUpdateError(err: any): void {
     this.error = 'Failed to update team. Please try again.';
