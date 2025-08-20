@@ -252,12 +252,15 @@ public class EventService {
     }
 
     private void updateFinishStatus(Event event) {
-        if (event.getEndDate() != null) {
+        if (event.getEndDate() != null && !event.isFinish()) {
             Instant endInstant = Instant.ofEpochSecond(
                     event.getEndDate().getSeconds(),
                     event.getEndDate().getNanos()
             );
-            event.setFinish(endInstant.isBefore(Instant.now()));
+
+            if (endInstant.isBefore(Instant.now())) {
+                event.setFinish(true);
+            }
         }
     }
 
@@ -498,5 +501,19 @@ public class EventService {
             log.error("Error retrieving events from user teams for user: {}", userId, e);
             return Collections.emptyList();
         }
+    }
+
+    public EventDTO archiveEvent(String eventId) {
+        Event event = eventRepository.findEventById(eventId);
+        if (event == null) {
+            throw new EntityNotFoundException("Event not found with id: " + eventId);
+        }
+
+        event.setFinish(true);
+
+        Event updatedEvent = eventRepository.saveEvent(event);
+        log.info("Event {} has been archived", eventId);
+
+        return eventMapper.convertToDTO(updatedEvent);
     }
 }

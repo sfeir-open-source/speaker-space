@@ -258,4 +258,14 @@ export class EventService {
       })
     );
   }
+
+  archiveEvent(eventId: string): Observable<Event> {
+    return this.http.patch<Event>(
+      `${environment.apiUrl}/event/${eventId}/archive`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      catchError(this.handleError('Error archiving event'))
+    );
+  }
 }

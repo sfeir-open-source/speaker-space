@@ -78,6 +78,7 @@
         [eventName]="eventName"
         [isOpen]="showArchiveConfirmation"
         [isArchiving]="isArchiving"
+        [isArchived]="isEventArchived"
         (confirm)="archiveEvent()"
         (cancel)="cancelArchiveEvent()">
       </app-archive-event-popup>

@@ -50,7 +50,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
   teamId: string = '';
   isLoading: boolean = true;
   error: string | null = null;
-
+  isEventArchived: boolean = false;
   isDeleting: boolean = false;
   isArchiving: boolean = false;
   showDeleteConfirmation: boolean = false;
@@ -235,6 +235,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
     this.teamId = event.teamId || '';
     this.currentUserRole = 'Owner';
     this.visibility = event.isPrivate === true ? 'private' : 'public';
+    this.isEventArchived = event.isFinish === true;
 
     this.eventGeneralData = {
       idEvent: this.eventId,
@@ -267,12 +268,7 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
 
     this.isArchiving = true;
 
-    const archiveData: Partial<EventDTO> = {
-      idEvent: this.eventId,
-      isFinish: true
-    };
-
-    this.eventService.updateEvent(archiveData)
+    this.eventService.archiveEvent(this.eventId)
       .pipe(
         finalize(() => {
           this.isArchiving = false;
@@ -281,8 +277,9 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
         takeUntilDestroyed(this._destroyRef),
       )
       .subscribe({
-        next: () => {
-          this.router.navigate(['/']);
+        next: (archivedEvent) => {
+          console.log('Event archived successfully:', archivedEvent);
+          this.isEventArchived = true;
         },
         error: (err) => {
           console.error('Error archiving event:', err);

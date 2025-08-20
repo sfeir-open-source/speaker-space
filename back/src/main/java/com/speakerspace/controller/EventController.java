@@ -198,4 +198,26 @@ public class EventController {
         boolean isSpeaker = eventService.isUserSpeakerOfEvent(eventId);
         return ResponseEntity.ok(Map.of("isSpeaker", isSpeaker));
     }
+
+    @PatchMapping("/{eventId}/archive")
+    public ResponseEntity<EventDTO> archiveEvent(
+            @PathVariable String eventId,
+            Authentication authentication) throws AccessDeniedException {
+
+        if (authentication == null) {
+            throw new UnauthorizedException("Authentication required");
+        }
+
+        EventDTO existingEvent = eventService.getEventById(eventId);
+        if (existingEvent == null) {
+            throw new EntityNotFoundException("Event not found with id: " + eventId);
+        }
+
+        if (!authHelper.isUserAuthorized(authentication, existingEvent.userCreateId())) {
+            throw new AccessDeniedException("User not authorized to archive this event");
+        }
+
+        EventDTO archivedEvent = eventService.archiveEvent(eventId);
+        return ResponseEntity.ok(archivedEvent);
+    }
 }

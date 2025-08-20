@@ -10,12 +10,13 @@ export class ArchiveEventPopupComponent {
   @Input() eventName: string = '';
   @Input() isOpen: boolean = false;
   @Input() isArchiving: boolean = false;
+  @Input() isArchived: boolean = false;
 
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
 
   onBackdropClick(event: MouseEvent): void {
-    if ((event.target as HTMLElement).id === 'delete-event-modal') {
+    if ((event.target as HTMLElement).id === 'archive-event-modal') {
       this.cancel.emit();
     }
   }
