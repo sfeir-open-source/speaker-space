@@ -2,7 +2,9 @@ package com.speakerspace.service;
 
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.*;
+import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.mapper.session.SpeakerMapper;
+import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.SessionRepository;
@@ -21,14 +23,59 @@ import java.util.stream.Collectors;
 public class SpeakerService {
 
     private final SessionRepository sessionRepository;
-    private final SessionService sessionService;
     private final SpeakerMapper speakerMapper;
     private final SpeakerRepository speakerRepository;
     private final UserReferenceCleanupService userReferenceCleanupService;
-
+    private final SessionSpeakerManagementService sessionSpeakerManagementService;
 
     @Autowired
     private EventService eventService;
+    @Autowired
+    private SessionMapper sessionMapper;
+
+    public SpeakerDTO createSpeaker(String eventId, SpeakerCreateRequestDTO createRequest) {
+        validateBusinessRules(eventId, createRequest);
+
+        Speaker speaker = buildSpeakerFromRequest(eventId, createRequest);
+
+        Session emptySession = sessionSpeakerManagementService.createEmptySessionForSpeaker(eventId, speaker);
+
+        sessionRepository.saveSession(emptySession);
+
+        return speakerMapper.convertToDTO(speaker);
+    }
+
+    public List<SessionDTO> getEmptySessionsForEvent(String eventId) {
+        return sessionSpeakerManagementService.getEmptySessionsForEvent(eventId);
+    }
+
+    public List<Speaker> findByEventId(String eventId) {
+        return sessionRepository.findUniqueSpeekersByEventId(eventId);
+    }
+
+    public Speaker findByIdAndEventId(String speakerId, String eventId) {
+        List<Speaker> speakers = findByEventId(eventId);
+        return speakers.stream()
+                .filter(speaker -> speakerId.equals(speaker.getId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public Speaker getSpeakerByEmailAndEventId(String email, String eventId) {
+        List<Speaker> speakers = findByEventId(eventId);
+        return speakers.stream()
+                .filter(speaker -> email.equalsIgnoreCase(speaker.getEmail()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public List<SessionImportData> getSessionsByEventAndSpeakerEmail(String eventId, String speakerEmail) {
+        List<Session> sessions = sessionRepository.findByEventIdAndSpeakerEmail(eventId, speakerEmail);
+        return sessions.stream()
+                .map(sessionMapper::toSessionImportData)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
 
     public boolean deleteSpeaker(String id) {
         Speaker existingSpeaker = speakerRepository.findSpeakerById(id);
@@ -45,9 +92,7 @@ public class SpeakerService {
         return deleted;
     }
 
-    public SpeakerDTO createSpeaker(String eventId, SpeakerCreateRequestDTO createRequest) {
-        validateBusinessRules(eventId, createRequest);
-
+    private Speaker buildSpeakerFromRequest(String eventId, SpeakerCreateRequestDTO createRequest) {
         String speakerId = generateSpeakerId();
 
         Speaker speaker = new Speaker();
@@ -70,39 +115,7 @@ public class SpeakerService {
                 new ArrayList<>();
         speaker.setSocialLinks(socialLinks);
 
-        log.info("Successfully created speaker {} '{}' for event {}",
-                speakerId, createRequest.name(), eventId);
-
-        return speakerMapper.convertToDTO(speaker);
-    }
-
-    public List<Speaker> findByEventId(String eventId) {
-        return sessionRepository.findUniqueSpeekersByEventId(eventId);
-    }
-
-    public Speaker findById(String speakerId) {
-        throw new UnsupportedOperationException(
-                "Use findByIdAndEventId instead - speaker lookup requires eventId");
-    }
-
-    public Speaker findByIdAndEventId(String speakerId, String eventId) {
-        List<Speaker> speakers = findByEventId(eventId);
-        return speakers.stream()
-                .filter(speaker -> speakerId.equals(speaker.getId()))
-                .findFirst()
-                .orElse(null);
-    }
-
-    public List<SessionImportData> getSessionsByEventAndSpeakerEmail(String eventId, String speakerEmail) {
-        return sessionService.getSessionsByEventAndSpeakerEmail(eventId, speakerEmail);
-    }
-
-    public SessionImportData getSessionByIdForSpeaker(String eventId, String sessionId, String speakerEmail) {
-        return sessionService.getSessionByIdForSpeaker(eventId, sessionId, speakerEmail);
-    }
-
-    public Speaker getSpeakerByEmailAndEventId(String email, String eventId) {
-        return sessionService.getSpeakerByEmailAndEventId(email, eventId);
+        return speaker;
     }
 
     private void validateBusinessRules(String eventId, SpeakerCreateRequestDTO createRequest) {

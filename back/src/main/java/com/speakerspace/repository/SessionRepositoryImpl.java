@@ -48,8 +48,8 @@ public class SessionRepositoryImpl extends AbstractFirestoreRepository<Session, 
     }
 
     @Override
-    public Session findSessionById(String id) {
-        return findByIdSync(id).orElse(null);
+    public Optional<Session> findSessionById(String id) {
+        return findByIdSync(id);
     }
 
     @Override

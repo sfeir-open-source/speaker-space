@@ -6,12 +6,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
 public interface SessionRepository {
     void saveSession(Session session);
-    Session findSessionById(String id);
+    Optional<Session> findSessionById(String id);
     List<Session> findByEventId(String eventId);
     List<String> findDistinctTracksByEventId(String eventId);
     Session findByIdAndEventId(String sessionId, String eventId);

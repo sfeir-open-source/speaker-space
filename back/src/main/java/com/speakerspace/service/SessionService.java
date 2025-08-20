@@ -2,6 +2,7 @@ package com.speakerspace.service;
 
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.*;
+import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.mapper.session.SessionCreateMapper;
 import com.speakerspace.mapper.session.SessionImportMapper;
 import com.speakerspace.mapper.session.SessionMapper;
@@ -34,6 +35,8 @@ public class SessionService {
 
     @Autowired
     private EventService eventService;
+    @Autowired
+    private SessionSpeakerManagementService sessionSpeakerManagementService;
 
     public ImportResultDTO importSessionsReview(String eventId, List<SessionDTO> importDataList) {
         List<String> successfulImports = new ArrayList<>();
@@ -186,15 +189,24 @@ public class SessionService {
             throw new IllegalArgumentException("Event not found: " + eventId);
         }
 
+        Optional<String> emptySessionId = sessionSpeakerManagementService
+                .findEmptySessionForSpeakers(createRequest.speakers(), eventId);
+
+        if (emptySessionId.isPresent()) {
+            return sessionSpeakerManagementService.updateEmptySession(emptySessionId.get(), createRequest);
+        } else {
+            return createNewSession(eventId, createRequest);
+        }
+    }
+
+    private SessionDTO createNewSession(String eventId, SessionCreateRequestDTO createRequest) {
         String sessionId = generateSessionId();
-
         Session session = sessionCreateMapper.convertCreateRequestToSession(sessionId, eventId, createRequest);
-
         sessionRepository.saveSession(session);
 
         linkSpeakersToUsersNonBlocking(session.getSpeakers(), eventId, session.getId());
 
-        log.info("Successfully created session {} '{}' for event {}",
+        log.info("Successfully created new session {} '{}' for event {}",
                 sessionId, createRequest.title(), eventId);
         return sessionMapper.convertToDTO(session);
     }
@@ -233,10 +245,8 @@ public class SessionService {
     }
 
     public boolean deleteSession(String id) {
-        Session existingSession = sessionRepository.findSessionById(id);
-        if (existingSession == null) {
-            return false;
-        }
+        Session existingSession = sessionRepository.findSessionById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Session not found: " + id));
 
         List<String> speakerIds = new ArrayList<>();
         if (existingSession.getSpeakers() != null) {
@@ -345,11 +355,6 @@ public class SessionService {
     public SessionImportData getSessionById(String eventId, String sessionId) {
         Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
         return session != null ? sessionMapper.toSessionImportData(session) : null;
-    }
-
-    public SessionDTO getSessionByIdAndEventId(String sessionId, String eventId) {
-        Session session = sessionRepository.findByIdAndEventId(sessionId, eventId);
-        return session != null ? sessionMapper.convertToDTO(session) : null;
     }
 
     public List<SessionDTO> getSessionsWithScheduleByEventId(String eventId) {

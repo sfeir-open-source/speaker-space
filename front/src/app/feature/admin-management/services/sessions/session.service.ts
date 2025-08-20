@@ -20,7 +20,18 @@ export class SessionService {
       `${environment.apiUrl}/session/event/${eventId}/session/${sessionId}`,
       { withCredentials: true }
     ).pipe(
-      map(sessionData => this.convertSessionDates(sessionData))
+      map(sessionData => this.convertSessionDates(sessionData)),
+      map(sessionData => this.normalizeSessionData(sessionData))
+  );
+  }
+
+  getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {
+    return this.http.get<any[]>(
+      `${environment.apiUrl}/session/event/${eventId}`,
+      { withCredentials: true }
+    ).pipe(
+      map(sessions => sessions.map(session => this.convertSessionDates(session))),
+      map(sessions => sessions.map(session => this.normalizeSessionData(session)))
     );
   }
 
@@ -31,6 +42,13 @@ export class SessionService {
       end: convertToDate(sessionData.end),
       createdAt: sessionData.createdAt ? convertToDate(sessionData.createdAt)?.toISOString() : undefined,
       updatedAt: sessionData.updatedAt ? convertToDate(sessionData.updatedAt)?.toISOString() : undefined
+    };
+  }
+
+  private normalizeSessionData(sessionData: any): SessionImportData {
+    return {
+      ...sessionData,
+      abstractText: sessionData.abstractText || sessionData.abstract || undefined
     };
   }
 
@@ -58,6 +76,15 @@ export class SessionService {
       { withCredentials: true }
     ).pipe(
       map(sessionData => this.convertSessionDates(sessionData))
+    );
+  }
+
+  getEmptySessionsForEvent(eventId: string): Observable<SessionImportData[]> {
+    return this.http.get<SessionImportData[]>(
+      `${environment.apiUrl}/session/event/${eventId}/empty-sessions`,
+      { withCredentials: true }
+    ).pipe(
+      map(sessions => sessions.map(session => this.convertSessionDates(session)))
     );
   }
 }

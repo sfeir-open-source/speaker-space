@@ -5,6 +5,7 @@ import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.EventAuthorizationHelper;
 import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
+import com.speakerspace.service.SessionService;
 import com.speakerspace.service.SpeakerService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class SpeakerSessionController {
 
     private final SpeakerService speakerService;
     private final EventAuthorizationHelper authorizationHelper;
+    private final SessionService sessionService;
 
     @GetMapping("/event/{eventId}")
     public ResponseEntity<List<SessionImportData>> getMySessions(
@@ -57,7 +59,7 @@ public class SpeakerSessionController {
         return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
             String userEmail = extractEmailFromAuthentication(authentication);
 
-            SessionImportData session = speakerService.getSessionByIdForSpeaker(eventId, sessionId, userEmail);
+            SessionImportData session = sessionService.getSessionByIdForSpeaker(eventId, sessionId, userEmail);
 
             if (session == null) {
                 throw new EntityNotFoundException("Session not found or not accessible");

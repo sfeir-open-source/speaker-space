@@ -41,6 +41,9 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
   private readonly sessionService = inject(SessionService);
   private readonly speakerService = inject(SpeakerService);
   protected override readonly _destroyRef = inject(DestroyRef);
+  availableEmptySessions: SessionImportData[] = [];
+  selectedEmptySession: SessionImportData | null = null;
+  isLoadingEmptySessions: boolean = false;
 
   sessionForm!: FormGroup;
   isSubmitting: boolean = false;
@@ -61,6 +64,7 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
   ngOnInit(): void {
     this.initializeForm();
     this.loadAvailableSpeakers();
+    this.loadEmptySessions();
     this.setDefaultStartDate();
   }
 
@@ -124,6 +128,7 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
 
   onSpeakersChange(speakers: Speaker[]): void {
     this.selectedSpeakers = speakers;
+    this.checkForEmptySession(speakers);
   }
 
   onFormatsChange(formats: string[]): void {
@@ -226,5 +231,51 @@ export class SessionCreatePopupComponent extends FormModalService<any, SessionCr
     }
 
     return null;
+  }
+
+  private loadEmptySessions(): void {
+    this.isLoadingEmptySessions = true;
+    this.sessionService.getEmptySessionsForEvent(this.eventId)
+      .pipe(
+        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoadingEmptySessions = false)
+      )
+      .subscribe({
+        next: (sessions) => {
+          this.availableEmptySessions = sessions;
+        },
+        error: (error) => {
+          console.error('Error loading empty sessions:', error);
+          this.availableEmptySessions = [];
+        }
+      });
+  }
+
+
+
+  private checkForEmptySession(speakers: Speaker[]): void {
+    if (!speakers.length || !this.availableEmptySessions.length) {
+      this.selectedEmptySession = null;
+      return;
+    }
+
+    const speakerEmails = speakers.map(s => s.email);
+
+    this.selectedEmptySession = this.availableEmptySessions.find(session =>
+      session.speakers.some(speaker => speakerEmails.includes(speaker.email))
+    ) || null;
+
+    if (this.selectedEmptySession) {
+      this.prefillFormFromEmptySession(this.selectedEmptySession);
+    }
+  }
+
+  private prefillFormFromEmptySession(session: SessionImportData): void {
+    const speaker = session.speakers[0];
+    if (speaker && !this.sessionForm.get('title')?.value) {
+      this.sessionForm.patchValue({
+        title: `Session by ${speaker.name}`
+      });
+    }
   }
 }

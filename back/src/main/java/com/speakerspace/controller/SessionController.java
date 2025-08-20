@@ -7,6 +7,7 @@ import com.speakerspace.model.session.Session;
 import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.service.SessionService;
+import com.speakerspace.service.SpeakerService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class SessionController {
 
     private final SessionService sessionService;
     private final EventAuthorizationHelper authorizationHelper;
+    private final SpeakerService speakerService;
 
     @PostMapping("/event/{eventId}/import")
     public ResponseEntity<ImportResultDTO> importSessionsReview(
@@ -90,13 +92,19 @@ public class SessionController {
     }
 
     @GetMapping("/event/{eventId}/session/{sessionId}")
-    public ResponseEntity<SessionDTO> getSessionDetailById(
+    public ResponseEntity<SessionImportData> getSessionDetailById(
             @PathVariable String eventId,
             @PathVariable String sessionId,
-            Authentication authentication) throws AccessDeniedException {
+            HttpServletRequest request,
+            Authentication authentication) {
 
-        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () ->
-                sessionService.getSessionByIdAndEventId(sessionId, eventId));
+        return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
+            SessionImportData session = sessionService.getSessionById(eventId, sessionId);
+            if (session == null) {
+                throw new EntityNotFoundException("Session not found with id: " + sessionId);
+            }
+            return session;
+        });
     }
 
     @GetMapping("/event/{eventId}/speakers")
@@ -201,5 +209,16 @@ public class SessionController {
         if (request.abstractText() != null && request.abstractText().length() > 2000) {
             throw new IllegalArgumentException("Abstract must not exceed 2000 characters");
         }
+    }
+
+    @GetMapping("/event/{eventId}/empty-sessions")
+    public ResponseEntity<List<SessionDTO>> getEmptySessionsForEvent(
+            @PathVariable String eventId,
+            Authentication authentication) throws AccessDeniedException {
+
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
+            List<SessionDTO> emptySessions = speakerService.getEmptySessionsForEvent(eventId);
+            return emptySessions;
+        });
     }
 }
