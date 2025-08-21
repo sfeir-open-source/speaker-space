@@ -27,6 +27,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class EventService {
 
+    private static final String BASE_URL = "https://speaker-space.io/event/";
+
     private final EventMapper eventMapper;
     private final EventRepository eventRepository;
     private final UserService userService;
@@ -35,9 +37,47 @@ public class EventService {
     private final UserReferenceCleanupService userReferenceCleanupService;
 
     public EventDTO createEvent(EventDTO eventDTO) {
-        Event event = eventMapper.convertToEntity(eventDTO);
+        String currentUserId = userService.getCurrentUserId();
 
-        validateEventBusinessRules(event);
+        if (eventDTO.eventName() == null || eventDTO.eventName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Event name is required");
+        }
+
+        if (eventDTO.type() == null || eventDTO.type().trim().isEmpty()) {
+            throw new IllegalArgumentException("Event type is required");
+        }
+
+        EventDTO sanitizedEventDTO = EventDTO.builder()
+                .idEvent(eventDTO.idEvent())
+                .eventName(eventDTO.eventName().trim())
+                .description(eventDTO.description())
+                .endDate(eventDTO.endDate())
+                .url(eventDTO.url())
+                .startDate(eventDTO.startDate())
+                .isOnline(Optional.ofNullable(eventDTO.isOnline()).orElse(false))
+                .location(eventDTO.location())
+                .isPrivate(Optional.ofNullable(eventDTO.isPrivate()).orElse(true))
+                .webLinkUrl(eventDTO.webLinkUrl())
+                .isFinish(Optional.ofNullable(eventDTO.isFinish()).orElse(false))
+                .userCreateId(currentUserId)
+                .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                .teamId(eventDTO.teamId())
+                .timeZone(Optional.ofNullable(eventDTO.timeZone()).orElse("Europe/Paris"))
+                .logoBase64(eventDTO.logoBase64())
+                .type(eventDTO.type().trim())
+                .build();
+
+        Event event = eventMapper.convertToEntity(sanitizedEventDTO);
+
+        if (event.getTeamId() != null &&
+                eventRepository.existsByEventNameAndTeamId(event.getEventName(), event.getTeamId())) {
+            throw new IllegalArgumentException("An event with this name already exists in this team");
+        }
+
+        if (event.getUrl() == null || event.getUrl().isEmpty()) {
+            String urlSuffix = generateUrlSuffix(event.getEventName());
+            event.setUrl(BASE_URL + urlSuffix);
+        }
 
         Event savedEvent = eventRepository.saveEvent(event);
         return eventMapper.convertToDTO(savedEvent);
@@ -49,7 +89,7 @@ public class EventService {
     }
 
     public EventDTO getEventByUrl(String urlId) {
-        String url = "https://speaker-space.io/event/" + urlId;
+        String url = BASE_URL + urlId;
         Event event = eventRepository.findByUrl(url);
         return event != null ? eventMapper.convertToDTO(event) : null;
     }
@@ -87,7 +127,16 @@ public class EventService {
             throw new RuntimeException("Event not found");
         }
 
-        validateEventNameUniqueness(eventDTO, existingEvent);
+        if (eventDTO.eventName() != null &&
+                !eventDTO.eventName().equals(existingEvent.getEventName()) &&
+                existingEvent.getTeamId() != null &&
+                eventRepository.existsByEventNameAndTeamIdAndIdEventNot(
+                        eventDTO.eventName(),
+                        existingEvent.getTeamId(),
+                        eventDTO.idEvent()
+                )) {
+            throw new IllegalArgumentException("An event with this name already exists in this team");
+        }
 
         Event eventToUpdate = mergeEventDataCorrectly(existingEvent, eventDTO);
         updateFinishStatus(eventToUpdate);
@@ -113,172 +162,6 @@ public class EventService {
             return deleteEventWithDependencies(eventId);
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete event and associated data", e);
-        }
-    }
-
-    public void updateEventDatesFromSessions(String eventId, List<SessionScheduleImportDataDTO> sessions) {
-        EventDateCalculator.DateRange dateRange = EventDateCalculator.calculateEventDateRange(sessions);
-
-        if (dateRange == null) {
-            log.debug("No valid date range found in sessions for event: {}", eventId);
-            return;
-        }
-
-        EventDTO currentEvent = getEventById(eventId);
-        if (currentEvent == null) {
-            throw new IllegalArgumentException("Event not found: " + eventId);
-        }
-
-        String newStartDate = dateRange.startDate().toString();
-        String newEndDate = dateRange.endDate().toString();
-
-        boolean startDateChanged = !Objects.equals(currentEvent.startDate(), newStartDate);
-        boolean endDateChanged = !Objects.equals(currentEvent.endDate(), newEndDate);
-
-        if (startDateChanged || endDateChanged) {
-            EventDTO updatedEvent = eventMapper.updateWithCalculatedDates(
-                    currentEvent, newStartDate, newEndDate);
-
-            updateEvent(updatedEvent);
-
-            log.info("Updated event {} dates from sessions: start={}, end={}",
-                    eventId, newStartDate, newEndDate);
-        } else {
-            log.debug("Event {} dates are already up to date", eventId);
-        }
-    }
-
-    public List<EventDTO> getEventsBySpeakerEmail() {
-        try {
-            String currentUserId = userService.getCurrentUserId();
-            UserDTO currentUser = userService.getUserByUid(currentUserId);
-
-            if (currentUser == null || currentUser.email() == null) {
-                log.debug("No current user or email found for speaker events");
-                return Collections.emptyList();
-            }
-
-            String userEmail = currentUser.email().toLowerCase().trim();
-            log.debug("Looking for speaker events for email: {}", userEmail);
-
-            if (currentUser.eventIds() != null && !currentUser.eventIds().isEmpty()) {
-                log.debug("Found {} event IDs in user profile", currentUser.eventIds().size());
-
-                List<EventDTO> speakerEvents = currentUser.eventIds().stream()
-                        .map(this::getEventById)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-
-                List<EventDTO> validSpeakerEvents = speakerEvents.stream()
-                        .filter(event -> isUserSpeakerOfEvent(event.idEvent()))
-                        .collect(Collectors.toList());
-
-                log.debug("Found {} valid speaker events for user {}", validSpeakerEvents.size(), userEmail);
-                return validSpeakerEvents;
-            }
-            return findEventsBySpeakerEmailInSessions(userEmail);
-
-        } catch (Exception e) {
-            log.error("Error retrieving events by speaker email", e);
-            return Collections.emptyList();
-        }
-    }
-
-    public boolean isUserSpeakerOfEvent(String eventId) {
-        try {
-            String currentUserId = userService.getCurrentUserId();
-            UserDTO currentUser = userService.getUserByUid(currentUserId);
-
-            if (currentUser == null || currentUser.email() == null || eventId == null) {
-                return false;
-            }
-
-            if (currentUser.eventIds() != null && currentUser.eventIds().contains(eventId)) {
-                log.debug("User {} is speaker in event {} (from user profile)", currentUser.email(), eventId);
-                return true;
-            }
-
-            List<Session> eventSessions = sessionRepository.findByEventId(eventId);
-            String userEmail = currentUser.email().toLowerCase().trim();
-
-            boolean isSpeaker = eventSessions.stream()
-                    .filter(session -> session.getSpeakers() != null)
-                    .flatMap(session -> session.getSpeakers().stream())
-                    .anyMatch(speaker -> speaker.getEmail() != null &&
-                            speaker.getEmail().toLowerCase().trim().equals(userEmail));
-
-            log.debug("User {} speaker status in event {}: {}", userEmail, eventId, isSpeaker);
-            return isSpeaker;
-
-        } catch (Exception e) {
-            log.error("Error checking if user is speaker of event: {}", eventId, e);
-            return false;
-        }
-    }
-
-    public List<EventDTO> getAllUserRelatedEventsComplete() {
-        Set<EventDTO> allEvents = new LinkedHashSet<>();
-
-        try {
-            List<EventDTO> createdEvents = getEventsForCurrentUser();
-            allEvents.addAll(createdEvents);
-            log.debug("Found {} created events", createdEvents.size());
-
-            String currentUserId = userService.getCurrentUserId();
-            List<EventDTO> teamEvents = getEventsFromUserTeams(currentUserId);
-            allEvents.addAll(teamEvents);
-            log.debug("Found {} team events", teamEvents.size());
-
-            List<EventDTO> speakerEvents = getEventsBySpeakerEmail();
-            allEvents.addAll(speakerEvents);
-            log.debug("Found {} speaker events", speakerEvents.size());
-
-            List<EventDTO> result = new ArrayList<>(allEvents);
-            result.sort((e1, e2) -> {
-                if (e1.startDate() != null && e2.startDate() != null) {
-                    return e2.startDate().compareTo(e1.startDate());
-                }
-                return e2.idEvent().compareTo(e1.idEvent());
-            });
-            return result;
-
-        } catch (Exception e) {
-            log.error("Error retrieving all user related events", e);
-            return Collections.emptyList();
-        }
-    }
-
-    public EventDTO archiveEvent(String eventId) {
-        Event event = eventRepository.findEventById(eventId);
-        if (event == null) {
-            throw new EntityNotFoundException("Event not found with id: " + eventId);
-        }
-
-        event.setFinish(true);
-
-        Event updatedEvent = eventRepository.saveEvent(event);
-        log.info("Event {} has been archived", eventId);
-
-        return eventMapper.convertToDTO(updatedEvent);
-    }
-
-    private void validateEventBusinessRules(Event event) {
-        if (event.getTeamId() != null &&
-                eventRepository.existsByEventNameAndTeamId(event.getEventName(), event.getTeamId())) {
-            throw new IllegalArgumentException("An event with this name already exists in this team");
-        }
-    }
-
-    private void validateEventNameUniqueness(EventDTO eventDTO, Event existingEvent) {
-        if (eventDTO.eventName() != null &&
-                !eventDTO.eventName().equals(existingEvent.getEventName()) &&
-                existingEvent.getTeamId() != null &&
-                eventRepository.existsByEventNameAndTeamIdAndIdEventNot(
-                        eventDTO.eventName(),
-                        existingEvent.getTeamId(),
-                        eventDTO.idEvent()
-                )) {
-            throw new IllegalArgumentException("An event with this name already exists in this team");
         }
     }
 
@@ -402,6 +285,104 @@ public class EventService {
                 instant.getEpochSecond(), instant.getNano());
     }
 
+    private String generateUrlSuffix(String eventName) {
+        if (eventName == null || eventName.isEmpty()) {
+            return UUID.randomUUID().toString();
+        }
+
+        return eventName.trim()
+                .toLowerCase()
+                .replaceAll("\\s+", "-")
+                .replaceAll("[^a-z0-9-]", "")
+                .replaceAll("-+", "-")
+                .replaceAll("^-|-$", "");
+    }
+
+    public void updateEventDatesFromSessions(String eventId, List<SessionScheduleImportDataDTO> sessions) {
+        EventDateCalculator.DateRange dateRange = EventDateCalculator.calculateEventDateRange(sessions);
+
+        if (dateRange == null) {
+            log.debug("No valid date range found in sessions for event: {}", eventId);
+            return;
+        }
+
+        EventDTO currentEvent = getEventById(eventId);
+        if (currentEvent == null) {
+            throw new IllegalArgumentException("Event not found: " + eventId);
+        }
+
+        String newStartDate = dateRange.startDate().toString();
+        String newEndDate = dateRange.endDate().toString();
+
+        boolean startDateChanged = !Objects.equals(currentEvent.startDate(), newStartDate);
+        boolean endDateChanged = !Objects.equals(currentEvent.endDate(), newEndDate);
+
+        if (startDateChanged || endDateChanged) {
+            EventDTO updatedEvent = EventDTO.builder()
+                    .idEvent(currentEvent.idEvent())
+                    .eventName(currentEvent.eventName())
+                    .description(currentEvent.description())
+                    .startDate(newStartDate)
+                    .endDate(newEndDate)
+                    .isOnline(currentEvent.isOnline())
+                    .location(currentEvent.location())
+                    .isPrivate(currentEvent.isPrivate())
+                    .webLinkUrl(currentEvent.webLinkUrl())
+                    .isFinish(currentEvent.isFinish())
+                    .url(currentEvent.url())
+                    .userCreateId(currentEvent.userCreateId())
+                    .conferenceHallUrl(currentEvent.conferenceHallUrl())
+                    .teamId(currentEvent.teamId())
+                    .timeZone(currentEvent.timeZone())
+                    .logoBase64(currentEvent.logoBase64())
+                    .type(currentEvent.type())
+                    .build();
+
+            updateEvent(updatedEvent);
+
+            log.info("Updated event {} dates from sessions: start={}, end={}",
+                    eventId, newStartDate, newEndDate);
+        } else {
+            log.debug("Event {} dates are already up to date", eventId);
+        }
+    }
+
+    public List<EventDTO> getEventsBySpeakerEmail() {
+        try {
+            String currentUserId = userService.getCurrentUserId();
+            UserDTO currentUser = userService.getUserByUid(currentUserId);
+
+            if (currentUser == null || currentUser.email() == null) {
+                log.debug("No current user or email found for speaker events");
+                return Collections.emptyList();
+            }
+
+            String userEmail = currentUser.email().toLowerCase().trim();
+            log.debug("Looking for speaker events for email: {}", userEmail);
+
+            if (currentUser.eventIds() != null && !currentUser.eventIds().isEmpty()) {
+                log.debug("Found {} event IDs in user profile", currentUser.eventIds().size());
+
+                List<EventDTO> speakerEvents = currentUser.eventIds().stream()
+                        .map(this::getEventById)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                List<EventDTO> validSpeakerEvents = speakerEvents.stream()
+                        .filter(event -> isUserSpeakerOfEvent(event.idEvent()))
+                        .collect(Collectors.toList());
+
+                log.debug("Found {} valid speaker events for user {}", validSpeakerEvents.size(), userEmail);
+                return validSpeakerEvents;
+            }
+            return findEventsBySpeakerEmailInSessions(userEmail);
+
+        } catch (Exception e) {
+            log.error("Error retrieving events by speaker email", e);
+            return Collections.emptyList();
+        }
+    }
+
     private List<EventDTO> findEventsBySpeakerEmailInSessions(String email) {
         try {
             List<Session> allSessions = sessionRepository.findAll();
@@ -433,6 +414,70 @@ public class EventService {
         }
     }
 
+    public boolean isUserSpeakerOfEvent(String eventId) {
+        try {
+            String currentUserId = userService.getCurrentUserId();
+            UserDTO currentUser = userService.getUserByUid(currentUserId);
+
+            if (currentUser == null || currentUser.email() == null || eventId == null) {
+                return false;
+            }
+
+            if (currentUser.eventIds() != null && currentUser.eventIds().contains(eventId)) {
+                log.debug("User {} is speaker in event {} (from user profile)", currentUser.email(), eventId);
+                return true;
+            }
+
+            List<Session> eventSessions = sessionRepository.findByEventId(eventId);
+            String userEmail = currentUser.email().toLowerCase().trim();
+
+            boolean isSpeaker = eventSessions.stream()
+                    .filter(session -> session.getSpeakers() != null)
+                    .flatMap(session -> session.getSpeakers().stream())
+                    .anyMatch(speaker -> speaker.getEmail() != null &&
+                            speaker.getEmail().toLowerCase().trim().equals(userEmail));
+
+            log.debug("User {} speaker status in event {}: {}", userEmail, eventId, isSpeaker);
+            return isSpeaker;
+
+        } catch (Exception e) {
+            log.error("Error checking if user is speaker of event: {}", eventId, e);
+            return false;
+        }
+    }
+
+    public List<EventDTO> getAllUserRelatedEventsComplete() {
+        Set<EventDTO> allEvents = new LinkedHashSet<>();
+
+        try {
+            List<EventDTO> createdEvents = getEventsForCurrentUser();
+            allEvents.addAll(createdEvents);
+            log.debug("Found {} created events", createdEvents.size());
+
+            String currentUserId = userService.getCurrentUserId();
+            List<EventDTO> teamEvents = getEventsFromUserTeams(currentUserId);
+            allEvents.addAll(teamEvents);
+            log.debug("Found {} team events", teamEvents.size());
+
+            List<EventDTO> speakerEvents = getEventsBySpeakerEmail();
+            allEvents.addAll(speakerEvents);
+            log.debug("Found {} speaker events", speakerEvents.size());
+
+            List<EventDTO> result = new ArrayList<>(allEvents);
+            result.sort((e1, e2) -> {
+                if (e1.startDate() != null && e2.startDate() != null) {
+                    return e2.startDate().compareTo(e1.startDate());
+                }
+                return e2.idEvent().compareTo(e1.idEvent());
+            });
+            return result;
+
+        } catch (Exception e) {
+            log.error("Error retrieving all user related events", e);
+            return Collections.emptyList();
+        }
+    }
+
     private List<EventDTO> getEventsFromUserTeams(String userId) {
         try {
             List<Team> userTeams = teamRepository.findTeamsByMemberId(userId);
@@ -454,5 +499,19 @@ public class EventService {
             log.error("Error retrieving events from user teams for user: {}", userId, e);
             return Collections.emptyList();
         }
+    }
+
+    public EventDTO archiveEvent(String eventId) {
+        Event event = eventRepository.findEventById(eventId);
+        if (event == null) {
+            throw new EntityNotFoundException("Event not found with id: " + eventId);
+        }
+
+        event.setFinish(true);
+
+        Event updatedEvent = eventRepository.saveEvent(event);
+        log.info("Event {} has been archived", eventId);
+
+        return eventMapper.convertToDTO(updatedEvent);
     }
 }

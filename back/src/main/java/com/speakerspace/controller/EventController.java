@@ -32,10 +32,27 @@ public class EventController {
             throw new UnauthorizedException("Authentication required");
         }
 
-        String currentUserId = authHelper.getUserId(authentication);
-        EventDTO eventForCreation = eventMapper.createForCreation(eventDTO, currentUserId);
+        EventDTO eventWithUserId = EventDTO.builder()
+                .idEvent(eventDTO.idEvent())
+                .eventName(eventDTO.eventName())
+                .description(eventDTO.description())
+                .endDate(eventDTO.endDate())
+                .url(eventDTO.url())
+                .startDate(eventDTO.startDate())
+                .isOnline(eventDTO.isOnline())
+                .location(eventDTO.location())
+                .isPrivate(eventDTO.isPrivate())
+                .webLinkUrl(eventDTO.webLinkUrl())
+                .isFinish(eventDTO.isFinish())
+                .userCreateId(authHelper.getUserId(authentication))
+                .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                .teamId(eventDTO.teamId())
+                .timeZone(eventDTO.timeZone())
+                .logoBase64(eventDTO.logoBase64())
+                .type(eventDTO.type())
+                .build();
 
-        EventDTO createdEvent = eventService.createEvent(eventForCreation);
+        EventDTO createdEvent = eventService.createEvent(eventWithUserId);
         return ResponseEntity.ok(createdEvent);
     }
 
@@ -112,9 +129,27 @@ public class EventController {
             throw new AccessDeniedException("User not authorized to update this event");
         }
 
-        EventDTO eventForUpdate = eventMapper.createForUpdate(eventDTO, existingEvent);
+        EventDTO eventWithPreservedUserId = EventDTO.builder()
+                .idEvent(eventDTO.idEvent())
+                .eventName(eventDTO.eventName())
+                .description(eventDTO.description())
+                .endDate(eventDTO.endDate())
+                .url(eventDTO.url())
+                .startDate(eventDTO.startDate())
+                .isOnline(eventDTO.isOnline())
+                .location(eventDTO.location())
+                .isPrivate(eventDTO.isPrivate())
+                .webLinkUrl(eventDTO.webLinkUrl())
+                .isFinish(eventDTO.isFinish())
+                .userCreateId(existingEvent.userCreateId())
+                .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                .teamId(eventDTO.teamId())
+                .timeZone(eventDTO.timeZone())
+                .logoBase64(eventDTO.logoBase64())
+                .type(eventDTO.type())
+                .build();
 
-        EventDTO updatedEvent = eventService.updateEvent(eventForUpdate);
+        EventDTO updatedEvent = eventService.updateEvent(eventWithPreservedUserId);
         return ResponseEntity.ok(updatedEvent);
     }
 
