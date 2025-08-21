@@ -2,6 +2,7 @@ package com.speakerspace.service;
 
 import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.mapper.UserMapper;
+import com.speakerspace.mapper.session.SessionImportMapper;
 import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.User;
 import com.speakerspace.model.session.Session;
@@ -29,6 +30,7 @@ public class UserSpeakerLinkService {
     private final SessionRepository sessionRepository;
     private final UserMapper userMapper;
     private final SpeakerMapper speakerMapper;
+    private final SessionImportMapper sessionImportMapper;
 
     public void linkSpeakerToUserOnImport(Speaker speaker, String eventId, String sessionId) {
         if (!isValidSpeakerEmail(speaker)) {
@@ -70,10 +72,6 @@ public class UserSpeakerLinkService {
 
                 if (linkResult.hasLinks()) {
                     updateUserWithAllLinks(userUid, linkResult);
-                    log.info("Successfully linked {} speakers across {} events to user {}",
-                            linkResult.getSpeakerIds().size(),
-                            linkResult.getEventIds().size(),
-                            userUid);
                 } else {
                     log.debug("No existing speakers found for user {} with email {}", userUid, normalizedEmail);
                 }
@@ -355,21 +353,8 @@ public class UserSpeakerLinkService {
         return sessionRepository.findByEventId(eventId)
                 .stream()
                 .filter(session -> user.getSessionIds().contains(session.getId()))
-                .map(this::convertSessionToImportData)
+                .map(sessionImportMapper::convertSessionToImportData)
                 .collect(Collectors.toList());
-    }
-
-    private SessionImportData convertSessionToImportData(Session session) {
-        SessionImportData importData = new SessionImportData();
-        importData.setId(session.getId());
-        importData.setTitle(session.getTitle());
-        importData.setAbstractText(session.getAbstractText());
-        importData.setStart(session.getStart());
-        importData.setEnd(session.getEnd());
-        importData.setTrack(session.getTrack());
-        importData.setLevel(session.getLevel());
-        importData.setSpeakers(session.getSpeakers() != null ? session.getSpeakers() : new ArrayList<>());
-        return importData;
     }
 
     private static class SpeakerUserLinkResult {

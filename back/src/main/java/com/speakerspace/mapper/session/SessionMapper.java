@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -115,6 +116,26 @@ public class SessionMapper {
         return importData;
     }
 
+    public Session createEmptySessionForSpeaker(String eventId, Speaker speaker) {
+        String sessionId = generateSessionId();
+
+        Session session = new Session();
+        session.setId(sessionId);
+        session.setTitle("");
+        session.setEventId(eventId);
+        session.setDeliberationStatus("PENDING");
+        session.setConfirmationStatus("PENDING");
+
+        session.setSpeakers(List.of(speaker));
+
+        session.setFormats(new ArrayList<>());
+        session.setCategories(new ArrayList<>());
+        session.setLanguages(new ArrayList<>());
+        session.setTags(new ArrayList<>());
+
+        return session;
+    }
+
     private List<SpeakerDTO> convertSpeakersToDTO(List<Speaker> speakers) {
         if (speakers == null || speakers.isEmpty()) {
             return new ArrayList<>();
@@ -161,5 +182,9 @@ public class SessionMapper {
         return categoryDTOs.stream()
                 .map(categoryMapper::convertToEntity)
                 .collect(Collectors.toList());
+    }
+
+    private String generateSessionId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 }

@@ -8,7 +8,6 @@ import com.speakerspace.mapper.session.CategoryMapper;
 import com.speakerspace.mapper.session.FormatMapper;
 import com.speakerspace.mapper.session.SessionMapper;
 import com.speakerspace.model.session.Session;
-import com.speakerspace.model.session.Speaker;
 import com.speakerspace.repository.SessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,26 +65,6 @@ public class SessionSpeakerManagementService {
                 .findFirst();
     }
 
-    public Session createEmptySessionForSpeaker(String eventId, Speaker speaker) {
-        String sessionId = generateSessionId();
-
-        Session session = new Session();
-        session.setId(sessionId);
-        session.setTitle("");
-        session.setEventId(eventId);
-        session.setDeliberationStatus("PENDING");
-        session.setConfirmationStatus("PENDING");
-
-        session.setSpeakers(List.of(speaker));
-
-        session.setFormats(new ArrayList<>());
-        session.setCategories(new ArrayList<>());
-        session.setLanguages(new ArrayList<>());
-        session.setTags(new ArrayList<>());
-
-        return session;
-    }
-
     private void updateSessionWithData(Session session, SessionCreateRequestDTO sessionData) {
         session.setTitle(sessionData.title().trim());
         session.setAbstractText(trimOrNull(sessionData.abstractText()));
@@ -135,7 +114,5 @@ public class SessionSpeakerManagementService {
         return value != null && !value.trim().isEmpty() ? value.trim() : null;
     }
 
-    private String generateSessionId() {
-        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
+
 }

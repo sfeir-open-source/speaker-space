@@ -3,6 +3,7 @@ package com.speakerspace.controller;
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.UnauthorizedException;
+import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.security.AuthenticationHelper;
 import com.speakerspace.service.EventService;
 import com.speakerspace.service.UserService;
@@ -23,6 +24,7 @@ public class EventController {
     private final EventService eventService;
     private final AuthenticationHelper authHelper;
     private final UserService userService;
+    private final EventMapper eventMapper;
 
     @PostMapping("/create")
     public ResponseEntity<EventDTO> createEvent(@RequestBody EventDTO eventDTO, Authentication authentication) {
@@ -30,27 +32,10 @@ public class EventController {
             throw new UnauthorizedException("Authentication required");
         }
 
-        EventDTO eventWithUserId = EventDTO.builder()
-                .idEvent(eventDTO.idEvent())
-                .eventName(eventDTO.eventName())
-                .description(eventDTO.description())
-                .endDate(eventDTO.endDate())
-                .url(eventDTO.url())
-                .startDate(eventDTO.startDate())
-                .isOnline(eventDTO.isOnline())
-                .location(eventDTO.location())
-                .isPrivate(eventDTO.isPrivate())
-                .webLinkUrl(eventDTO.webLinkUrl())
-                .isFinish(eventDTO.isFinish())
-                .userCreateId(authHelper.getUserId(authentication))
-                .conferenceHallUrl(eventDTO.conferenceHallUrl())
-                .teamId(eventDTO.teamId())
-                .timeZone(eventDTO.timeZone())
-                .logoBase64(eventDTO.logoBase64())
-                .type(eventDTO.type())
-                .build();
+        String currentUserId = authHelper.getUserId(authentication);
+        EventDTO eventForCreation = eventMapper.createForCreation(eventDTO, currentUserId);
 
-        EventDTO createdEvent = eventService.createEvent(eventWithUserId);
+        EventDTO createdEvent = eventService.createEvent(eventForCreation);
         return ResponseEntity.ok(createdEvent);
     }
 
@@ -127,27 +112,9 @@ public class EventController {
             throw new AccessDeniedException("User not authorized to update this event");
         }
 
-        EventDTO eventWithPreservedUserId = EventDTO.builder()
-                .idEvent(eventDTO.idEvent())
-                .eventName(eventDTO.eventName())
-                .description(eventDTO.description())
-                .endDate(eventDTO.endDate())
-                .url(eventDTO.url())
-                .startDate(eventDTO.startDate())
-                .isOnline(eventDTO.isOnline())
-                .location(eventDTO.location())
-                .isPrivate(eventDTO.isPrivate())
-                .webLinkUrl(eventDTO.webLinkUrl())
-                .isFinish(eventDTO.isFinish())
-                .userCreateId(existingEvent.userCreateId())
-                .conferenceHallUrl(eventDTO.conferenceHallUrl())
-                .teamId(eventDTO.teamId())
-                .timeZone(eventDTO.timeZone())
-                .logoBase64(eventDTO.logoBase64())
-                .type(eventDTO.type())
-                .build();
+        EventDTO eventForUpdate = eventMapper.createForUpdate(eventDTO, existingEvent);
 
-        EventDTO updatedEvent = eventService.updateEvent(eventWithPreservedUserId);
+        EventDTO updatedEvent = eventService.updateEvent(eventForUpdate);
         return ResponseEntity.ok(updatedEvent);
     }
 

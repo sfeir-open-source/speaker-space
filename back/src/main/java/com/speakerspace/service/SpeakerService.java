@@ -36,9 +36,9 @@ public class SpeakerService {
     public SpeakerDTO createSpeaker(String eventId, SpeakerCreateRequestDTO createRequest) {
         validateBusinessRules(eventId, createRequest);
 
-        Speaker speaker = buildSpeakerFromRequest(eventId, createRequest);
+        Speaker speaker = speakerMapper.buildSpeakerFromRequest(eventId, createRequest);
 
-        Session emptySession = sessionSpeakerManagementService.createEmptySessionForSpeaker(eventId, speaker);
+        Session emptySession = sessionMapper.createEmptySessionForSpeaker(eventId, speaker);
 
         sessionRepository.saveSession(emptySession);
 
@@ -92,31 +92,7 @@ public class SpeakerService {
         return deleted;
     }
 
-    private Speaker buildSpeakerFromRequest(String eventId, SpeakerCreateRequestDTO createRequest) {
-        String speakerId = generateSpeakerId();
 
-        Speaker speaker = new Speaker();
-        speaker.setId(speakerId);
-        speaker.setName(createRequest.name().trim());
-        speaker.setBio(trimOrNull(createRequest.bio()));
-        speaker.setCompany(trimOrNull(createRequest.company()));
-        speaker.setReferences(trimOrNull(createRequest.references()));
-        speaker.setEmail(createRequest.email().toLowerCase().trim());
-        speaker.setEventId(eventId);
-        speaker.setPicture(trimOrNull(createRequest.picture()));
-        speaker.setLocation(trimOrNull(createRequest.location()));
-
-        List<String> socialLinks = createRequest.socialLinks() != null ?
-                createRequest.socialLinks().stream()
-                        .filter(link -> link != null && !link.trim().isEmpty())
-                        .map(String::trim)
-                        .distinct()
-                        .collect(Collectors.toList()) :
-                new ArrayList<>();
-        speaker.setSocialLinks(socialLinks);
-
-        return speaker;
-    }
 
     private void validateBusinessRules(String eventId, SpeakerCreateRequestDTO createRequest) {
         EventDTO event = eventService.getEventById(eventId);
@@ -132,13 +108,5 @@ public class SpeakerService {
                     "A speaker with email '" + createRequest.email() +
                             "' already exists in this event");
         }
-    }
-
-    private String generateSpeakerId() {
-        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
-
-    private String trimOrNull(String value) {
-        return value != null && !value.trim().isEmpty() ? value.trim() : null;
     }
 }

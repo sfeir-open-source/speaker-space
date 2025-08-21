@@ -12,6 +12,9 @@ import {EventTeamCardComponent} from '../../../components/event/event-team-card/
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {NgClass} from '@angular/common';
 import {NavbarTeamPageComponent} from '../../../components/team/navbar-team-page/navbar-team-page.component';
+import {TeamMember} from '../../../type/team/team-member';
+import {TeamMemberService} from '../../../services/team/team-member.service';
+import {AuthService} from '../../../../../core/login/services/auth.service';
 
 @Component({
   selector: 'app-list-event-page',
@@ -33,6 +36,8 @@ export class ListEventPageComponent implements OnInit {
   isLoading: boolean = true;
   error: string | null = null;
   events: Event[] = [];
+  currentUserRole: string = '';
+  members: TeamMember[] = [];
   eventCounts = { active: 0, archived: 0 };
 
   protected readonly _destroyRef = inject(DestroyRef);
@@ -42,11 +47,20 @@ export class ListEventPageComponent implements OnInit {
     private route: ActivatedRoute,
     private teamService: TeamService,
     private eventService: EventService,
-    private eventStatusService: EventStatusService
+    private eventStatusService: EventStatusService,
+    private teamMemberService: TeamMemberService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loadTeamAndEvents();
+    this.authService.user$.pipe(
+      takeUntilDestroyed(this._destroyRef)
+    ).subscribe(user => {
+      if (user && this.teamId) {
+        this.loadUserRole(user.uid);
+      }
+    });
   }
 
   private loadTeamAndEvents(): void {
@@ -69,12 +83,41 @@ export class ListEventPageComponent implements OnInit {
         this.events = events;
         this.updateEventCounts();
         this.updateFormFields();
+
+        const user = this.authService.user$.getValue();
+        if (user) {
+          this.loadUserRole(user.uid);
+        }
       },
       error: (err) => {
         console.error('Error loading team events:', err);
         this.error = 'Failed to load team details or events';
       }
     });
+  }
+
+  private loadUserRole(userId: string): void {
+    this.teamMemberService.getTeamMembers(this.teamId)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: (members: TeamMember[]) => {
+          this.members = members;
+          const currentMember = members.find(m => m.userId === userId);
+          if (currentMember) {
+            this.currentUserRole = currentMember.role;
+          } else {
+            this.currentUserRole = '';
+          }
+        },
+        error: (err) => {
+          console.error('Error loading team members:', err);
+          this.currentUserRole = '';
+        }
+      });
+  }
+
+  get canCreateEvent(): boolean {
+    return this.currentUserRole === 'Owner';
   }
 
   private updateEventCounts(): void {
@@ -117,7 +160,7 @@ export class ListEventPageComponent implements OnInit {
   }
 
   addEvent(): void {
-    if (this.teamId) {
+    if (this.canCreateEvent && this.teamId) {
       this.router.navigate(['/create-event', this.teamId]);
     }
   }

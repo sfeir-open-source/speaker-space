@@ -7,6 +7,7 @@ import com.speakerspace.config.CookieService;
 import com.speakerspace.config.FirebaseTokenRequest;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.exception.*;
+import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.service.UserService;
 import com.speakerspace.service.UserSpeakerLinkService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
-import java.util.ArrayList;
 
 @RestController
 @Slf4j
@@ -29,6 +29,7 @@ public class AuthController {
     private final UserSpeakerLinkService userSpeakerLinkService;
     private final CookieService cookieService;
     private final FirebaseAuth firebaseAuth;
+    private final UserMapper userMapper;
 
     @PostMapping("/login")
     public ResponseEntity<UserDTO> login(@RequestBody FirebaseTokenRequest request, HttpServletResponse response) {
@@ -48,26 +49,14 @@ public class AuthController {
             existingUser = createNewUser(decodedToken);
 
             if (email != null) {
-                userSpeakerLinkService.linkExistingSpeakersToNewUser(uid, email)
-                        .whenComplete((result, throwable) -> {
-                            if (throwable != null) {
-                                log.error("Failed to link speakers for new user {}: {}", uid, throwable.getMessage());
-                            } else {
-                                log.info("Successfully completed speaker linking for new user {}", uid);
-                            }
-                        });
+                linkSpeakersToUser(uid, email);
             }
         } else {
             existingUser = updateExistingUserIfNeeded(existingUser, decodedToken);
 
             if (existingUser.email() != null &&
                     (email == null || !email.equalsIgnoreCase(existingUser.email()))) {
-                userSpeakerLinkService.linkExistingSpeakersToNewUser(uid, existingUser.email())
-                        .whenComplete((result, throwable) -> {
-                            if (throwable != null) {
-                                log.error("Failed to re-link speakers for user {}: {}", uid, throwable.getMessage());
-                            }
-                        });
+                linkSpeakersToUser(uid, existingUser.email());
             }
         }
 
@@ -154,16 +143,7 @@ public class AuthController {
     }
 
     private UserDTO createNewUser(FirebaseToken decodedToken) {
-        UserDTO userDTO = UserDTO.builder()
-                .uid(decodedToken.getUid())
-                .email(decodedToken.getEmail())
-                .name(decodedToken.getName())
-                .photoURL(decodedToken.getPicture())
-                .socialLinks(new ArrayList<>())
-                .speakerIds(new ArrayList<>())
-                .eventIds(new ArrayList<>())
-                .sessionIds(new ArrayList<>())
-                .build();
+        UserDTO userDTO = userMapper.createFromFirebaseToken(decodedToken);
 
         UserDTO createdUser = userService.saveUser(userDTO);
         if (createdUser == null) {
@@ -173,43 +153,23 @@ public class AuthController {
     }
 
     private UserDTO updateExistingUserIfNeeded(UserDTO existingUser, FirebaseToken decodedToken) {
-        boolean needsUpdate = false;
-        UserDTO.UserDTOBuilder builder = UserDTO.builder()
-                .uid(existingUser.uid())
-                .email(existingUser.email())
-                .name(existingUser.name())
-                .photoURL(existingUser.photoURL())
-                .company(existingUser.company())
-                .location(existingUser.location())
-                .phoneNumber(existingUser.phoneNumber())
-                .bio(existingUser.bio())
-                .socialLinks(existingUser.socialLinks())
-                .speakerIds(existingUser.speakerIds())
-                .eventIds(existingUser.eventIds())
-                .sessionIds(existingUser.sessionIds());
+        UserMapper.UpdateResult updateResult = userMapper.updateFromFirebaseTokenIfNeeded(existingUser, decodedToken);
 
-        if (existingUser.email() == null && decodedToken.getEmail() != null) {
-            builder.email(decodedToken.getEmail());
-            needsUpdate = true;
-        }
-
-        if ((existingUser.name() == null || existingUser.name().isEmpty())
-                && decodedToken.getName() != null) {
-            builder.name(decodedToken.getName());
-            needsUpdate = true;
-        }
-
-        if ((existingUser.photoURL() == null || existingUser.photoURL().isEmpty())
-                && decodedToken.getPicture() != null) {
-            builder.photoURL(decodedToken.getPicture());
-            needsUpdate = true;
-        }
-
-        if (needsUpdate) {
-            UserDTO updatedUserDTO = builder.build();
-            return userService.saveUser(updatedUserDTO);
+        if (updateResult.wasUpdated()) {
+            return userService.saveUser(updateResult.getUserDTO());
         }
 
         return existingUser;
+    }
+
+    private void linkSpeakersToUser(String uid, String email) {
+        userSpeakerLinkService.linkExistingSpeakersToNewUser(uid, email)
+                .whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        log.error("Failed to link speakers for user {}: {}", uid, throwable.getMessage());
+                    } else {
+                        log.info("Successfully completed speaker linking for user {}", uid);
+                    }
+                });
     }
 }

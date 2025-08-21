@@ -2,6 +2,7 @@ package com.speakerspace.service;
 
 import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.dto.UserDTO;
+import com.speakerspace.mapper.TeamMemberMapper;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
 import com.speakerspace.repository.TeamRepository;
@@ -19,6 +20,7 @@ public class TeamMemberService {
 
     private final TeamRepository teamRepository;
     private final UserService userService;
+    private final TeamMemberMapper teamMemberMapper;
 
     public TeamMemberDTO addTeamMember(String teamId, TeamMemberDTO memberDTO) throws AccessDeniedException {
         Team team = validateTeamAccess(teamId);
@@ -70,7 +72,7 @@ public class TeamMemberService {
         return Optional.ofNullable(team.getMembers())
                 .orElse(List.of())
                 .stream()
-                .map(this::convertMemberToDTO)
+                .map(teamMemberMapper::convertMemberToDTO)
                 .toList();
     }
 
@@ -214,18 +216,5 @@ public class TeamMemberService {
         }
 
         return team;
-    }
-
-    private TeamMemberDTO convertMemberToDTO(TeamMember member) {
-        UserDTO userDTO = userService.getUserByUid(member.getUserId());
-
-        return TeamMemberDTO.builder()
-                .userId(member.getUserId())
-                .role(member.getRole())
-                .email(member.getEmail())
-                .name(userDTO != null ? userDTO.name() : null)
-                .photoURL(userDTO != null ? userDTO.photoURL() : null)
-                .status(member.getStatus())
-                .build();
     }
 }

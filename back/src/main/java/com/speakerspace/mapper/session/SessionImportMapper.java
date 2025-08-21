@@ -2,6 +2,8 @@ package com.speakerspace.mapper.session;
 
 import com.speakerspace.dto.session.SessionDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
+import com.speakerspace.model.session.Session;
+import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -68,6 +70,19 @@ public class SessionImportMapper {
         speaker.setUpdatedAt(now);
 
         return speaker;
+    }
+
+    public SessionImportData convertSessionToImportData(Session session) {
+        SessionImportData importData = new SessionImportData();
+        importData.setId(session.getId());
+        importData.setTitle(session.getTitle());
+        importData.setAbstractText(session.getAbstractText());
+        importData.setStart(session.getStart());
+        importData.setEnd(session.getEnd());
+        importData.setTrack(session.getTrack());
+        importData.setLevel(session.getLevel());
+        importData.setSpeakers(session.getSpeakers() != null ? session.getSpeakers() : new ArrayList<>());
+        return importData;
     }
 
     private String generateSpeakerId() {
