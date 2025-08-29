@@ -1,16 +1,20 @@
-import { Injectable } from '@angular/core';
-import {environment} from '../../../../environments/environment.development';
-import {HttpClient} from '@angular/common/http';
+import { inject, Injectable } from "@angular/core";
+import { environment } from "../../../../environments/environment.development";
+import { HttpClient } from "@angular/common/http";
+
+interface FirestoreConnexionInfo {
+  message: string;
+}
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class TestConnectionBackFrontService {
-  private apiUrl = environment.apiUrl;
-
-  constructor(private http: HttpClient) { }
+  // SUGGESTION: avec une syntaxe plus moderne
 
   testFirestore() {
-    return this.http.get<{message: string}>(`${this.apiUrl}/firestore/connection-info`);
+    return inject(HttpClient).get<FirestoreConnexionInfo>(
+      `${environment.apiUrl}/firestore/connection-info`,
+    );
   }
 }
