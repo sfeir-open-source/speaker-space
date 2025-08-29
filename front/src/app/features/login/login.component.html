@@ -15,6 +15,22 @@
           </div>
         </div>
         <div class="mt-8 flex flex-col gap-4">
+          <!--
+          SUGGESTION:
+          - transforme les svg en fichier .svg
+          - transforme les buttons en composant (du coup ça te permettra d'éviter de répéter le style)
+          - ensuite tu pourras utiliser ici 3 fois le composant ça peut te donner un truc du genre :
+
+          <app-login-button icon="/img/sso/google.svg" label="Google" bg="#EA2533" outline="#EA2533" />
+          <app-login-button icon="/img/sso/github.svg" label="GitHub" bg="#24292F" outline="#24292F" />
+          <app-login-button icon="/img/sso/x.svg" label="X.com" bg="white" outline="black" />
+
+          ça permet :
+          - de voir en un coup d'oeil que y'a 3 boutons
+          - d'en ajouter un sans duplication de code (vu la tartine de class Tailwind t'as pas envie de le maintenir en 3,4,10 exemplaire)
+          - c'est plus facile de voir les spécificités de chaque bouton (là j'ai été obligé de sélectionner le contenu de class pour voir quand ça matchait plus autour)
+          - d'indiquer très facilement à quelqu'un comment ajouter un nouveau bouton (y'a un composant à copier juste en dessous avec des paramètres facile à lire)
+          -->
           <button type="button" class="flex w-full items-center justify-center gap-3 rounded-md px-3 py-1.5 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 bg-[#EA2533] focus-visible:outline-[#EA2533] text-white">
             <svg role="presentation" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="h-5 w-5" viewBox="0 0 16 16" aria-hidden="true">
               <path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.792 4.792 0 0 0 0 3.063h.003c.635 1.893 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.702 3.702 0 0 0 1.599-2.431H8v-3.08h7.545z"></path>

@@ -38,5 +38,9 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.7.2"
-  }
+  },
+  "// SUGGESTION": [
+    "n'hésite pas à ajouter un linter (eslint: https://github.com/angular-eslint/angular-eslint) et un formatter (prettier : https://prettier.io/docs/integrating-with-linters)",
+    "// ça te permettra d'avoir partout un style de code uniforme (plus facile de relire les PRs)", 
+    "// et des indications si t'as mauvaise pratique automatiquement remontées pendant que tu codes (méthodes/class/function dépréciés, problème de sécurité, etc.)"]
 }
