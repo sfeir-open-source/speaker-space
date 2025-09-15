@@ -30,14 +30,14 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<UserDTO> login(@RequestBody FirebaseTokenRequest request, HttpServletResponse response) {
-        if (request.getIdToken() == null) {
+        if (request.idToken() == null) {
             throw new IllegalArgumentException("No token provided");
         }
 
-        FirebaseToken decodedToken = verifyFirebaseToken(request.getIdToken());
+        FirebaseToken decodedToken = verifyFirebaseToken(request.idToken());
         String uid = decodedToken.getUid();
 
-        cookieService.setAuthCookie(response, request.getIdToken());
+        cookieService.setAuthCookie(response, request.idToken());
 
         UserDTO existingUser = userService.getUserByUid(uid);
 

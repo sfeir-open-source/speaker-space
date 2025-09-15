@@ -67,8 +67,7 @@ class AuthControllerTest {
                 .photoURL("https://example.com/photo.jpg")
                 .build();
 
-        tokenRequest = new FirebaseTokenRequest();
-        tokenRequest.idToken = VALID_TOKEN;
+        tokenRequest = new FirebaseTokenRequest(VALID_TOKEN);
 
         when(firebaseToken.getUid()).thenReturn(testUserDTO.uid());
         when(firebaseToken.getEmail()).thenReturn(testUserDTO.email());
@@ -134,8 +133,7 @@ class AuthControllerTest {
     @Test
     void login_WithNoToken_ShouldReturnBadRequest() {
         // Given
-        FirebaseTokenRequest emptyRequest = new FirebaseTokenRequest();
-        emptyRequest.idToken = null;
+        FirebaseTokenRequest emptyRequest = new FirebaseTokenRequest(null);
 
         // When
         ResponseEntity<?> responseEntity = authController.login(emptyRequest, response);

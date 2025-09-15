@@ -18,124 +18,100 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NullPointerException.class)
-    public ResponseEntity<Map<String, Object>> handleNullPointerException(NullPointerException ex) {
+    public ResponseEntity<AppError> handleNullPointerException(NullPointerException ex) {
         logger.error("Null pointer exception: {}", ex.getMessage(), ex);
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Data validation error");
-        errorResponse.put("message", "Required data is missing or invalid");
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        AppError errorResponse = new AppError(
+                "Data validation error",
+                "Required data is missing or invalid"
+        );
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
+    public ResponseEntity<AppError> handleIllegalArgumentException(IllegalArgumentException ex) {
         logger.error("Illegal argument/validation error: {}", ex.getMessage(), ex);
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Invalid input");
-        errorResponse.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.badRequest()
+                .body(new AppError("Invalid input",ex.getMessage()));
     }
 
     @ExceptionHandler(UnsupportedOperationException.class)
-    public ResponseEntity<Map<String, Object>> handleUnsupportedOperation(UnsupportedOperationException ex) {
+    public ResponseEntity<AppError> handleUnsupportedOperation(UnsupportedOperationException ex) {
         logger.error("Unsupported operation error: {}", ex.getMessage(), ex);
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Operation not supported");
-        errorResponse.put("message", "An internal error occurred while processing your request");
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        AppError errorResponse = new AppError(
+                "Operation not supported",
+                "An internal error occurred while processing your request"
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+    public ResponseEntity<AppError> handleAccessDenied(AccessDeniedException ex) {
         logger.warn("Access denied: {}", ex.getMessage());
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Access denied");
-        errorResponse.put("message", "You do not have permission to perform this action.");
-
+        AppError errorResponse = new AppError(
+                "Access denied",
+                "You do not have permission to perform this action."
+        );
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleEntityNotFound(EntityNotFoundException ex) {
+    public ResponseEntity<AppError> handleEntityNotFound(EntityNotFoundException ex) {
         logger.warn("Entity not found: {}", ex.getMessage());
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Resource not found");
-        errorResponse.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        return ResponseEntity.badRequest()
+                .body(new AppError("Resource not found",ex.getMessage()));
     }
 
     @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationException(ValidationException ex) {
+    public ResponseEntity<AppError> handleValidationException(ValidationException ex) {
         logger.error("Validation error: {}", ex.getMessage());
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Validation failed");
-        errorResponse.put("message", ex.getMessage());
-        errorResponse.put("details", ex.getErrors());
-
-        return ResponseEntity.badRequest().body(errorResponse);
+        return ResponseEntity.badRequest()
+                .body(new AppError("Validation failed",ex.getMessage(),ex.getErrors()));
     }
 
     @ExceptionHandler(FirebaseAuthenticationException.class)
-    public ResponseEntity<Map<String, Object>> handleFirebaseAuth(FirebaseAuthenticationException ex) {
+    public ResponseEntity<AppError> handleFirebaseAuth(FirebaseAuthenticationException ex) {
         logger.error("Firebase authentication error: {}", ex.getMessage());
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Authentication failed");
-        errorResponse.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        return ResponseEntity.badRequest()
+                .body(new AppError("Authentication failed",ex.getMessage()));
     }
 
     @ExceptionHandler(TokenExpiredException.class)
-    public ResponseEntity<Map<String, Object>> handleTokenExpired(TokenExpiredException ex) {
+    public ResponseEntity<AppError> handleTokenExpired(TokenExpiredException ex) {
         logger.warn("Token expired: {}", ex.getMessage());
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Token expired");
-        errorResponse.put("message", "Please refresh your authentication");
-
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        AppError errorResponse = new AppError(
+                "Token expired",
+                "Please refresh your authentication"
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Map<String, Object>> handleJsonParseError(HttpMessageNotReadableException ex) {
+    public ResponseEntity<AppError> handleJsonParseError(HttpMessageNotReadableException ex) {
         logger.error("JSON parsing error: {}", ex.getMessage());
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Invalid JSON format");
-        errorResponse.put("message", "Please check your JSON structure");
-
-        return ResponseEntity.badRequest().body(errorResponse);
+        AppError errorResponse = new AppError(
+                "Invalid JSON format",
+                "Please check your JSON structure"
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+    public ResponseEntity<AppError> handleRuntimeException(RuntimeException ex) {
         logger.error("Runtime error: {}", ex.getMessage(), ex);
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Server error");
-        errorResponse.put("message", "An error occurred while processing your request");
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        AppError errorResponse = new AppError(
+                "Server error",
+                "An error occurred while processing your request"
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+    public ResponseEntity<AppError> handleGenericException(Exception ex) {
         logger.error("Unexpected error: {}", ex.getMessage(), ex);
-
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Server error");
-        errorResponse.put("message", "Please try again later");
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        AppError errorResponse = new AppError(
+                "Server error",
+                "Please try again later"
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 }
