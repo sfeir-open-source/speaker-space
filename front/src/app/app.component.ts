@@ -5,6 +5,7 @@ import {FooterComponent} from './core/footer/footer.component';
 import {SidebarComponent} from './core/sidebar/sidebar.component';
 import {AuthService} from './core/login/services/auth.service';
 import {filter, take} from 'rxjs';
+import {isDefined} from './shared/type/predicates';
 
 @Component({
   selector: 'app-root',
@@ -28,7 +29,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.authService.user$.pipe(
-      filter(user => !!user && !!user.email),
+      filter(user => isDefined(user && user.email)),
       take(1)
     ).subscribe(user => {
       if (user) {

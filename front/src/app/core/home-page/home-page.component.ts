@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import {IsLogoutHomePageComponent} from './is-logout-home-page/is-logout-home-page-component';
 import {IsLoginHomePageComponent} from './is-login-home-page/is-login-home-page.component';
 import {AuthService} from '../login/services/auth.service';
+import {isDefined} from '../../shared/type/predicates';
 
 @Component({
   selector: 'app-home-page',
@@ -18,7 +19,7 @@ export class HomePageComponent {
 
   ngOnInit() {
     this.authService.user$.subscribe((user) => {
-      this.isLogin = !!user;
+      this.isLogin = isDefined(user);
       this.userName = user?.displayName || null;
     });
   }

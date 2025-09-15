@@ -1,6 +1,6 @@
 import { HttpRequest, HttpHandlerFn, HttpEvent } from '@angular/common/http';
 import { of } from 'rxjs';
-import { authInterceptor } from './auth.interceptor';
+import {authInterceptorFn} from './auth.interceptor';
 
 describe('AuthInterceptor', () => {
   it('should add withCredentials to requests', () => {
@@ -11,7 +11,7 @@ describe('AuthInterceptor', () => {
       return of({} as HttpEvent<unknown>);
     });
 
-    authInterceptor(req, next);
+    authInterceptorFn(req, next);
 
     expect(next).toHaveBeenCalled();
   });
@@ -26,6 +26,6 @@ describe('AuthInterceptor', () => {
       return of({} as HttpEvent<unknown>);
     });
 
-    authInterceptor(req, next);
+    authInterceptorFn(req, next);
   });
 });

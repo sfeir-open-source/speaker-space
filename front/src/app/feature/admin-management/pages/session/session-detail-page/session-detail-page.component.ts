@@ -20,6 +20,7 @@ import {SessionScheduleUpdate} from '../../../type/session/schedule-json-data';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {BaseDetailComponent} from '../../../components/class/base-detail-component';
+import {isDefined} from '../../../../../shared/type/predicates';
 
 @Component({
     selector: 'app-session-detail-page',
@@ -284,7 +285,7 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
   }
 
   hasScheduleInfo(): boolean {
-    return !!(this.session?.start || this.session?.track);
+    return isDefined(this.session?.start || this.session?.track);
   }
 
   formatCompleteSessionInfo(): string {

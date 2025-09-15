@@ -1,19 +1,11 @@
-import { Injectable } from '@angular/core';
-import { CanActivate, Router } from '@angular/router';
+import {inject} from '@angular/core';
+import {CanActivateFn, RedirectCommand, Router} from '@angular/router';
 import { Auth } from '@angular/fire/auth';
+import {isDefined} from '../../../shared/type/predicates';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class AuthGuard implements CanActivate {
-
-  constructor(private auth: Auth, private router: Router) {}
-
-  canActivate(): boolean {
-    if (this.auth.currentUser) {
-      return true;
-    }
-    this.router.navigate(['/login']);
-    return false;
+export const AuthGuard: CanActivateFn = () => {
+  if (isDefined(inject(Auth).currentUser)) {
+    return true;
   }
-}
+  return new RedirectCommand(inject(Router).parseUrl("/login"));
+};

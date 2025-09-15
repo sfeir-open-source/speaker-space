@@ -4,6 +4,7 @@ import {NavigationEnd, Router, RouterModule} from '@angular/router';
 import {filter, Subscription} from 'rxjs';
 import {AuthService} from '../login/services/auth.service';
 import {UserDataService} from '../services/user-services/user-data.service';
+import {isDefined} from '../../shared/type/predicates';
 
 @Component({
   selector: 'app-navbar',
@@ -39,7 +40,7 @@ export class NavbarComponent {
       });
 
     this.authService.user$.subscribe((user) => {
-      this.isLogin = !!user;
+      this.isLogin = isDefined(user);
       this.userName = user?.displayName || null;
       this.userPhotoURL = user?.photoURL || null;
       this.userEmail = user?.email || null;

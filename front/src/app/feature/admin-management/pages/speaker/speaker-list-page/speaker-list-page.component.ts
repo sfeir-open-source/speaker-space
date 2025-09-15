@@ -16,6 +16,7 @@ import {
   SpeakerFilterPopupComponent
 } from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {isDefined} from '../../../../../shared/type/predicates';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -245,7 +246,7 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
 
     if (this.currentFilters.hasCompleteTasks !== null) {
       filtered = filtered.filter(speaker => {
-        const isComplete: boolean = !!(speaker.name && speaker.email && speaker.company && speaker.bio);
+        const isComplete: boolean = isDefined(speaker.name && speaker.email && speaker.company && speaker.bio);
         return this.currentFilters.hasCompleteTasks ? isComplete : !isComplete;
       });
     }
