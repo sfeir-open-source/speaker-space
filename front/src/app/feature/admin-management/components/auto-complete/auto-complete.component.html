@@ -24,7 +24,7 @@
           <div
             class="p-3 hover:bg-gray-100 cursor-pointer"
             (click)="selectItem(item)">
-            <ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item }"></ng-container>
+            <ng-container *ngTemplateOutlet="itemTemplate; context: { $implicit: item }"/>
           </div>
         }
       }

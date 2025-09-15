@@ -1,6 +1,6 @@
-<app-navbar-profile></app-navbar-profile>
+<app-navbar-profile/>
 <main class="flex min-h-screen">
-  <app-profile-sidebar [activeSection]="activeSection()"></app-profile-sidebar>
+  <app-profile-sidebar [activeSection]="activeSection()"/>
   <section class="flex-1 p-4">
     <article class="flex justify-start items-center bg-white shadow-md p-4 rounded-md">
       <button class="bg-action hover:bg-action-hover text-white mr-3 px-2 py-2 rounded-md flex items-center gap-2 cursor-pointer">
@@ -15,9 +15,9 @@
     </app-save-indicator>
 
     <form [formGroup]="profileForm">
-      <app-personal-info id="personal-info"></app-personal-info>
-      <app-biography id="biography"></app-biography>
-      <app-social-networks id="social-networks"></app-social-networks>
+      <app-personal-info id="personal-info"/>
+      <app-biography id="biography"/>
+      <app-social-networks id="social-networks"/>
     </form>
   </section>
 </main>

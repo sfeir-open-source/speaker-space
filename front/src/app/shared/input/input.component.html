@@ -2,11 +2,11 @@
   <div>
     <label [for]="name" class="block text-start text-md" [class.required]="required">
       {{ label }}
-      <ng-content select="[labelSuffix]"></ng-content>
+      <ng-content select="[labelSuffix]"/>
     </label>
     <label [for]="name" class="block text-start text-xs text-gray-600">
       {{ paragraph }}
-      <ng-content select="[paragraphSuffix]"></ng-content>
+      <ng-content select="[paragraphSuffix]"/>
     </label>
   </div>
 
