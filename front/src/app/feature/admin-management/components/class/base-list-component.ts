@@ -149,7 +149,7 @@ export abstract class BaseListComponent<T> implements OnInit, OnDestroy {
 
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
-    img.src = 'img/profil-picture.svg';
+    img.src = 'assets/img/profil-picture.svg';
   }
 
   get paginatedItems(): T[] {

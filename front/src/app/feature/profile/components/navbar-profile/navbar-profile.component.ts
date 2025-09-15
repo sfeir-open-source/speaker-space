@@ -32,6 +32,6 @@ export class NavbarProfileComponent implements OnInit{
   }
 
   handlePictureError(event: any) {
-    event.target.src = 'img/profil-picture.svg';
+    event.target.src = 'assets/img/profil-picture.svg';
   }
 }

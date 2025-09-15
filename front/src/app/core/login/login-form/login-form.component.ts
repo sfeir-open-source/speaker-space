@@ -4,18 +4,21 @@ import {ActivatedRoute} from '@angular/router';
 import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
 import {ButtonLoginComponent} from '../components/button-login/button-login.component';
 import {AuthService} from '../services/auth.service';
+import {EmailModalComponent} from '../components/email-modal/email-modal.component';
 
 @Component({
   selector: 'app-login-form',
-    imports: [
-        ButtonLoginComponent,
-        FormsModule
-    ],
+  imports: [
+    ButtonLoginComponent,
+    FormsModule,
+    EmailModalComponent
+  ],
   templateUrl: './login-form.component.html',
   styleUrl: './login-form.component.scss'
 })
 export class LoginFormComponent {
   email: string = '';
+  isEmailModalOpen: boolean = false;
 
   constructor(
     private authService: AuthService,
@@ -87,5 +90,13 @@ export class LoginFormComponent {
     } else if (email) {
       this.authService.confirmSignIn(email, window.location.href);
     }
+  }
+
+  openEmailModal(): void {
+    this.isEmailModalOpen = true;
+  }
+
+  closeEmailModal(): void {
+    this.isEmailModalOpen = false;
   }
 }

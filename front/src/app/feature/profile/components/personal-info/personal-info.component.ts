@@ -37,6 +37,6 @@ export class PersonalInfoComponent {
   }
 
   handlePictureError(event: any): void {
-    event.target.src = 'img/profil-picture.svg';
+    event.target.src = 'assets/img/profil-picture.svg';
   }
 }

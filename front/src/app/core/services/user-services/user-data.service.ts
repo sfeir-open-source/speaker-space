@@ -22,7 +22,7 @@ export class UserDataService {
     this.isSidebarOpen = open;
     if (user) {
       this.userName = user.displayName || null;
-      this.userPhotoURL = user.photoURL || 'img/profil-picture.svg';
+      this.userPhotoURL = user.photoURL || 'assets/img/profil-picture.svg';
       this.userEmail = user.email || 'No email';
       this.userCompany = user.company || '';
       this.userCity = user.city || '';

@@ -43,6 +43,6 @@ describe('NotFoundPageComponent', () => {
     const logoImg = fixture.debugElement.query(By.css('img[alt="Logo speaker space not found"]'));
 
     expect(logoImg).toBeTruthy();
-    expect(logoImg.attributes['src']).toBe('img/logo-speaker-space.svg');
+    expect(logoImg.attributes['src']).toBe('assets/img/logo-speaker-space.svg');
   });
 });

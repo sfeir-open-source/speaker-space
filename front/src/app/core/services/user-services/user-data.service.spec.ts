@@ -52,7 +52,7 @@ describe('UserDataService', () => {
     service.toggleSidebar(true, mockUser);
 
     expect(service.userName).toBe('test@example.com');
-    expect(service.userPhotoURL).toBe('img/profil-picture.svg');
+    expect(service.userPhotoURL).toBe('assets/img/profil-picture.svg');
     expect(service.userEmail).toBe('test@example.com');
   });
 

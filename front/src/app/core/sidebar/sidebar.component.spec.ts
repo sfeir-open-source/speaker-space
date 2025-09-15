@@ -5,8 +5,8 @@ import { CommonModule } from '@angular/common';
 import { By } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import {AuthService} from '../services/auth.service';
-import {UserDataService} from '../services/user-data.service';
+import {UserDataService} from '../services/user-services/user-data.service';
+import {AuthService} from '../login/services/auth.service';
 
 class MockSidebarNavItemComponent {}
 
@@ -20,7 +20,7 @@ class MockSidebarService {
     this.isSidebarOpen = open;
     if (user) {
       this.userName = user.displayName || user.email;
-      this.userPhotoURL = user.photoURL || 'img/profil-picture.svg';
+      this.userPhotoURL = user.photoURL || 'assets/img/profil-picture.svg';
       this.userEmail = user.email || 'No email';
     }
   });

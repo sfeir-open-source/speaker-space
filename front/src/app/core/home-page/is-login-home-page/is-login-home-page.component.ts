@@ -86,7 +86,7 @@ export class IsLoginHomePageComponent implements OnInit {
         idEvent: event.idEvent ?? '',
         title: event.eventName ?? 'Untitled Event',
         type: event.type ?? 'Unknown',
-        img: event.logoBase64 || 'img/logo-speaker-space.svg',
+        img: event.logoBase64 || 'assets/img/logo-speaker-space.svg',
         link: event.webLinkUrl ?? '',
         statusText: status.statusText,
         statusClass: status.statusClass,

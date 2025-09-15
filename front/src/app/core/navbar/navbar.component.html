@@ -1,6 +1,6 @@
 <main [ngClass]="isHomePage() ? 'md:h-[250px]' : 'md:h-[160px]'" class="relative bg-primaryBlack h-[100px] w-full px-4 lg:px-8 flex flex-col lg:flex-row items-center justify-center">
   <section class="flex items-center gap-4 w-full md:w-auto md:absolute md:top-8 md:left-10 justify-start">
-    <a href="/"><img src="img/logo-speaker-space.svg" class="h-15 brightness-0 invert" alt="Speaker Space Logo"></a>
+    <a href="/"><img src="assets/img/logo-speaker-space.svg" class="h-15 brightness-0 invert" alt="Speaker Space Logo"></a>
       @if(isLogin){
         <a href="/" class="text-white text-base md:text-2xl hidden md:block">Speaker Space</a>
       }@else{
@@ -14,7 +14,7 @@
       </a>
       <button class="relative" (click)="openSidebar()" aria-label="Open user menu">
         <img
-          [src]="userPhotoURL || 'img/profil-picture.svg'"
+          [src]="userPhotoURL || 'assets/img/profil-picture.svg'"
           class="h-15 w-15 rounded-full"
           alt="Your profile picture"
           (error)="handlePictureError($event)" referrerpolicy="no-referrer">

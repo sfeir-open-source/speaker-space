@@ -10,7 +10,7 @@ export class UserStateService {
   readonly user = computed(() => this.userState());
   readonly displayName = computed(() => this.userState()?.displayName || '');
   readonly email = computed(() => this.userState()?.email || '');
-  readonly photoURL = computed(() => this.userState()?.photoURL || 'img/profil-picture.svg');
+  readonly photoURL = computed(() => this.userState()?.photoURL || 'assets/img/profil-picture.svg');
   readonly company = computed(() => this.userState()?.company || '');
   readonly city = computed(() => this.userState()?.city || '');
   readonly phoneNumber = computed(() => this.userState()?.phoneNumber || '');

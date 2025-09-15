@@ -3,7 +3,6 @@ import { NavbarComponent } from './navbar.component';
 import { AuthService } from '../login/services/auth.service';
 import { BehaviorSubject } from 'rxjs';
 import { By } from '@angular/platform-browser';
-import { RouterModule } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 class MockAuthService {
@@ -87,7 +86,7 @@ describe('NavbarComponent', () => {
 
     component.handlePictureError(event);
 
-    expect(event.target.src).toBe('img/profil-picture.svg');
+    expect(event.target.src).toBe('assets/img/profil-picture.svg');
   });
 
   it('should open sidebar when profile button is clicked', () => {

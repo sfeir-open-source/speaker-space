@@ -89,9 +89,6 @@ export class MembersCardComponent implements OnInit, OnChanges {
   }
 
   getDefaultAvatar(): string {
-    return 'img/profil-picture.svg';
-  }
-
-  ngAfterViewInit(): void {
+    return 'assets/img/profil-picture.svg';
   }
 }

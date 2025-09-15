@@ -23,6 +23,6 @@ export class EventTeamCardComponent {
 
   handleImageError(event: Event): void {
     const imgElement = event.target as HTMLImageElement;
-    imgElement.src = 'img/logo-speaker-space.svg';
+    imgElement.src = 'assets/img/logo-speaker-space.svg';
   }
 }

@@ -48,7 +48,7 @@ export class NavbarComponent {
   }
 
   handlePictureError(event: any) {
-    event.target.src = 'img/profil-picture.svg';
+    event.target.src = 'assets/img/profil-picture.svg';
   }
 
   openSidebar() {
