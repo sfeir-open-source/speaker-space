@@ -39,13 +39,6 @@ export class NavbarComponent {
       });
   }
 
-  get displayName(): string | null {
-    return this.userName;
-  }
-
-  get isUserLoggedIn(): boolean {
-    return this.isLogin;
-  }
 
   handlePictureError(event: any) {
     event.target.src = 'assets/img/profil-picture.svg';
