@@ -344,15 +344,16 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   }
 
   private checkForEmailModal(): void {
-    const params = new URLSearchParams(window.location.search);
-    const showEmailModal: string | null = params.get('showEmailModal');
+    this.route.queryParams.subscribe(params => {
+      const showEmailModal = params['showEmailModal'];
 
-    if (showEmailModal === 'true') {
-      const modal = document.getElementById('crud-modal');
-      if (modal) {
-        modal.classList.remove('hidden');
+      if (showEmailModal === 'true') {
+        const modal = document.getElementById('crud-modal');
+        if (modal) {
+          modal.classList.remove('hidden');
+        }
       }
-    }
+    });
   }
 
   private extractOrGenerateUrlSuffix(event: any): string {

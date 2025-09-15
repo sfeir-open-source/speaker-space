@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import {BehaviorSubject, firstValueFrom, Observable, of} from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
@@ -22,6 +22,7 @@ import {UserStateService} from '../../services/user-services/user-state.service'
 import {User} from '../../models/user.model';
 import {environment} from '../../../../environments/environment.development';
 import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
+import {map} from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -35,11 +36,21 @@ export class AuthService {
   private dialog = inject(MatDialog);
   private userState = inject(UserStateService);
 
-  user$ = new BehaviorSubject<FirebaseUser | null>(null);
+  private userSubject$ = new BehaviorSubject<FirebaseUser | null>(null);
 
-  constructor() {
+  get user$() {
+    return this.userSubject$.asObservable();
+  }
+
+  private setFirebaseUser(user: FirebaseUser | null): void {
+    this.userSubject$.next(user);
+  }
+
+  constructor(
+    private route: ActivatedRoute
+  ) {
     onAuthStateChanged(this.auth, (user) => {
-      this.user$.next(user);
+      this.setFirebaseUser(user);
 
       if (user) {
         this.fetchAndMergeUserData(user);
@@ -117,7 +128,7 @@ export class AuthService {
       }
 
       const result = await signInWithPopup(this.auth, provider);
-      this.user$.next(result.user);
+      this.setFirebaseUser(result.user);
       if (result.user) {
         await this.processInvitations(result.user);
         const token = await result.user.getIdToken();
@@ -216,7 +227,7 @@ export class AuthService {
       try {
         await setPersistence(this.auth, browserLocalPersistence);
         const result = await signInWithEmailLink(this.auth, email, url);
-        this.user$.next(result.user);
+        this.setFirebaseUser(result.user);
         sessionStorage.removeItem('emailForSignIn');
 
         if (result.user) {
@@ -259,39 +270,46 @@ export class AuthService {
     if (isSignInWithEmailLink(this.auth, window.location.href)) {
       let email = sessionStorage.getItem('emailForSignIn');
       if (!email) {
-        const params = new URLSearchParams(window.location.search);
-        email = params.get('email');
-      }
-      if (email) {
-        signInWithEmailLink(this.auth, email, window.location.href)
-          .then(async (result) => {
-            sessionStorage.removeItem('emailForSignIn');
-            this.user$.next(result.user);
+        this.route.queryParams.subscribe(params => {
+          email = params['email'];
 
-            if (result.user) {
-              const token = await result.user.getIdToken();
-
-              try {
-                await this.sendTokenToBackend(token);
-                await this.saveUserToBackend({
-                  uid: result.user.uid,
-                  email: result.user.email,
-                  displayName: result.user.displayName,
-                  photoURL: result.user.photoURL
-                });
-              } catch (error) {
-                console.error('Error during backend operations:', error);
-              }
-            }
-
-            window.history.replaceState({}, document.title, '/');
-            this.router.navigate(['/']);
-          })
-          .catch((error) => {
-            console.error('Connection error:', error);
-          });
+          if (email) {
+            this.processEmailSignIn(email);
+          }
+        });
+      } else {
+        this.processEmailSignIn(email);
       }
     }
+  }
+
+  private processEmailSignIn(email: string) {
+    signInWithEmailLink(this.auth, email, window.location.href)
+      .then(async (result) => {
+        sessionStorage.removeItem('emailForSignIn');
+        this.setFirebaseUser(result.user);
+
+        if (result.user) {
+          const token = await result.user.getIdToken();
+
+          try {
+            await this.sendTokenToBackend(token);
+            await this.saveUserToBackend({
+              uid: result.user.uid,
+              email: result.user.email,
+              displayName: result.user.displayName,
+              photoURL: result.user.photoURL
+            });
+          } catch (error) {
+            console.error('Error during backend operations:', error);
+          }
+        }
+
+        this.router.navigate(['/']);
+      })
+      .catch((error) => {
+        console.error('Connection error:', error);
+      });
   }
 
   private async sendTokenToBackend(token: string) {
@@ -329,7 +347,7 @@ export class AuthService {
     this.userState.clearUser();
 
     window.history.replaceState({}, document.title, '/');
-    this.user$.next(null);
+    this.setFirebaseUser(null);
     this.router.navigate(['/']);
   }
 
@@ -381,13 +399,9 @@ export class AuthService {
   }
 
   getToken(): Observable<string | null> {
-    const user = this.currentUserSubject.value;
-    if (user && user.token) {
-      return of(user.token);
-    }
-
-    const token = localStorage.getItem('token');
-    return of(token);
+    return this.currentUserSubject.pipe(
+      map(user => user?.token ?? localStorage.getItem('token')),
+    );
   }
 
   async getCurrentUserToken(): Promise<string | null> {

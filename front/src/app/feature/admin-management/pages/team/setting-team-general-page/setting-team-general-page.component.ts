@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, FormsModule, Validators} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize, Subscription } from 'rxjs';
+import {finalize, Subscription} from 'rxjs';
 import {InputComponent} from '../../../../../shared/input/input.component';
 import {NavbarTeamPageComponent} from '../../../components/team/navbar-team-page/navbar-team-page.component';
 import {SidebarTeamComponent} from '../../../components/team/sidebar-team/sidebar-team.component';
@@ -32,8 +32,6 @@ import {DangerZoneConfig} from '../../../type/components/danger-zone';
   styleUrl: './setting-team-general-page.component.scss'
 })
 export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
-  readonly BASE_URL = 'https://speaker-space.io/team/';
-
   activeSection: string = 'settings-general';
   teamUrl: string = '';
   teamId: string = '';
@@ -102,15 +100,16 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   }
 
   private checkForEmailModal(): void {
-    const params = new URLSearchParams(window.location.search);
-    const showEmailModal = params.get('showEmailModal');
+    this.route.queryParams.subscribe(params => {
+      const showEmailModal = params['showEmailModal'];
 
-    if (showEmailModal === 'true') {
-      const modal = document.getElementById('crud-modal');
-      if (modal) {
-        modal.classList.remove('hidden');
+      if (showEmailModal === 'true') {
+        const modal = document.getElementById('crud-modal');
+        if (modal) {
+          modal.classList.remove('hidden');
+        }
       }
-    }
+    });
   }
 
   private subscribeToRouteParams(): void {
@@ -174,12 +173,13 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     this.setupNameChangeListener();
     this.error = null;
 
-    const user = this.authService.user$.getValue();
-    if (user) {
-      this.loadUserRole(user.uid);
-    } else {
-      this.teamForm.get('teamName')?.disable();
-    }
+    this.authService.user$.subscribe(user => {
+      if (user) {
+        this.loadUserRole(user.uid);
+      } else {
+        this.teamForm.get('teamName')?.disable();
+      }
+    });
   }
 
   private extractOrGenerateUrlSuffix(team: any): string {
