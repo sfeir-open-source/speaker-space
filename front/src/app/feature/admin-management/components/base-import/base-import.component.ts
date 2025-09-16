@@ -51,8 +51,6 @@ export abstract class BaseImportComponent {
           throw new Error('File is empty');
         }
 
-        JSON.parse(jsonContent);
-
         processor(jsonContent);
       } catch (error) {
         console.error('JSON parsing error:', error);

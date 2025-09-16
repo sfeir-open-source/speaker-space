@@ -38,12 +38,6 @@ export class AutocompleteComponent<T> {
     this.focused.emit();
   }
 
-  onBlur(): void {
-    setTimeout(() => {
-      this.showResults = false;
-      this.blurred.emit();
-    }, 200);
-  }
 
   onInputChange(event: Event): void {
     const value: string = (event.target as HTMLInputElement).value;
