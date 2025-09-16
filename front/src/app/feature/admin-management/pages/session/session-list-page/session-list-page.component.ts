@@ -1,20 +1,20 @@
-import {Component, Input} from '@angular/core';
-import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {finalize} from 'rxjs';
-import {ActivatedRoute, Router} from '@angular/router';
-import {EventService} from '../../../services/event/event.service';
-import {EventDataService} from '../../../services/event/event-data.service';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
-import {BaseListComponent} from '../../../components/class/base-list-component';
-import {SessionFilters} from '../../../type/session/session-filters';
-import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
-import {SpeakerService} from '../../../services/speaker/speaker.service';
-import {
-  SessionUnifiedFilterPopupComponent
-} from '../../../components/session/session-filter-popup/session-filter-popup.component';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { finalize, Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AsyncPipe } from '@angular/common';
+
+import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ButtonGreyComponent } from '../../../../../shared/button-grey/button-grey.component';
+import { Category, Format, SessionImportData, Speaker } from '../../../type/session/session';
+import { SessionFilters } from '../../../type/session/session-filters';
+import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
+import { SessionUnifiedFilterPopupComponent } from '../../../components/session/session-filter-popup/session-filter-popup.component';
+import { BaseListService, ListState } from '../../../components/services/base-list.service';
+import { EventService } from '../../../services/event/event.service';
+import { EventDataService } from '../../../services/event/event-data.service';
+import { SpeakerService } from '../../../services/speaker/speaker.service';
 
 @Component({
   selector: 'app-session-list-page',
@@ -25,78 +25,126 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
     ButtonGreyComponent,
     ButtonGreenActionsComponent,
     SessionUnifiedFilterPopupComponent,
+    AsyncPipe
   ],
+  providers: [BaseListService],
   templateUrl: './session-list-page.component.html',
   styleUrl: './session-list-page.component.scss'
 })
-export class SessionListPageComponent extends BaseListComponent<SessionImportData> {
+export class SessionListPageComponent implements OnInit, OnDestroy {
   @Input() icon: string = 'search';
 
-  showFilterPopup : boolean = false;
+  showFilterPopup: boolean = false;
   availableFormats: Format[] = [];
   availableCategories: Category[] = [];
+  Math = Math;
   currentFilters: SessionFilters = {
     selectedFormats: [],
     selectedCategories: []
   };
 
+  readonly listService = inject(BaseListService<SessionImportData>);
+  readonly state$: Observable<ListState> = this.listService.state$;
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private eventService: EventService,
+    eventDataService: EventDataService,
+    speakerService: SpeakerService
+  ) {
+    (this.listService as any).eventService = eventService;
+    (this.listService as any).eventDataService = eventDataService;
+  }
+
+  ngOnInit(): void {
+    this.initializeRouteSubscription();
+  }
+
+  ngOnDestroy(): void {
+    this.listService.destroy();
+  }
+
+  private initializeRouteSubscription(): void {
+    this.listService.initializeRouteSubscription(
+      this.route,
+      () => this.loadItems()
+    );
+  }
+
+  private async loadItems(): Promise<void> {
+    const currentState = this.listService.getCurrentState();
+    if (!currentState.eventId) return;
+
+    this.listService.updateState({ isLoadingItems: true });
+
+    return new Promise((resolve, reject) => {
+      this.eventService.getSessionsByEventId(currentState.eventId)
+        .pipe(
+          finalize(() => this.listService.updateState({ isLoadingItems: false })),
+          takeUntilDestroyed(this.listService['destroyRef'])
+        )
+        .subscribe({
+          next: (sessions: SessionImportData[]) => {
+            const sortedSessions: SessionImportData[] = sessions.sort((a, b) => {
+              const titleA: string = a.title?.toLowerCase() || '';
+              const titleB: string = b.title?.toLowerCase() || '';
+              return titleA.localeCompare(titleB);
+            });
+
+            this.listService.updateItems(sortedSessions);
+            this.extractAvailableFilters(sessions);
+            resolve();
+          },
+          error: () => {
+            this.listService.updateState({
+              error: 'Failed to load sessions. Please try again.'
+            });
+            this.listService.updateItems([]);
+            reject();
+          }
+        });
+    });
+  }
+
   get totalSessions(): number {
-    return this.totalItems;
+    return this.listService.getCurrentState().totalItems;
   }
 
   get isLoadingSessions(): boolean {
-    return this.isLoadingItems;
+    return this.listService.getCurrentState().isLoadingItems;
   }
 
   get paginatedSessions(): SessionImportData[] {
-    return this.paginatedItems;
+    return this.listService.getPaginatedItems();
   }
 
-  Math = Math;
-
-  constructor(
-    route: ActivatedRoute,
-    router: Router,
-    eventService: EventService,
-    speakerService : SpeakerService,
-    eventDataService: EventDataService
-  ) {
-    super(route, router, eventService, speakerService, eventDataService);
+  get currentPage(): number {
+    return this.listService.getCurrentState().currentPage;
   }
 
-  loadItems(): void {
-    if (!this.eventId) return;
+  get totalPages(): number {
+    return this.listService.getCurrentState().totalPages;
+  }
 
-    this.isLoadingItems = true;
+  get itemsPerPage(): number {
+    return this.listService.getCurrentState().itemsPerPage;
+  }
 
-    this.eventService.getSessionsByEventId(this.eventId)
-      .pipe(
-        finalize(() => this.isLoadingItems = false),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe({
-        next: (sessions: SessionImportData[]) => {
-          const sortedSessions : SessionImportData[] = sessions.sort((a, b) => {
-            const titleA : string = a.title?.toLowerCase() || '';
-            const titleB : string = b.title?.toLowerCase() || '';
-            return titleA.localeCompare(titleB);
-          });
+  get pageNumbers(): number[] {
+    return this.listService.getPageNumbers();
+  }
 
-          this.items = sortedSessions;
-          this.filteredItems = [...sortedSessions];
-          this.totalItems = sortedSessions.length;
+  get selectAll(): boolean {
+    return this.listService.getCurrentState().selectAll;
+  }
 
-          this.extractAvailableFilters(sessions);
+  get selectedItems(): string[] {
+    return this.listService.getCurrentState().selectedItems;
+  }
 
-          this.calculatePagination();
-        },
-        error: () => {
-          this.error = 'Failed to load sessions. Please try again.';
-          this.items = [];
-          this.filteredItems = [];
-          this.totalItems = 0;
-        }
-      });
+  get searchTerm(): string {
+    return this.listService.getCurrentState().searchTerm;
   }
 
   getItemId(session: SessionImportData): string {
@@ -104,9 +152,24 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
   }
 
   openItemDetail(sessionId: string): void {
+    const currentState = this.listService.getCurrentState();
     if (sessionId) {
-      this.router.navigate(['/event', this.eventId, 'session', sessionId]);
+      this.router.navigate(['/event', currentState.eventId, 'session', sessionId]);
     }
+  }
+
+  onSearch(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.listService.onSearch(target.value);
+    this.applyFilters();
+  }
+
+  goToPage(page: number): void {
+    this.listService.goToPage(page);
+  }
+
+  onSubmit(event: Event): void {
+    event.preventDefault();
   }
 
   formatSpeakers(speakers: Speaker[] | undefined): string {
@@ -120,9 +183,28 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
   }
 
   toggleSessionSelection(sessionId: string): void {
-    this.toggleItemSelection(sessionId);
+    this.listService.toggleItemSelection(sessionId);
   }
 
+  toggleSelectAll(): void {
+    this.listService.toggleSelectAll((session: SessionImportData) => this.getItemId(session));
+  }
+
+  onRowClick(session: SessionImportData, event: Event): void {
+    event.preventDefault();
+
+    const target = event.target as HTMLElement;
+    const isCheckboxArea = target.closest('.checkbox-area');
+
+    const sessionId : string = this.getItemId(session);
+    if (!sessionId) return;
+
+    if (isCheckboxArea) {
+      this.toggleSessionSelection(sessionId);
+    } else {
+      this.openItemDetail(sessionId);
+    }
+  }
 
   private extractAvailableFilters(sessions: SessionImportData[]): void {
     const formatMap = new Map<string, Format>();
@@ -171,7 +253,8 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
   }
 
   private applyFilters(): void {
-    let filtered : SessionImportData[] = [...this.items];
+    const items = this.listService.getCurrentItems();
+    let filtered: SessionImportData[] = [...items];
 
     if (this.currentFilters.selectedFormats.length > 0) {
       filtered = filtered.filter(session =>
@@ -189,8 +272,9 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
       );
     }
 
-    if (this.searchTerm.trim()) {
-      const searchLower : string = this.searchTerm.toLowerCase();
+    const searchTerm : string = this.listService.getCurrentState().searchTerm;
+    if (searchTerm.trim()) {
+      const searchLower: string = searchTerm.toLowerCase();
       filtered = filtered.filter(session =>
         session.title?.toLowerCase().includes(searchLower) ||
         session.abstractText?.toLowerCase().includes(searchLower) ||
@@ -200,12 +284,7 @@ export class SessionListPageComponent extends BaseListComponent<SessionImportDat
       );
     }
 
-    this.filteredItems = filtered;
-    this.updateItemsAfterFilter();
-  }
-
-  filterItems(): void {
-    this.applyFilters();
+    this.listService.updateFilteredItems(filtered);
   }
 
   get hasActiveFilters(): boolean {

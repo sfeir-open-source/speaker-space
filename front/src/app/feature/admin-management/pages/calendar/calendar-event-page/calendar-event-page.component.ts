@@ -1,27 +1,27 @@
-import {Component, OnInit, OnDestroy} from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize, forkJoin } from 'rxjs';
-import {BaseListComponent} from '../../../components/class/base-list-component';
-import {CalendarService} from '../../../services/calendar/calendar.service';
-import {EventService} from '../../../services/event/event.service';
-import {SpeakerService} from '../../../services/speaker/speaker.service';
-import {EventDataService} from '../../../services/event/event-data.service';
-import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {NgClass} from '@angular/common';
-import {CalendarDayData, CalendarSession, CalendarSessionData} from '../../../type/calendar/calendar';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import { finalize, forkJoin, Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NgClass, AsyncPipe } from '@angular/common';
+import { CalendarService } from '../../../services/calendar/calendar.service';
+import { EventService } from '../../../services/event/event.service';
+import { EventDataService } from '../../../services/event/event-data.service';
+import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
+import { CalendarDayData, CalendarSession, CalendarSessionData } from '../../../type/calendar/calendar';
+import { BaseListService, ListState } from '../../../components/services/base-list.service';
 
 @Component({
   selector: 'app-calendar-event-page',
   templateUrl: './calendar-event-page.component.html',
   imports: [
     NavbarEventPageComponent,
-    NgClass
+    NgClass,
+    AsyncPipe
   ],
+  providers: [BaseListService],
   styleUrls: ['./calendar-event-page.component.css']
 })
-export class CalendarEventPageComponent extends BaseListComponent<CalendarSessionData> implements OnInit, OnDestroy {
-
+export class CalendarEventPageComponent implements OnInit, OnDestroy {
   selectedDate: Date = new Date();
   sessions: CalendarSessionData[] = [];
   tracks: string[] = [];
@@ -31,86 +31,134 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
   readonly HOUR_HEIGHT: number = 120;
   readonly START_HOUR: number = 9;
   readonly END_HOUR: number = 19;
+  readonly listService = inject(BaseListService<CalendarSessionData>);
+  readonly state$: Observable<ListState> = this.listService.state$;
 
   constructor(
-    route: ActivatedRoute,
-    router: Router,
+    private route: ActivatedRoute,
+    private router: Router,
+    private calendarService: CalendarService,
     eventService: EventService,
-    speakerService: SpeakerService,
-    eventDataService: EventDataService,
-    private calendarService: CalendarService
+    eventDataService: EventDataService
   ) {
-    super(route, router, eventService, speakerService, eventDataService);
+    (this.listService as any).eventService = eventService;
+    (this.listService as any).eventDataService = eventDataService;
   }
 
-  override ngOnInit(): void {
-    super.ngOnInit();
+  ngOnInit(): void {
+    this.initializeRouteSubscription();
   }
 
-  override ngOnDestroy(): void {
-    super.ngOnDestroy();
+  ngOnDestroy(): void {
+    this.listService.destroy();
   }
 
-  override loadItems(): void {
-    if (!this.eventId) return;
+  private initializeRouteSubscription(): void {
+    this.listService.initializeRouteSubscription(
+      this.route,
+      () => this.loadItems()
+    );
+  }
 
-    this.isLoadingItems = true;
+  private async loadItems(): Promise<void> {
+    const currentState = this.listService.getCurrentState();
+    if (!currentState.eventId) return;
 
-    forkJoin({
-      sessions: this.calendarService.getCalendarSessions(this.eventId),
-      tracks: this.calendarService.getEventTracks(this.eventId)
-    }).pipe(
-      finalize(() => this.isLoadingItems = false),
-      takeUntilDestroyed(this._destroyRef),
-    ).subscribe({
-      next: ({sessions, tracks}) => {
-        this.sessions = sessions || [];
-        this.tracks = tracks || [];
-        this.items = this.sessions;
-        this.filteredItems = this.sessions;
-        this.totalItems = this.sessions.length;
+    this.listService.updateState({ isLoadingItems: true });
 
-        this.eventDateRange = this.calendarService.getEventDateRange(this.sessions);
-        if (this.eventDateRange) {
-          this.selectedDate = new Date(this.eventDateRange.start);
+    return new Promise((resolve, reject) => {
+      forkJoin({
+        sessions: this.calendarService.getCalendarSessions(currentState.eventId),
+        tracks: this.calendarService.getEventTracks(currentState.eventId)
+      }).pipe(
+        finalize(() => this.listService.updateState({ isLoadingItems: false })),
+        takeUntilDestroyed(this.listService['destroyRef'])
+      ).subscribe({
+        next: ({ sessions, tracks }) => {
+          this.sessions = sessions || [];
+          this.tracks = tracks || [];
+
+          this.listService.updateItems(this.sessions);
+
+          this.eventDateRange = this.calendarService.getEventDateRange(this.sessions);
+          if (this.eventDateRange) {
+            this.selectedDate = new Date(this.eventDateRange.start);
+          }
+
+          this.buildCalendarData();
+          resolve();
+        },
+        error: (err) => {
+          console.error('Error loading calendar data:', err);
+          this.listService.updateState({ error: 'Failed to load calendar data' });
+          reject(err);
         }
-
-        this.buildCalendarData();
-      },
-      error: (err) => {
-        console.error('Error loading calendar data:', err);
-        this.error = 'Failed to load calendar data';
-      }
+      });
     });
   }
 
-  override getItemId(item: CalendarSessionData): string {
-    return item.id || '';
+  get isLoading(): boolean {
+    return this.listService.getCurrentState().isLoading;
   }
 
-  override filterItems(): void {
-    if (!this.searchTerm) {
-      this.filteredItems = this.sessions;
+  get isLoadingItems(): boolean {
+    return this.listService.getCurrentState().isLoadingItems;
+  }
+
+  get error(): string | null {
+    return this.listService.getCurrentState().error;
+  }
+
+  get eventName(): string {
+    return this.listService.getCurrentState().eventName;
+  }
+
+  get eventUrl(): string {
+    return this.listService.getCurrentState().eventUrl;
+  }
+
+  get eventId(): string {
+    return this.listService.getCurrentState().eventId;
+  }
+
+  get teamId(): string {
+    return this.listService.getCurrentState().teamId;
+  }
+
+  openItemDetail(itemId: string): void {
+    const currentState = this.listService.getCurrentState();
+    this.router.navigate(['/event', currentState.eventId, 'session', itemId]);
+  }
+
+  onSearch(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.listService.onSearch(target.value);
+    this.filterItems();
+  }
+
+  private filterItems(): void {
+    const searchTerm = this.listService.getCurrentState().searchTerm;
+
+    if (!searchTerm) {
+      this.listService.updateFilteredItems(this.sessions);
     } else {
-      this.filteredItems = this.sessions.filter(session =>
-        session.title.toLowerCase().includes(this.searchTerm) ||
-        (session.abstractText && session.abstractText.toLowerCase().includes(this.searchTerm)) ||
+      const filtered = this.sessions.filter(session =>
+        session.title.toLowerCase().includes(searchTerm) ||
+        (session.abstractText && session.abstractText.toLowerCase().includes(searchTerm)) ||
         (session.speakers && session.speakers.some(speaker =>
-          speaker.name.toLowerCase().includes(this.searchTerm)
+          speaker.name.toLowerCase().includes(searchTerm)
         ))
       );
+      this.listService.updateFilteredItems(filtered);
     }
-    this.updateItemsAfterFilter();
+
     this.buildCalendarData();
   }
 
-  override openItemDetail(itemId: string): void {
-    this.router.navigate(['/event', this.eventId, 'session', itemId]);
-  }
-
   private buildCalendarData(): void {
+    const filteredItems = this.listService.getCurrentFilteredItems();
     this.calendarData = this.calendarService.buildCalendarData(
-      this.filteredItems,
+      filteredItems,
       this.selectedDate,
       this.tracks
     );
@@ -158,11 +206,11 @@ export class CalendarEventPageComponent extends BaseListComponent<CalendarSessio
   }
 
   formatSessionTime(session: CalendarSession): string {
-    const start : string = session.startTime.toLocaleTimeString('en-EN', {
+    const start: string = session.startTime.toLocaleTimeString('en-EN', {
       hour: '2-digit',
       minute: '2-digit'
     });
-    const end : string = session.endTime.toLocaleTimeString('en-EN', {
+    const end: string = session.endTime.toLocaleTimeString('en-EN', {
       hour: '2-digit',
       minute: '2-digit'
     });

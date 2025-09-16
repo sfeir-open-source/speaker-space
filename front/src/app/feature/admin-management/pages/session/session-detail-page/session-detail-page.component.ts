@@ -1,9 +1,8 @@
-import {Component, HostListener} from '@angular/core';
+import {Component, DestroyRef, HostListener, inject, OnDestroy, OnInit} from '@angular/core';
 import {Category, Format, SessionImportData} from '../../../type/session/session';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {finalize} from 'rxjs';
+import {finalize, Observable} from 'rxjs';
 import {ActivatedRoute, Router} from '@angular/router';
-import {EventService} from '../../../services/event/event.service';
 import {SessionService} from '../../../services/sessions/session.service';
 import {
   NavbarSessionPageComponent
@@ -19,21 +18,24 @@ import {
 import {SessionScheduleUpdate} from '../../../type/session/schedule-json-data';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {BaseDetailComponent} from '../../../components/class/base-detail-component';
 import {isDefined} from '../../../../../shared/type/predicates';
+import {BaseDetailService, DetailState} from '../../../components/services/base-detail.service';
+import {AsyncPipe} from '@angular/common';
 
 @Component({
-    selector: 'app-session-detail-page',
+  selector: 'app-session-detail-page',
   imports: [
     ButtonGreyComponent,
     NavbarSessionPageComponent,
     ReactiveFormsModule,
-    ButtonGreenActionsComponent
+    ButtonGreenActionsComponent,
+    AsyncPipe
   ],
-    templateUrl: './session-detail-page.component.html',
-    styleUrl: './session-detail-page.component.scss'
+  providers: [BaseDetailService],
+  templateUrl: './session-detail-page.component.html',
+  styleUrl: './session-detail-page.component.scss'
 })
-export class SessionDetailPageComponent extends BaseDetailComponent {
+export class SessionDetailPageComponent implements OnInit, OnDestroy {
   sessionId: string = '';
   session: SessionImportData | null = null;
   format: Format | null = null;
@@ -60,19 +62,52 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     return { label, value: val };
   });
 
+  readonly detailService = inject(BaseDetailService);
+  readonly state$: Observable<DetailState> = this.detailService.state$;
+  protected readonly _destroyRef = inject(DestroyRef);
+
   constructor(
-    route: ActivatedRoute,
-    eventService: EventService,
+    private route: ActivatedRoute,
     private sessionService: SessionService,
-    protected router: Router,
-    private fb: FormBuilder,
-  ) {
-    super(route, eventService);
+    private router: Router,
+    private fb: FormBuilder
+  ) {}
+
+  ngOnInit(): void {
+    this.initializeScheduleForm();
+    this.initializeRouteSubscription();
   }
 
-  override ngOnInit(): void {
-    super.ngOnInit();
-    this.initializeScheduleForm();
+  ngOnDestroy(): void {
+    this.detailService.destroy();
+  }
+
+  private initializeRouteSubscription(): void {
+    this.detailService.initializeRouteSubscription(
+      this.route,
+      ['eventId', 'sessionId'],
+      (params) => this.loadSessionData(params)
+    );
+  }
+
+  private async loadSessionData(params: Record<string, string>): Promise<void> {
+    this.sessionId = params['sessionId'];
+    const eventId = params['eventId'];
+
+    try {
+      const [session, tracks] = await Promise.all([
+        this.sessionService.getSessionById(eventId, this.sessionId).toPromise(),
+        this.sessionService.getAvailableTracksForEvent(eventId).toPromise()
+      ]);
+
+      this.session = session!;
+      this.availableTracks = tracks || [];
+      this.format = session!.formats?.[0] || null;
+      this.category = session!.categories?.[0] || null;
+    } catch (error) {
+      this.detailService.updateState({ error: 'Failed to load session data' });
+      throw error;
+    }
   }
 
   private initializeScheduleForm(): void {
@@ -110,37 +145,9 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     }
   }
 
-  protected subscribeToRouteParams(): void {
-    this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.eventId = params.get('eventId') || '';
-      this.sessionId = params.get('sessionId') || '';
-
-      if (this.eventId && this.sessionId) {
-        this.loadEventAndDetailData();
-      } else {
-        this.error = 'Event ID or Session ID is missing from route parameters';
-        this.isLoading = false;
-      }
-    });
-  }
-
-  protected loadDetailData(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      Promise.all([
-        this.sessionService.getSessionById(this.eventId, this.sessionId).toPromise(),
-        this.sessionService.getAvailableTracksForEvent(this.eventId).toPromise()
-      ]).then(([session, tracks]) => {
-        this.session = session!;
-        this.availableTracks = tracks || [];
-        this.format = session!.formats?.[0] || null;
-        this.category = session!.categories?.[0] || null;
-        resolve();
-      }).catch(err => {
-        this.error = 'Failed to load session data';
-        reject(err);
-      });
-    });
-  }
+  onImageError = (event: Event): void => {
+    this.detailService.handleImageError(event);
+  };
 
   onEditSession(): void {
     this.isEditingSchedule = true;
@@ -248,6 +255,7 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     }
 
     const endDate = this.calculateEndDate(startDate, formValues.duration);
+    const currentState = this.detailService.getCurrentState();
 
     const scheduleUpdate: SessionScheduleUpdate = {
       start: startDate,
@@ -258,7 +266,7 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
     this.isUpdatingSchedule = true;
     this.scheduleError = null;
 
-    this.sessionService.updateSessionSchedule(this.eventId, this.sessionId, scheduleUpdate)
+    this.sessionService.updateSessionSchedule(currentState.eventId, this.sessionId, scheduleUpdate)
       .pipe(
         finalize(() => this.isUpdatingSchedule = false),
         takeUntilDestroyed(this._destroyRef),
@@ -358,6 +366,7 @@ export class SessionDetailPageComponent extends BaseDetailComponent {
   }
 
   openItemDetail(speakerId: string): void {
-    this.router.navigate(['event', this.eventId, 'speaker', speakerId]);
+    const currentState = this.detailService.getCurrentState();
+    this.router.navigate(['event', currentState.eventId, 'speaker', speakerId]);
   }
 }

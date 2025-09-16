@@ -1,35 +1,75 @@
-import {Component} from '@angular/core';
-import {Speaker} from '../../../type/session/session';
-import {ActivatedRoute } from '@angular/router';
-import {EventService} from '../../../services/event/event.service';
-import {
-  NavbarSpeakerPageComponent
-} from '../../../components/speaker/navbar-speaker-page/navbar-speaker-page.component';
-import {SpeakerService} from '../../../services/speaker/speaker.service';
-import {SocialLinkService} from '../../../../../core/services/social-link-service/social-link.service';
-import {SocialLinkInfo} from '../../../../../core/types/social-link-info';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {BaseDetailComponent} from '../../../components/class/base-detail-component';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AsyncPipe } from '@angular/common';
+
+import { Speaker } from '../../../type/session/session';
+import { NavbarSpeakerPageComponent } from '../../../components/speaker/navbar-speaker-page/navbar-speaker-page.component';
+import { SpeakerService } from '../../../services/speaker/speaker.service';
+import { SocialLinkService } from '../../../../../core/services/social-link-service/social-link.service';
+import { SocialLinkInfo } from '../../../../../core/types/social-link-info';
+import { BaseDetailService, DetailState } from '../../../components/services/base-detail.service';
 
 @Component({
-    selector: 'app-speaker-detail-page',
+  selector: 'app-speaker-detail-page',
   imports: [
     NavbarSpeakerPageComponent,
+    AsyncPipe
   ],
-    templateUrl: './speaker-detail-page.component.html',
-    styleUrl: './speaker-detail-page.component.scss'
+  providers: [BaseDetailService],
+  templateUrl: './speaker-detail-page.component.html',
+  styleUrl: './speaker-detail-page.component.scss'
 })
-export class SpeakerDetailPageComponent extends BaseDetailComponent {
+export class SpeakerDetailPageComponent implements OnInit, OnDestroy {
   speakerId: string = '';
   speaker: Speaker | null = null;
 
+  readonly detailService = inject(BaseDetailService);
+  readonly state$: Observable<DetailState> = this.detailService.state$;
+
   constructor(
-    route: ActivatedRoute,
-    eventService: EventService,
+    private route: ActivatedRoute,
     private speakerService: SpeakerService,
     private socialLinkService: SocialLinkService
-  ) {
-    super(route, eventService);
+  ) {}
+
+  ngOnInit(): void {
+    this.initializeRouteSubscription();
+  }
+
+  ngOnDestroy(): void {
+    this.detailService.destroy();
+  }
+
+  private initializeRouteSubscription(): void {
+    this.detailService.initializeRouteSubscription(
+      this.route,
+      ['eventId', 'speakerId'],
+      (params) => this.loadSpeakerData(params)
+    );
+  }
+
+  private async loadSpeakerData(params: Record<string, string>): Promise<void> {
+    this.speakerId = params['speakerId'];
+    const eventId = params['eventId'];
+
+    return new Promise((resolve, reject) => {
+      this.speakerService.getSpeakerById(eventId, this.speakerId)
+        .pipe(takeUntilDestroyed(this.detailService['destroyRef']))
+        .subscribe({
+          next: (speaker: Speaker) => {
+            this.speaker = speaker;
+            resolve();
+          },
+          error: (err) => {
+            this.detailService.updateState({
+              error: 'Failed to load speaker data. Please check if the speaker exists.'
+            });
+            reject(err);
+          }
+        });
+    });
   }
 
   getParsedSocialLinks(): SocialLinkInfo[] {
@@ -42,34 +82,7 @@ export class SpeakerDetailPageComponent extends BaseDetailComponent {
     );
   }
 
-  protected subscribeToRouteParams(): void {
-    this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.eventId = params.get('eventId') || '';
-      this.speakerId = params.get('speakerId') || '';
-
-      if (this.eventId && this.speakerId) {
-        this.loadEventAndDetailData();
-      } else {
-        this.error = 'Event ID or Speaker ID is missing from route parameters';
-        this.isLoading = false;
-      }
-    });
-  }
-
-  protected loadDetailData(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.speakerService.getSpeakerById(this.eventId, this.speakerId)
-        .pipe(takeUntilDestroyed(this._destroyRef),)
-        .subscribe({
-          next: (speaker: Speaker) => {
-            this.speaker = speaker;
-            resolve();
-          },
-          error: (err) => {
-            this.error = 'Failed to load speaker data. Please check if the speaker exists.';
-            reject(err);
-          }
-        });
-    });
-  }
+  onImageError = (event: Event): void => {
+    this.detailService.handleImageError(event);
+  };
 }

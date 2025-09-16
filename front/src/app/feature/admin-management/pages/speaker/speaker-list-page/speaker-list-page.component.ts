@@ -1,22 +1,21 @@
-import {Component, Input} from '@angular/core';
-import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {finalize} from 'rxjs';
-import {ActivatedRoute, Router} from '@angular/router';
-import {EventService} from '../../../services/event/event.service';
-import {EventDataService} from '../../../services/event/event-data.service';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {Category, Format, Speaker} from '../../../type/session/session';
-import {BaseListComponent} from '../../../components/class/base-list-component';
-import {SpeakerFilters} from '../../../type/speaker/speaker-filters';
-import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
-import {SpeakerWithSessionsDTO} from '../../../type/speaker/speaker-with-sessions';
-import {SpeakerService} from '../../../services/speaker/speaker.service';
-import {
-  SpeakerFilterPopupComponent
-} from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {isDefined} from '../../../../../shared/type/predicates';
+import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { finalize, Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AsyncPipe } from '@angular/common';
+import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ButtonGreyComponent } from '../../../../../shared/button-grey/button-grey.component';
+import { Category, Format, Speaker } from '../../../type/session/session';
+import { SpeakerFilters } from '../../../type/speaker/speaker-filters';
+import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
+import { SpeakerWithSessionsDTO } from '../../../type/speaker/speaker-with-sessions';
+import { SpeakerService } from '../../../services/speaker/speaker.service';
+import { SpeakerFilterPopupComponent } from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
+import { isDefined } from '../../../../../shared/type/predicates';
+import { BaseListService, ListState } from '../../../components/services/base-list.service';
+import { EventService } from '../../../services/event/event.service';
+import { EventDataService } from '../../../services/event/event-data.service';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -27,11 +26,13 @@ import {isDefined} from '../../../../../shared/type/predicates';
     ButtonGreyComponent,
     ButtonGreenActionsComponent,
     SpeakerFilterPopupComponent,
+    AsyncPipe
   ],
+  providers: [BaseListService],
   templateUrl: './speaker-list-page.component.html',
   styleUrl: './speaker-list-page.component.scss'
 })
-export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
+export class SpeakerListPageComponent implements OnInit, OnDestroy {
   @Input() icon: string = 'person';
 
   showFilterPopup: boolean = false;
@@ -45,86 +46,124 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
     hasCompleteTasks: null
   };
 
-  get totalSpeakers(): number {
-    return this.totalItems;
-  }
-
-  get isLoadingSpeakers(): boolean {
-    return this.isLoadingItems;
-  }
-
-  get paginatedSpeakers(): Speaker[] {
-    return this.paginatedItems;
-  }
+  readonly listService = inject(BaseListService<Speaker>);
+  readonly state$: Observable<ListState> = this.listService.state$;
 
   Math = Math;
 
   constructor(
-    route: ActivatedRoute,
-    router: Router,
+    private route: ActivatedRoute,
+    private router: Router,
+    private speakerService: SpeakerService,
     eventService: EventService,
-    speakerService : SpeakerService,
-    eventDataService: EventDataService,
+    eventDataService: EventDataService
   ) {
-    super(route, router, eventService, speakerService, eventDataService);
+    (this.listService as any).eventService = eventService;
+    (this.listService as any).eventDataService = eventDataService;
   }
 
-  loadItems(): void {
-    if (!this.eventId) return;
+  ngOnInit(): void {
+    this.initializeRouteSubscription();
+  }
 
-    this.isLoadingItems = true;
-    this.error = null;
+  ngOnDestroy(): void {
+    this.listService.destroy();
+  }
 
-    this.speakerService.getSpeakersWithSessionsByEventId(this.eventId)
-      .pipe(
-        finalize(() => this.isLoadingItems = false),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe({
-        next: (speakersWithSessions: SpeakerWithSessionsDTO[]) => {
-          console.log('Received speakers with sessions:', speakersWithSessions);
+  private initializeRouteSubscription(): void {
+    this.listService.initializeRouteSubscription(
+      this.route,
+      () => this.loadItems()
+    );
+  }
 
-          this.speakersWithSessions = speakersWithSessions;
+  private async loadItems(): Promise<void> {
+    const currentState = this.listService.getCurrentState();
+    if (!currentState.eventId) return;
 
-          const speakers : Speaker[] = speakersWithSessions.map(sws => sws.speaker);
-          const sortedSpeakers: Speaker[] = speakers.sort((a, b) => {
-            const nameA: string = a.name?.toLowerCase() || '';
-            const nameB: string = b.name?.toLowerCase() || '';
-            return nameA.localeCompare(nameB);
-          });
+    this.listService.updateState({ isLoadingItems: true, error: null });
 
-          this.items = sortedSpeakers;
-          this.filteredItems = [...sortedSpeakers];
-          this.totalItems = sortedSpeakers.length;
+    return new Promise((resolve, reject) => {
+      this.speakerService.getSpeakersWithSessionsByEventId(currentState.eventId)
+        .pipe(
+          finalize(() => this.listService.updateState({ isLoadingItems: false })),
+          takeUntilDestroyed(this.listService['destroyRef'])
+        )
+        .subscribe({
+          next: (speakersWithSessions: SpeakerWithSessionsDTO[]) => {
+            console.log('Received speakers with sessions:', speakersWithSessions);
 
-          this.extractAvailableFilters();
-          this.calculatePagination();
-        },
-        error: (error) => {
-          console.error('Error loading speakers with sessions:', error);
-          this.loadSpeakersWithFallback();
-        }
-      });
+            this.speakersWithSessions = speakersWithSessions;
+
+            const speakers: Speaker[] = speakersWithSessions.map(sws => sws.speaker);
+            const sortedSpeakers: Speaker[] = speakers.sort((a, b) => {
+              const nameA: string = a.name?.toLowerCase() || '';
+              const nameB: string = b.name?.toLowerCase() || '';
+              return nameA.localeCompare(nameB);
+            });
+
+            this.listService.updateItems(sortedSpeakers);
+            this.extractAvailableFilters();
+            resolve();
+          },
+          error: (error) => {
+            console.error('Error loading speakers with sessions:', error);
+            this.loadSpeakersWithFallback();
+            reject(error);
+          }
+        });
+    });
   }
 
   private loadSpeakersWithFallback(): void {
-    this.eventService.getSpeakersByEventId(this.eventId)
-      .pipe(takeUntilDestroyed(this._destroyRef),)
-      .subscribe({
-        next: (speakers: Speaker[]) => {
-        },
-        error: (error) => {
-          this.error = 'Failed to load speakers. Please try again.';
-        }
-      });
+    this.listService.updateState({
+      error: 'Failed to load speakers. Please check if sessions are imported first.',
+      isLoadingItems: false
+    });
 
-    this.error = 'Failed to load speakers. Please check if sessions are imported first.';
-    this.items = [];
-    this.filteredItems = [];
-    this.totalItems = 0;
+    this.listService.updateItems([]);
     this.speakersWithSessions = [];
   }
 
+  get totalSpeakers(): number {
+    return this.listService.getCurrentState().totalItems;
+  }
+
+  get isLoadingSpeakers(): boolean {
+    return this.listService.getCurrentState().isLoadingItems;
+  }
+
+  get paginatedSpeakers(): Speaker[] {
+    return this.listService.getPaginatedItems();
+  }
+
+  get currentPage(): number {
+    return this.listService.getCurrentState().currentPage;
+  }
+
+  get totalPages(): number {
+    return this.listService.getCurrentState().totalPages;
+  }
+
+  get itemsPerPage(): number {
+    return this.listService.getCurrentState().itemsPerPage;
+  }
+
+  get pageNumbers(): number[] {
+    return this.listService.getPageNumbers();
+  }
+
+  get selectAll(): boolean {
+    return this.listService.getCurrentState().selectAll;
+  }
+
+  get selectedItems(): string[] {
+    return this.listService.getCurrentState().selectedItems;
+  }
+
+  get searchTerm(): string {
+    return this.listService.getCurrentState().searchTerm;
+  }
 
   onFiltersApplied(filters: SpeakerFilters): void {
     this.currentFilters = filters;
@@ -141,10 +180,6 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
     this.applyFilters();
   }
 
-  filterItems(): void {
-    this.applyFilters();
-  }
-
   get hasActiveFilters(): boolean {
     return this.currentFilters.selectedFormats.length > 0 ||
       this.currentFilters.selectedCategories.length > 0 ||
@@ -152,7 +187,7 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
   }
 
   get activeFiltersCount(): number {
-    let count : number = 0;
+    let count: number = 0;
     count += this.currentFilters.selectedFormats.length;
     count += this.currentFilters.selectedCategories.length;
     if (this.currentFilters.hasCompleteTasks !== null) count += 1;
@@ -164,8 +199,27 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
   }
 
   openItemDetail(speakerId: string): void {
-    this.router.navigate(['event', this.eventId, 'speaker', speakerId]);
+    const currentState = this.listService.getCurrentState();
+    this.router.navigate(['event', currentState.eventId, 'speaker', speakerId]);
   }
+
+  onSearch(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.listService.onSearch(target.value);
+    this.applyFilters();
+  }
+
+  goToPage(page: number): void {
+    this.listService.goToPage(page);
+  }
+
+  onSubmit(event: Event): void {
+    event.preventDefault();
+  }
+
+  onImageError = (event: Event): void => {
+    this.listService.handleImageError(event);
+  };
 
   isSpeakerSelected(speakerName: string | undefined): boolean {
     if (!speakerName) return false;
@@ -173,7 +227,11 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
   }
 
   toggleSpeakerSelection(speakerName: string): void {
-    this.toggleItemSelection(speakerName);
+    this.listService.toggleItemSelection(speakerName);
+  }
+
+  toggleSelectAll(): void {
+    this.listService.toggleSelectAll((speaker: Speaker) => this.getItemId(speaker));
   }
 
   openFilterPopup(): void {
@@ -210,7 +268,8 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
   }
 
   private applyFilters(): void {
-    let filtered: Speaker[] = [...this.items];
+    const items = this.listService.getCurrentItems();
+    let filtered: Speaker[] = [...items];
 
     if (this.currentFilters.selectedFormats.length > 0) {
       filtered = filtered.filter(speaker => {
@@ -251,8 +310,9 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
       });
     }
 
-    if (this.searchTerm.trim()) {
-      const searchLower: string = this.searchTerm.toLowerCase();
+    const searchTerm = this.listService.getCurrentState().searchTerm;
+    if (searchTerm.trim()) {
+      const searchLower: string = searchTerm.toLowerCase();
       filtered = filtered.filter(speaker =>
         speaker.name?.toLowerCase().includes(searchLower) ||
         speaker.email?.toLowerCase().includes(searchLower) ||
@@ -261,7 +321,6 @@ export class SpeakerListPageComponent extends BaseListComponent<Speaker> {
       );
     }
 
-    this.filteredItems = filtered;
-    this.updateItemsAfterFilter();
+    this.listService.updateFilteredItems(filtered);
   }
 }
