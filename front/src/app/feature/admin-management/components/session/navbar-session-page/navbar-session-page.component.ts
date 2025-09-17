@@ -1,10 +1,10 @@
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
+import { Component, OnDestroy, OnInit, input, signal, effect } from '@angular/core';
 import { Router } from '@angular/router';
-import {Subscription} from 'rxjs';
-import {AuthService} from '../../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../../services/team/user-role.service';
-import {NavbarAdminPageComponent} from '../../navbar-admin-page/navbar-admin-page.component';
-import {NavbarConfig} from '../../../type/components/navbar-config';
+import { Subscription } from 'rxjs';
+import { AuthService } from '../../../../../core/login/services/auth.service';
+import { UserRoleService } from '../../../services/team/user-role.service';
+import { NavbarAdminPageComponent } from '../../navbar-admin-page/navbar-admin-page.component';
+import { NavbarConfig } from '../../../type/components/navbar-config';
 
 @Component({
   selector: 'app-navbar-session-page',
@@ -15,55 +15,71 @@ import {NavbarConfig} from '../../../type/components/navbar-config';
   templateUrl: './navbar-session-page.component.html',
   styleUrl: './navbar-session-page.component.scss'
 })
+export class NavbarSessionPageComponent implements OnInit, OnDestroy {
+  eventId = input<string>('');
+  eventUrl = input<string>('');
+  eventName = input<string>('');
+  userRole = input<string>('');
+  sessionId = input<string>('');
 
-export class NavbarSessionPageComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() eventId: string = '';
-  @Input() eventUrl: string = '';
-  @Input() eventName: string = '';
-  @Input() userRole: string = '';
-  @Input() sessionId: string = '';
+  activePage = signal<string>('');
+  currentUserRole = signal<string>('Member');
+  navbarConfig = signal<NavbarConfig>({
+    leftButtons: [],
+    rightContent: undefined,
+    rightButtonConfig: undefined
+  });
 
-  activePage: string = '';
-  currentUserRole: string = 'Member';
-  navbarConfig: NavbarConfig = { leftButtons: [] };
-
+  private currentUser = signal<any>(null);
   private userSubscription?: Subscription;
   private roleSubscription?: Subscription;
   private routerSubscription?: Subscription;
-  private currentUser: any = null;
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private userRoleService: UserRoleService,
-  ) {}
+  ) {
+    effect(() => {
+      const userRoleValue = this.userRole();
+      if (userRoleValue) {
+        this.currentUserRole.set(userRoleValue);
+      }
+    });
+
+    effect(() => {
+      const eventIdValue = this.eventId();
+      const currentUserValue = this.currentUser();
+
+      if (eventIdValue && currentUserValue) {
+        this.loadUserRole(currentUserValue.uid);
+      }
+    });
+
+    effect(() => {
+      const eventIdValue = this.eventId();
+      const eventUrlValue = this.eventUrl();
+
+      if (eventIdValue || eventUrlValue) {
+        this.setupNavbarConfig();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.setupNavbarConfig();
     this.userSubscription = this.authService.user$.subscribe(user => {
-      this.currentUser = user;
-      if (user && this.eventId) {
+      this.currentUser.set(user);
+      if (user && this.eventId()) {
         this.loadUserRole(user.uid);
       }
     });
 
     this.userRoleService.getRole().subscribe(role => {
       if (role) {
-        this.currentUserRole = role;
+        this.currentUserRole.set(role);
       }
     });
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['userRole'] && changes['userRole'].currentValue) {
-      this.currentUserRole = changes['userRole'].currentValue;
-    } else if (changes['eventId'] && changes['eventId'].currentValue && this.currentUser) {
-      this.loadUserRole(this.currentUser.uid);
-    }
-
-    if (changes['eventId'] || changes['eventUrl']) {
-      this.setupNavbarConfig();
-    }
   }
 
   ngOnDestroy(): void {
@@ -73,7 +89,7 @@ export class NavbarSessionPageComponent implements OnInit, OnChanges, OnDestroy 
   }
 
   private setupNavbarConfig(): void {
-    this.navbarConfig = {
+    const config: NavbarConfig = {
       leftButtons: [],
       rightContent: 'custom-button',
       rightButtonConfig: {
@@ -83,16 +99,21 @@ export class NavbarSessionPageComponent implements OnInit, OnChanges, OnDestroy 
         cssClass: 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'
       }
     };
+
+    this.navbarConfig.set(config);
   }
 
   private loadUserRole(userId: string): void {
-    if (!this.eventId) return;
+    const eventIdValue = this.eventId();
+    if (!eventIdValue) return;
+
     this.roleSubscription?.unsubscribe();
   }
 
   private goToSessionsPage(): void {
-    if (this.eventId) {
-      this.router.navigate(['/event-sessions', this.eventId]);
+    const eventIdValue = this.eventId();
+    if (eventIdValue) {
+      this.router.navigate(['/event-sessions', eventIdValue]);
     }
   }
 }

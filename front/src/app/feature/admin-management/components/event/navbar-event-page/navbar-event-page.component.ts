@@ -1,12 +1,11 @@
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
+import { Component, OnDestroy, OnInit, input, signal, effect } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import {Subscription} from 'rxjs';
-import {AuthService} from '../../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../../services/team/user-role.service';
-import {EventService} from '../../../services/event/event.service';
-import {TeamService} from '../../../services/team/team.service';
-import {NavbarAdminPageComponent} from '../../navbar-admin-page/navbar-admin-page.component';
-import {NavbarConfig} from '../../../type/components/navbar-config';
+import { Subscription } from 'rxjs';
+import { AuthService } from '../../../../../core/login/services/auth.service';
+import { UserRoleService } from '../../../services/team/user-role.service';
+import { EventService } from '../../../services/event/event.service';
+import { NavbarAdminPageComponent } from '../../navbar-admin-page/navbar-admin-page.component';
+import { NavbarConfig } from '../../../type/components/navbar-config';
 
 @Component({
   selector: 'app-navbar-event-page',
@@ -17,29 +16,57 @@ import {NavbarConfig} from '../../../type/components/navbar-config';
   templateUrl: './navbar-event-page.component.html',
   styleUrl: './navbar-event-page.component.scss'
 })
+export class NavbarEventPageComponent implements OnInit, OnDestroy {
+  eventId = input<string>('');
+  eventUrl = input<string>('');
+  eventName = input<string>('');
+  userRole = input<string>('');
+  teamId = input<string>('');
 
-export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() eventId: string = '';
-  @Input() eventUrl: string = '';
-  @Input() eventName: string = '';
-  @Input() userRole: string = '';
-  @Input() teamId: string = '';
+  activePage = signal<string>('');
+  currentUserRole = signal<string>('Member');
+  navbarConfig = signal<NavbarConfig>({
+    leftButtons: [],
+    rightContent: undefined,
+    rightButtonConfig: undefined
+  });
 
-  activePage: string = '';
-  currentUserRole: string = 'Member';
-  navbarConfig: NavbarConfig = { leftButtons: [] };
-
+  private currentUser = signal<any>(null);
   private userSubscription?: Subscription;
   private roleSubscription?: Subscription;
   private routerSubscription?: Subscription;
-  private currentUser: any = null;
 
   constructor(
     private router: Router,
     private authService: AuthService,
     private userRoleService: UserRoleService,
     private eventService: EventService,
-  ) {}
+  ) {
+    effect(() => {
+      const userRoleValue = this.userRole();
+      if (userRoleValue) {
+        this.currentUserRole.set(userRoleValue);
+      }
+    });
+
+    effect(() => {
+      const eventIdValue = this.eventId();
+      const currentUserValue = this.currentUser();
+
+      if (eventIdValue && currentUserValue) {
+        this.loadUserRole(currentUserValue.uid);
+      }
+    });
+
+    effect(() => {
+      const eventIdValue = this.eventId();
+      const eventUrlValue = this.eventUrl();
+
+      if (eventIdValue || eventUrlValue) {
+        this.setupNavbarConfig();
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.setupNavbarConfig();
@@ -50,30 +77,19 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
         this.setActivePage();
       }
     });
+
     this.userSubscription = this.authService.user$.subscribe(user => {
-      this.currentUser = user;
-      if (user && this.eventId) {
+      this.currentUser.set(user);
+      if (user && this.eventId()) {
         this.loadUserRole(user.uid);
       }
     });
 
     this.userRoleService.getRole().subscribe(role => {
       if (role) {
-        this.currentUserRole = role;
+        this.currentUserRole.set(role);
       }
     });
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['userRole'] && changes['userRole'].currentValue) {
-      this.currentUserRole = changes['userRole'].currentValue;
-    } else if (changes['eventId'] && changes['eventId'].currentValue && this.currentUser) {
-      this.loadUserRole(this.currentUser.uid);
-    }
-
-    if (changes['eventId'] || changes['eventUrl']) {
-      this.setupNavbarConfig();
-    }
   }
 
   ngOnDestroy(): void {
@@ -83,22 +99,25 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private setupNavbarConfig(): void {
-    this.navbarConfig = {
+    const eventIdValue = this.eventId();
+
+    const config: NavbarConfig = {
       leftButtons: [
         {
           id: 'session',
           label: 'Sessions',
           materialIcon: 'lists',
-          route: `/event-sessions/${this.eventId}`,
+          route: `/event-sessions/${eventIdValue}`,
           handler: this.session.bind(this)
         },
         {
           id: 'speakers',
           label: 'Speakers',
           materialIcon: 'group',
-          route: `/event-speakers/${this.eventId}`,
+          route: `/event-speakers/${eventIdValue}`,
           handler: this.speaker.bind(this)
-        },{
+        },
+        {
           id: 'calendar',
           label: 'Schedule',
           materialIcon: 'calendar_today',
@@ -126,11 +145,12 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
         cssClass: 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'
       }
     };
+
+    this.navbarConfig.set(config);
   }
 
   private loadUserRole(userId: string): void {
-    if (!this.eventId) return;
-
+    if (!this.eventId()) return;
     this.roleSubscription?.unsubscribe();
   }
 
@@ -138,77 +158,72 @@ export class NavbarEventPageComponent implements OnInit, OnChanges, OnDestroy {
     const currentRoute: string = this.router.url;
     const isMobile: boolean = window.innerWidth < 1024;
 
+    let activePageValue = '';
+
     switch (true) {
       case currentRoute.includes('session'):
-        this.activePage = 'session';
+        activePageValue = 'session';
         break;
       case currentRoute.includes('speakers'):
-        this.activePage = 'speakers';
+        activePageValue = 'speakers';
         break;
       case currentRoute.includes('calendar'):
-        this.activePage = 'calendar';
+        activePageValue = 'calendar';
         break;
       case currentRoute.includes('event-detail'):
-        this.activePage = 'settings';
+        activePageValue = 'settings';
         break;
       case currentRoute.includes('event-customize'):
-        this.activePage = isMobile ? 'customize' : 'settings';
+        activePageValue = isMobile ? 'customize' : 'settings';
         break;
       default:
-        this.activePage = '';
+        activePageValue = '';
         break;
     }
+
+    this.activePage.set(activePageValue);
   }
 
   private session(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/event-sessions', this.eventId]);
+    const eventIdValue = this.eventId();
+    if (!eventIdValue) return;
+    this.router.navigate(['/event-sessions', eventIdValue]);
   }
 
   private speaker(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/event-speakers', this.eventId]);
+    const eventIdValue = this.eventId();
+    if (!eventIdValue) return;
+    this.router.navigate(['/event-speakers', eventIdValue]);
   }
 
   private calendar(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/event-calendar', this.eventId]);
+    const eventIdValue = this.eventId();
+    if (!eventIdValue) return;
+    this.router.navigate(['/event-calendar', eventIdValue]);
   }
 
   private settings(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/event-detail', this.eventId]);
+    const eventIdValue = this.eventId();
+    if (!eventIdValue) return;
+    this.router.navigate(['/event-detail', eventIdValue]);
   }
 
   private customize(): void {
-    if (!this.eventId) {
-      return;
-    }
-
-    this.router.navigate(['/event-customize', this.eventId]);
+    const eventIdValue = this.eventId();
+    if (!eventIdValue) return;
+    this.router.navigate(['/event-customize', eventIdValue]);
   }
 
   private goToEventPage(): void {
-    if (this.teamId) {
-      this.router.navigate(['/team', this.teamId]);
-    } else if (this.eventId) {
-      this.eventService.getEventById(this.eventId).subscribe({
+    const teamIdValue = this.teamId();
+    const eventIdValue = this.eventId();
+
+    if (teamIdValue) {
+      this.router.navigate(['/team', teamIdValue]);
+    } else if (eventIdValue) {
+      this.eventService.getEventById(eventIdValue).subscribe({
         next: (event) => {
-          if (!event) {
-            return;
-          }
+          if (!event) return;
 
           if (event.teamId && typeof event.teamId === 'string' && event.teamId.trim() !== '') {
             this.router.navigate(['/team', event.teamId]);

@@ -24,6 +24,7 @@ import {AsyncPipe} from '@angular/common';
 
 @Component({
   selector: 'app-session-detail-page',
+  standalone: true,
   imports: [
     ButtonGreyComponent,
     NavbarSessionPageComponent,

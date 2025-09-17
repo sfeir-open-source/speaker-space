@@ -18,6 +18,7 @@ import { SpeakerService } from '../../../services/speaker/speaker.service';
 
 @Component({
   selector: 'app-session-list-page',
+  standalone: true,
   imports: [
     NavbarEventPageComponent,
     FormsModule,
@@ -50,8 +51,7 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private eventService: EventService,
-    eventDataService: EventDataService,
-    speakerService: SpeakerService
+    eventDataService: EventDataService
   ) {
     (this.listService as any).eventService = eventService;
     (this.listService as any).eventDataService = eventDataService;

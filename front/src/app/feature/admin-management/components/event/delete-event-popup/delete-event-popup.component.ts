@@ -1,6 +1,6 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, input, output, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {FormsModule} from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-delete-event-popup',
@@ -10,22 +10,22 @@ import {FormsModule} from '@angular/forms';
   styleUrl: './delete-event-popup.component.scss'
 })
 export class DeleteEventPopupComponent {
-  @Input() eventName: string = '';
-  @Input() isOpen: boolean = false;
-  @Input() isDeleting: boolean = false;
+  eventName = input<string>('');
+  isOpen = input<boolean>(false);
+  isDeleting = input<boolean>(false);
 
-  @Output() confirm: EventEmitter<void> = new EventEmitter<void>();
-  @Output() cancel: EventEmitter<void> = new EventEmitter<void>();
+  confirm = output<void>();
+  cancel = output<void>();
 
-  confirmationText: string = '';
+  confirmationText = signal<string>('');
 
-  get isConfirmationValid(): boolean {
-    return this.confirmationText.trim() === 'DELETE';
-  }
+  isConfirmationValid = computed<boolean>(() =>
+    this.confirmationText().trim() === 'DELETE'
+  );
 
-  get isDeleteButtonDisabled(): boolean {
-    return this.isDeleting || !this.isConfirmationValid;
-  }
+  isDeleteButtonDisabled = computed<boolean>(() =>
+    this.isDeleting() || !this.isConfirmationValid()
+  );
 
   onCancel(event: MouseEvent): void {
     event.preventDefault();
@@ -36,7 +36,7 @@ export class DeleteEventPopupComponent {
   onConfirm(event: MouseEvent): void {
     event.preventDefault();
 
-    if (this.isConfirmationValid && !this.isDeleting) {
+    if (this.isConfirmationValid() && !this.isDeleting()) {
       this.confirm.emit();
     }
   }
@@ -48,12 +48,19 @@ export class DeleteEventPopupComponent {
     }
   }
 
-  private resetForm(): void {
-    this.confirmationText = '';
+  onKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.resetForm();
+      this.cancel.emit();
+    }
   }
 
   onConfirmationTextChange(event: Event): void {
     const target = event.target as HTMLInputElement;
-    this.confirmationText = target.value;
+    this.confirmationText.set(target.value);
+  }
+
+  private resetForm(): void {
+    this.confirmationText.set('');
   }
 }

@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 @Component({
   selector: 'app-archive-event-popup',
@@ -7,15 +7,15 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
   styleUrl: './archive-event-popup.component.scss'
 })
 export class ArchiveEventPopupComponent {
-  @Input() eventName: string = '';
-  @Input() isOpen: boolean = false;
-  @Input() isArchiving: boolean = false;
+  eventName = input<string>('');
+  isOpen = input<boolean>(false);
+  isArchiving = input<boolean>(false);
 
-  @Output() confirm = new EventEmitter<void>();
-  @Output() cancel = new EventEmitter<void>();
+  confirm = output<void>();
+  cancel = output<void>();
 
   onBackdropClick(event: MouseEvent): void {
-    if ((event.target as HTMLElement).id === 'delete-event-modal') {
+    if ((event.target as HTMLElement).id === 'archive-event-modal') {
       this.cancel.emit();
     }
   }
@@ -23,5 +23,11 @@ export class ArchiveEventPopupComponent {
   onCancel(event: MouseEvent): void {
     event.preventDefault();
     this.cancel.emit();
+  }
+
+  onKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.cancel.emit();
+    }
   }
 }

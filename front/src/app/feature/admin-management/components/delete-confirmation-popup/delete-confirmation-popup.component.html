@@ -1,9 +1,9 @@
-@if(isOpen) {
+@if(isOpen()) {
   <div
-    [id]="modalId"
+    [id]="modalId()"
     aria-modal="true"
     role="dialog"
-    [attr.aria-labelledby]="modalTitleId"
+    [attr.aria-labelledby]="modalTitleId()"
     class="fixed inset-0 bg-gray-300/90 overflow-y-auto flex items-center justify-center z-50"
     (click)="onBackdropClick($event)"
     (keydown)="onKeyDown($event)"
@@ -16,18 +16,18 @@
 
       <header class="flex justify-between items-center mb-4">
         <h2
-          [id]="modalTitleId"
+          [id]="modalTitleId()"
           class="text-xl font-medium">
-          {{ title }}
+          {{ title() }}
         </h2>
         <button
           type="button"
           aria-label="Close dialog"
           (click)="onCancel($event)"
-          [disabled]="isDeleting"
+          [disabled]="isDeleting()"
           class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-          [class.opacity-50]="isDeleting"
-          [class.cursor-not-allowed]="isDeleting">
+          [class.opacity-50]="isDeleting()"
+          [class.cursor-not-allowed]="isDeleting()">
           <span aria-hidden="true">✕</span>
         </button>
       </header>
@@ -45,24 +45,22 @@
         </div>
 
         <p class="text-sm text-gray-600 mb-4">
-          {{ getDescriptionText() }} This action cannot be undone.
+          {{ descriptionText() }} This action cannot be undone.
         </p>
 
-        @if (requireTextConfirmation) {
+        @if (requireTextConfirmation()) {
           <div class="space-y-3">
             <label for="confirmation-input" class="block text-sm text-gray-600">
-              Confirm deletion by entering : "<span class="font-medium text-gray-800">{{ requiredConfirmationText }}</span>"
-
-
+              Confirm deletion by entering : "<span class="font-medium text-gray-800">{{ requiredConfirmationText() }}</span>"
             </label>
 
             <input
               id="confirmation-input"
               type="text"
-              [(ngModel)]="userConfirmationText"
+              [ngModel]="userConfirmationText()"
               (input)="onConfirmationTextChange($event)"
-              [disabled]="isDeleting"
-              [placeholder]="requiredConfirmationText"
+              [disabled]="isDeleting()"
+              [placeholder]="requiredConfirmationText()"
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               autocomplete="off"
               spellcheck="false">
@@ -73,28 +71,28 @@
       <footer class="flex justify-end space-x-3">
         <button
           type="button"
-          [disabled]="isDeleting"
+          [disabled]="isDeleting()"
           (click)="onCancel($event)"
           class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-          [class.opacity-50]="isDeleting"
-          [class.cursor-not-allowed]="isDeleting">
+          [class.opacity-50]="isDeleting()"
+          [class.cursor-not-allowed]="isDeleting()">
           Cancel
         </button>
 
         <button
           type="button"
-          [disabled]="isDeleteButtonDisabled"
+          [disabled]="isDeleteButtonDisabled()"
           (click)="onConfirm($event)"
           class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
 
-          @if (isDeleting) {
+          @if (isDeleting()) {
             <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" aria-hidden="true"></div>
-            <span>{{ loadingText }}</span>
+            <span>{{ loadingText() }}</span>
           } @else {
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
             </svg>
-            <span>{{ confirmButtonText }}</span>
+            <span>{{ confirmButtonText() }}</span>
           }
         </button>
       </footer>
