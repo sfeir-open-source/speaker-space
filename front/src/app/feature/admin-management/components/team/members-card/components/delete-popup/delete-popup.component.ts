@@ -1,5 +1,5 @@
-import {Component, EventEmitter, Input, Output, SimpleChanges} from '@angular/core';
-import {TeamMember} from '../../../../../type/team/team-member';
+import { Component, computed, input, output } from '@angular/core';
+import { TeamMember } from '../../../../../type/team/team-member';
 
 @Component({
   selector: 'app-delete-popup',
@@ -9,20 +9,17 @@ import {TeamMember} from '../../../../../type/team/team-member';
   styleUrl: './delete-popup.component.scss'
 })
 export class DeletePopupComponent {
-  @Input() member: TeamMember | null = null;
-  @Input() isDeleting : boolean = false;
-  @Input() isOpen : boolean = false;
+  member = input<TeamMember | null>(null);
+  isDeleting = input<boolean>(false);
+  isOpen = input<boolean>(false);
 
-  @Output() confirm = new EventEmitter<TeamMember>();
-  @Output() cancel = new EventEmitter<void>();
+  confirm = output<TeamMember>();
+  cancel = output<void>();
 
-  memberName: string = '';
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['member'] && this.member) {
-      this.memberName = this.member.displayName || this.member.email || 'this member';
-    }
-  }
+  memberName = computed(() => {
+    const currentMember = this.member();
+    return currentMember?.displayName || currentMember?.email || 'this member';
+  });
 
   onCancel(event: MouseEvent): void {
     event.preventDefault();
@@ -31,8 +28,10 @@ export class DeletePopupComponent {
 
   onConfirm(event: MouseEvent): void {
     event.preventDefault();
-    if (this.member) {
-      this.confirm.emit(this.member);
+    const currentMember = this.member();
+
+    if (currentMember) {
+      this.confirm.emit(currentMember);
     }
   }
 

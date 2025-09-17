@@ -1,9 +1,9 @@
-import {Component, EventEmitter, Input, Output, OnInit, SimpleChanges, OnChanges} from '@angular/core';
+import { Component, input, output, computed } from '@angular/core';
 import { FormsModule } from "@angular/forms";
 import { CommonModule } from '@angular/common';
-import {RolePopupComponent} from './components/role-popup/role-popup.component';
-import {DeletePopupComponent} from './components/delete-popup/delete-popup.component';
-import {TeamMember} from '../../../type/team/team-member';
+import { RolePopupComponent } from './components/role-popup/role-popup.component';
+import { DeletePopupComponent } from './components/delete-popup/delete-popup.component';
+import { TeamMember } from '../../../type/team/team-member';
 
 @Component({
   selector: 'app-members-card',
@@ -17,46 +17,39 @@ import {TeamMember} from '../../../type/team/team-member';
   templateUrl: './members-card.component.html',
   styleUrl: './members-card.component.scss'
 })
-export class MembersCardComponent implements OnInit, OnChanges {
-  @Input() member!: TeamMember;
-  @Input() currentUserRole: string = '';
-  @Input() currentUserId: string = '';
-  @Input() isCreator: boolean = false;
+export class MembersCardComponent {
+  member = input.required<TeamMember>();
+  currentUserRole = input<string>('');
+  currentUserId = input<string>('');
+  isCreator = input<boolean>(false);
 
-  @Output() onRemove = new EventEmitter<TeamMember>();
-  @Output() onRoleChange = new EventEmitter<{member: TeamMember, newRole: string}>();
+  onRemove = output<TeamMember>();
+  onRoleChange = output<{member: TeamMember, newRole: string}>();
 
-  selectedRole: string = '';
-  canManageRoles: boolean = false;
-  canChangeThisRole: boolean = false;
-  canRemoveThisMember: boolean = false;
+  selectedRole = computed(() => this.member()?.role ?? '');
+
+  private isCurrentUser = computed(() =>
+    Boolean(this.currentUserId()) && this.member()?.userId === this.currentUserId()
+  );
+
+  canManageRoles = computed(() =>
+    this.currentUserRole() === 'Owner'
+  );
+
+  canChangeThisRole = computed(() =>
+    this.canManageRoles() && !this.isCurrentUser()
+  );
+
+  canRemoveThisMember = computed(() =>
+    this.canManageRoles() && this.member()?.role !== 'Owner'
+  );
+
   showRoleModal: boolean = false;
   showDeleteModal: boolean = false;
   isDeleting: boolean = false;
 
-  ngOnInit() {
-    if (this.member) {
-      this.selectedRole = this.member.role;
-      this.updatePermissions();
-    }
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['currentUserId'] || changes['member'] || changes['currentUserRole']) {
-      this.updatePermissions();
-    }
-  }
-
-  updatePermissions() {
-    const isCurrentUser: boolean = Boolean(this.currentUserId) && this.member.userId === this.currentUserId;
-    this.canManageRoles = this.currentUserRole === 'Owner';
-    this.canChangeThisRole = this.canManageRoles && !isCurrentUser;
-    this.canRemoveThisMember = this.canManageRoles && this.member.role !== 'Owner';
-  }
-
   openChangeRoleModal() {
-    if (this.canChangeThisRole && this.member.userId !== this.currentUserId) {
-      this.selectedRole = this.member.role;
+    if (this.canChangeThisRole() && this.member().userId !== this.currentUserId()) {
       this.showRoleModal = true;
     }
   }
@@ -66,14 +59,14 @@ export class MembersCardComponent implements OnInit, OnChanges {
   }
 
   changeRole(newRole: string) {
-    if (newRole !== this.member.role) {
-      this.onRoleChange.emit({member: this.member, newRole});
+    if (newRole !== this.member().role) {
+      this.onRoleChange.emit({member: this.member(), newRole});
     }
     this.closeChangeRoleModal();
   }
 
   openDeleteModal() {
-    if (this.canRemoveThisMember) {
+    if (this.canRemoveThisMember()) {
       this.showDeleteModal = true;
     }
   }
@@ -85,7 +78,7 @@ export class MembersCardComponent implements OnInit, OnChanges {
 
   confirmDelete() {
     this.isDeleting = true;
-    this.onRemove.emit(this.member);
+    this.onRemove.emit(this.member());
   }
 
   getDefaultAvatar(): string {

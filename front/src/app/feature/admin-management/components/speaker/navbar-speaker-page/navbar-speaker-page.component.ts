@@ -1,10 +1,10 @@
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
+import { Component, input, computed, effect, inject, DestroyRef } from '@angular/core';
 import { Router } from '@angular/router';
-import {Subscription} from 'rxjs';
-import {AuthService} from '../../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../../services/team/user-role.service';
-import {NavbarAdminPageComponent} from '../../navbar-admin-page/navbar-admin-page.component';
-import {NavbarConfig} from '../../../type/components/navbar-config';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../../../../core/login/services/auth.service';
+import { UserRoleService } from '../../../services/team/user-role.service';
+import { NavbarAdminPageComponent } from '../../navbar-admin-page/navbar-admin-page.component';
+import { NavbarConfig } from '../../../type/components/navbar-config';
 
 @Component({
   selector: 'app-navbar-speaker-page',
@@ -15,84 +15,81 @@ import {NavbarConfig} from '../../../type/components/navbar-config';
   templateUrl: './navbar-speaker-page.component.html',
   styleUrl: './navbar-speaker-page.component.scss'
 })
+export class NavbarSpeakerPageComponent {
+  eventId = input<string>('');
+   eventUrl = input<string>('');
+   eventName = input<string>('');
+   userRole = input<string>('');
+   speakerEmail = input<string>('');
 
-export class NavbarSpeakerPageComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() eventId: string = '';
-  @Input() eventUrl: string = '';
-  @Input() eventName: string = '';
-  @Input() userRole: string = '';
-  @Input() speakerEmail: string = '';
+  private  router = inject(Router);
+  private  authService = inject(AuthService);
+  private  userRoleService = inject(UserRoleService);
+  private  destroyRef = inject(DestroyRef);
 
   activePage: string = '';
   currentUserRole: string = 'Member';
-  navbarConfig: NavbarConfig = { leftButtons: [] };
-
-  private userSubscription?: Subscription;
-  private roleSubscription?: Subscription;
-  private routerSubscription?: Subscription;
   private currentUser: any = null;
 
-  constructor(
-    private router: Router,
-    private authService: AuthService,
-    private userRoleService: UserRoleService,
-  ) {}
+   navbarConfig = computed((): NavbarConfig => ({
+    leftButtons: [],
+    rightContent: 'custom-button',
+    rightButtonConfig: {
+      label: 'Speakers page',
+      icon: 'arrow_forward',
+      handler: this.goToSpeakersPage.bind(this),
+      cssClass: 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'
+    }
+  }));
 
-  ngOnInit(): void {
-    this.setupNavbarConfig();
-    this.userSubscription = this.authService.user$.subscribe(user => {
-      this.currentUser = user;
-      if (user && this.eventId) {
-        this.loadUserRole(user.uid);
+  constructor() {
+    effect(() => {
+      this.setupUserSubscription();
+      this.setupRoleSubscription();
+
+      const currentEventId = this.eventId();
+      const currentUserRole = this.userRole();
+
+      if (currentUserRole) {
+        this.currentUserRole = currentUserRole;
+      } else if (currentEventId && this.currentUser) {
+        this.loadUserRole(this.currentUser.uid);
       }
     });
-
-    this.userRoleService.getRole().subscribe(role => {
-      if (role) {
-        this.currentUserRole = role;
-      }
-    });
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['userRole'] && changes['userRole'].currentValue) {
-      this.currentUserRole = changes['userRole'].currentValue;
-    } else if (changes['eventId'] && changes['eventId'].currentValue && this.currentUser) {
-      this.loadUserRole(this.currentUser.uid);
-    }
+  private setupUserSubscription(): void {
+    this.authService.user$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(user => {
+        this.currentUser = user;
+        const currentEventId = this.eventId();
 
-    if (changes['eventId'] || changes['eventUrl']) {
-      this.setupNavbarConfig();
-    }
+        if (user && currentEventId) {
+          this.loadUserRole(user.uid);
+        }
+      });
   }
 
-  ngOnDestroy(): void {
-    this.userSubscription?.unsubscribe();
-    this.roleSubscription?.unsubscribe();
-    this.routerSubscription?.unsubscribe();
-  }
-
-  private setupNavbarConfig(): void {
-    this.navbarConfig = {
-      leftButtons: [],
-      rightContent: 'custom-button',
-      rightButtonConfig: {
-        label: 'Speakers page',
-        icon: 'arrow_forward',
-        handler: this.goToSpeakersPage.bind(this),
-        cssClass: 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'
-      }
-    };
+  private setupRoleSubscription(): void {
+    this.userRoleService.getRole()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(role => {
+        if (role) {
+          this.currentUserRole = role;
+        }
+      });
   }
 
   private loadUserRole(userId: string): void {
-    if (!this.eventId) return;
-    this.roleSubscription?.unsubscribe();
+    const currentEventId = this.eventId();
+    if (!currentEventId) return;
   }
 
   private goToSpeakersPage(): void {
-    if (this.eventId) {
-      this.router.navigate(['/event-speakers', this.eventId]);
+    const currentEventId = this.eventId();
+    if (currentEventId) {
+      this.router.navigate(['/event-speakers', currentEventId]);
     }
   }
 }

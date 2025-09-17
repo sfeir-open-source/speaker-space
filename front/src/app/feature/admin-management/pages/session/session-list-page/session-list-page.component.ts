@@ -10,11 +10,10 @@ import { ButtonGreyComponent } from '../../../../../shared/button-grey/button-gr
 import { Category, Format, SessionImportData, Speaker } from '../../../type/session/session';
 import { SessionFilters } from '../../../type/session/session-filters';
 import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
-import { SessionUnifiedFilterPopupComponent } from '../../../components/session/session-filter-popup/session-filter-popup.component';
+import { SessionFilterPopupComponent } from '../../../components/session/session-filter-popup/session-filter-popup.component';
 import { BaseListService, ListState } from '../../../components/services/base-list.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
-import { SpeakerService } from '../../../services/speaker/speaker.service';
 
 @Component({
   selector: 'app-session-list-page',
@@ -25,7 +24,7 @@ import { SpeakerService } from '../../../services/speaker/speaker.service';
     ReactiveFormsModule,
     ButtonGreyComponent,
     ButtonGreenActionsComponent,
-    SessionUnifiedFilterPopupComponent,
+    SessionFilterPopupComponent,
     AsyncPipe
   ],
   providers: [BaseListService],

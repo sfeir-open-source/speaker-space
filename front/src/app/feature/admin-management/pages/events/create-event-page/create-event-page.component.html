@@ -41,13 +41,13 @@
     @if (activePage === 'pageOne') {
       <app-general-info-event
         mode="create"
-        (formSubmitted)="onGeneralFormSubmitted($event())"
+        (formSubmitted)="onGeneralFormSubmitted($event)"
         (goBack)="onGoBack()">
       </app-general-info-event>
     } @else {
       <app-information-event
         mode="create"
-        (formSubmitted)="onInformationFormSubmitted($event())"
+        (formSubmitted)="onInformationFormSubmitted($event)"
         (doItLater)="onGoBack()">
       </app-information-event>
     }

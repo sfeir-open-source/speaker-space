@@ -1,6 +1,6 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {FormsModule} from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-delete-team-popup',
@@ -10,22 +10,21 @@ import {FormsModule} from '@angular/forms';
   styleUrl: './delete-team-popup.component.scss'
 })
 export class DeleteTeamPopupComponent {
-  @Input() teamName: string = '';
-  @Input() isOpen: boolean = false;
-  @Input() isDeleting: boolean = false;
+  teamName = input<string>('');
+  isOpen = input<boolean>(false);
+  isDeleting = input<boolean>(false);
 
-  @Output() confirm = new EventEmitter<void>();
-  @Output() cancel = new EventEmitter<void>();
-
+  confirm = output<void>();
+  cancel = output<void>();
   confirmationText: string = '';
 
-  get isConfirmationValid(): boolean {
-    return this.confirmationText.trim() === 'DELETE';
-  }
+  isConfirmationValid = computed(() =>
+    this.confirmationText.trim() === 'DELETE'
+  );
 
-  get isDeleteButtonDisabled(): boolean {
-    return this.isDeleting || !this.isConfirmationValid;
-  }
+  isDeleteButtonDisabled = computed(() =>
+    this.isDeleting() || !this.isConfirmationValid()
+  );
 
   onCancel(event: MouseEvent): void {
     event.preventDefault();
@@ -36,7 +35,7 @@ export class DeleteTeamPopupComponent {
   onConfirm(event: MouseEvent): void {
     event.preventDefault();
 
-    if (this.isConfirmationValid && !this.isDeleting) {
+    if (this.isConfirmationValid() && !this.isDeleting()) {
       this.confirm.emit();
     }
   }
