@@ -28,21 +28,33 @@ export class InputComponent {
   private readonly sanitizer = inject(DomSanitizer);
 
   readonly iconViewBox = input<string>('0 0 16 16');
-  readonly label = input<string>('');
-  readonly paragraph = input<string>('');
-  readonly placeholder = input<string>('');
+  readonly label = input<string | undefined>(undefined);
+  readonly paragraph = input<string | undefined>(undefined);
+  readonly placeholder = input<string | undefined>(undefined);
   readonly type = input<string>('text');
   readonly control = input.required<FormControl>();
-  readonly required = input<boolean, boolean>(false, { transform: booleanAttribute });
+
+  readonly required = input<boolean, boolean | undefined>(false, {
+    transform: (value: boolean | undefined) => value ?? false
+  });
+
   readonly name = input<string>('');
   readonly errorMessage = input<string>('This field is required');
-  readonly disabled = input<boolean, boolean>(false, { transform: booleanAttribute });
+
+  readonly disabled = input<boolean, boolean | undefined>(false, {
+    transform: (value: boolean | undefined) => value ?? false
+  });
+
   readonly rows = input<number>(6);
   readonly icon = input<string>('');
   readonly iconPath = input<string>('');
   readonly customClass = input<string>('');
   readonly staticPlaceholder = input<string>('');
-  readonly isRequired = input<boolean>(false);
+
+  readonly isRequired = input<boolean, boolean | undefined>(false, {
+    transform: (value: boolean | undefined) => value ?? false
+  });
+
   readonly minLength = input<number>(2);
   readonly serverErrors = input<Record<string, string> | null>(null);
   readonly options = input<{ value: string; label: string }[]>([]);
@@ -51,11 +63,21 @@ export class InputComponent {
 
   private readonly sanitizedIconPath = signal<SafeHtml>('');
 
+  readonly hasLabel = computed(() => {
+    const label = this.label();
+    return label !== undefined && label !== '' && label !== 'undefined';
+  });
+
+  readonly effectiveLabel = computed(() => {
+    const label = this.label();
+    return label && label !== 'undefined' ? label : '';
+  });
+
   readonly effectivePlaceholder = computed(() => {
     const staticPlaceholder = this.staticPlaceholder();
     const placeholder = this.placeholder();
 
-    if (staticPlaceholder) {
+    if (staticPlaceholder && staticPlaceholder !== '') {
       return staticPlaceholder;
     }
     if (placeholder && placeholder !== 'undefined') {
