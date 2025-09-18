@@ -41,6 +41,7 @@
   </section>
 </main>
 
-<app-email-modal [isOpen]="isEmailModalOpen"
-                 (closeEvent)="closeEmailModal()"
-                 (submitEvent)="mailLinkLogin($event)"/>
+<app-email-modal
+  [isOpen]="isEmailModalOpen()"
+  (closeEvent)="closeEmailModal()"
+  (submitEvent)="onEmailSubmit($event)"/>

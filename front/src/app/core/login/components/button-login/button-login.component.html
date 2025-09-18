@@ -1,11 +1,11 @@
-<button [class]="getButtonClasses()"
-        [disabled]="disabled"
+<button [class]="buttonClasses()"
+        [disabled]="disabled()"
         type="button">
 
   @if(hasIcon()) {
     <img
-      [src]="iconSrc"
-      [alt]="iconAlt"
+      [src]="iconSrc()"
+      [alt]="iconAlt()"
       class="h-5 w-5 flex-shrink-0"
       loading="lazy"
       aria-hidden="true"

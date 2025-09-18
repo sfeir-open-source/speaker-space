@@ -1,25 +1,25 @@
 <div
-  (click)="navigateToEvent(field.idEvent)"
+  (click)="navigateToEvent(field().idEvent)"
   class="flex flex-col h-full items-center bg-white border border-gray-200 rounded-lg shadow-sm md:flex-row hover:bg-gray-100 cursor-pointer"
   role="button"
   tabindex="0"
-  [attr.aria-label]="'View details for ' + field.title"
-  (keydown.enter)="navigateToEvent(field.idEvent)">
+  [attr.aria-label]="'View details for ' + field().title"
+  (keydown.enter)="navigateToEvent(field().idEvent)">
 
   <img class="object-cover w-full rounded-t-lg h-30 md:h-full md:w-35 md:rounded-none md:rounded-s-lg"
-    [src]="field.img"
-    [alt]="field.title"
+    [src]="field().img"
+    [alt]="field().title"
     (error)="handleImageError($event)"
     referrerpolicy="no-referrer">
 
   <section class="flex flex-col justify-between p-3 leading-normal w-full">
-    <h1 class="text-xl font-medium text-gray-900">{{field.title}}</h1>
-    <p class="mb-2 md:mb-5 font-normal text-gray-700">{{field.type}}</p>
+    <h1 class="text-xl font-medium text-gray-900">{{field().title}}</h1>
+    <p class="mb-2 md:mb-5 font-normal text-gray-700">{{field().type}}</p>
     <p class="mt-2 md:mt-5 text-sm font-normal text-gray-700 flex items-center">
       <span class="inline-block w-3 h-3 mr-2 rounded-full"
-        [ngClass]="{'bg-green-500': field.statusText === 'Open', 'bg-orange-500': field.statusText !== 'Open'}"
+        [ngClass]="{'bg-green-500': field().statusText === 'Open', 'bg-orange-500': field().statusText !== 'Open'}"
         aria-hidden="true"></span>
-      {{field.statusText}}
+      {{field().statusText}}
     </p>
   </section>
 </div>

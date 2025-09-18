@@ -1,6 +1,6 @@
 <app-generic-filter-popup
-  [config]="filterConfig"
-  [currentFilters]="currentFiltersForGeneric"
+  [config]="filterConfig()"
+  [currentFilters]="currentFiltersForGeneric()"
   (filtersApplied)="onFiltersApplied($event)"
   (filtersReset)="onFiltersReset()"
   (popupClosed)="onPopupClosed()">

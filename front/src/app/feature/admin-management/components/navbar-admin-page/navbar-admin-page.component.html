@@ -1,34 +1,32 @@
 <main class="relative bg-white h-[50px] w-full px-4 lg:px-8 flex justify-around items-center shadow-sm">
   <section class="flex items-center gap-4">
-    @for (button of config.leftButtons; track button.id) {
-      @if (button.isVisible !== false) {
-        <app-button-grey
-          [materialIcon]="button.materialIcon"
-          [buttonHandler]="onButtonClick.bind(this, button)"
-          [route]="button.route || ''"
-          [isActivePage]="isButtonActive(button)"
-          [ngClass]="button.cssClass"
-        >
-          {{ button.label }}
-        </app-button-grey>
-      }
+    @for (button of visibleLeftButtons(); track button.id) {
+      <app-button-grey
+        [materialIcon]="button.materialIcon"
+        [buttonHandler]="getButtonHandler(button)"
+        [route]="button.route || ''"
+        [isActivePage]="isButtonActive(button)"
+        [ngClass]="button.cssClass"
+      >
+        {{ button.label }}
+      </app-button-grey>
     }
   </section>
 
-  @if (config.rightContent === 'role') {
+  @if (config().rightContent === 'role') {
     <p class="bg-blue-50 text-blue-600 border-blue-500 text-sm py-0.5 px-2 border rounded-md">
-      {{ currentUserRole }}
+      {{ currentUserRole() }}
     </p>
   }
 
-  @if (config.rightContent === 'custom-button' && config.rightButtonConfig) {
+  @if (rightButtonConfig()) {
     <button
-      [ngClass]="config.rightButtonConfig.cssClass || 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'"
+      [ngClass]="rightButtonCssClass()"
       (click)="onRightButtonClick()"
-      [attr.aria-label]="config.rightButtonConfig.label"
+      [attr.aria-label]="rightButtonConfig()!.label"
     >
-      <span>{{ config.rightButtonConfig.label }}</span>
-      <span class="material-icons text-lg ml-2">{{ config.rightButtonConfig.icon }}</span>
+      <span>{{ rightButtonConfig()!.label }}</span>
+      <span class="material-icons text-lg ml-2">{{ rightButtonConfig()!.icon }}</span>
     </button>
   }
 </main>

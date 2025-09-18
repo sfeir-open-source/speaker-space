@@ -1,15 +1,18 @@
 import {
   Component,
-  EventEmitter,
   HostListener,
-  Input,
   OnDestroy,
   OnInit,
-  Output,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal
 } from '@angular/core';
-import {DropdownConfig, FilterConfig, FilterOption} from '../../../type/components/filter.type';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
+import { DropdownConfig, FilterConfig, FilterOption } from '../../../type/components/filter.type';
+import { ButtonGreyComponent } from '../../../../../shared/button-grey/button-grey.component';
+import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
 
 @Component({
   selector: 'app-generic-filter-popup',
@@ -21,23 +24,55 @@ import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-ac
   styleUrl: './generic-filter-popup.component.scss'
 })
 export class GenericFilterPopupComponent implements OnInit, OnDestroy {
-  @Input() config!: FilterConfig;
-  @Input() currentFilters: Record<string, any> = {};
+  readonly config = input.required<FilterConfig>();
+  readonly currentFilters = input<Record<string, any>>({});
 
-  @Output() filtersApplied : EventEmitter<Record<string, any>> = new EventEmitter<Record<string, any>>();
-  @Output() filtersReset : EventEmitter<void> = new EventEmitter<void>();
-  @Output() popupClosed : EventEmitter<void> = new EventEmitter<void>();
+  readonly filtersApplied = output<Record<string, any>>();
+  readonly filtersReset = output<void>();
+  readonly popupClosed = output<void>();
 
-  workingFilters: Record<string, any> = {};
-  openDropdowns: Set<string> = new Set();
+  private readonly _workingFilters = signal<Record<string, any>>({});
+  private readonly _openDropdowns = signal<Set<string>>(new Set());
+  readonly workingFilters = this._workingFilters.asReadonly();
+  readonly openDropdowns = this._openDropdowns.asReadonly();
+
+
+  readonly hasButtons = computed(() => {
+    const buttons = this.config().buttons;
+    return buttons !== undefined && buttons.length > 0;
+  });
+
+  readonly hasDropdowns = computed(() => {
+    const dropdowns = this.config().dropdowns;
+    return dropdowns !== undefined && dropdowns.length > 0;
+  });
+
+  readonly safeButtons = computed(() => {
+    return this.config().buttons || [];
+  });
+
+  readonly safeDropdowns = computed(() => {
+    return this.config().dropdowns || [];
+  });
+
+  private documentClickHandler?: (event: Event) => void;
+
+  constructor() {
+    effect(() => {
+      const current = this.currentFilters();
+      this._workingFilters.set(this.deepCopy(current));
+    });
+  }
 
   ngOnInit(): void {
-    this.workingFilters = this.deepCopy(this.currentFilters);
-    document.addEventListener('click', this.handleDocumentClick.bind(this));
+    this.documentClickHandler = this.handleDocumentClick.bind(this);
+    document.addEventListener('click', this.documentClickHandler);
   }
 
   ngOnDestroy(): void {
-    document.removeEventListener('click', this.handleDocumentClick.bind(this));
+    if (this.documentClickHandler) {
+      document.removeEventListener('click', this.documentClickHandler);
+    }
   }
 
   private deepCopy(obj: any): any {
@@ -46,25 +81,37 @@ export class GenericFilterPopupComponent implements OnInit, OnDestroy {
 
   private handleDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
+    const currentConfig = this.config();
+    const currentOpenDropdowns = this.openDropdowns();
 
-    this.config.dropdowns?.forEach(dropdown => {
+    currentConfig.dropdowns?.forEach(dropdown => {
       if (!target.closest(`#${dropdown.id}-select`) && !target.closest(`.${dropdown.id}-dropdown`)) {
-        this.openDropdowns.delete(dropdown.id);
+        if (currentOpenDropdowns.has(dropdown.id)) {
+          const newSet = new Set(currentOpenDropdowns);
+          newSet.delete(dropdown.id);
+          this._openDropdowns.set(newSet);
+        }
       }
     });
   }
 
   toggleDropdown(dropdownId: string): void {
-    if (this.openDropdowns.has(dropdownId)) {
-      this.openDropdowns.delete(dropdownId);
+    const currentOpenDropdowns = this.openDropdowns();
+    const newSet = new Set<string>();
+
+    if (currentOpenDropdowns.has(dropdownId)) {
+      currentOpenDropdowns.forEach(id => {
+        if (id !== dropdownId) newSet.add(id);
+      });
     } else {
-      this.openDropdowns.clear();
-      this.openDropdowns.add(dropdownId);
+      newSet.add(dropdownId);
     }
+
+    this._openDropdowns.set(newSet);
   }
 
   isDropdownOpen(dropdownId: string): boolean {
-    return this.openDropdowns.has(dropdownId);
+    return this.openDropdowns().has(dropdownId);
   }
 
   getOptionValue(option: string | FilterOption): string {
@@ -77,32 +124,42 @@ export class GenericFilterPopupComponent implements OnInit, OnDestroy {
 
   onDropdownChange(dropdownId: string, value: string, event: Event): void {
     const target = event.target as HTMLInputElement;
-    const currentValues = this.workingFilters[dropdownId] || [];
+    const currentFilters = this.workingFilters();
+    const currentValues = currentFilters[dropdownId] || [];
+
+    const newFilters = { ...currentFilters };
 
     if (target.checked) {
       if (!currentValues.includes(value)) {
-        this.workingFilters[dropdownId] = [...currentValues, value];
+        newFilters[dropdownId] = [...currentValues, value];
       }
     } else {
-      this.workingFilters[dropdownId] = currentValues.filter((v: string) => v !== value);
+      newFilters[dropdownId] = currentValues.filter((v: string) => v !== value);
     }
+
+    this._workingFilters.set(newFilters);
   }
 
   isValueSelected(dropdownId: string, value: string): boolean {
-    const currentValues = this.workingFilters[dropdownId] || [];
+    const currentValues = this.workingFilters()[dropdownId] || [];
     return currentValues.includes(value);
   }
 
   onButtonChange(buttonId: string, value: boolean | null): void {
-    if (this.workingFilters[buttonId] === value) {
-      this.workingFilters[buttonId] = null;
+    const currentFilters = this.workingFilters();
+    const newFilters = { ...currentFilters };
+
+    if (currentFilters[buttonId] === value) {
+      newFilters[buttonId] = null;
     } else {
-      this.workingFilters[buttonId] = value;
+      newFilters[buttonId] = value;
     }
+
+    this._workingFilters.set(newFilters);
   }
 
   getDropdownDisplayText(dropdown: DropdownConfig): string {
-    const selectedValues = this.workingFilters[dropdown.id] || [];
+    const selectedValues = this.workingFilters()[dropdown.id] || [];
 
     if (selectedValues.length === 0) {
       return dropdown.placeholder;
@@ -118,23 +175,23 @@ export class GenericFilterPopupComponent implements OnInit, OnDestroy {
   }
 
   getDropdownWidth(dropdownId: string): number {
-    const buttonElement : HTMLElement | null = document.getElementById(`${dropdownId}-select`);
+    const buttonElement: HTMLElement | null = document.getElementById(`${dropdownId}-select`);
     return buttonElement ? buttonElement.offsetWidth : 336;
   }
 
   getDropdownTop(dropdownId: string): number {
-    const buttonElement : HTMLElement | null = document.getElementById(`${dropdownId}-select`);
+    const buttonElement: HTMLElement | null = document.getElementById(`${dropdownId}-select`);
     if (!buttonElement) return 0;
 
-    const rect : DOMRect = buttonElement.getBoundingClientRect();
+    const rect: DOMRect = buttonElement.getBoundingClientRect();
     return rect.bottom + 4;
   }
 
   getDropdownLeft(dropdownId: string): number {
-    const buttonElement : HTMLElement | null = document.getElementById(`${dropdownId}-select`);
+    const buttonElement: HTMLElement | null = document.getElementById(`${dropdownId}-select`);
     if (!buttonElement) return 0;
 
-    const rect : DOMRect = buttonElement.getBoundingClientRect();
+    const rect: DOMRect = buttonElement.getBoundingClientRect();
     return rect.left;
   }
 
@@ -147,7 +204,7 @@ export class GenericFilterPopupComponent implements OnInit, OnDestroy {
       case 'Enter':
         const target = event.target as HTMLElement;
         if (target.id && target.id.endsWith('-select')) {
-          const dropdownId : string = target.id.replace('-select', '');
+          const dropdownId: string = target.id.replace('-select', '');
           this.toggleDropdown(dropdownId);
           event.preventDefault();
         }
@@ -158,28 +215,27 @@ export class GenericFilterPopupComponent implements OnInit, OnDestroy {
   onCheckboxKeyDown(event: KeyboardEvent, dropdownId: string, value: string): void {
     if (event.key === 'Enter') {
       const checkbox = event.target as HTMLInputElement;
-      const newCheckedState : boolean = !checkbox.checked;
+      const newCheckedState: boolean = !checkbox.checked;
       checkbox.checked = newCheckedState;
 
       this.onDropdownChange(dropdownId, value, { target: checkbox } as any);
-
       event.preventDefault();
     }
   }
 
   onApply(): void {
-    this.filtersApplied.emit(this.deepCopy(this.workingFilters));
+    this.filtersApplied.emit(this.deepCopy(this.workingFilters()));
     this.onClose();
   }
 
   onReset(): void {
-    this.workingFilters = {};
-    this.openDropdowns.clear();
+    this._workingFilters.set({});
+    this._openDropdowns.set(new Set());
     this.filtersReset.emit();
   }
 
   onClose(): void {
-    this.openDropdowns.clear();
+    this._openDropdowns.set(new Set());
     this.popupClosed.emit();
   }
 

@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, input} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {EventTeamField} from './interface/event-team-field';
 import {Router} from '@angular/router';
@@ -11,7 +11,7 @@ import {Router} from '@angular/router';
   styleUrl: './event-team-card.component.scss'
 })
 export class EventTeamCardComponent {
-  @Input() field!: EventTeamField;
+  field = input.required<EventTeamField>();
 
   constructor(private router: Router) {}
 

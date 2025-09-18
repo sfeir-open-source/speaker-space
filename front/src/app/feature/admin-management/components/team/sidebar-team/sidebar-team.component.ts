@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, input} from '@angular/core';
 import {SidebarAdminPageComponent} from '../../sidebar-admin-page/sidebar-admin-page.component';
 import {SidebarConfig} from '../../../type/components/sidebar-config';
 
@@ -12,7 +12,7 @@ import {SidebarConfig} from '../../../type/components/sidebar-config';
   styleUrl: './sidebar-team.component.scss'
 })
 export class SidebarTeamComponent {
-  @Input() teamId: string = '';
+  teamId = input<string>('');
 
   readonly sidebarConfig: SidebarConfig = {
     buttons: [

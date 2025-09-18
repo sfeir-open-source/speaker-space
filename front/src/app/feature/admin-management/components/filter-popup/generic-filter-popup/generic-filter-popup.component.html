@@ -11,14 +11,14 @@
 
     <header class="flex items-center bg-gray-100 justify-between px-3 py-2 border-b border-gray-200 flex-shrink-0 rounded-t-lg">
       <h2 id="filter-title" class="text-lg font-medium text-gray-600">
-        {{ config.title }}
+        {{ config().title }}
       </h2>
     </header>
 
     <main class="p-6 space-y-8 flex-1 min-h-0">
 
-      @if (config.buttons && config.buttons.length > 0) {
-        @for (button of config.buttons; track button.id) {
+      @if (hasButtons()) {
+        @for (button of safeButtons(); track button.id) {
           <article>
             <label class="block text-sm font-medium text-gray-900 mb-3">
               {{ button.label }}
@@ -28,7 +28,7 @@
                 <button
                   type="button"
                   (click)="onButtonChange(button.id, option.value)"
-                  [class]="workingFilters[button.id] === option.value ? option.activeClass : option.inactiveClass">
+                  [class]="workingFilters()[button.id] === option.value ? option.activeClass : option.inactiveClass">
                   {{ option.label }}
                 </button>
               }
@@ -37,8 +37,8 @@
         }
       }
 
-      @if (config.dropdowns && config.dropdowns.length > 0) {
-        @for (dropdown of config.dropdowns; track dropdown.id) {
+      @if (hasDropdowns()) {
+        @for (dropdown of safeDropdowns(); track dropdown.id) {
           <article>
             <label [for]="dropdown.id + '-select'" class="block text-sm font-medium text-gray-900 mb-3">
               {{ dropdown.label }}

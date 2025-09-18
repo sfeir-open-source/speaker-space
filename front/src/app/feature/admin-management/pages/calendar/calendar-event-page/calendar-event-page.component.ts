@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, computed, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, forkJoin, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -22,22 +22,29 @@ import { BaseListService, ListState } from '../../../components/services/base-li
   styleUrls: ['./calendar-event-page.component.css']
 })
 export class CalendarEventPageComponent implements OnInit, OnDestroy {
-  selectedDate: Date = new Date();
-  sessions: CalendarSessionData[] = [];
-  tracks: string[] = [];
-  calendarData: CalendarDayData | null = null;
-  eventDateRange: { start: Date; end: Date } | null = null;
+  private readonly selectedDateSignal = signal<Date>(new Date());
+  private readonly sessionsSignal = signal<CalendarSessionData[]>([]);
+  private readonly tracksSignal = signal<string[]>([]);
+  private readonly calendarDataSignal = signal<CalendarDayData | null>(null);
+  private readonly eventDateRangeSignal = signal<{ start: Date; end: Date } | null>(null);
+
+  readonly selectedDate = computed(() => this.selectedDateSignal());
+  readonly sessions = computed(() => this.sessionsSignal());
+  readonly tracks = computed(() => this.tracksSignal());
+  readonly calendarData = computed(() => this.calendarDataSignal());
+  readonly eventDateRange = computed(() => this.eventDateRangeSignal());
 
   readonly HOUR_HEIGHT: number = 120;
   readonly START_HOUR: number = 9;
   readonly END_HOUR: number = 19;
+
   readonly listService = inject(BaseListService<CalendarSessionData>);
   readonly state$: Observable<ListState> = this.listService.state$;
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly calendarService = inject(CalendarService);
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private calendarService: CalendarService,
     eventService: EventService,
     eventDataService: EventDataService
   ) {
@@ -75,14 +82,16 @@ export class CalendarEventPageComponent implements OnInit, OnDestroy {
         takeUntilDestroyed(this.listService['destroyRef'])
       ).subscribe({
         next: ({ sessions, tracks }) => {
-          this.sessions = sessions || [];
-          this.tracks = tracks || [];
+          this.sessionsSignal.set(sessions || []);
+          this.tracksSignal.set(tracks || []);
 
-          this.listService.updateItems(this.sessions);
+          this.listService.updateItems(this.sessions());
 
-          this.eventDateRange = this.calendarService.getEventDateRange(this.sessions);
-          if (this.eventDateRange) {
-            this.selectedDate = new Date(this.eventDateRange.start);
+          const dateRange = this.calendarService.getEventDateRange(this.sessions());
+          this.eventDateRangeSignal.set(dateRange);
+
+          if (dateRange) {
+            this.selectedDateSignal.set(new Date(dateRange.start));
           }
 
           this.buildCalendarData();
@@ -140,9 +149,9 @@ export class CalendarEventPageComponent implements OnInit, OnDestroy {
     const searchTerm = this.listService.getCurrentState().searchTerm;
 
     if (!searchTerm) {
-      this.listService.updateFilteredItems(this.sessions);
+      this.listService.updateFilteredItems(this.sessions());
     } else {
-      const filtered = this.sessions.filter(session =>
+      const filtered = this.sessions().filter(session =>
         session.title.toLowerCase().includes(searchTerm) ||
         (session.abstractText && session.abstractText.toLowerCase().includes(searchTerm)) ||
         (session.speakers && session.speakers.some(speaker =>
@@ -157,30 +166,32 @@ export class CalendarEventPageComponent implements OnInit, OnDestroy {
 
   private buildCalendarData(): void {
     const filteredItems = this.listService.getCurrentFilteredItems();
-    this.calendarData = this.calendarService.buildCalendarData(
+    const calendarData = this.calendarService.buildCalendarData(
       filteredItems,
-      this.selectedDate,
-      this.tracks
+      this.selectedDate(),
+      this.tracks()
     );
+    this.calendarDataSignal.set(calendarData);
   }
 
   goToPreviousDay(): void {
-    const previousDay = new Date(this.selectedDate);
+    const previousDay = new Date(this.selectedDate());
     previousDay.setDate(previousDay.getDate() - 1);
-    this.selectedDate = previousDay;
+    this.selectedDateSignal.set(previousDay);
     this.buildCalendarData();
   }
 
   goToNextDay(): void {
-    const nextDay = new Date(this.selectedDate);
+    const nextDay = new Date(this.selectedDate());
     nextDay.setDate(nextDay.getDate() + 1);
-    this.selectedDate = nextDay;
+    this.selectedDateSignal.set(nextDay);
     this.buildCalendarData();
   }
 
   goToEventStart(): void {
-    if (this.eventDateRange) {
-      this.selectedDate = new Date(this.eventDateRange.start);
+    const dateRange = this.eventDateRange();
+    if (dateRange) {
+      this.selectedDateSignal.set(new Date(dateRange.start));
       this.buildCalendarData();
     }
   }
@@ -189,13 +200,13 @@ export class CalendarEventPageComponent implements OnInit, OnDestroy {
     this.openItemDetail(session.id);
   }
 
-  get displayHours(): string[] {
+  readonly displayHours = computed((): string[] => {
     const hours: string[] = [];
     for (let hour: number = this.START_HOUR; hour <= this.END_HOUR; hour++) {
       hours.push(`${hour.toString().padStart(2, '0')}:00`);
     }
     return hours;
-  }
+  });
 
   formatDisplayDate(date: Date): string {
     return date.toLocaleDateString('en-EN', {
@@ -235,17 +246,21 @@ export class CalendarEventPageComponent implements OnInit, OnDestroy {
     return baseClass;
   }
 
-  canGoToPreviousDay(): boolean {
-    if (!this.eventDateRange) return true;
-    const previousDay = new Date(this.selectedDate);
-    previousDay.setDate(previousDay.getDate() - 1);
-    return previousDay >= this.eventDateRange.start;
-  }
+  readonly canGoToPreviousDay = computed((): boolean => {
+    const dateRange = this.eventDateRange();
+    if (!dateRange) return true;
 
-  canGoToNextDay(): boolean {
-    if (!this.eventDateRange) return true;
-    const nextDay = new Date(this.selectedDate);
+    const previousDay = new Date(this.selectedDate());
+    previousDay.setDate(previousDay.getDate() - 1);
+    return previousDay >= dateRange.start;
+  });
+
+  readonly canGoToNextDay = computed((): boolean => {
+    const dateRange = this.eventDateRange();
+    if (!dateRange) return true;
+
+    const nextDay = new Date(this.selectedDate());
     nextDay.setDate(nextDay.getDate() + 1);
-    return nextDay <= this.eventDateRange.end;
-  }
+    return nextDay <= dateRange.end;
+  });
 }

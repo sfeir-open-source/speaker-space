@@ -1,8 +1,8 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {ButtonLoginComponent} from '../button-login/button-login.component';
-import {FormsModule} from '@angular/forms';
-import {AuthErrorDialogComponent} from '../../../../shared/auth-error-dialog/auth-error-dialog.component';
-import {AuthService} from '../../services/auth.service';
+import { Component, input, output, inject } from '@angular/core';
+import { ButtonLoginComponent } from '../button-login/button-login.component';
+import { FormsModule } from '@angular/forms';
+import { AuthErrorDialogComponent } from '../../../../shared/auth-error-dialog/auth-error-dialog.component';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-email-modal',
@@ -14,17 +14,15 @@ import {AuthService} from '../../services/auth.service';
   styleUrl: './email-modal.component.scss'
 })
 export class EmailModalComponent {
-  @Input() isOpen: boolean = false;
-  @Output() closeEvent = new EventEmitter<void>();
-  @Output() submitEvent = new EventEmitter<string>();
+  isOpen = input<boolean>(false);
 
+  closeEvent = output<void>();
+  submitEvent = output<string>();
   email: string = '';
 
-  constructor(
-    private authService: AuthService,
-  ) {}
+  private authService = inject(AuthService);
 
-  mailLinkLogin(email: string) {
+  mailLinkLogin(email: string): void {
     if (!email) {
       this.authService.openDialog(AuthErrorDialogComponent, {
         width: '400px',

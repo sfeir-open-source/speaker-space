@@ -1,7 +1,7 @@
-@if(isOpen){
+@if(isOpen()){
   <div
-       class="fixed inset-0 bg-gray-300/75 overflow-y-auto z-50 flex justify-center items-center"
-       (click)="onBackdropClick($event)">
+    class="fixed inset-0 bg-gray-300/75 overflow-y-auto z-50 flex justify-center items-center"
+    (click)="onBackdropClick($event)">
 
     <section class="bg-white rounded-lg shadow p-10 w-full max-w-md lg:max-w-[400px] m-2 transition-transform scale-100"
              (click)="$event.stopPropagation()">
@@ -26,7 +26,9 @@
                class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                [(ngModel)]="email">
 
-        <app-button-login buttonType="button-white" alt="Email Sign in button" (click)="mailLinkLogin(email); $event.preventDefault()">
+        <app-button-login
+          buttonType="button-white"
+          (click)="mailLinkLogin(email); $event.preventDefault()">
           Sign in
         </app-button-login>
       </form>

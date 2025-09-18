@@ -40,19 +40,19 @@ const USER_TO_STORAGE_MAPPING: Partial<Record<keyof User, string>> = {
 export class UserStateService {
   private userState = signal<User | null>(null);
 
-  readonly user = computed(() => this.userState());
-  readonly displayName = computed(() => this.userState()?.displayName || '');
-  readonly email = computed(() => this.userState()?.email || '');
-  readonly photoURL = computed(() => this.userState()?.photoURL || 'assets/img/profil-picture.svg');
-  readonly company = computed(() => this.userState()?.company || '');
-  readonly city = computed(() => this.userState()?.city || '');
-  readonly phoneNumber = computed(() => this.userState()?.phoneNumber || '');
-  readonly githubLink = computed(() => this.userState()?.githubLink || '');
-  readonly twitterLink = computed(() => this.userState()?.twitterLink || '');
-  readonly blueSkyLink = computed(() => this.userState()?.blueSkyLink || '');
-  readonly linkedInLink = computed(() => this.userState()?.linkedInLink || '');
-  readonly otherLink = computed(() => this.userState()?.otherLink || '');
-  readonly biography = computed(() => this.userState()?.biography || '');
+  user = computed(() => this.userState());
+  displayName = computed(() => this.userState()?.displayName || '');
+  email = computed(() => this.userState()?.email || '');
+  photoURL = computed(() => this.userState()?.photoURL || 'assets/img/profil-picture.svg');
+  company = computed(() => this.userState()?.company || '');
+  city = computed(() => this.userState()?.city || '');
+  phoneNumber = computed(() => this.userState()?.phoneNumber || '');
+  githubLink = computed(() => this.userState()?.githubLink || '');
+  twitterLink = computed(() => this.userState()?.twitterLink || '');
+  blueSkyLink = computed(() => this.userState()?.blueSkyLink || '');
+  linkedInLink = computed(() => this.userState()?.linkedInLink || '');
+  otherLink = computed(() => this.userState()?.otherLink || '');
+  biography = computed(() => this.userState()?.biography || '');
 
   updateUser(user: Partial<User>): void {
     this.userState.update(currentUser => ({

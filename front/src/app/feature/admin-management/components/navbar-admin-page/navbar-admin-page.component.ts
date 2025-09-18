@@ -1,10 +1,10 @@
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
-import {Subscription} from 'rxjs';
-import {NavigationEnd, Router} from '@angular/router';
-import {UserRoleService} from '../../services/team/user-role.service';
-import {ButtonGreyComponent} from '../../../../shared/button-grey/button-grey.component';
-import {NgClass} from '@angular/common';
-import {NavbarButton, NavbarConfig} from '../../type/components/navbar-config';
+import { Component, OnDestroy, OnInit, computed, effect, inject, input, signal } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+import { UserRoleService } from '../../services/team/user-role.service';
+import { ButtonGreyComponent } from '../../../../shared/button-grey/button-grey.component';
+import { NgClass } from '@angular/common';
+import { NavbarButton, NavbarConfig } from '../../type/components/navbar-config';
 
 @Component({
   selector: 'app-navbar-admin-page',
@@ -16,46 +16,64 @@ import {NavbarButton, NavbarConfig} from '../../type/components/navbar-config';
   templateUrl: './navbar-admin-page.component.html',
   styleUrl: './navbar-admin-page.component.scss'
 })
-export class NavbarAdminPageComponent implements OnInit, OnDestroy, OnChanges {
-  @Input() config: NavbarConfig = { leftButtons: [] };
-  @Input() activePage: string = '';
-  @Input() userRole: string = '';
+export class NavbarAdminPageComponent implements OnInit, OnDestroy {
+  readonly config = input<NavbarConfig>({ leftButtons: [] });
+  readonly activePage = input<string>('');
+  readonly userRole = input<string>('');
 
-  currentUserRole: string = 'Member';
-  private userSubscription?: Subscription;
-  private routerSubscription?: Subscription;
-  private roleSubscription?: Subscription;
+  private readonly router = inject(Router);
+  private readonly userRoleService = inject(UserRoleService);
 
-  constructor(
-    private router: Router,
-    private userRoleService: UserRoleService
-  ) {}
+  private readonly _currentUserRole = signal<string>('Member');
+  readonly currentUserRole = this._currentUserRole.asReadonly();
 
-  ngOnInit(): void {
-    this.routerSubscription = this.router.events.subscribe(event => {
-      if (event instanceof NavigationEnd) {
-      }
-    });
+  private readonly destroy$ = new Subject<void>();
 
-    this.roleSubscription = this.userRoleService.getRole().subscribe(role => {
-      if (role) {
-        this.currentUserRole = role;
+  readonly visibleLeftButtons = computed(() => {
+    return this.config().leftButtons.filter(button => button.isVisible !== false);
+  });
+
+  readonly rightButtonConfig = computed(() => {
+    const cfg = this.config();
+    return cfg.rightContent === 'custom-button' ? cfg.rightButtonConfig : null;
+  });
+
+  readonly rightButtonCssClass = computed(() => {
+    const buttonConfig = this.rightButtonConfig();
+    return buttonConfig?.cssClass ||
+      'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors';
+  });
+
+  constructor() {
+    effect(() => {
+      const inputRole = this.userRole();
+      if (inputRole) {
+        this._currentUserRole.set(inputRole);
       }
     });
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['userRole'] && changes['userRole'].currentValue) {
-      this.currentUserRole = changes['userRole'].currentValue;
-    }
+  ngOnInit(): void {
+    this.router.events
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(event => {
+        if (event instanceof NavigationEnd) {
+        }
+      });
+
+    this.userRoleService.getRole()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(role => {
+        if (role) {
+          this._currentUserRole.set(role);
+        }
+      });
   }
 
   ngOnDestroy(): void {
-    this.userSubscription?.unsubscribe();
-    this.routerSubscription?.unsubscribe();
-    this.roleSubscription?.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
-
 
   onButtonClick(button: NavbarButton): void {
     if (button.handler) {
@@ -66,13 +84,17 @@ export class NavbarAdminPageComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   isButtonActive(button: NavbarButton): boolean {
-    return this.activePage === button.id;
+    return this.activePage() === button.id;
   }
 
   onRightButtonClick(): void {
-    const rightButtonConfig = this.config.rightButtonConfig;
+    const rightButtonConfig = this.rightButtonConfig();
     if (rightButtonConfig?.handler) {
       rightButtonConfig.handler();
     }
+  }
+
+  getButtonHandler(button: NavbarButton): () => void {
+    return () => this.onButtonClick(button);
   }
 }

@@ -1,10 +1,11 @@
-import {Component} from '@angular/core';
-import {FormsModule} from "@angular/forms";
-import {ActivatedRoute} from '@angular/router';
-import {AuthErrorDialogComponent} from '../../../shared/auth-error-dialog/auth-error-dialog.component';
-import {ButtonLoginComponent} from '../components/button-login/button-login.component';
-import {AuthService} from '../services/auth.service';
-import {EmailModalComponent} from '../components/email-modal/email-modal.component';
+import { Component, signal, effect, inject, OnInit } from '@angular/core';
+import { FormsModule } from "@angular/forms";
+import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthErrorDialogComponent } from '../../../shared/auth-error-dialog/auth-error-dialog.component';
+import { ButtonLoginComponent } from '../components/button-login/button-login.component';
+import { AuthService } from '../services/auth.service';
+import { EmailModalComponent } from '../components/email-modal/email-modal.component';
 
 @Component({
   selector: 'app-login-form',
@@ -16,47 +17,49 @@ import {EmailModalComponent} from '../components/email-modal/email-modal.compone
   templateUrl: './login-form.component.html',
   styleUrl: './login-form.component.scss'
 })
-export class LoginFormComponent {
-  email: string = '';
-  isEmailModalOpen: boolean = false;
+export class LoginFormComponent implements OnInit {
+  email = signal<string>('');
+  isEmailModalOpen = signal<boolean>(false);
 
-  constructor(
-    private authService: AuthService,
-    private route: ActivatedRoute
-  ) {}
+  private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
-  ngOnInit() {
-    const email = sessionStorage.getItem('emailForSignIn');
-    if (email) {
-      this.email = email;
-    }
-    if (this.authService.isSignInWithEmailLink(window.location.href)) {
-      this.handleEmailSignIn();
-    }
-
-    this.route.queryParams.subscribe(params => {
-      const showEmailModal = params['showEmailModal'];
-      const emailParam = params['email'];
-
-      if (showEmailModal === 'true' && emailParam) {
-        this.email = emailParam;
-        const modal = document.getElementById('crud-modal');
-        if (modal) {
-          modal.classList.remove('hidden');
-        }
+  constructor() {
+    effect(() => {
+      if (this.authService.isSignInWithEmailLink(window.location.href)) {
+        this.handleEmailSignIn();
       }
     });
   }
 
-  googleLogin() {
+  ngOnInit(): void {
+    const storedEmail = sessionStorage.getItem('emailForSignIn');
+    if (storedEmail) {
+      this.email.set(storedEmail);
+    }
+
+    this.route.queryParams
+      .pipe(takeUntilDestroyed())
+      .subscribe(params => {
+        const showEmailModal = params['showEmailModal'];
+        const emailParam = params['email'];
+
+        if (showEmailModal === 'true' && emailParam) {
+          this.email.set(emailParam);
+          this.openEmailModal();
+        }
+      });
+  }
+
+  googleLogin(): void {
     this.authService.loginWithGoogle();
   }
 
-  gitHubLogin() {
+  gitHubLogin(): void {
     this.authService.loginWithGitHub();
   }
 
-  mailLinkLogin(email: string) {
+  mailLinkLogin(email: string): void {
     if (!email) {
       this.authService.openDialog(AuthErrorDialogComponent, {
         width: '400px',
@@ -71,32 +74,39 @@ export class LoginFormComponent {
     this.authService.loginWithEmail(email);
   }
 
-  private handleEmailSignIn() {
+  private handleEmailSignIn(): void {
     let email = sessionStorage.getItem('emailForSignIn');
 
     if (!email) {
-      this.route.queryParams.subscribe(params => {
-        email = params['email'];
+      this.route.queryParams
+        .pipe(takeUntilDestroyed())
+        .subscribe(params => {
+          email = params['email'];
 
-        if (!email) {
-          email = window.prompt('Please enter your email for confirmation');
-          if (!email) return;
-        }
+          if (!email) {
+            email = window.prompt('Please enter your email for confirmation');
+            if (!email) return;
+          }
 
-        if (email) {
-          this.authService.confirmSignIn(email, window.location.href);
-        }
-      });
+          if (email) {
+            this.authService.confirmSignIn(email, window.location.href);
+          }
+        });
     } else if (email) {
       this.authService.confirmSignIn(email, window.location.href);
     }
   }
 
   openEmailModal(): void {
-    this.isEmailModalOpen = true;
+    this.isEmailModalOpen.set(true);
   }
 
   closeEmailModal(): void {
-    this.isEmailModalOpen = false;
+    this.isEmailModalOpen.set(false);
+  }
+
+  onEmailSubmit(submittedEmail: string): void {
+    this.mailLinkLogin(submittedEmail);
+    this.closeEmailModal();
   }
 }

@@ -68,8 +68,6 @@ export class GeneralInfoEventComponent {
   teams: Team[] = [];
   saveStatus$ = new BehaviorSubject<SaveStatus>('idle');
 
-  private autoSaveDestroy$ = new Subject<void>();
-
    showAutoSaveIndicator = computed(() => this.mode() === 'edit');
    showGoBackButton = computed(() => this.mode() === 'create');
    showVisibilitySection = computed(() => this.mode() === 'edit');
@@ -284,7 +282,6 @@ export class GeneralInfoEventComponent {
     );
 
     this.saveStatus$ = saveStatus$ as BehaviorSubject<SaveStatus>;
-    this.autoSaveDestroy$ = destroy$;
 
     this.timezoneSelector.valueChanges
       .pipe(

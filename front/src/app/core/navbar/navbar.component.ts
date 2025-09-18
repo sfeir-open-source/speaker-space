@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, computed} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {NavigationEnd, Router, RouterModule} from '@angular/router';
 import {filter, startWith} from 'rxjs';
@@ -15,40 +15,41 @@ import {map} from 'rxjs/operators';
   styleUrl: './navbar.component.scss'
 })
 export class NavbarComponent {
-  isLogin: boolean = false;
-  userName: string | null = null;
-  userPhotoURL: string | null = null;
-  userEmail: string | null = null;
-  haveNotification: boolean = true;
+  private readonly authService = inject(AuthService);
+  private readonly userDataService = inject(UserDataService);
+  private readonly router = inject(Router);
 
-  private userDataService = inject(UserDataService);
-  isHomePage = toSignal(
-    inject(Router).events.pipe(
+  readonly isHomePage = toSignal(
+    this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
       map(event => event.url === '/'),
-      startWith(inject(Router).url === '/')
-    )
+      startWith(this.router.url === '/')
+    ),
+    { initialValue: this.router.url === '/' }
   );
-  constructor() {
-    inject(AuthService).user$.pipe(takeUntilDestroyed())
-      .subscribe((user) => {
-        this.isLogin = !!user;
-        this.userName = user?.displayName || null;
-        this.userPhotoURL = user?.photoURL || null;
-        this.userEmail = user?.email || null;
-      });
+
+  private readonly userSignal = toSignal(
+    this.authService.user$.pipe(takeUntilDestroyed()),
+    { initialValue: null }
+  );
+
+  readonly isLogin = computed(() => !!this.userSignal());
+  readonly userName = computed(() => this.userSignal()?.displayName || null);
+  readonly userPhotoURL = computed(() => this.userSignal()?.photoURL || null);
+  readonly userEmail = computed(() => this.userSignal()?.email || null);
+
+  haveNotification: boolean = true;
+
+  handlePictureError(event: Event): void {
+    const target = event.target as HTMLImageElement;
+    target.src = 'assets/img/profil-picture.svg';
   }
 
-
-  handlePictureError(event: any) {
-    event.target.src = 'assets/img/profil-picture.svg';
-  }
-
-  openSidebar() {
+  openSidebar(): void {
     this.userDataService.toggleSidebar(true, {
-      displayName: this.userName,
-      photoURL: this.userPhotoURL,
-      email: this.userEmail
+      displayName: this.userName(),
+      photoURL: this.userPhotoURL(),
+      email: this.userEmail()
     });
   }
 }

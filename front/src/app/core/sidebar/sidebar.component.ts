@@ -1,80 +1,67 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, effect } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { filter, Subscription } from 'rxjs';
+import { filter, map } from 'rxjs';
 import { UserDataService } from '../services/user-services/user-data.service';
 import { AuthService } from '../login/services/auth.service';
 import {ButtonWithIconComponent} from '../../shared/button-with-icon/button-with-icon.component';
 import {CommonModule} from '@angular/common';
 import {TeamService} from '../../feature/admin-management/services/team/team.service';
-import {Team} from '../../feature/admin-management/type/team/team';
+import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [
-    ButtonWithIconComponent,
-    CommonModule],
+  imports: [ButtonWithIconComponent, CommonModule],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
-export class SidebarComponent implements OnInit, OnDestroy {
-  currentRoute : string = '';
-  hasUnreadNotifications : boolean = true;
-  notificationCount : number = 1;
-  teams: Team[] = [];
-  isLoadingTeams : boolean = true;
+export class SidebarComponent implements OnInit {
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly teamService = inject(TeamService);
+  readonly userDataService = inject(UserDataService);
 
-  private subscriptions: Subscription = new Subscription();
-  private routerSubscription?: Subscription;
-  private teamsSubscription?: Subscription;
+  private readonly _hasUnreadNotifications = signal<boolean>(true);
+  private readonly _notificationCount = signal<number>(1);
 
-  constructor(
-    public userDataService: UserDataService,
-    private authService: AuthService,
-    private router: Router,
-    private teamService: TeamService
-  ) {}
+  readonly hasUnreadNotifications = this._hasUnreadNotifications.asReadonly();
+  readonly notificationCount = this._notificationCount.asReadonly();
+
+  readonly currentRoute = toSignal(
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      map(event => (event as NavigationEnd).url),
+      takeUntilDestroyed()
+    ),
+    { initialValue: this.router.url }
+  );
+
+  readonly teams = toSignal(
+    this.teamService.teams$,
+    { initialValue: null }
+  );
+
+  readonly isLoadingTeams = computed(() => {
+    const teamsData = this.teams();
+    return teamsData === null;
+  });
+
+  readonly hasTeams = computed(() => {
+    const teamsData = this.teams();
+    return teamsData !== null && teamsData.length > 0;
+  });
+
+  constructor() {
+    effect(() => {
+      console.log('Teams state:', {
+        teams: this.teams(),
+        isLoading: this.isLoadingTeams(),
+        hasTeams: this.hasTeams()
+      });
+    });
+  }
 
   ngOnInit(): void {
-    this.subscribeToRouterEvents();
-
-    const teamsSub = this.teamService.teams$.subscribe(teams => {
-      this.teams = teams;
-      this.isLoadingTeams = false;
-    });
-
-    this.teamService.loadUserTeams();
-
-    this.subscriptions.add(teamsSub);
-  }
-
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
-
-  private subscribeToRouterEvents(): void {
-    const routerSub = this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      this.currentRoute = event.url;
-    });
-
-    this.currentRoute = this.router.url;
-    this.subscriptions.add(routerSub);
-  }
-
-  private loadTeams(): void {
-    this.isLoadingTeams = true;
-    this.teamsSubscription = this.teamService.teams$.subscribe({
-      next: (teams) => {
-        this.teams = teams;
-        this.isLoadingTeams = false;
-      },
-      error: () => {
-        this.isLoadingTeams = false;
-      }
-    });
-
     this.teamService.loadUserTeams();
   }
 
@@ -101,14 +88,5 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   createNewTeam(): void {
     this.navigateTo('/create-team');
-  }
-
-  private unsubscribeAll(): void {
-    if (this.routerSubscription) {
-      this.routerSubscription.unsubscribe();
-    }
-    if (this.teamsSubscription) {
-      this.teamsSubscription.unsubscribe();
-    }
   }
 }

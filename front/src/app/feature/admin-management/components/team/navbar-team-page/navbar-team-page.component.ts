@@ -1,11 +1,12 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed, effect, inject, input, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import {TeamMemberService} from '../../../services/team/team-member.service';
-import {AuthService} from '../../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../../services/team/user-role.service';
-import {NavbarAdminPageComponent} from '../../navbar-admin-page/navbar-admin-page.component';
-import {NavbarConfig} from '../../../type/components/navbar-config';
+import { Subject, takeUntil } from 'rxjs';
+import { TeamMemberService } from '../../../services/team/team-member.service';
+import { AuthService } from '../../../../../core/login/services/auth.service';
+import { UserRoleService } from '../../../services/team/user-role.service';
+import { NavbarAdminPageComponent } from '../../navbar-admin-page/navbar-admin-page.component';
+import { NavbarConfig } from '../../../type/components/navbar-config';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-navbar-team-page',
@@ -16,147 +17,160 @@ import {NavbarConfig} from '../../../type/components/navbar-config';
   templateUrl: './navbar-team-page.component.html',
   styleUrl: './navbar-team-page.component.scss'
 })
-export class NavbarTeamPageComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() teamUrl: string = '';
-  @Input() teamId: string = '';
-  @Input() teamName: string = '';
-  @Input() userRole: string = '';
+export class NavbarTeamPageComponent implements OnInit, OnDestroy {
+  readonly teamUrl = input<string>('');
+  readonly teamId = input<string>('');
+  readonly teamName = input<string>('');
+  readonly userRole = input<string>('');
 
-  activePage: string = '';
-  currentUserRole: string = 'Member';
-  navbarConfig: NavbarConfig = { leftButtons: [] };
+  private readonly router = inject(Router);
+  private readonly teamMemberService = inject(TeamMemberService);
+  private readonly authService = inject(AuthService);
+  private readonly userRoleService = inject(UserRoleService);
 
-  private userSubscription?: Subscription;
-  private roleSubscription?: Subscription;
-  private routerSubscription?: Subscription;
-  private currentUser: any = null;
+  private readonly _activePage = signal<string>('');
+  private readonly _currentUserRole = signal<string>('Member');
 
-  constructor(
-    private router: Router,
-    private teamMemberService: TeamMemberService,
-    private authService: AuthService,
-    private userRoleService: UserRoleService
-  ) {}
+  readonly activePage = this._activePage.asReadonly();
+  readonly currentUserRole = this._currentUserRole.asReadonly();
 
-  ngOnInit(): void {
-    this.setupNavbarConfig();
-    this.setActivePage();
+  private readonly destroy$ = new Subject<void>();
 
-    this.routerSubscription = this.router.events.subscribe(event => {
-      if (event instanceof NavigationEnd) {
-        this.setActivePage();
-      }
-    });
+  readonly user = toSignal(this.authService.user$, { initialValue: null });
+  readonly globalRole = toSignal(
+    this.userRoleService.getRole(),
+    { initialValue: null }
+  );
 
-    this.userSubscription = this.authService.user$.subscribe(user => {
-      this.currentUser = user;
-      if (user && this.teamId) {
-        this.loadUserRole(user.uid);
-      }
-    });
+  readonly navbarConfig = computed<NavbarConfig>(() => {
+    const teamId = this.teamId();
 
-    this.userRoleService.getRole().subscribe(role => {
-      if (role) {
-        this.currentUserRole = role;
-      }
-    });
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['userRole']?.currentValue) {
-      this.currentUserRole = changes['userRole'].currentValue;
-    } else if (changes['teamId']?.currentValue && this.currentUser) {
-      this.loadUserRole(this.currentUser.uid);
-    }
-
-    if (changes['teamId']) {
-      this.setupNavbarConfig();
-    }
-  }
-
-  ngOnDestroy(): void {
-    this.userSubscription?.unsubscribe();
-    this.roleSubscription?.unsubscribe();
-    this.routerSubscription?.unsubscribe();
-  }
-
-  private setupNavbarConfig(): void {
-    this.navbarConfig = {
+    return {
       leftButtons: [
         {
           id: 'team-page',
           label: 'Events',
           materialIcon: 'star',
-          route: `/team/${this.teamId}`,
-          handler: this.events.bind(this)
+          route: `/team/${teamId}`,
+          handler: () => this.events()
         },
         {
           id: 'settings',
           label: 'Settings',
           materialIcon: 'settings',
-          handler: this.settings.bind(this)
+          handler: () => this.settings()
         },
         {
           id: 'members',
           label: 'Members',
           materialIcon: 'groups',
           cssClass: 'lg:hidden',
-          handler: this.members.bind(this)
+          handler: () => this.members()
         }
       ],
       rightContent: 'role'
     };
+  });
+
+  private readonly isMobile = computed(() => {
+    return typeof window !== 'undefined' && window.innerWidth < 1024;
+  });
+
+  readonly currentUser = computed(() => {
+    return this.user();
+  });
+
+  constructor() {
+    effect(() => {
+      const inputRole = this.userRole();
+      if (inputRole) {
+        this._currentUserRole.set(inputRole);
+      }
+    });
+
+    effect(() => {
+      const user = this.currentUser();
+      const teamId = this.teamId();
+
+      if (user?.uid && teamId) {
+        this.loadUserRole(user.uid, teamId);
+      }
+    });
+
+    effect(() => {
+      const globalRole = this.globalRole();
+      if (globalRole && !this.userRole()) {
+        this._currentUserRole.set(globalRole);
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    this.setActivePage();
+
+    this.router.events
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(event => {
+        if (event instanceof NavigationEnd) {
+          this.setActivePage();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private setActivePage(): void {
-    const currentRoute: string = this.router.url;
-    const isMobile: boolean = window.innerWidth < 1024;
+    const currentRoute = this.router.url;
+    const isMobile = this.isMobile();
 
     switch (true) {
       case currentRoute.includes('/team/') && !currentRoute.includes('settings-'):
-        this.activePage = 'team-page';
+        this._activePage.set('team-page');
         break;
       case currentRoute.includes('settings-general'):
-        this.activePage = 'settings';
+        this._activePage.set('settings');
         break;
       case currentRoute.includes('settings-members'):
-        this.activePage = isMobile ? 'members' : 'settings';
+        this._activePage.set(isMobile ? 'members' : 'settings');
         break;
       default:
-        this.activePage = '';
+        this._activePage.set('');
         break;
     }
   }
 
   private events(): void {
-    if (this.teamId) {
-      this.router.navigate(['/team', this.teamId]);
+    const teamId = this.teamId();
+    if (teamId) {
+      this.router.navigate(['/team', teamId]);
     }
   }
 
   private settings(): void {
-    if (this.teamId) {
-      this.router.navigate(['/settings-general', this.teamId]);
+    const teamId = this.teamId();
+    if (teamId) {
+      this.router.navigate(['/settings-general', teamId]);
     }
   }
 
   private members(): void {
-    if (this.teamId) {
-      this.router.navigate(['/settings-members', this.teamId]);
+    const teamId = this.teamId();
+    if (teamId) {
+      this.router.navigate(['/settings-members', teamId]);
     }
   }
 
-  private loadUserRole(userId: string): void {
-    if (!this.teamId) return;
-
-    this.roleSubscription?.unsubscribe();
-
-    this.roleSubscription = this.teamMemberService.getTeamMembers(this.teamId)
+  private loadUserRole(userId: string, teamId: string): void {
+    this.teamMemberService.getTeamMembers(teamId)
+      .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (members) => {
           const currentMember = members.find(m => m.userId === userId);
           if (currentMember) {
-            this.currentUserRole = currentMember.role;
+            this._currentUserRole.set(currentMember.role);
           }
         },
         error: (err) => {

@@ -1,9 +1,9 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {GenericFilterPopupComponent} from '../../filter-popup/generic-filter-popup/generic-filter-popup.component';
-import {Category, Format} from '../../../type/session/session';
-import {SpeakerFilters} from '../../../type/speaker/speaker-filters';
-import {FilterConfig} from '../../../type/components/filter.type';
-import {GenericFilterService} from '../../services/generic-filter.service';
+import { Component, OnInit, computed, effect, inject, input, output } from '@angular/core';
+import { GenericFilterPopupComponent } from '../../filter-popup/generic-filter-popup/generic-filter-popup.component';
+import { Category, Format } from '../../../type/session/session';
+import { SpeakerFilters } from '../../../type/speaker/speaker-filters';
+import { FilterConfig } from '../../../type/components/filter.type';
+import { GenericFilterService } from '../../services/generic-filter.service';
 
 @Component({
   selector: 'app-speaker-filter-popup',
@@ -14,45 +14,59 @@ import {GenericFilterService} from '../../services/generic-filter.service';
   styleUrl: './speaker-filter-popup.component.scss'
 })
 export class SpeakerFilterPopupComponent implements OnInit {
-  @Input() availableFormats: Format[] = [];
-  @Input() availableCategories: Category[] = [];
-  @Input() currentFilters: SpeakerFilters = {
+  readonly availableFormats = input<Format[]>([]);
+  readonly availableCategories = input<Category[]>([]);
+  readonly currentFilters = input<SpeakerFilters>({
     selectedFormats: [],
     selectedCategories: [],
     hasCompleteTasks: null
-  };
+  });
 
-  @Output() filtersApplied:EventEmitter<SpeakerFilters> = new EventEmitter<SpeakerFilters>();
-  @Output() filtersReset : EventEmitter<void> = new EventEmitter<void>();
-  @Output() popupClosed : EventEmitter<void> = new EventEmitter<void>();
+  readonly filtersApplied = output<SpeakerFilters>();
+  readonly filtersReset = output<void>();
+  readonly popupClosed = output<void>();
 
-  filterConfig!: FilterConfig;
-  currentFiltersForGeneric: Record<string, any> = {};
+  private readonly filterService = inject(GenericFilterService);
 
-  constructor(private filterService: GenericFilterService) {}
-
-  ngOnInit(): void {
-    this.setupFilterConfig();
-    this.setupCurrentFilters();
-  }
-
-  private setupFilterConfig(): void {
-    this.filterConfig = this.filterService.createStandardFilterConfig(
-      this.availableFormats,
-      this.availableCategories,
+  readonly filterConfig = computed<FilterConfig>(() => {
+    return this.filterService.createStandardFilterConfig(
+      this.availableFormats(),
+      this.availableCategories(),
       'Speaker Filters',
       true,
-      this.currentFilters
+      this.currentFilters()
     );
+  });
+
+  readonly currentFiltersForGeneric = computed<Record<string, any>>(() => {
+    const filters = this.currentFilters();
+    return {
+      selectedFormats: [...filters.selectedFormats],
+      selectedCategories: [...filters.selectedCategories],
+      hasCompleteTasks: filters.hasCompleteTasks
+    };
+  });
+
+  readonly filterSummary = computed(() => {
+    const filters = this.currentFilters();
+    return {
+      formatCount: filters.selectedFormats.length,
+      categoryCount: filters.selectedCategories.length,
+      hasTaskFilter: filters.hasCompleteTasks !== null,
+      totalActiveFilters: filters.selectedFormats.length +
+        filters.selectedCategories.length +
+        (filters.hasCompleteTasks !== null ? 1 : 0)
+    };
+  });
+
+  constructor() {
+    effect(() => {
+      const summary = this.filterSummary();
+      console.log('Filter summary updated:', summary);
+    });
   }
 
-  private setupCurrentFilters(): void {
-    this.currentFiltersForGeneric = {
-      selectedFormats: [...this.currentFilters.selectedFormats],
-      selectedCategories: [...this.currentFilters.selectedCategories],
-      hasCompleteTasks: this.currentFilters.hasCompleteTasks
-    };
-  }
+  ngOnInit(): void {}
 
   onFiltersApplied(genericFilters: Record<string, any>): void {
     const convertedFilters: SpeakerFilters = this.filterService.convertToSpeakerFilters(genericFilters);

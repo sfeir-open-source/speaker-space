@@ -1,42 +1,62 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
+
+interface UserData {
+  displayName?: string | null;
+  photoURL?: string | null;
+  email?: string | null;
+  company?: string;
+  city?: string;
+  phoneNumber?: string;
+  githubLink?: string;
+  twitterLink?: string;
+  blueSkyLink?: string;
+  linkedInLink?: string;
+  otherLink?: string;
+  biography?: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserDataService {
-  isSidebarOpen : boolean = false;
-  userName: string | null = null;
-  userPhotoURL: string | null = null;
-  userEmail: string | null = null;
-  userCompany: string = '';
-  userCity: string = '';
-  userPhoneNumber: string = '';
-  userGithubLink: string = '';
-  userTwitterLink: string = '';
-  userBlueSkyLink: string = '';
-  userLinkedInLink: string = '';
-  userOtherLink: string = '';
-  userBiography: string = '';
+  private readonly _isSidebarOpen = signal<boolean>(false);
+  private readonly _userData = signal<UserData>({});
+  readonly isSidebarOpen = this._isSidebarOpen.asReadonly();
+  readonly userName = computed(() => this._userData().displayName || null);
+  readonly userPhotoURL = computed(() => this._userData().photoURL || null);
+  readonly userEmail = computed(() => this._userData().email || null);
+  readonly userCompany = computed(() => this._userData().company || '');
+  readonly userCity = computed(() => this._userData().city || '');
+  readonly userPhoneNumber = computed(() => this._userData().phoneNumber || '');
+  readonly userGithubLink = computed(() => this._userData().githubLink || '');
+  readonly userTwitterLink = computed(() => this._userData().twitterLink || '');
+  readonly userBlueSkyLink = computed(() => this._userData().blueSkyLink || '');
+  readonly userLinkedInLink = computed(() => this._userData().linkedInLink || '');
+  readonly userOtherLink = computed(() => this._userData().otherLink || '');
+  readonly userBiography = computed(() => this._userData().biography || '');
 
-  toggleSidebar(open: boolean, user: any = null) {
-    this.isSidebarOpen = open;
+  readonly displayName = computed(() =>
+    this.userName() || this.userEmail() || 'Unknown User'
+  );
+
+  toggleSidebar(open: boolean, user: UserData | null = null): void {
+    this._isSidebarOpen.set(open);
+
     if (user) {
-      this.userName = user.displayName || null;
-      this.userPhotoURL = user.photoURL || 'assets/img/profil-picture.svg';
-      this.userEmail = user.email || 'No email';
-      this.userCompany = user.company || '';
-      this.userCity = user.city || '';
-      this.userPhoneNumber = user.phoneNumber || '';
-      this.userGithubLink = user.githubLink || '';
-      this.userTwitterLink = user.twitterLink || '';
-      this.userBlueSkyLink = user.blueSkyLink || '';
-      this.userLinkedInLink = user.linkedInLink || '';
-      this.userOtherLink = user.otherLink || '';
-      this.userBiography = user.biography || '';
+      this._userData.set({
+        displayName: user.displayName || null,
+        photoURL: user.photoURL || 'assets/img/profil-picture.svg',
+        email: user.email || 'No email',
+        company: user.company || '',
+        city: user.city || '',
+        phoneNumber: user.phoneNumber || '',
+        githubLink: user.githubLink || '',
+        twitterLink: user.twitterLink || '',
+        blueSkyLink: user.blueSkyLink || '',
+        linkedInLink: user.linkedInLink || '',
+        otherLink: user.otherLink || '',
+        biography: user.biography || ''
+      });
     }
-  }
-
-  get displayName(): string {
-    return this.userName || this.userEmail || 'Unknown User';
   }
 }

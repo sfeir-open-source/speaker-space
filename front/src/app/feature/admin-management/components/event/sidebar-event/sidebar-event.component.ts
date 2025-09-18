@@ -1,4 +1,4 @@
-import {Component, Input } from '@angular/core';
+import {Component, input} from '@angular/core';
 import {SidebarConfig} from '../../../type/components/sidebar-config';
 import {SidebarAdminPageComponent} from '../../sidebar-admin-page/sidebar-admin-page.component';
 
@@ -12,7 +12,7 @@ import {SidebarAdminPageComponent} from '../../sidebar-admin-page/sidebar-admin-
   styleUrl: './sidebar-event.component.scss'
 })
 export class SidebarEventComponent {
-  @Input() eventId: string = '';
+  eventId = input<string>('');
 
   readonly sidebarConfig: SidebarConfig = {
     buttons: [
