@@ -1,16 +1,17 @@
 import {
   booleanAttribute,
   Component,
-  EventEmitter,
-  Input,
-  OnChanges,
-  OnInit,
-  Output,
-  SimpleChanges
+  output,
+  input,
+  computed,
+  effect,
+  signal,
+  DestroyRef,
+  inject
 } from '@angular/core';
-import {FormControl, FormsModule, ReactiveFormsModule, ValidatorFn, Validators} from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-input',
@@ -23,142 +24,73 @@ import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
   templateUrl: './input.component.html',
   styleUrl: './input.component.scss'
 })
-export class InputComponent implements OnInit, OnChanges {
-  sanitizedIconPath: SafeHtml = '';
-  @Input() iconViewBox: string = '0 0 16 16';
-  @Input() label?: string = '';
-  @Input() paragraph?: string = '';
-  @Input() placeholder?: string = '';
-  @Input() type: string = 'text';
-  @Input() control!: FormControl;
-  @Input({transform: booleanAttribute}) required: boolean = false;
-  @Input() name: string = '';
-  @Input() errorMessage: string = 'This field is required';
-  @Input({transform: booleanAttribute}) disabled: boolean = false;
-  @Input() rows: number = 6;
-  @Input() icon?: string;
-  @Input() iconPath?: string = '';
-  @Input() customClass: string = '';
-  @Input() staticPlaceholder?: string;
-  @Input() isRequired: boolean = false;
-  @Input() minLength: number = 2;
-  @Input() serverErrors: Record<string, string> | null = null;
-  @Input() options: { value: string; label: string }[] = [];
+export class InputComponent {
+  private readonly sanitizer = inject(DomSanitizer);
 
-  @Output() blur : EventEmitter<void> = new EventEmitter<void>();
+  readonly iconViewBox = input<string>('0 0 16 16');
+  readonly label = input<string>('');
+  readonly paragraph = input<string>('');
+  readonly placeholder = input<string>('');
+  readonly type = input<string>('text');
+  readonly control = input.required<FormControl>();
+  readonly required = input<boolean, boolean>(false, { transform: booleanAttribute });
+  readonly name = input<string>('');
+  readonly errorMessage = input<string>('This field is required');
+  readonly disabled = input<boolean, boolean>(false, { transform: booleanAttribute });
+  readonly rows = input<number>(6);
+  readonly icon = input<string>('');
+  readonly iconPath = input<string>('');
+  readonly customClass = input<string>('');
+  readonly staticPlaceholder = input<string>('');
+  readonly isRequired = input<boolean>(false);
+  readonly minLength = input<number>(2);
+  readonly serverErrors = input<Record<string, string> | null>(null);
+  readonly options = input<{ value: string; label: string }[]>([]);
 
-  private isInitialized : boolean = false;
+  readonly blur = output<void>();
 
-  constructor(private sanitizer: DomSanitizer) {}
+  private readonly sanitizedIconPath = signal<SafeHtml>('');
 
-  ngOnInit() {
-    this.isInitialized = true;
-    this.applyValidators();
-  }
+  readonly effectivePlaceholder = computed(() => {
+    const staticPlaceholder = this.staticPlaceholder();
+    const placeholder = this.placeholder();
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['iconPath'] && this.iconPath) {
-      try {
-        if (this.iconPath.trim().startsWith('<svg')) {
-          this.sanitizedIconPath = this.sanitizer.bypassSecurityTrustHtml(this.iconPath);
-        } else {
-          const svgWrapper = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="${this.iconViewBox}" fill="currentColor">${this.iconPath}</svg>`;
-          this.sanitizedIconPath = this.sanitizer.bypassSecurityTrustHtml(svgWrapper);
-        }
-      } catch (error) {
-        console.error('Error processing SVG:', error, this.iconPath);
-        this.sanitizedIconPath = '';
-      }
+    if (staticPlaceholder) {
+      return staticPlaceholder;
     }
-
-    if (this.isInitialized && (changes['required'] || changes['minLength'] || changes['control'])) {
-      this.applyValidators();
-    }
-  }
-
-  private applyValidators(): void {
-    if (!this.control) {
-      return;
-    }
-
-    if (this.control === null || this.control === undefined) {
-      return;
-    }
-
-    try {
-      const validators: ValidatorFn[] = [];
-
-      if (this.required) {
-        validators.push(Validators.required);
-      }
-
-      if (this.minLength && this.minLength > 0) {
-        validators.push(Validators.minLength(this.minLength));
-      }
-
-      if (this.type === 'email') {
-        validators.push(Validators.email);
-      }
-
-      if (this.name === 'phoneNumber') {
-        validators.push(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'));
-      } else if (this.name === 'avatarPictureURL' || this.name.toLowerCase().includes('link')) {
-        validators.push(Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?'));
-      }
-
-      this.control.setValidators(validators.length > 0 ? validators : null);
-      this.control.updateValueAndValidity();
-
-    } catch (error) {
-      console.error(`Erreur lors de l'application des validateurs pour le champ '${this.name}':`, error);
-    }
-  }
-
-  onInputBlur(): void {
-    if (this.control) {
-      this.control.markAsTouched();
-    }
-    this.blur.emit();
-  }
-
-  get effectivePlaceholder(): string {
-    if (this.staticPlaceholder) {
-      return this.staticPlaceholder;
-    }
-    if (this.placeholder && this.placeholder !== 'undefined') {
-      return this.placeholder;
+    if (placeholder && placeholder !== 'undefined') {
+      return placeholder;
     }
     return '';
-  }
+  });
 
-  get isTextarea(): boolean {
-    return this.type === 'textarea';
-  }
+  readonly isTextarea = computed(() => this.type() === 'textarea');
+  readonly isSelect = computed(() => this.type() === 'select');
+  readonly hasIcon = computed(() => {
+    const icon = this.icon();
+    return icon !== undefined && icon !== '';
+  });
 
-  get hasIcon(): boolean {
-    return this.icon !== undefined && this.icon !== '';
-  }
-
-  get hasError(): boolean {
-    if (!this.control) {
+  readonly hasError = computed(() => {
+    const control = this.control();
+    if (!control) {
       return false;
     }
+    return control.invalid && (control.touched || control.dirty);
+  });
 
-    const shouldShowError: boolean = this.control.invalid && (this.control.touched || this.control.dirty);
-
-    return shouldShowError;
-  }
-
-  get errorMessages(): string[] {
-    if (!this.hasError || !this.control) {
+  readonly errorMessages = computed(() => {
+    if (!this.hasError() || !this.control()) {
       return [];
     }
 
-    const errors = this.control.errors || {};
+    const errors = this.control().errors || {};
     const messages: string[] = [];
+    const errorMessage = this.errorMessage();
+    const name = this.name();
 
     if (errors['required']) {
-      messages.push(this.errorMessage || 'This field is required');
+      messages.push(errorMessage || 'This field is required');
     }
 
     if (errors['email']) {
@@ -166,8 +98,8 @@ export class InputComponent implements OnInit, OnChanges {
     }
 
     if (errors['minlength']) {
-      if (this.errorMessage && this.errorMessage.includes('minimum')) {
-        messages.push(this.errorMessage);
+      if (errorMessage && errorMessage.includes('minimum')) {
+        messages.push(errorMessage);
       } else {
         messages.push(`Minimum length is ${errors['minlength'].requiredLength} characters`);
       }
@@ -178,12 +110,12 @@ export class InputComponent implements OnInit, OnChanges {
     }
 
     if (errors['pattern']) {
-      if (this.name.toLowerCase().includes('link') || this.name === 'avatarPictureURL') {
-        messages.push(this.errorMessage || 'Please enter a valid URL');
-      } else if (this.name === 'phoneNumber') {
-        messages.push(this.errorMessage || 'Please enter a valid phone number');
+      if (name.toLowerCase().includes('link') || name === 'avatarPictureURL') {
+        messages.push(errorMessage || 'Please enter a valid URL');
+      } else if (name === 'phoneNumber') {
+        messages.push(errorMessage || 'Please enter a valid phone number');
       } else {
-        messages.push(this.errorMessage || 'The value does not match the required pattern');
+        messages.push(errorMessage || 'The value does not match the required pattern');
       }
     }
 
@@ -192,13 +124,83 @@ export class InputComponent implements OnInit, OnChanges {
     }
 
     if (messages.length === 0 && Object.keys(errors).length > 0) {
-      messages.push(this.errorMessage || 'Invalid value');
+      messages.push(errorMessage || 'Invalid value');
     }
 
     return messages;
+  });
+
+  readonly sanitizedIcon = computed(() => this.sanitizedIconPath());
+
+  constructor() {
+    effect(() => {
+      const iconPath = this.iconPath();
+      const iconViewBox = this.iconViewBox();
+
+      if (!iconPath) {
+        this.sanitizedIconPath.set('');
+        return;
+      }
+
+      try {
+        if (iconPath.trim().startsWith('<svg')) {
+          this.sanitizedIconPath.set(this.sanitizer.bypassSecurityTrustHtml(iconPath));
+        } else {
+          const svgWrapper = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="${iconViewBox}" fill="currentColor">${iconPath}</svg>`;
+          this.sanitizedIconPath.set(this.sanitizer.bypassSecurityTrustHtml(svgWrapper));
+        }
+      } catch (error) {
+        console.error('Error processing SVG:', error, iconPath);
+        this.sanitizedIconPath.set('');
+      }
+    });
+
+    effect(() => {
+      const control = this.control();
+      const required = this.required();
+      const minLength = this.minLength();
+      const type = this.type();
+      const name = this.name();
+
+      if (!control) {
+        return;
+      }
+
+      try {
+        const validators: ValidatorFn[] = [];
+
+        if (required) {
+          validators.push(Validators.required);
+        }
+
+        if (minLength && minLength > 0) {
+          validators.push(Validators.minLength(minLength));
+        }
+
+        if (type === 'email') {
+          validators.push(Validators.email);
+        }
+
+        if (name === 'phoneNumber') {
+          validators.push(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'));
+        } else if (name === 'avatarPictureURL' || name.toLowerCase().includes('link')) {
+          validators.push(Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?'));
+        }
+
+        control.setValidators(validators.length > 0 ? validators : null);
+        control.updateValueAndValidity();
+
+      } catch (error) {
+        console.error(`Erreur lors de l'application des validateurs pour le champ '${name}':`, error);
+      }
+    });
   }
 
-  get isSelect(): boolean {
-    return this.type === 'select';
+  onInputBlur(): void {
+    const control = this.control();
+    if (control) {
+      control.markAsTouched();
+    }
+    this.blur.emit();
   }
 }

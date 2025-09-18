@@ -1,27 +1,26 @@
-import {Component, DestroyRef, inject, OnDestroy, OnInit} from '@angular/core';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {finalize, Subject, Subscription} from 'rxjs';
-import {ActivatedRoute, Router} from '@angular/router';
-import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
-import {EventService} from '../../../services/event/event.service';
-import {EventDataService} from '../../../services/event/event-data.service';
-import {EventDTO} from '../../../type/event/eventDTO';
-import {InformationEventComponent} from '../../../components/event/information-event/information-event.component';
-import {GeneralInfoEventComponent} from '../../../components/event/general-info-event/general-info-event.component';
-import {DangerZoneConfig} from '../../../type/components/danger-zone';
-import {DangerZoneComponent} from '../../../components/danger-zone/danger-zone.component';
-import {ArchiveEventPopupComponent} from '../../../components/event/archive-event-popup/archive-event-popup.component';
-import {DeleteConfirmationConfig} from '../../../type/components/delete-confirmation';
-import {
-  DeleteConfirmationPopupComponent
-} from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
-import {SessionReviewImportComponent} from '../../../components/session/session-review-import/session-review-import.component';
-import {ImportResult} from '../../../type/session/session';
-import {
-  SessionScheduleImportComponent
-} from '../../../components/session/session-schedule-import/session-schedule-import.component';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, inject, OnInit, signal, computed } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { finalize, Subscription } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
+import { SidebarEventComponent } from '../../../components/event/sidebar-event/sidebar-event.component';
+import { EventService } from '../../../services/event/event.service';
+import { EventDataService } from '../../../services/event/event-data.service';
+import { EventDTO } from '../../../type/event/eventDTO';
+import { InformationEventComponent } from '../../../components/event/information-event/information-event.component';
+import { GeneralInfoEventComponent } from '../../../components/event/general-info-event/general-info-event.component';
+import { DangerZoneConfig } from '../../../type/components/danger-zone';
+import { DangerZoneComponent } from '../../../components/danger-zone/danger-zone.component';
+import { ArchiveEventPopupComponent } from '../../../components/event/archive-event-popup/archive-event-popup.component';
+import { DeleteConfirmationConfig } from '../../../type/components/delete-confirmation';
+import { DeleteConfirmationPopupComponent } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
+import { SessionReviewImportComponent } from '../../../components/session/session-review-import/session-review-import.component';
+import { ImportResult } from '../../../type/session/session';
+import { SessionScheduleImportComponent } from '../../../components/session/session-schedule-import/session-schedule-import.component';
+
+type UserRole = 'Owner' | 'Admin' | 'Member';
+type EventVisibility = 'private' | 'public';
 
 @Component({
   selector: 'app-setting-event-page',
@@ -42,80 +41,98 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
   templateUrl: './setting-event-page.component.html',
   styleUrl: './setting-event-page.component.scss'
 })
-export class SettingEventPageComponent implements OnInit, OnDestroy {
-  eventId: string = '';
-  eventUrl: string = '';
-  eventName: string = '';
-  teamUrl: string = '';
-  teamId: string = '';
-  isLoading: boolean = true;
-  error: string | null = null;
+export class SettingEventPageComponent implements OnInit {
+  readonly eventId = signal<string>('');
+  readonly eventUrl = signal<string>('');
+  readonly eventName = signal<string>('');
+  readonly teamUrl = signal<string>('');
+  readonly teamId = signal<string>('');
+  readonly isLoading = signal<boolean>(true);
+  readonly error = signal<string | null>(null);
 
-  isDeleting: boolean = false;
-  isArchiving: boolean = false;
-  showDeleteConfirmation: boolean = false;
-  showArchiveConfirmation: boolean = false;
-  currentUserRole: string = '';
+  readonly isDeleting = signal<boolean>(false);
+  readonly isArchiving = signal<boolean>(false);
+  readonly showDeleteConfirmation = signal<boolean>(false);
+  readonly showArchiveConfirmation = signal<boolean>(false);
+  readonly currentUserRole = signal<UserRole>('Owner');
 
-  eventInformationData: Partial<EventDTO> | null = null;
-  eventGeneralData: Partial<EventDTO> | null = null;
-  visibility: 'private' | 'public' = 'private';
+  readonly eventInformationData = signal<Partial<EventDTO> | null>(null);
+  readonly eventGeneralData = signal<Partial<EventDTO> | null>(null);
+  readonly visibility = signal<EventVisibility>('private');
 
-  private destroy$ = new Subject<void>();
+  readonly isProcessing = computed(() => this.isDeleting() || this.isArchiving());
+  readonly canShowDangerZone = computed(() => this.currentUserRole() === 'Owner');
+  readonly hasEventData = computed(() => !!this.eventGeneralData() && !!this.eventInformationData());
+
+  readonly dangerZoneConfig = computed<DangerZoneConfig>(() => ({
+    title: 'Danger zone',
+    entityName: this.eventName(),
+    entityType: 'event',
+    showArchiveSection: true,
+    isDeleting: this.isProcessing(),
+    currentUserRole: this.currentUserRole()
+  }));
+
+  readonly deleteConfirmationConfig = computed<DeleteConfirmationConfig>(() => ({
+    entityType: 'event',
+    entityName: this.eventName(),
+    title: 'Confirm Event Deletion',
+    confirmButtonText: 'Delete permanently',
+    loadingText: 'Deleting...',
+    requireTextConfirmation: true,
+    confirmationText: 'DELETE'
+  }));
+
   private routeSubscription?: Subscription;
-  private readonly _destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventService: EventService,
-    private eventDataService: EventDataService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly eventService: EventService,
+    private readonly eventDataService: EventDataService,
   ) {}
 
   ngOnInit(): void {
-    this.isLoading = true;
-    this.currentUserRole = 'Owner';
+    this.isLoading.set(true);
+    this.currentUserRole.set('Owner');
     this.subscribeToRouteParams();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.routeSubscription?.unsubscribe();
   }
 
   private subscribeToRouteParams(): void {
     this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.eventId = params.get('eventId') || '';
+      const eventIdParam = params.get('eventId') || '';
+      this.eventId.set(eventIdParam);
 
-      if (this.eventId) {
+      if (eventIdParam) {
         this.loadEventData();
       } else {
-        this.error = 'Event ID is missing from route parameters';
-        this.isLoading = false;
+        this.error.set('Event ID is missing from route parameters');
+        this.isLoading.set(false);
       }
     });
   }
 
   loadEventData(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID is required to load event data';
-      this.isLoading = false;
+    const eventId = this.eventId();
+    if (!eventId) {
+      this.error.set('Event ID is required to load event data');
+      this.isLoading.set(false);
       return;
     }
 
-    this.eventService.getEventById(this.eventId)
+    this.eventService.getEventById(eventId)
       .pipe(
-        finalize(() => this.isLoading = false),
-        takeUntilDestroyed(this._destroyRef),
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (event) => {
           this.handleEventDataLoaded(event);
-          this.eventUrl = event.url || '';
+          this.eventUrl.set(event.url || '');
 
           this.eventDataService.loadEvent({
-            idEvent: event.idEvent || this.eventId,
+            idEvent: event.idEvent || eventId,
             eventName: event.eventName || '',
             teamId: event.teamId || '',
             url: event.url || '',
@@ -130,8 +147,40 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  private handleEventDataLoaded(event: any): void {
+    this.eventId.set(event.idEvent || this.eventId());
+    this.eventName.set(event.eventName || '');
+    this.eventUrl.set(event.url || '');
+    this.teamUrl.set(event.teamUrl || '');
+    this.teamId.set(event.teamId || '');
+    this.currentUserRole.set('Owner');
+    this.visibility.set(event.isPrivate === true ? 'private' : 'public');
+
+    this.eventGeneralData.set({
+      idEvent: this.eventId(),
+      eventName: event.eventName,
+      url: event.url,
+      conferenceHallUrl: event.conferenceHallUrl,
+      timeZone: event.timeZone || 'Europe/Paris',
+      isPrivate: event.isPrivate === true,
+      type: event.type,
+    });
+
+    this.eventInformationData.set({
+      idEvent: this.eventId(),
+      startDate: event.startDate,
+      endDate: event.endDate,
+      isOnline: event.isOnline,
+      location: event.location,
+      description: event.description,
+      webLinkUrl: event.webLinkUrl
+    });
+
+    this.error.set(null);
+  }
+
   private handleEventDataError(err: any): void {
-    this.error = 'Failed to load event details. Please try again.';
+    this.error.set('Failed to load event details. Please try again.');
     console.error('Error loading event data:', err);
   }
 
@@ -144,69 +193,78 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
   }
 
   confirmArchiveEvent(): void {
-    this.showArchiveConfirmation = true;
+    this.showArchiveConfirmation.set(true);
   }
 
   cancelArchiveEvent(): void {
-    this.showArchiveConfirmation = false;
+    this.showArchiveConfirmation.set(false);
   }
 
   confirmDeleteEvent(): void {
-    this.showDeleteConfirmation = true;
+    this.showDeleteConfirmation.set(true);
   }
 
   cancelDeleteEvent(): void {
-    this.showDeleteConfirmation = false;
+    this.showDeleteConfirmation.set(false);
   }
 
-  deleteEvent(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID is missing - cannot delete event';
+  archiveEvent(): void {
+    const eventId = this.eventId();
+    if (!eventId) {
+      this.error.set('Event ID is missing - cannot archive event');
       return;
     }
 
-    this.isDeleting = true;
+    this.isArchiving.set(true);
 
-    this.eventService.deleteEvent(this.eventId)
+    const archiveData: Partial<EventDTO> = {
+      idEvent: eventId,
+      isFinish: true
+    };
+
+    this.eventService.updateEvent(archiveData)
       .pipe(
         finalize(() => {
-          this.isDeleting = false;
-          this.showDeleteConfirmation = false;
+          this.isArchiving.set(false);
+          this.showArchiveConfirmation.set(false);
         }),
-        takeUntilDestroyed(this._destroyRef),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: () => {
-          this.router.navigate(['/']);
+          this.navigateToHome();
         },
         error: (err) => {
-          console.error('Error deleting event:', err);
-          this.error = 'Failed to delete event. Please try again.';
+          this.handleArchiveError(err);
         }
       });
   }
 
-  get dangerZoneConfig(): DangerZoneConfig {
-    return {
-      title: 'Danger zone',
-      entityName: this.eventName,
-      entityType: 'event',
-      showArchiveSection: true,
-      isDeleting: this.isDeleting || this.isArchiving,
-      currentUserRole: this.currentUserRole
-    };
-  }
+  deleteEvent(): void {
+    const eventId = this.eventId();
+    if (!eventId) {
+      this.error.set('Event ID is missing - cannot delete event');
+      return;
+    }
 
-  get deleteConfirmationConfig(): DeleteConfirmationConfig {
-    return {
-      entityType: 'event',
-      entityName: this.eventName,
-      title: 'Confirm Event Deletion',
-      confirmButtonText: 'Delete permanently',
-      loadingText: 'Deleting...',
-      requireTextConfirmation: true,
-      confirmationText: 'DELETE'
-    };
+    this.isDeleting.set(true);
+
+    this.eventService.deleteEvent(eventId)
+      .pipe(
+        finalize(() => {
+          this.isDeleting.set(false);
+          this.showDeleteConfirmation.set(false);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => {
+          this.navigateToHome();
+        },
+        error: (err) => {
+          this.handleDeleteError(err);
+        }
+      });
   }
 
   onDeleteConfirmed(): void {
@@ -217,77 +275,17 @@ export class SettingEventPageComponent implements OnInit, OnDestroy {
     this.cancelDeleteEvent();
   }
 
-  onImportCompleted(result: ImportResult): void {
-
-    if (result.successCount > 0) {
-      this.loadSessions();
-    }
+  private navigateToHome(): void {
+    this.router.navigate(['/']);
   }
 
-  private loadSessions(): void {
+  private handleArchiveError(err: any): void {
+    console.error('Error archiving event:', err);
+    this.error.set('Failed to archive event. Please try again.');
   }
 
-  private handleEventDataLoaded(event: any): void {
-    this.eventId = event.idEvent || this.eventId;
-    this.eventName = event.eventName || '';
-    this.eventUrl = event.url || '';
-    this.teamUrl = event.teamUrl || '';
-    this.teamId = event.teamId || '';
-    this.currentUserRole = 'Owner';
-    this.visibility = event.isPrivate === true ? 'private' : 'public';
-
-    this.eventGeneralData = {
-      idEvent: this.eventId,
-      eventName: event.eventName,
-      url: event.url,
-      conferenceHallUrl: event.conferenceHallUrl,
-      timeZone: event.timeZone || 'Europe/Paris',
-      isPrivate: event.isPrivate === true,
-      type: event.type,
-    };
-
-    this.eventInformationData = {
-      idEvent: this.eventId,
-      startDate: event.startDate,
-      endDate: event.endDate,
-      isOnline: event.isOnline,
-      location: event.location,
-      description: event.description,
-      webLinkUrl: event.webLinkUrl
-    };
-
-    this.error = null;
-  }
-
-  archiveEvent(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID is missing - cannot archive event';
-      return;
-    }
-
-    this.isArchiving = true;
-
-    const archiveData: Partial<EventDTO> = {
-      idEvent: this.eventId,
-      isFinish: true
-    };
-
-    this.eventService.updateEvent(archiveData)
-      .pipe(
-        finalize(() => {
-          this.isArchiving = false;
-          this.showArchiveConfirmation = false;
-        }),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe({
-        next: () => {
-          this.router.navigate(['/']);
-        },
-        error: (err) => {
-          console.error('Error archiving event:', err);
-          this.error = 'Failed to archive event. Please try again.';
-        }
-      });
+  private handleDeleteError(err: any): void {
+    console.error('Error deleting event:', err);
+    this.error.set('Failed to delete event. Please try again.');
   }
 }

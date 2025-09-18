@@ -1,73 +1,72 @@
 <app-navbar-event-page
-  [eventUrl]="eventUrl"
-  [eventId]="eventId"
-  [eventName]="eventName"
-  [teamId]="teamId">
+  [eventUrl]="eventUrl()"
+  [eventId]="eventId()"
+  [eventName]="eventName()"
+  [teamId]="teamId()">
 </app-navbar-event-page>
 
 <div class="px-10 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
   <main class="flex">
-    <app-sidebar-event [eventId]="eventId"/>
+    <app-sidebar-event [eventId]="eventId()"/>
 
     <section class="flex-1 p-4">
-      @if (isLoading) {
+      @if (isLoading()) {
         <div class="flex justify-center items-center h-40" role="status" aria-label="Loading event data">
-          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" aria-hidden="true"></div>
           <span class="sr-only">Loading...</span>
         </div>
       }
 
-      @if (error) {
+      @if (error()) {
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
-          <p>{{ error }}</p>
+          <p>{{ error() }}</p>
         </div>
       }
 
-      @if (!isLoading && !error) {
-
+      @if (!isLoading() && !error()) {
         <app-session-review-import
-          [eventId]="eventId"
-          (importCompleted)="onImportCompleted($event)"
+          [eventId]="eventId()"
           class="mb-6">
         </app-session-review-import>
 
         <app-session-schedule-import
-          [eventId]="eventId"
-          (importCompleted)="onImportCompleted($event)"
+          [eventId]="eventId()"
           class="mb-6">
         </app-session-schedule-import>
 
-        <article class="w-full items-center bg-white shadow-md rounded-lg mb-5">
-          <header class="p-4 flex items-center justify-between">
+        @if (hasEventData()) {
+          <article class="w-full items-center bg-white shadow-md rounded-lg mb-5">
+            <header class="p-4 flex items-center justify-between">
               <h1 class="text-xl font-medium">General Information</h1>
               <p class="mt-1 sm:mt-0 text-xs text-gray-600">
                 Please note that if the data is modified, it is automatically saved!
               </p>
-          </header>
+            </header>
 
-          <app-general-info-event
-            mode="edit"
-            [initialData]="eventGeneralData"
-            [initialVisibility]="visibility">
-          </app-general-info-event>
+            <app-general-info-event
+              mode="edit"
+              [initialData]="eventGeneralData()"
+              [initialVisibility]="visibility()">
+            </app-general-info-event>
+          </article>
 
-        </article>
-
-        <article class="w-full items-center bg-white shadow-md rounded-lg">
-          <header class="flex items-center justify-between p-4">
+          <article class="w-full items-center bg-white shadow-md rounded-lg">
+            <header class="flex items-center justify-between p-4">
               <h1 class="text-xl font-medium">Event Details</h1>
-          </header>
+            </header>
+
             <app-information-event
               mode="edit"
-              [initialData]="eventInformationData">
+              [initialData]="eventInformationData()">
             </app-information-event>
-      </article>
+          </article>
+        }
 
-        @if (currentUserRole === 'Owner') {
+        @if (canShowDangerZone()) {
           <app-danger-zone
-            [config]="dangerZoneConfig"
-            [isDeleting]="isDeleting || isArchiving"
-            [currentUserRole]="currentUserRole"
+            [config]="dangerZoneConfig()"
+            [isDeleting]="isProcessing()"
+            [currentUserRole]="currentUserRole()"
             (archiveAction)="onDangerZoneArchive()"
             (deleteAction)="onDangerZoneDelete()">
           </app-danger-zone>
@@ -75,17 +74,17 @@
       }
 
       <app-archive-event-popup
-        [eventName]="eventName"
-        [isOpen]="showArchiveConfirmation"
-        [isArchiving]="isArchiving"
+        [eventName]="eventName()"
+        [isOpen]="showArchiveConfirmation()"
+        [isArchiving]="isArchiving()"
         (confirm)="archiveEvent()"
         (cancel)="cancelArchiveEvent()">
       </app-archive-event-popup>
 
       <app-delete-confirmation-popup
-        [config]="deleteConfirmationConfig"
-        [isOpen]="showDeleteConfirmation"
-        [isDeleting]="isDeleting"
+        [config]="deleteConfirmationConfig()"
+        [isOpen]="showDeleteConfirmation()"
+        [isDeleting]="isDeleting()"
         (confirm)="onDeleteConfirmed()"
         (cancel)="onDeleteCancelled()">
       </app-delete-confirmation-popup>

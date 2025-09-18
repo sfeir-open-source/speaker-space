@@ -9,10 +9,15 @@
   <div class="px-5 sm:px-5 md:px-5 lg:px-5 xl:px-20 2xl:px-70 w-full">
     <main class="flex justify-center p-4">
       @if (speaker) {
-        <div class="relative bg-white rounded-lg shadow-xl max-w-7xl w-full">
+        <article class="relative bg-white rounded-lg shadow-xl max-w-7xl w-full"
+                 role="main"
+                 [attr.aria-label]="'Speaker profile for ' + speaker.name">
 
-          <section class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between p-3 mb-6">
+          <section class="p-6 border-b border-gray-200"
+                   aria-labelledby="speaker-info-heading">
+            <h2 id="speaker-info-heading" class="sr-only">Speaker Information</h2>
+
+            <header class="flex items-center justify-between p-3 mb-6">
               <div class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-1 py-1 pr-4 bg-white shadow-sm">
                 <div class="flex-shrink-0">
                   <img
@@ -24,95 +29,84 @@
                 </div>
 
                 <div class="flex-1 min-w-0">
-                  <h4 class="font-medium text-gray-900 text-sm truncate">
+                  <h3 class="font-medium text-gray-900 text-sm truncate">
                     {{ speaker.name }}
-                  </h4>
+                  </h3>
                   <p class="text-gray-600 text-xs truncate">
                     {{speaker.company}}
                   </p>
                 </div>
               </div>
-            </div>
+            </header>
 
-            <div class="px-3 pb-2">
+            <address class="px-3 pb-2 not-italic">
               @if (speaker.email) {
                 <div class="flex items-center gap-2">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600" aria-hidden="true">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <polyline points="22,6 12,13 2,6"/>
                   </svg>
                   <p class="text-gray-900 text-sm">{{ speaker.email }}</p>
                 </div>
               } @else {
-                <div class="flex items-center gap-2">
-                  <p class="text-gray-500 italic text-sm">No email available</p>
-                </div>
+                <p class="text-gray-500 italic text-sm">No email available</p>
               }
-            </div>
+            </address>
 
-            <div class="px-3 pb-6">
+            <nav class="px-3 pb-6" aria-label="Social media links">
               @if (speaker.socialLinks && speaker.socialLinks.length > 0) {
-                <div class="space-y-3">
+                <ul class="space-y-3" role="list">
                   @for (socialLink of getParsedSocialLinks(); track socialLink.fullUrl) {
-                    <div class="flex items-center gap-3">
-                      <div class="flex-shrink-0 text-gray-600" [innerHTML]="socialLink.iconSvg"></div>
-
-                      <div class="flex-1 min-w-0">
-                        <a
-                          [href]="socialLink.fullUrl"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="block group">
-                          <div class="text-sm text-gray-900 group-hover:underline transition-colors duration-200 truncate">
-                            {{ socialLink.displayUrl }}
-                          </div>
-                        </a>
-                      </div>
-                    </div>
+                    <li class="flex items-center gap-3">
+                      <div class="flex-shrink-0 text-gray-600" [innerHTML]="socialLink.iconSvg" aria-hidden="true"></div>
+                      <a
+                        [href]="socialLink.fullUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="block group flex-1 min-w-0"
+                        [attr.aria-label]="'Visit ' + socialLink.displayUrl + ' (opens in new tab)'">
+                        <span class="text-sm text-gray-900 group-hover:underline transition-colors duration-200 truncate">
+                          {{ socialLink.displayUrl }}
+                        </span>
+                      </a>
+                    </li>
                   }
-                </div>
+                </ul>
               } @else {
-                <div class="flex items-center gap-2 mt-2">
-                  <p class="text-sm text-gray-500 italic">No social links available</p>
-                </div>
+                <p class="text-sm text-gray-500 italic">No social links available</p>
               }
-            </div>
+            </nav>
 
-            <div class="p-3">
-              <h4 class="font-base font-medium text-gray-900 mb-3">Biography</h4>
+            <section class="p-3" aria-labelledby="biography-heading">
+              <h4 id="biography-heading" class="font-base font-medium text-gray-900 mb-3">Biography</h4>
               @if (speaker.bio) {
                 <p class="whitespace-pre-wrap text-gray-600">{{ speaker.bio }}</p>
               } @else {
                 <p class="text-gray-500 italic">No biography available</p>
               }
-            </div>
+            </section>
           </section>
 
-          <section class="p-6 border-b border-gray-200">
-            <div class="p-3">
-              <h4 class="font-base font-medium text-gray-900 mb-3">References</h4>
-              @if (speaker.bio) {
-                <p class="whitespace-pre-wrap text-gray-600">{{ speaker.references }}</p>
-              } @else {
-                <p class="text-gray-500 italic">No references available</p>
-              }
-            </div>
+          <section class="p-6 border-b border-gray-200" aria-labelledby="references-heading">
+            <h4 id="references-heading" class="font-base font-medium text-gray-900 mb-3">References</h4>
+            @if (speaker.references) {
+              <p class="whitespace-pre-wrap text-gray-600">{{ speaker.references }}</p>
+            } @else {
+              <p class="text-gray-500 italic">No references available</p>
+            }
           </section>
 
-          <section class="p-6 border-b border-gray-200">
-            <div class="p-3">
-              <h4 class="font-base font-medium text-gray-900 mb-3">Location</h4>
-              @if (speaker.location) {
-                <p class="whitespace-pre-wrap text-gray-600">{{ speaker.location }}</p>
-              } @else {
-                <p class="text-gray-500 italic">No location available</p>
-              }
-            </div>
+          <section class="p-6 border-b border-gray-200" aria-labelledby="location-heading">
+            <h4 id="location-heading" class="font-base font-medium text-gray-900 mb-3">Location</h4>
+            @if (speaker.location) {
+              <p class="whitespace-pre-wrap text-gray-600">{{ speaker.location }}</p>
+            } @else {
+              <p class="text-gray-500 italic">No location available</p>
+            }
           </section>
 
-        </div>
+        </article>
       }
     </main>
   </div>
-
 }

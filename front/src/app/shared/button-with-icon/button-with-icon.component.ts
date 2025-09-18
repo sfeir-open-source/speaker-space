@@ -1,5 +1,5 @@
-import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {CommonModule} from '@angular/common';
+import { Component, output, input, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-button-with-icon',
@@ -9,31 +9,58 @@ import {CommonModule} from '@angular/common';
   styleUrl: './button-with-icon.component.scss'
 })
 export class ButtonWithIconComponent {
-  @Input() route: string = '';
-  @Input() materialIcon: string = '';
-  @Input() hasNotification: boolean = false;
-  @Input() buttonHandler: (() => void) | null = null;
-  @Input() notificationCount: number = 1;
-  @Input() disabled: boolean = false;
-  @Input() customClass: string = '';
+  readonly route = input<string>('');
+  readonly materialIcon = input<string>('');
+  readonly hasNotification = input<boolean>(false);
+  readonly buttonHandler = input<(() => void) | null>(null);
+  readonly notificationCount = input<number>(1);
+  readonly disabled = input<boolean>(false);
+  readonly customClass = input<string>('');
+  readonly ariaLabel = input<string | null>(null);
 
-  @Output() itemClick = new EventEmitter<string>();
+  readonly itemClick = output<string>();
 
-  navigate() {
-    if (!this.disabled) {
-      this.itemClick.emit(this.route);
-    }
-  }
+  readonly buttonClasses = computed(() => {
+    const baseClasses = 'group flex items-center gap-x-3 w-full text-left rounded-md p-2 leading-6 transition-colors';
+    const customClass = this.customClass();
 
-  handleButtonClick() {
-    if (this.disabled) {
+    const stateClasses = this.disabled()
+      ? 'opacity-50 cursor-not-allowed hover:bg-transparent'
+      : 'hover:bg-gray-100 cursor-pointer';
+
+    return `${baseClasses} ${customClass} ${stateClasses}`.trim();
+  });
+
+  readonly notificationAriaLabel = computed(() => {
+    const count = this.notificationCount();
+    return count > 1
+      ? `You have ${count} notifications`
+      : 'You have notifications';
+  });
+
+  navigate(): void {
+    if (this.disabled()) {
       return;
     }
 
-    if (this.buttonHandler) {
-      this.buttonHandler();
-    } else if (this.route) {
-      this.itemClick.emit(this.route);
+    const routeValue = this.route();
+    if (routeValue) {
+      this.itemClick.emit(routeValue);
+    }
+  }
+
+  handleButtonClick(): void {
+    if (this.disabled()) {
+      return;
+    }
+
+    const handler = this.buttonHandler();
+    const routeValue = this.route();
+
+    if (handler) {
+      handler();
+    } else if (routeValue) {
+      this.itemClick.emit(routeValue);
     }
   }
 }

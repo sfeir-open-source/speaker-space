@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, input, OnInit, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -33,7 +33,7 @@ import { EventDataService } from '../../../services/event/event-data.service';
   styleUrl: './speaker-list-page.component.scss'
 })
 export class SpeakerListPageComponent implements OnInit, OnDestroy {
-  @Input() icon: string = 'person';
+  readonly icon = input<string>('person');
 
   showFilterPopup: boolean = false;
   availableFormats: Format[] = [];
@@ -47,19 +47,19 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
   };
 
   readonly listService = inject(BaseListService<Speaker>);
+  readonly route = inject(ActivatedRoute);
+  readonly router = inject(Router);
+  readonly speakerService = inject(SpeakerService);
+  readonly eventService = inject(EventService);
+  readonly eventDataService = inject(EventDataService);
+
   readonly state$: Observable<ListState> = this.listService.state$;
 
-  Math = Math;
+  readonly Math = Math;
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private speakerService: SpeakerService,
-    eventService: EventService,
-    eventDataService: EventDataService
-  ) {
-    (this.listService as any).eventService = eventService;
-    (this.listService as any).eventDataService = eventDataService;
+  constructor() {
+    (this.listService as any).eventService = this.eventService;
+    (this.listService as any).eventDataService = this.eventDataService;
   }
 
   ngOnInit(): void {
@@ -83,7 +83,7 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
 
     this.listService.updateState({ isLoadingItems: true, error: null });
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.speakerService.getSpeakersWithSessionsByEventId(currentState.eventId)
         .pipe(
           finalize(() => this.listService.updateState({ isLoadingItems: false })),
@@ -106,7 +106,7 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
             this.extractAvailableFilters();
             resolve();
           },
-          error: (error) => {
+          error: (error: Error) => {
             console.error('Error loading speakers with sessions:', error);
             this.loadSpeakersWithFallback();
             reject(error);

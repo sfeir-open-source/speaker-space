@@ -1,25 +1,28 @@
 <app-navbar-team-page
-  [teamUrl]="teamUrl"
-  [teamId]="teamId"
-  [teamName]="teamName">
+  [teamUrl]="teamUrl()"
+  [teamId]="teamId()"
+  [teamName]="teamName()">
 </app-navbar-team-page>
 <div class="px-10 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
   <main class="flex">
-    <app-sidebar-team [teamId]="teamId"/>
+    <app-sidebar-team [teamId]="teamId()"/>
+
     <section class="flex-1 p-4">
-      @if (isLoading) {
+      @if (isLoading()) {
         <div class="flex justify-center items-center h-40">
-          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"
+               aria-label="Loading..."></div>
         </div>
       }
 
-      @if (error) {
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          <p>{{ error }}</p>
+      @if (error()) {
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
+             role="alert">
+          <p>{{ error() }}</p>
         </div>
       }
 
-      @if (!isLoading && !error) {
+      @if (!isLoading() && !error()) {
         <form class="w-full mx-auto" (ngSubmit)="onSubmit()">
           <article class="w-full items-center bg-white shadow-md rounded-lg">
             <header class="p-4">
@@ -37,34 +40,35 @@
                   [name]="field.name">
                 </app-input>
               }
-
             </header>
             <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
-            @if (currentUserRole === 'Owner') {
+
+            @if (currentUserRole() === 'Owner') {
               <footer class="flex justify-end mt-4 p-4">
                 <button
                   type="submit"
-                  class="bg-action hover:bg-action-hover text-white px-4 py-2 rounded-md cursor-pointer">
+                  class="bg-action hover:bg-action-hover text-white px-4 py-2 rounded-md cursor-pointer transition-colors"
+                  [disabled]="teamForm.invalid">
                   Save
                 </button>
               </footer>
             }
           </article>
 
-          @if (currentUserRole === 'Owner') {
+          @if (currentUserRole() === 'Owner') {
             <app-danger-zone
-              [config]="dangerZoneConfig"
-              [isDeleting]="isDeleting"
-              [currentUserRole]="currentUserRole"
+              [config]="dangerZoneConfig()"
+              [isDeleting]="isDeleting()"
+              [currentUserRole]="currentUserRole()"
               (deleteAction)="onDangerZoneDelete()">
             </app-danger-zone>
           }
         </form>
       }
       <app-delete-confirmation-popup
-        [config]="deleteConfirmationConfig"
-        [isOpen]="showDeleteConfirmation"
-        [isDeleting]="isDeleting"
+        [config]="deleteConfirmationConfig()"
+        [isOpen]="showDeleteConfirmation()"
+        [isDeleting]="isDeleting()"
         (confirm)="onDeleteConfirmed()"
         (cancel)="onDeleteCancelled()">
       </app-delete-confirmation-popup>

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, input, OnInit, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -31,25 +31,61 @@ import { EventDataService } from '../../../services/event/event-data.service';
   templateUrl: './session-list-page.component.html',
   styleUrl: './session-list-page.component.scss'
 })
-export class SessionListPageComponent implements OnInit, OnDestroy {
-  @Input() icon: string = 'search';
+export class SessionListPageComponent implements OnInit {
+  readonly icon = input<string>('search');
 
-  showFilterPopup: boolean = false;
-  availableFormats: Format[] = [];
-  availableCategories: Category[] = [];
-  Math = Math;
-  currentFilters: SessionFilters = {
+  readonly showFilterPopup = signal<boolean>(false);
+  readonly availableFormats = signal<Format[]>([]);
+  readonly availableCategories = signal<Category[]>([]);
+  readonly currentFilters = signal<SessionFilters>({
     selectedFormats: [],
     selectedCategories: []
-  };
+  });
 
+  readonly hasActiveFilters = computed(() => {
+    const filters = this.currentFilters();
+    return filters.selectedFormats.length > 0 || filters.selectedCategories.length > 0;
+  });
+
+  readonly activeFiltersCount = computed(() => {
+    const filters = this.currentFilters();
+    return filters.selectedFormats.length + filters.selectedCategories.length;
+  });
+
+  readonly totalSessions = computed(() => this.listService.getCurrentState().totalItems);
+  readonly isLoadingSessions = computed(() => this.listService.getCurrentState().isLoadingItems);
+  readonly paginatedSessions = computed(() => this.listService.getPaginatedItems());
+  readonly currentPage = computed(() => this.listService.getCurrentState().currentPage);
+  readonly totalPages = computed(() => this.listService.getCurrentState().totalPages);
+  readonly itemsPerPage = computed(() => this.listService.getCurrentState().itemsPerPage);
+  readonly pageNumbers = computed(() => this.listService.getPageNumbers());
+  readonly selectAll = computed(() => this.listService.getCurrentState().selectAll);
+  readonly selectedItems = computed(() => this.listService.getCurrentState().selectedItems);
+  readonly searchTerm = computed(() => this.listService.getCurrentState().searchTerm);
+
+  readonly paginationInfo = computed(() => {
+    const current = this.currentPage();
+    const itemsPerPageValue = this.itemsPerPage();
+    const total = this.totalSessions();
+
+    return {
+      start: (current - 1) * itemsPerPageValue + 1,
+      end: Math.min(current * itemsPerPageValue, total),
+      total
+    };
+  });
+
+  readonly canGoToPreviousPage = computed(() => this.currentPage() > 1);
+  readonly canGoToNextPage = computed(() => this.currentPage() < this.totalPages());
+
+  readonly Math = Math;
   readonly listService = inject(BaseListService<SessionImportData>);
   readonly state$: Observable<ListState> = this.listService.state$;
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private eventService: EventService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly eventService: EventService,
     eventDataService: EventDataService
   ) {
     (this.listService as any).eventService = eventService;
@@ -58,10 +94,6 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.initializeRouteSubscription();
-  }
-
-  ngOnDestroy(): void {
-    this.listService.destroy();
   }
 
   private initializeRouteSubscription(): void {
@@ -85,12 +117,7 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
         )
         .subscribe({
           next: (sessions: SessionImportData[]) => {
-            const sortedSessions: SessionImportData[] = sessions.sort((a, b) => {
-              const titleA: string = a.title?.toLowerCase() || '';
-              const titleB: string = b.title?.toLowerCase() || '';
-              return titleA.localeCompare(titleB);
-            });
-
+            const sortedSessions = this.sortSessionsByTitle(sessions);
             this.listService.updateItems(sortedSessions);
             this.extractAvailableFilters(sessions);
             resolve();
@@ -106,44 +133,12 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  get totalSessions(): number {
-    return this.listService.getCurrentState().totalItems;
-  }
-
-  get isLoadingSessions(): boolean {
-    return this.listService.getCurrentState().isLoadingItems;
-  }
-
-  get paginatedSessions(): SessionImportData[] {
-    return this.listService.getPaginatedItems();
-  }
-
-  get currentPage(): number {
-    return this.listService.getCurrentState().currentPage;
-  }
-
-  get totalPages(): number {
-    return this.listService.getCurrentState().totalPages;
-  }
-
-  get itemsPerPage(): number {
-    return this.listService.getCurrentState().itemsPerPage;
-  }
-
-  get pageNumbers(): number[] {
-    return this.listService.getPageNumbers();
-  }
-
-  get selectAll(): boolean {
-    return this.listService.getCurrentState().selectAll;
-  }
-
-  get selectedItems(): string[] {
-    return this.listService.getCurrentState().selectedItems;
-  }
-
-  get searchTerm(): string {
-    return this.listService.getCurrentState().searchTerm;
+  private sortSessionsByTitle(sessions: SessionImportData[]): SessionImportData[] {
+    return sessions.sort((a, b) => {
+      const titleA = a.title?.toLowerCase() || '';
+      const titleB = b.title?.toLowerCase() || '';
+      return titleA.localeCompare(titleB);
+    });
   }
 
   getItemId(session: SessionImportData): string {
@@ -164,6 +159,7 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
   }
 
   goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages()) return;
     this.listService.goToPage(page);
   }
 
@@ -173,12 +169,15 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
 
   formatSpeakers(speakers: Speaker[] | undefined): string {
     if (!speakers || speakers.length === 0) return 'Aucun speaker';
-    return speakers.map(speaker => speaker.name).filter(name => name).join(', ');
+    return speakers
+      .map(speaker => speaker.name)
+      .filter(name => name)
+      .join(', ');
   }
 
   isSessionSelected(sessionId: string | undefined): boolean {
     if (!sessionId) return false;
-    return this.selectedItems.includes(sessionId);
+    return this.selectedItems().includes(sessionId);
   }
 
   toggleSessionSelection(sessionId: string): void {
@@ -195,7 +194,7 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
     const target = event.target as HTMLElement;
     const isCheckboxArea = target.closest('.checkbox-area');
 
-    const sessionId : string = this.getItemId(session);
+    const sessionId = this.getItemId(session);
     if (!sessionId) return;
 
     if (isCheckboxArea) {
@@ -206,7 +205,16 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
   }
 
   private extractAvailableFilters(sessions: SessionImportData[]): void {
+    const formats = this.extractUniqueFormats(sessions);
+    const categories = this.extractUniqueCategories(sessions);
+
+    this.availableFormats.set(formats);
+    this.availableCategories.set(categories);
+  }
+
+  private extractUniqueFormats(sessions: SessionImportData[]): Format[] {
     const formatMap = new Map<string, Format>();
+
     sessions.forEach(session => {
       session.formats?.forEach(format => {
         if (format.id && !formatMap.has(format.id)) {
@@ -214,10 +222,14 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
         }
       });
     });
-    this.availableFormats = Array.from(formatMap.values())
-      .sort((a, b) => a.name.localeCompare(b.name));
 
+    return Array.from(formatMap.values())
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private extractUniqueCategories(sessions: SessionImportData[]): Category[] {
     const categoryMap = new Map<string, Category>();
+
     sessions.forEach(session => {
       session.categories?.forEach(category => {
         if (category.id && !categoryMap.has(category.id)) {
@@ -225,74 +237,92 @@ export class SessionListPageComponent implements OnInit, OnDestroy {
         }
       });
     });
-    this.availableCategories = Array.from(categoryMap.values())
+
+    return Array.from(categoryMap.values())
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   openFilterPopup(): void {
-    this.showFilterPopup = true;
+    this.showFilterPopup.set(true);
   }
 
   closeFilterPopup(): void {
-    this.showFilterPopup = false;
+    this.showFilterPopup.set(false);
   }
 
   onFiltersApplied(filters: SessionFilters): void {
-    this.currentFilters = filters;
+    this.currentFilters.set(filters);
     this.applyFilters();
     this.closeFilterPopup();
   }
 
   onFiltersReset(): void {
-    this.currentFilters = {
+    this.currentFilters.set({
       selectedFormats: [],
       selectedCategories: []
-    };
+    });
     this.applyFilters();
   }
 
   private applyFilters(): void {
     const items = this.listService.getCurrentItems();
-    let filtered: SessionImportData[] = [...items];
+    let filtered = [...items];
 
-    if (this.currentFilters.selectedFormats.length > 0) {
-      filtered = filtered.filter(session =>
-        session.formats?.some(format =>
-          this.currentFilters.selectedFormats.includes(format.id)
-        )
-      );
+    const filters = this.currentFilters();
+
+    if (filters.selectedFormats.length > 0) {
+      filtered = this.filterByFormats(filtered, filters.selectedFormats);
     }
 
-    if (this.currentFilters.selectedCategories.length > 0) {
-      filtered = filtered.filter(session =>
-        session.categories?.some(category =>
-          this.currentFilters.selectedCategories.includes(category.id)
-        )
-      );
+    if (filters.selectedCategories.length > 0) {
+      filtered = this.filterByCategories(filtered, filters.selectedCategories);
     }
 
-    const searchTerm : string = this.listService.getCurrentState().searchTerm;
+    const searchTerm = this.listService.getCurrentState().searchTerm;
     if (searchTerm.trim()) {
-      const searchLower: string = searchTerm.toLowerCase();
-      filtered = filtered.filter(session =>
-        session.title?.toLowerCase().includes(searchLower) ||
-        session.abstractText?.toLowerCase().includes(searchLower) ||
-        session.speakers?.some(speaker =>
-          speaker.name?.toLowerCase().includes(searchLower)
-        )
-      );
+      filtered = this.filterBySearchTerm(filtered, searchTerm);
     }
 
     this.listService.updateFilteredItems(filtered);
   }
 
-  get hasActiveFilters(): boolean {
-    return this.currentFilters.selectedFormats.length > 0 ||
-      this.currentFilters.selectedCategories.length > 0;
+  private filterByFormats(sessions: SessionImportData[], selectedFormats: string[]): SessionImportData[] {
+    return sessions.filter(session =>
+      session.formats?.some(format =>
+        selectedFormats.includes(format.id)
+      )
+    );
   }
 
-  get activeFiltersCount(): number {
-    return this.currentFilters.selectedFormats.length +
-      this.currentFilters.selectedCategories.length;
+  private filterByCategories(sessions: SessionImportData[], selectedCategories: string[]): SessionImportData[] {
+    return sessions.filter(session =>
+      session.categories?.some(category =>
+        selectedCategories.includes(category.id)
+      )
+    );
+  }
+
+  private filterBySearchTerm(sessions: SessionImportData[], searchTerm: string): SessionImportData[] {
+    const searchLower = searchTerm.toLowerCase();
+
+    return sessions.filter(session =>
+      session.title?.toLowerCase().includes(searchLower) ||
+      session.abstractText?.toLowerCase().includes(searchLower) ||
+      session.speakers?.some(speaker =>
+        speaker.name?.toLowerCase().includes(searchLower)
+      )
+    );
+  }
+
+  goToPreviousPage(): void {
+    if (this.canGoToPreviousPage()) {
+      this.goToPage(this.currentPage() - 1);
+    }
+  }
+
+  goToNextPage(): void {
+    if (this.canGoToNextPage()) {
+      this.goToPage(this.currentPage() + 1);
+    }
   }
 }

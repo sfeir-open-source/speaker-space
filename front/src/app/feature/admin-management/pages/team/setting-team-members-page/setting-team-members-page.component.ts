@@ -1,32 +1,32 @@
 import {
   Component,
   OnInit,
-  OnDestroy,
-  TemplateRef,
-  ViewChild,
-  Input,
+  viewChild,
+  input,
   ElementRef,
   inject,
-  DestroyRef
+  DestroyRef,
+  signal,
+  effect
 } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import {debounceTime, distinctUntilChanged, finalize, Subject, switchMap, take, tap} from 'rxjs';
+import { debounceTime, distinctUntilChanged, finalize, switchMap, take, tap } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import {map} from 'rxjs/operators';
-import {SidebarTeamComponent} from '../../../components/team/sidebar-team/sidebar-team.component';
-import {MembersCardComponent} from '../../../components/team/members-card/members-card.component';
-import {AutocompleteComponent} from '../../../components/auto-complete/auto-complete.component';
-import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
-import {NavbarTeamPageComponent} from '../../../components/team/navbar-team-page/navbar-team-page.component';
-import {TeamMember} from '../../../type/team/team-member';
-import {FormSubmitData} from '../../../type/team/form-submit-data';
-import {TeamService} from '../../../services/team/team.service';
-import {TeamMemberService} from '../../../services/team/team-member.service';
-import {AuthService} from '../../../../../core/login/services/auth.service';
-import {UserRoleService} from '../../../services/team/user-role.service';
-import {FormField} from '../../../../../shared/input/interface/form-field';
-import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
+import { SidebarTeamComponent } from '../../../components/team/sidebar-team/sidebar-team.component';
+import { MembersCardComponent } from '../../../components/team/members-card/members-card.component';
+import { AutocompleteComponent } from '../../../components/auto-complete/auto-complete.component';
+import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
+import { NavbarTeamPageComponent } from '../../../components/team/navbar-team-page/navbar-team-page.component';
+import { TeamMember } from '../../../type/team/team-member';
+import { FormSubmitData } from '../../../type/team/form-submit-data';
+import { TeamService } from '../../../services/team/team.service';
+import { TeamMemberService } from '../../../services/team/team-member.service';
+import { AuthService } from '../../../../../core/login/services/auth.service';
+import { UserRoleService } from '../../../services/team/user-role.service';
+import { FormField } from '../../../../../shared/input/interface/form-field';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-setting-team-members-page',
@@ -44,190 +44,198 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
   templateUrl: './setting-team-members-page.component.html',
   styleUrl: './setting-team-members-page.component.scss'
 })
-export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
-  @Input() member!: TeamMember;
-  @Input() formSubmitData: FormSubmitData | undefined;
-  @ViewChild('formSubmit') formSubmitElement!: ElementRef<HTMLFormElement>;
+export class SettingTeamMembersPageComponent implements OnInit {
+  readonly member = input<TeamMember>();
+  readonly formSubmitData = input<FormSubmitData>();
 
-  activeSection: string = 'settings-members';
-  teamUrl: string = '';
-  teamId: string = '';
-  teamName: string = '';
-  isLoading: boolean = false;
-  error: string | null = null;
-  teamMembers: TeamMember[] = [];
-  showDeleteConfirmation: boolean = false;
-  isDeleting: boolean = false;
-  searchControl = new FormControl('');
-  isSearching: boolean = false;
-  selectedUser: TeamMember | null = null;
-  isAddingMember: boolean = false;
-  currentUserRole: string = '';
-  isCreator: boolean = false;
-  currentUserId: string = '';
-  searchResults: TeamMember[] = [];
-  currentTeamMembers: TeamMember[] = [];
+  readonly formSubmitElement = viewChild<ElementRef<HTMLFormElement>>('formSubmit');
 
-  private destroy$ = new Subject<void>();
-  private readonly _destroyRef = inject(DestroyRef);
+  readonly activeSection = signal<string>('settings-members');
+  readonly teamUrl = signal<string>('');
+  readonly teamId = signal<string>('');
+  readonly teamName = signal<string>('');
+  readonly isLoading = signal<boolean>(false);
+  readonly error = signal<string | null>(null);
+  readonly teamMembers = signal<TeamMember[]>([]);
+  readonly isDeleting = signal<boolean>(false);
+  readonly isSearching = signal<boolean>(false);
+  readonly selectedUser = signal<TeamMember | null>(null);
+  readonly isAddingMember = signal<boolean>(false);
+  readonly currentUserRole = signal<string>('');
+  readonly isCreator = signal<boolean>(false);
+  readonly currentUserId = signal<string>('');
+  readonly searchResults = signal<TeamMember[]>([]);
+  readonly currentTeamMembers = signal<TeamMember[]>([]);
+  readonly formSubmitDataInternal = signal<FormSubmitData | undefined>(undefined);
 
-  @ViewChild('userItemTemplate') userItemTemplate!: TemplateRef<any>;
+  readonly searchControl = new FormControl('');
 
-  constructor(
-    private route: ActivatedRoute,
-    private teamService: TeamService,
-    private teamMemberService: TeamMemberService,
-    private authService: AuthService,
-    private userRoleService: UserRoleService
-  ) {}
+  readonly field: FormField = {
+    name: 'findmembers',
+    placeholder: 'Find member by email',
+    icon: 'search',
+    type: 'text',
+  };
 
-  ngOnInit() {
-    this.activeSection = 'settings-members';
-    this.isLoading = true;
+  private readonly route = inject(ActivatedRoute);
+  private readonly teamService = inject(TeamService);
+  private readonly teamMemberService = inject(TeamMemberService);
+  private readonly authService = inject(AuthService);
+  private readonly userRoleService = inject(UserRoleService);
+  private readonly destroyRef = inject(DestroyRef);
 
-    this.authService.user$.subscribe(user => {
-      if (user) {
-        this.currentUserId = user.uid;
-      }
-    });
-
-    this.authService.user$.pipe(
-      takeUntilDestroyed(this._destroyRef),
-      switchMap(user => {
-        if (!user) {
-          return [];
-        }
-        this.currentUserId = user.uid;
-
-        return this.route.paramMap.pipe(
-          switchMap(params => {
-            this.teamId = params.get('teamId') || '';
-            if (!this.teamId) {
-              this.error = 'Team ID 1 is missing';
-              this.isLoading = false;
-              return [];
-            }
-
-            return this.teamService.getTeamByUrl(this.teamId).pipe(
-              switchMap(team => {
-                this.teamId = team.id || '';
-                this.teamName = team.name;
-                this.isCreator = team.userCreateId === this.currentUserId;
-
-                if (!this.teamId) {
-                  this.error = 'Team ID is missing';
-                  this.isLoading = false;
-                  return [];
-                }
-
-                return this.teamMemberService.getTeamMembers(this.teamId);
-              })
-            );
-          })
-        );
-      })
-    ).subscribe({
-      next: (members: TeamMember[]) => {
-        this.teamMembers = members;
-        this.currentTeamMembers = [...members];
-
-        const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
-        if (currentMember) {
-          this.currentUserRole = currentMember.role ?? 'Member';
-          this.userRoleService.setRole(this.currentUserRole);
-        }
-
-        this.isLoading = false;
-        this.error = null;
-      },
-      error: (err) => {
-        this.isLoading = false;
-        this.error = 'Failed to load team data. Please try again.';
-        console.error('Error:', err);
+  constructor() {
+    effect(() => {
+      const role = this.currentUserRole();
+      if (role) {
+        this.userRoleService.setRole(role);
       }
     });
 
     this.setupSearchListener();
   }
 
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
+  ngOnInit(): void {
+    this.activeSection.set('settings-members');
+    this.isLoading.set(true);
+
+    this.authService.user$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap(user => {
+          if (!user) {
+            return [];
+          }
+          this.currentUserId.set(user.uid);
+
+          return this.route.paramMap.pipe(
+            switchMap(params => {
+              const teamIdParam = params.get('teamId') || '';
+              this.teamId.set(teamIdParam);
+
+              if (!teamIdParam) {
+                this.error.set('Team ID is missing');
+                this.isLoading.set(false);
+                return [];
+              }
+
+              return this.teamService.getTeamByUrl(teamIdParam).pipe(
+                switchMap(team => {
+                  this.teamId.set(team.id || '');
+                  this.teamName.set(team.name);
+                  this.isCreator.set(team.userCreateId === this.currentUserId());
+
+                  if (!team.id) {
+                    this.error.set('Team ID is missing');
+                    this.isLoading.set(false);
+                    return [];
+                  }
+
+                  return this.teamMemberService.getTeamMembers(team.id);
+                })
+              );
+            })
+          );
+        })
+      )
+      .subscribe({
+        next: (members: TeamMember[]) => {
+          this.teamMembers.set(members);
+          this.currentTeamMembers.set([...members]);
+
+          const currentMember = members.find(m => m.userId === this.currentUserId());
+          if (currentMember) {
+            this.currentUserRole.set(currentMember.role ?? 'Member');
+          }
+
+          this.isLoading.set(false);
+          this.error.set(null);
+        },
+        error: (err) => {
+          this.isLoading.set(false);
+          this.error.set('Failed to load team data. Please try again.');
+          console.error('Error:', err);
+        }
+      });
   }
 
   onSearchInputChanged(query: string): void {
     if (!query || query.length < 2) {
-      this.selectedUser = null;
+      this.selectedUser.set(null);
     }
   }
 
-  setupSearchListener() {
-    this.searchControl.valueChanges.pipe(
-      tap(query => {
-        if (!query || query.length < 2) {
-          this.searchResults  = [];
-          this.isSearching = false;
-          this.selectedUser = null;
-        }
-      }),
-      debounceTime(300),
-      distinctUntilChanged(),
-      takeUntilDestroyed(this._destroyRef),
-      switchMap(query => {
-        if (!query || query.length < 2) {
-          return [];
-        }
+  private setupSearchListener(): void {
+    this.searchControl.valueChanges
+      .pipe(
+        tap(query => {
+          if (!query || query.length < 2) {
+            this.searchResults.set([]);
+            this.isSearching.set(false);
+            this.selectedUser.set(null);
+          }
+        }),
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+        switchMap(query => {
+          if (!query || query.length < 2) {
+            return [];
+          }
 
-        this.isSearching = true;
+          this.isSearching.set(true);
 
-        return this.teamMemberService.searchUsersByEmail(query).pipe(
-          finalize(() => this.isSearching = false)
-        );
-      })
-    ).subscribe({
-      next: (results) => {
-        if (Array.isArray(results)) {
-          this.searchResults = results.filter(user =>
-            !this.currentTeamMembers.some(member => member.userId === user.userId)
+          return this.teamMemberService.searchUsersByEmail(query).pipe(
+            finalize(() => this.isSearching.set(false))
           );
-        } else {
-          this.teamMembers = [];
+        })
+      )
+      .subscribe({
+        next: (results) => {
+          if (Array.isArray(results)) {
+            const filteredResults = results.filter(user =>
+              !this.currentTeamMembers().some(member => member.userId === user.userId)
+            );
+            this.searchResults.set(filteredResults);
+          } else {
+            this.searchResults.set([]);
+          }
+        },
+        error: (err) => {
+          this.error.set('Error searching for users');
+          this.searchResults.set([]);
         }
-      },
-      error: (err) => {
-        this.error = 'Error searching for users';
-        this.teamMembers = [];
-      }
-    });
+      });
   }
 
-  selectUser(user: TeamMember) {
-    this.selectedUser = user;
+  selectUser(user: TeamMember): void {
+    this.selectedUser.set(user);
     this.searchControl.setValue(user.email);
   }
 
-  addMember() {
-    if (this.currentUserRole !== 'Owner') {
-      this.error = 'Only Owners can add members';
+  addMember(): void {
+    if (this.currentUserRole() !== 'Owner') {
+      this.error.set('Only Owners can add members');
       return;
     }
 
     const email = this.searchControl.value;
+    const selectedUser = this.selectedUser();
 
-    if (this.selectedUser && this.teamId) {
-      this.isAddingMember = true;
+    if (selectedUser && this.teamId()) {
+      this.isAddingMember.set(true);
 
       const newMember: TeamMember = {
-        userId: this.selectedUser.userId,
-        email: this.selectedUser.email,
-        displayName: this.selectedUser.displayName || '',
-        photoURL: this.selectedUser.photoURL || '',
+        userId: selectedUser.userId,
+        email: selectedUser.email,
+        displayName: selectedUser.displayName || '',
+        photoURL: selectedUser.photoURL || '',
         role: 'Member'
       };
 
-      this.teamMemberService.addTeamMember(this.teamId, newMember, this.teamName)
+      this.teamMemberService.addTeamMember(this.teamId(), newMember, this.teamName())
         .pipe(
-          finalize(() => this.isAddingMember = false),
+          finalize(() => this.isAddingMember.set(false)),
           switchMap(addedMember => {
             return this.authService.user$.pipe(
               take(1),
@@ -236,31 +244,32 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
                 this.submitFormSubmit(
                   newMember.email,
-                  this.teamName,
-                  this.teamId,
+                  this.teamName(),
+                  this.teamId(),
                   inviterName
                 );
 
                 return addedMember;
               })
             );
-          })
+          }),
+          takeUntilDestroyed(this.destroyRef)
         )
         .subscribe({
           next: (addedMember) => {
-            this.currentTeamMembers = [...this.currentTeamMembers, addedMember];
+            this.currentTeamMembers.set([...this.currentTeamMembers(), addedMember]);
             this.searchControl.setValue('');
-            this.selectedUser = null;
-            this.error = null;
+            this.selectedUser.set(null);
+            this.error.set(null);
           },
           error: (err) => {
-            this.error = err.message || 'Failed to add team member. Please try again.';
+            this.error.set(err.message || 'Failed to add team member. Please try again.');
           }
         });
     } else if (email && this.validateEmail(email)) {
       this.inviteMemberByEmail();
     } else {
-      this.error = 'Please select a user or enter a valid email address';
+      this.error.set('Please select a user or enter a valid email address');
     }
   }
 
@@ -277,7 +286,7 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
     Best regards,`;
 
-    this.formSubmitData = {
+    this.formSubmitDataInternal.set({
       email: email,
       subject: `Invitation to join "${teamName}" team on Speaker Space by ${inviterName}`,
       message: message,
@@ -285,144 +294,114 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
       teamName: teamName,
       invitationLink: invitationLink,
       autoresponse: ''
-    };
+    });
 
     setTimeout(() => {
-      if (this.formSubmitElement && this.formSubmitElement.nativeElement) {
-        this.formSubmitElement.nativeElement.submit();
+      const formElement = this.formSubmitElement();
+      if (formElement?.nativeElement) {
+        formElement.nativeElement.submit();
       }
     }, 100);
   }
 
-  loadTeamMembers(): void {
-    this.teamMemberService.getTeamMembers(this.teamId)
-      .pipe(finalize(() => this.isLoading = false))
-      .subscribe({
-        next: (members: TeamMember[]) => {
-          this.teamMembers = members;
-          this.currentTeamMembers = [...members];
-          const currentMember = this.teamMembers.find(m => m.userId === this.currentUserId);
-          if (currentMember) {
-            this.currentUserRole = currentMember.role ?? 'Member';
-            this.userRoleService.setRole(this.currentUserRole);
-          }
-          this.error = null;
-        },
-        error: (err: any) => {
-          this.error = 'Failed to load team members. Please try again.';
-          console.error('Error loading team members:', err);
-        }
-      });
-  }
-
-  confirmDeleteMember(member: TeamMember): void {
-    this.selectedUser = member;
-  }
-
-  cancelDeleteMember(): void {
-    this.selectedUser = null;
-    this.showDeleteConfirmation = false;
-  }
-
   deleteMember(member: TeamMember): void {
-    this.isDeleting = true;
-    const userId : string = member.userId;
+    this.isDeleting.set(true);
+    const userId: string = member.userId;
 
-    this.teamMemberService.removeTeamMember(this.teamId, userId)
-      .pipe(finalize(() => {
-        this.isDeleting = false;
-        this.selectedUser = null;
-      }))
+    this.teamMemberService.removeTeamMember(this.teamId(), userId)
+      .pipe(
+        finalize(() => {
+          this.isDeleting.set(false);
+          this.selectedUser.set(null);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
         next: () => {
-          this.currentTeamMembers = this.currentTeamMembers.filter(m => m.userId !== userId);
-          this.teamMembers = this.teamMembers.filter(m => m.userId !== userId);
-          this.error = null;
+          const updatedMembers = this.currentTeamMembers().filter(m => m.userId !== userId);
+          this.currentTeamMembers.set(updatedMembers);
+          this.teamMembers.set(this.teamMembers().filter(m => m.userId !== userId));
+          this.error.set(null);
         },
         error: (err) => {
-          this.error = err.message || 'Failed to remove team member. Please try again.';
+          this.error.set(err.message || 'Failed to remove team member. Please try again.');
         }
       });
   }
 
-  updateMemberRole(data: {member: TeamMember, newRole: string}): void {
+  updateMemberRole(data: { member: TeamMember, newRole: string }): void {
     const { member, newRole } = data;
 
-    if (!this.teamId) {
-      this.error = 'Team ID is missing';
+    if (!this.teamId()) {
+      this.error.set('Team ID is missing');
       return;
     }
 
-    if (this.currentUserRole !== 'Owner') {
-      this.error = 'Only Owners can change member roles';
+    if (this.currentUserRole() !== 'Owner') {
+      this.error.set('Only Owners can change member roles');
       return;
     }
 
-    if (member.userId === this.currentUserId) {
-      this.error = 'You cannot change your own role';
+    if (member.userId === this.currentUserId()) {
+      this.error.set('You cannot change your own role');
       return;
     }
 
     if (member.role === 'Owner' && newRole === 'Member') {
-      const ownerCount : number = this.currentTeamMembers.filter(m => m.role === 'Owner').length;
+      const ownerCount: number = this.currentTeamMembers().filter(m => m.role === 'Owner').length;
       if (ownerCount <= 1) {
-        this.error = 'Cannot demote the last Owner. Promote another member to Owner first.';
+        this.error.set('Cannot demote the last Owner. Promote another member to Owner first.');
         return;
       }
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.teamMemberService.updateMemberRole(this.teamId, member.userId, newRole)
-      .pipe(finalize(() => this.isLoading = false))
+    this.teamMemberService.updateMemberRole(this.teamId(), member.userId, newRole)
+      .pipe(
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
         next: (updatedMember: TeamMember) => {
-          this.currentTeamMembers = this.currentTeamMembers.map(m =>
+          const updatedCurrentMembers = this.currentTeamMembers().map(m =>
             m.userId === updatedMember.userId ? updatedMember : m
           );
-          this.teamMembers = this.teamMembers.map(m =>
+          this.currentTeamMembers.set(updatedCurrentMembers);
+
+          const updatedTeamMembers = this.teamMembers().map(m =>
             m.userId === updatedMember.userId ? updatedMember : m
           );
-          this.error = null;
+          this.teamMembers.set(updatedTeamMembers);
+
+          this.error.set(null);
         },
         error: (err) => {
-          this.error = err.message || 'Failed to update member role. Please try again.';
+          this.error.set(err.message || 'Failed to update member role. Please try again.');
         }
       });
   }
 
-  handleBackdropClick(event: MouseEvent): void {
-    if ((event.target as HTMLElement).id === 'delete-modal') {
-      this.cancelDeleteMember();
-    }
-  }
-
-  field: FormField = {
-    name: 'findmembers',
-    placeholder: 'Find member by email',
-    icon: 'search',
-    type: 'text',
-  };
-
-  onSubmit(event: Event) {
+  onSubmit(event: Event): void {
     event.preventDefault();
     this.addMember();
   }
 
-  inviteMemberByEmail() {
+  inviteMemberByEmail(): void {
     const email = this.searchControl.value;
 
     if (!email || !this.validateEmail(email)) {
-      this.error = 'Please enter a valid email address';
+      this.error.set('Please enter a valid email address');
       return;
     }
 
-    this.isAddingMember = true;
+    this.isAddingMember.set(true);
     const normalizedEmail = email.toLowerCase();
 
-    this.teamMemberService.inviteMemberByEmail(this.teamId, normalizedEmail, this.teamName)
+    this.teamMemberService.inviteMemberByEmail(this.teamId(), normalizedEmail, this.teamName())
       .pipe(
-        finalize(() => this.isAddingMember = false)
+        finalize(() => this.isAddingMember.set(false)),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: (invitedMember) => {
@@ -433,24 +412,24 @@ export class SettingTeamMembersPageComponent implements OnInit, OnDestroy {
 
             this.submitFormSubmit(
               normalizedEmail,
-              this.teamName,
-              this.teamId,
+              this.teamName(),
+              this.teamId(),
               inviterName
             );
 
-            this.currentTeamMembers = [...this.currentTeamMembers, invitedMember];
+            this.currentTeamMembers.set([...this.currentTeamMembers(), invitedMember]);
             this.searchControl.setValue('');
-            this.error = null;
+            this.error.set(null);
           });
         },
         error: (err) => {
-          this.error = 'Failed to invite member. Please try again.';
+          this.error.set('Failed to invite member. Please try again.');
           console.error('Error inviting member:', err);
         }
       });
   }
 
-  validateEmail(email: string): boolean {
+  private validateEmail(email: string): boolean {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
   }

@@ -1,21 +1,20 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import {FormBuilder, FormControl, FormGroup, FormsModule, Validators} from '@angular/forms';
+import { Component, OnInit, inject, signal, computed, effect, DestroyRef } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, FormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import {finalize, Subscription} from 'rxjs';
-import {InputComponent} from '../../../../../shared/input/input.component';
-import {NavbarTeamPageComponent} from '../../../components/team/navbar-team-page/navbar-team-page.component';
-import {SidebarTeamComponent} from '../../../components/team/sidebar-team/sidebar-team.component';
-import {FormField} from '../../../../../shared/input/interface/form-field';
-import {TeamService} from '../../../services/team/team.service';
-import {TeamMemberService} from '../../../services/team/team-member.service';
-import {AuthService} from '../../../../../core/login/services/auth.service';
-import {TeamMember} from '../../../type/team/team-member';
-import {DangerZoneComponent} from '../../../components/danger-zone/danger-zone.component';
-import {
-  DeleteConfirmationPopupComponent
-} from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
-import {DeleteConfirmationConfig} from '../../../type/components/delete-confirmation';
-import {DangerZoneConfig} from '../../../type/components/danger-zone';
+import { finalize } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { InputComponent } from '../../../../../shared/input/input.component';
+import { NavbarTeamPageComponent } from '../../../components/team/navbar-team-page/navbar-team-page.component';
+import { SidebarTeamComponent } from '../../../components/team/sidebar-team/sidebar-team.component';
+import { FormField } from '../../../../../shared/input/interface/form-field';
+import { TeamService } from '../../../services/team/team.service';
+import { TeamMemberService } from '../../../services/team/team-member.service';
+import { AuthService } from '../../../../../core/login/services/auth.service';
+import { TeamMember } from '../../../type/team/team-member';
+import { DangerZoneComponent } from '../../../components/danger-zone/danger-zone.component';
+import { DeleteConfirmationPopupComponent } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
+import { DeleteConfirmationConfig } from '../../../type/components/delete-confirmation';
+import { DangerZoneConfig } from '../../../type/components/danger-zone';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -31,22 +30,20 @@ import {DangerZoneConfig} from '../../../type/components/danger-zone';
   templateUrl: './setting-team-general-page.component.html',
   styleUrl: './setting-team-general-page.component.scss'
 })
-export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
-  activeSection: string = 'settings-general';
-  teamUrl: string = '';
-  teamId: string = '';
-  teamName: string = '';
-  isLoading: boolean = true;
-  error: string | null = null;
-  isDeleting: boolean = false;
-  showDeleteConfirmation: boolean = false;
-  currentUserRole: string = '';
+export class SettingTeamGeneralPageComponent implements OnInit {
+  readonly activeSection = signal<string>('settings-general');
+  readonly teamUrl = signal<string>('');
+  readonly teamId = signal<string>('');
+  readonly teamName = signal<string>('');
+  readonly isLoading = signal<boolean>(true);
+  readonly error = signal<string | null>(null);
+  readonly isDeleting = signal<boolean>(false);
+  readonly showDeleteConfirmation = signal<boolean>(false);
+  readonly currentUserRole = signal<string>('');
 
   teamForm: FormGroup;
-  private nameChangeSubscription?: Subscription;
-  private routeSubscription?: Subscription;
 
-  formFields: FormField[] = [
+  readonly formFields: FormField[] = [
     {
       name: 'teamName',
       label: 'Team name',
@@ -64,93 +61,129 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     }
   ];
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private teamService: TeamService,
-    private teamMemberService: TeamMemberService,
-    private fb: FormBuilder,
-    private authService: AuthService
-  ) {
+  readonly dangerZoneConfig = computed<DangerZoneConfig>(() => ({
+    title: 'Danger zone',
+    entityName: this.teamName(),
+    entityType: 'team',
+    showArchiveSection: false,
+    isDeleting: this.isDeleting(),
+    currentUserRole: this.currentUserRole()
+  }));
+
+  readonly deleteConfirmationConfig = computed<DeleteConfirmationConfig>(() => ({
+    entityType: 'team',
+    entityName: this.teamName(),
+    title: 'Confirm Team Deletion',
+    confirmButtonText: 'Delete permanently',
+    loadingText: 'Deleting...',
+    requireTextConfirmation: true,
+    confirmationText: 'DELETE'
+  }));
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly teamService = inject(TeamService);
+  private readonly teamMemberService = inject(TeamMemberService);
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
     this.teamForm = this.initializeForm();
-  }
 
-  ngOnInit(): void {
-    this.activeSection = 'settings-general';
-    this.isLoading = true;
-    this.checkForEmailModal();
-    this.subscribeToRouteParams();
+    effect(() => {
+      this.updateFormControlsBasedOnRole();
+    });
 
-    this.authService.user$.subscribe(user => {
-      if (user && this.teamId) {
-        this.loadUserRole(user.uid);
-      }
+    effect(() => {
+      this.setupNameChangeListener();
     });
   }
 
-  ngOnDestroy(): void {
-    this.unsubscribeAll();
+  ngOnInit(): void {
+    this.activeSection.set('settings-general');
+    this.isLoading.set(true);
+    this.checkForEmailModal();
+    this.subscribeToRouteParams();
+    this.subscribeToUserChanges();
   }
 
   private initializeForm(): FormGroup {
     return this.fb.group({
-      teamName: [{value: '', disabled: false}, Validators.required],
-      teamURL: {value: '', disabled: true}
+      teamName: [{ value: '', disabled: false }, Validators.required],
+      teamURL: { value: '', disabled: true }
     });
   }
 
   private checkForEmailModal(): void {
-    this.route.queryParams.subscribe(params => {
-      const showEmailModal = params['showEmailModal'];
-
-      if (showEmailModal === 'true') {
-        const modal = document.getElementById('crud-modal');
-        if (modal) {
-          modal.classList.remove('hidden');
+    this.route.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const showEmailModal = params['showEmailModal'];
+        if (showEmailModal === 'true') {
+          const modal = document.getElementById('crud-modal');
+          modal?.classList.remove('hidden');
         }
-      }
-    });
+      });
   }
 
   private subscribeToRouteParams(): void {
-    this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.teamId = params.get('teamId') || '';
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const teamIdParam = params.get('teamId') || '';
+        this.teamId.set(teamIdParam);
 
-      if (this.teamId) {
-        this.loadTeamData();
-      } else {
-        this.error = 'Team ID 2 is missing';
-        this.isLoading = false;
-      }
-    });
+        if (teamIdParam) {
+          this.loadTeamData();
+        } else {
+          this.error.set('Team ID is missing');
+          this.isLoading.set(false);
+        }
+      });
   }
 
-  loadTeamData(): void {
+  private subscribeToUserChanges(): void {
+    this.authService.user$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(user => {
+        if (user && this.teamId()) {
+          this.loadUserRole(user.uid);
+        }
+      });
+  }
 
-    this.teamService.getTeamByUrl(this.teamId)
-      .pipe(finalize(() => this.isLoading = false))
+  private loadTeamData(): void {
+    this.teamService.getTeamByUrl(this.teamId())
+      .pipe(
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
-        next: this.handleTeamDataLoaded.bind(this),
-        error: this.handleTeamDataError.bind(this)
+        next: (team) => this.handleTeamDataLoaded(team),
+        error: (err) => this.handleTeamDataError(err)
       });
   }
 
   private updateFormControlsBasedOnRole(): void {
-    if (this.currentUserRole !== 'Owner') {
-      this.teamForm.get('teamName')?.disable();
+    const nameControl = this.teamForm.get('teamName');
+    if (!nameControl) return;
+
+    if (this.currentUserRole() !== 'Owner') {
+      nameControl.disable();
     } else {
-      this.teamForm.get('teamName')?.enable();
+      nameControl.enable();
     }
   }
 
-  loadUserRole(userId: string): void {
-    this.teamMemberService.getTeamMembers(this.teamId)
+  private loadUserRole(userId: string): void {
+    this.teamMemberService.getTeamMembers(this.teamId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (members: TeamMember[]) => {
           const currentMember = members.find(m => m.userId === userId);
           if (currentMember) {
-            this.currentUserRole = currentMember.role;
-            this.updateFormControlsBasedOnRole();
+            this.currentUserRole.set(currentMember.role);
           }
         },
         error: (err) => {
@@ -160,37 +193,15 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   }
 
   private handleTeamDataLoaded(team: any): void {
-    this.teamId = team.id || '';
-    this.teamName = team.name;
-
-    const urlSuffix = this.extractOrGenerateUrlSuffix(team);
+    this.teamId.set(team.id || '');
+    this.teamName.set(team.name);
 
     this.teamForm.patchValue({
       teamName: team.name,
       teamURL: team.id
     });
 
-    this.setupNameChangeListener();
-    this.error = null;
-
-    this.authService.user$.subscribe(user => {
-      if (user) {
-        this.loadUserRole(user.uid);
-      } else {
-        this.teamForm.get('teamName')?.disable();
-      }
-    });
-  }
-
-  private extractOrGenerateUrlSuffix(team: any): string {
-    if (team.id) {
-      if (team.id.startsWith(this.teamId)) {
-        return team.id.substring(this.teamId.length);
-      }
-      return team.id;
-    }
-
-    return this.formatUrlFromName(team.name);
+    this.error.set(null);
   }
 
   private formatUrlFromName(name: string): string {
@@ -202,32 +213,26 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
   }
 
   private handleTeamDataError(err: any): void {
-    this.error = 'Failed to load team details. Please try again.';
+    this.error.set('Failed to load team details. Please try again.');
   }
 
-  setupNameChangeListener(): void {
-    if (this.nameChangeSubscription) {
-      this.nameChangeSubscription.unsubscribe();
-    }
-
+  private setupNameChangeListener(): void {
     const nameControl = this.teamForm.get('teamName');
     if (nameControl) {
-      this.nameChangeSubscription = nameControl.valueChanges.subscribe(value => {
-        if (value) {
-          const urlSuffix = this.formatUrlFromName(value);
-          this.teamForm.get('teamId')?.setValue(urlSuffix);
-        }
-      });
+      nameControl.valueChanges
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(value => {
+          if (value) {
+            const urlSuffix = this.formatUrlFromName(value);
+            this.teamForm.get('teamId')?.setValue(urlSuffix);
+          }
+        });
     }
   }
 
   onSubmit(): void {
-    if (this.teamForm.invalid) {
-      return;
-    }
-
-    if (!this.teamId) {
-      this.error = 'Team ID is missing';
+    if (this.teamForm.invalid || !this.teamId()) {
+      this.error.set('Team ID is missing or form is invalid');
       return;
     }
 
@@ -237,54 +242,58 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
       url: formValues.teamURL
     };
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.teamService.updateTeam(this.teamId, updatedTeam)
-      .pipe(finalize(() => this.isLoading = false))
+    this.teamService.updateTeam(this.teamId(), updatedTeam)
+      .pipe(
+        finalize(() => this.isLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
-        next: this.handleTeamUpdated.bind(this),
-        error: this.handleTeamUpdateError.bind(this)
+        next: (team) => this.handleTeamUpdated(team),
+        error: (err) => this.handleTeamUpdateError(err)
       });
   }
 
   private handleTeamUpdated(team: any): void {
-    this.teamName = team.name;
-    this.teamUrl = team.url || '';
+    this.teamName.set(team.name);
+    this.teamUrl.set(team.url || '');
   }
 
   private handleTeamUpdateError(err: any): void {
-    this.error = 'Failed to update team. Please try again.';
+    this.error.set('Failed to update team. Please try again.');
   }
 
   confirmDeleteTeam(): void {
-    this.showDeleteConfirmation = true;
+    this.showDeleteConfirmation.set(true);
   }
 
   cancelDeleteTeam(): void {
-    this.showDeleteConfirmation = false;
+    this.showDeleteConfirmation.set(false);
   }
 
   deleteTeam(): void {
-    if (!this.teamId) {
-      this.error = 'Team ID is missing';
+    if (!this.teamId()) {
+      this.error.set('Team ID is missing');
       return;
     }
 
-    this.isDeleting = true;
+    this.isDeleting.set(true);
 
-    this.teamService.deleteTeam(this.teamId)
+    this.teamService.deleteTeam(this.teamId())
       .pipe(
         finalize(() => {
-          this.isDeleting = false;
-          this.showDeleteConfirmation = false;
-        })
+          this.isDeleting.set(false);
+          this.showDeleteConfirmation.set(false);
+        }),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe({
         next: () => {
           this.router.navigate(['/']);
         },
         error: (err) => {
-          this.error = 'Failed to delete team. Please try again.';
+          this.error.set('Failed to delete team. Please try again.');
         }
       });
   }
@@ -293,40 +302,8 @@ export class SettingTeamGeneralPageComponent implements OnInit, OnDestroy {
     return this.teamForm.get(name) as FormControl;
   }
 
-  private unsubscribeAll(): void {
-    if (this.nameChangeSubscription) {
-      this.nameChangeSubscription.unsubscribe();
-    }
-    if (this.routeSubscription) {
-      this.routeSubscription.unsubscribe();
-    }
-  }
-
-  get dangerZoneConfig(): DangerZoneConfig {
-    return {
-      title: 'Danger zone',
-      entityName: this.teamName,
-      entityType: 'team',
-      showArchiveSection: false,
-      isDeleting: this.isDeleting,
-      currentUserRole: this.currentUserRole
-    };
-  }
-
   onDangerZoneDelete(): void {
     this.confirmDeleteTeam();
-  }
-
-  get deleteConfirmationConfig(): DeleteConfirmationConfig {
-    return {
-      entityType: 'team',
-      entityName: this.teamName,
-      title: 'Confirm Team Deletion',
-      confirmButtonText: 'Delete permanently',
-      loadingText: 'Deleting...',
-      requireTextConfirmation: true,
-      confirmationText: 'DELETE'
-    };
   }
 
   onDeleteConfirmed(): void {

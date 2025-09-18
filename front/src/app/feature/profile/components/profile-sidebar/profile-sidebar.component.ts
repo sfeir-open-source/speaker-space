@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, input, Input} from '@angular/core';
 import {Router} from '@angular/router';
 import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
 
@@ -12,7 +12,7 @@ import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/butto
   styleUrl: './profile-sidebar.component.scss'
 })
 export class ProfileSidebarComponent {
-  @Input() activeSection: string = '';
+  activeSection = input<string>('');
 
   constructor(private router: Router) {}
 
@@ -29,6 +29,6 @@ export class ProfileSidebarComponent {
   }
 
     isActive(sectionId: string): boolean {
-    return this.activeSection === sectionId.replace('#', '');
+    return this.activeSection() === sectionId.replace('#', '');
   }
 }

@@ -1,4 +1,4 @@
-import {Component, DestroyRef, inject, OnInit} from '@angular/core';
+import {Component, DestroyRef, inject, OnInit, signal, computed} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import { switchMap } from 'rxjs/operators';
 import {EventTeamField} from '../../../components/event/event-team-card/interface/event-team-field';
@@ -10,7 +10,6 @@ import {finalize} from 'rxjs';
 import {EventStatusService} from '../../../services/event/event-status.service';
 import {EventTeamCardComponent} from '../../../components/event/event-team-card/event-team-card.component';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {NgClass} from '@angular/common';
 import {NavbarTeamPageComponent} from '../../../components/team/navbar-team-page/navbar-team-page.component';
 
 @Component({
@@ -19,31 +18,33 @@ import {NavbarTeamPageComponent} from '../../../components/team/navbar-team-page
   imports: [
     EventTeamCardComponent,
     ButtonGreyComponent,
-    NgClass,
     NavbarTeamPageComponent
   ],
   styleUrls: ['./list-event-page.component.css']
 })
 export class ListEventPageComponent implements OnInit {
-  activeTab: 'Active' | 'Archived' = 'Active';
-  teamUrl: string = '';
-  teamId: string = '';
-  teamName: string = '';
-  formFields: EventTeamField[] = [];
-  isLoading: boolean = true;
-  error: string | null = null;
-  events: Event[] = [];
-  eventCounts = { active: 0, archived: 0 };
+  readonly activeTab = signal<'Active' | 'Archived'>('Active');
+  readonly teamUrl = signal<string>('');
+  readonly teamId = signal<string>('');
+  readonly teamName = signal<string>('');
+  readonly isLoading = signal<boolean>(true);
+  readonly error = signal<string | null>(null);
+  readonly events = signal<Event[]>([]);
 
-  protected readonly _destroyRef = inject(DestroyRef);
+  readonly formFields = computed(() => {
+    const filteredEvents = this.eventStatusService.filterEventsByStatus(
+      this.events(),
+      this.activeTab() === 'Archived'
+    );
+    return this.transformEventsToFields(filteredEvents);
+  });
 
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute,
-    private teamService: TeamService,
-    private eventService: EventService,
-    private eventStatusService: EventStatusService
-  ) {}
+  private readonly _destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly teamService = inject(TeamService);
+  private readonly eventService = inject(EventService);
+  private readonly eventStatusService = inject(EventStatusService);
 
   ngOnInit(): void {
     this.loadTeamAndEvents();
@@ -52,33 +53,27 @@ export class ListEventPageComponent implements OnInit {
   private loadTeamAndEvents(): void {
     this.route.paramMap.pipe(
       switchMap(params => {
-        this.teamId = params.get('teamId') || '';
-        this.isLoading = true;
-        this.error = null;
-        return this.teamService.getTeamByUrl(this.teamId);
+        this.teamId.set(params.get('teamId') || '');
+        this.isLoading.set(true);
+        this.error.set(null);
+        return this.teamService.getTeamByUrl(this.teamId());
       }),
       switchMap(team => {
-        this.teamName = team.name;
-        this.teamId = team.id ?? '';
-        return this.eventService.getEventsByTeam(this.teamId);
+        this.teamName.set(team.name);
+        this.teamId.set(team.id ?? '');
+        return this.eventService.getEventsByTeam(this.teamId());
       }),
       takeUntilDestroyed(this._destroyRef),
-      finalize(() => this.isLoading = false)
+      finalize(() => this.isLoading.set(false))
     ).subscribe({
       next: (events: Event[]) => {
-        this.events = events;
-        this.updateEventCounts();
-        this.updateFormFields();
+        this.events.set(events);
       },
       error: (err) => {
         console.error('Error loading team events:', err);
-        this.error = 'Failed to load team details or events';
+        this.error.set('Failed to load team details or events');
       }
     });
-  }
-
-  private updateEventCounts(): void {
-    this.eventCounts = this.eventStatusService.getEventCounts(this.events);
   }
 
   private transformEventsToFields(events: Event[]): EventTeamField[] {
@@ -101,24 +96,15 @@ export class ListEventPageComponent implements OnInit {
     });
   }
 
-  private updateFormFields(): void {
-    const filteredEvents = this.eventStatusService.filterEventsByStatus(
-      this.events,
-      this.activeTab === 'Archived'
-    );
-    this.formFields = this.transformEventsToFields(filteredEvents);
-  }
-
   setActiveTab(tab: 'Active' | 'Archived'): void {
-    if (this.activeTab !== tab) {
-      this.activeTab = tab;
-      this.updateFormFields();
+    if (this.activeTab() !== tab) {
+      this.activeTab.set(tab);
     }
   }
 
   addEvent(): void {
-    if (this.teamId) {
-      this.router.navigate(['/create-event', this.teamId]);
+    if (this.teamId()) {
+      this.router.navigate(['/create-event', this.teamId()]);
     }
   }
 }

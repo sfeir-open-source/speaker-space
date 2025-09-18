@@ -1,19 +1,17 @@
 <button
-  [type]="type"
-  [ngClass]="[
-    customTextClass,
-    isActivePage ?
-      'bg-grey hover:bg-grey-hover cursor-pointer text-gray-700 shadow-sm' :
-      'cursor-pointer hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-indigo-600 whitespace-nowrap'
-  ]"
-  class="rounded-md py-1 px-2 text-sm inline-flex items-center gap-2"
+  [type]="type()"
+  [class]="buttonClasses()"
+  [disabled]="disabled()"
+  [attr.aria-label]="ariaLabel()"
   (click)="handleButtonClick()">
-  @if(materialIcon){
+
+  @if (materialIcon()) {
     <div class="relative inline-flex items-center justify-center">
-      <span class="material-symbols-outlined">
-        {{ materialIcon }}
+      <span class="material-symbols-outlined" aria-hidden="true">
+        {{ materialIcon() }}
       </span>
     </div>
   }
+
   <ng-content/>
 </button>

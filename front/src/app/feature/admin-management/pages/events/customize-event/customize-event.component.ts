@@ -1,11 +1,14 @@
-import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
-import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from "@angular/forms";
+import { Component, viewChild, ElementRef, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from "@angular/forms";
 import { finalize, Subscription } from 'rxjs';
-import {ActivatedRoute, Router} from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
-import {NavbarEventPageComponent} from '../../../components/event/navbar-event-page/navbar-event-page.component';
-import {SidebarEventComponent} from '../../../components/event/sidebar-event/sidebar-event.component';
+import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
+import { SidebarEventComponent } from '../../../components/event/sidebar-event/sidebar-event.component';
+
+type UserRole = 'Owner' | 'Admin' | 'Member';
+type ActiveSection = 'event-customize';
 
 @Component({
   selector: 'app-customize-event',
@@ -19,57 +22,60 @@ import {SidebarEventComponent} from '../../../components/event/sidebar-event/sid
   templateUrl: './customize-event.component.html',
   styleUrl: './customize-event.component.scss'
 })
-
 export class CustomizeEventComponent implements OnInit, OnDestroy {
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  readonly fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
-  activeSection: string = 'event-customize';
-  eventId: string = '';
-  eventUrl: string = '';
-  eventName: string = '';
-  isLoading: boolean = true;
-  error: string | null = null;
-  isDeleting: boolean = false;
-  currentUserRole: string = '';
-  teamUrl: string = '';
-  teamId: string = '';
+  readonly activeSection = signal<ActiveSection>('event-customize');
+  readonly eventId = signal<string>('');
+  readonly eventUrl = signal<string>('');
+  readonly eventName = signal<string>('');
+  readonly isLoading = signal<boolean>(true);
+  readonly error = signal<string | null>(null);
+  readonly isDeleting = signal<boolean>(false);
+  readonly currentUserRole = signal<UserRole>('Owner');
+  readonly teamUrl = signal<string>('');
+  readonly teamId = signal<string>('');
+
+  readonly selectedImageUrl = signal<string | null>(null);
+  readonly selectedFile = signal<File | null>(null);
+  readonly isUploading = signal<boolean>(false);
+  readonly uploadError = signal<string | null>(null);
+  readonly isDragOver = signal<boolean>(false);
+
+  readonly isProcessing = computed(() => this.isUploading() || this.isLoading());
+  readonly canUpload = computed(() => !this.isUploading() && this.fileInput());
+  readonly hasSelectedImage = computed(() => !!this.selectedImageUrl() && !this.isUploading());
+  readonly showUploadArea = computed(() => !this.selectedImageUrl() && !this.isUploading());
+
   eventForm: FormGroup;
   private nameChangeSubscription?: Subscription;
   private routeSubscription?: Subscription;
-  readonly BASE_URL = 'https://speaker-space.io/event/';
 
-  selectedImageUrl: string | null = null;
-  selectedFile: File | null = null;
-  isUploading: boolean = false;
-  uploadError: string | null = null;
-  isDragOver: boolean = false;
-
-  private readonly MAX_FILE_SIZE : number = 300 * 1024;
-  private readonly ALLOWED_TYPES : string[] = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+  private readonly BASE_URL = 'https://speaker-space.io/event/';
+  private readonly MAX_FILE_SIZE = 300 * 1024;
+  private readonly ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'] as const;
 
   constructor(
-    private route: ActivatedRoute,
-    private eventService: EventService,
-    private eventDataService: EventDataService,
-    private fb: FormBuilder,
-    private router: Router,
+    private readonly route: ActivatedRoute,
+    private readonly eventService: EventService,
+    private readonly eventDataService: EventDataService,
+    private readonly fb: FormBuilder,
+    private readonly router: Router,
   ) {
     this.eventForm = this.initializeForm();
   }
 
   ngOnInit(): void {
-    this.activeSection = 'event-customize';
-    this.isLoading = true;
+    this.activeSection.set('event-customize');
+    this.isLoading.set(true);
     this.checkForEmailModal();
-    this.currentUserRole = 'Owner';
+    this.currentUserRole.set('Owner');
     this.subscribeToRouteParams();
   }
 
   ngOnDestroy(): void {
     this.unsubscribeAll();
-    if (this.selectedImageUrl) {
-      URL.revokeObjectURL(this.selectedImageUrl);
-    }
+    this.cleanupImageUrl();
   }
 
   private compressImage(file: File): Promise<File> {
@@ -96,7 +102,6 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
 
         canvas.width = width;
         canvas.height = height;
-
         ctx.drawImage(img, 0, 0, width, height);
 
         canvas.toBlob((blob) => {
@@ -113,14 +118,14 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   }
 
   private handleEventDataLoaded(event: any): void {
-    this.eventId = event.idEvent || this.eventId;
-    this.eventName = event.eventName || '';
-    this.eventUrl = event.url || '';
-    this.teamUrl = event.teamUrl || '';
-    this.teamId = event.teamId || '';
-    this.currentUserRole = 'Owner';
+    this.eventId.set(event.idEvent || this.eventId());
+    this.eventName.set(event.eventName || '');
+    this.eventUrl.set(event.url || '');
+    this.teamUrl.set(event.teamUrl || '');
+    this.teamId.set(event.teamId || '');
+    this.currentUserRole.set('Owner');
 
-    const urlSuffix: string = this.extractOrGenerateUrlSuffix(event);
+    const urlSuffix = this.extractOrGenerateUrlSuffix(event);
 
     this.eventForm.patchValue({
       eventName: event.eventName || '',
@@ -129,11 +134,11 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
     });
 
     if (event.logoBase64) {
-      this.selectedImageUrl = event.logoBase64;
+      this.selectedImageUrl.set(event.logoBase64);
     }
 
     this.setupNameChangeListener();
-    this.error = null;
+    this.error.set(null);
   }
 
   onSubmit(): void {
@@ -141,12 +146,12 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.eventId) {
-      this.error = 'Event ID is missing - cannot update event';
+    if (!this.eventId()) {
+      this.error.set('Event ID is missing - cannot update event');
       return;
     }
 
-    if (this.selectedFile) {
+    if (this.selectedFile()) {
       this.uploadImageAndNavigate();
       return;
     }
@@ -155,68 +160,64 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   }
 
   private async uploadImageAndNavigate(): Promise<void> {
-    if (!this.selectedFile || !this.eventId) {
+    const file = this.selectedFile();
+    const eventId = this.eventId();
+
+    if (!file || !eventId) {
       return;
     }
 
-    this.isUploading = true;
-    this.uploadError = null;
+    this.isUploading.set(true);
+    this.uploadError.set(null);
 
     try {
-      const compressedFile : File = await this.compressImage(this.selectedFile);
+      const compressedFile = await this.compressImage(file);
 
       if (compressedFile.size > this.MAX_FILE_SIZE) {
-        this.uploadError = 'L\'image est encore trop volumineuse après compression. Essayez une image plus petite.';
+        this.uploadError.set('L\'image est encore trop volumineuse après compression. Essayez une image plus petite.');
         return;
       }
 
-      const base64Image : string = await this.convertToBase64(compressedFile);
-
+      const base64Image = await this.convertToBase64(compressedFile);
       const updateData = {
-        idEvent: this.eventId,
+        idEvent: eventId,
         logoBase64: base64Image
       };
 
       this.eventService.updateEvent(updateData).subscribe({
         next: (response) => {
           console.log('Logo saved successfully:', response);
-          this.selectedImageUrl = base64Image;
-
-          if (this.selectedImageUrl && this.selectedImageUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(this.selectedImageUrl);
-          }
-
+          this.handleImageUploadSuccess(base64Image);
           this.navigateToTeam();
         },
         error: (err) => {
-          console.error('Upload error:', err);
-          this.uploadError = 'Erreur lors de la sauvegarde. Veuillez réessayer.';
+          this.handleImageUploadError(err);
         },
         complete: () => {
-          this.isUploading = false;
+          this.isUploading.set(false);
         }
       });
 
     } catch (error) {
       console.error('Error processing image:', error);
-      this.uploadError = 'Erreur lors du traitement de l\'image.';
-      this.isUploading = false;
+      this.uploadError.set('Erreur lors du traitement de l\'image.');
+      this.isUploading.set(false);
     }
   }
 
   private updateEventAndNavigate(): void {
     const formValues = this.eventForm.getRawValue();
     const updatedEvent = {
-      idEvent: this.eventId,
+      idEvent: this.eventId(),
       eventName: formValues.eventName,
       url: formValues.eventURL.replace(this.BASE_URL, ''),
       webLinkUrl: formValues.weblink,
     };
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.eventService.updateEvent(updatedEvent)
-      .pipe(finalize(() => this.isLoading = false))
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (response) => {
           this.handleEventUpdated(response);
@@ -229,42 +230,45 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   }
 
   private navigateToTeam(): void {
-    if (this.teamId) {
-      this.router.navigate(['/team', this.teamId]);
+    const teamId = this.teamId();
+    if (teamId) {
+      this.router.navigate(['/team', teamId]);
     } else {
-      this.error = 'Team ID is missing, cannot navigate back to team page';
+      this.error.set('Team ID is missing, cannot navigate back to team page');
     }
   }
 
   private subscribeToRouteParams(): void {
     this.routeSubscription = this.route.paramMap.subscribe(params => {
-      this.eventId = params.get('eventId') || '';
+      const eventIdParam = params.get('eventId') || '';
+      this.eventId.set(eventIdParam);
 
-      if (this.eventId) {
+      if (eventIdParam) {
         this.loadEventData();
       } else {
-        this.error = 'Event ID is missing from route parameters';
-        this.isLoading = false;
+        this.error.set('Event ID is missing from route parameters');
+        this.isLoading.set(false);
       }
     });
   }
 
   loadEventData(): void {
-    if (!this.eventId) {
-      this.error = 'Event ID is required to load event data';
-      this.isLoading = false;
+    const eventId = this.eventId();
+    if (!eventId) {
+      this.error.set('Event ID is required to load event data');
+      this.isLoading.set(false);
       return;
     }
 
-    this.eventService.getEventById(this.eventId)
-      .pipe(finalize(() => this.isLoading = false))
+    this.eventService.getEventById(eventId)
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (event) => {
           this.handleEventDataLoaded(event);
+          this.eventUrl.set(event.url || '');
 
-          this.eventUrl = event.url || '';
           this.eventDataService.loadEvent({
-            idEvent: event.idEvent || this.eventId,
+            idEvent: event.idEvent || eventId,
             eventName: event.eventName || '',
             teamId: event.teamId || '',
             url: event.url || '',
@@ -279,8 +283,9 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   }
 
   triggerFileInput(): void {
-    if (!this.isUploading && this.fileInput) {
-      this.fileInput.nativeElement.click();
+    const fileInputRef = this.fileInput();
+    if (this.canUpload() && fileInputRef) {
+      fileInputRef.nativeElement.click();
     }
   }
 
@@ -294,19 +299,19 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.isDragOver = true;
+    this.isDragOver.set(true);
   }
 
   onDragLeave(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.isDragOver = false;
+    this.isDragOver.set(false);
   }
 
   onDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.isDragOver = false;
+    this.isDragOver.set(false);
 
     const files = event.dataTransfer?.files;
     if (files && files.length > 0) {
@@ -315,30 +320,101 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   }
 
   private handleFile(file: File): void {
-    this.uploadError = null;
+    this.uploadError.set(null);
 
-    if (!this.ALLOWED_TYPES.includes(file.type)) {
-      this.uploadError = 'Unsupported file format. Use JPEG, PNG, WEBP, or AVIF.';
+    if (!this.ALLOWED_TYPES.includes(file.type as any)) {
+      this.uploadError.set('Unsupported file format. Use JPEG, PNG, WEBP, or AVIF.');
       return;
     }
 
     if (file.size > this.MAX_FILE_SIZE) {
-      this.uploadError = 'The file is too large. Maximum size: 300KB.';
+      this.uploadError.set('The file is too large. Maximum size: 300KB.');
       return;
     }
 
-    if (this.selectedImageUrl) {
-      URL.revokeObjectURL(this.selectedImageUrl);
-    }
+    this.cleanupImageUrl();
+    this.selectedFile.set(file);
+    this.selectedImageUrl.set(URL.createObjectURL(file));
+  }
 
-    this.selectedFile = file;
-    this.selectedImageUrl = URL.createObjectURL(file);
+  onImageError(event: Event): void {
+    console.error('Error loading image:', event);
+    this.uploadError.set('Erreur lors du chargement de l\'image.');
+    this.selectedImageUrl.set(null);
+  }
+
+  removeImage(event: Event): void {
+    event.stopPropagation();
+
+    const imageUrl = this.selectedImageUrl();
+    const isExistingImage = imageUrl && imageUrl.startsWith('data:image');
+
+    if (isExistingImage) {
+      this.removeImageFromServer();
+    } else {
+      this.resetImageState();
+    }
+  }
+
+  private removeImageFromServer(): void {
+    const updateData = {
+      idEvent: this.eventId(),
+      logoBase64: ''
+    };
+
+    this.isUploading.set(true);
+    this.eventService.updateEvent(updateData).subscribe({
+      next: (response) => {
+        console.log('Logo deleted successfully', response);
+        if (!response.logoBase64 || response.logoBase64.trim() === '') {
+          this.resetImageState();
+        } else {
+          this.uploadError.set('Erreur: le logo n\'a pas été supprimé côté serveur.');
+        }
+      },
+      error: (err) => {
+        console.error('Error deleting logo:', err);
+        this.uploadError.set('Erreur lors de la suppression du logo.');
+      },
+      complete: () => {
+        this.isUploading.set(false);
+      }
+    });
+  }
+
+  private resetImageState(): void {
+    this.cleanupImageUrl();
+    this.selectedImageUrl.set(null);
+    this.selectedFile.set(null);
+    this.uploadError.set(null);
+
+    const fileInputRef = this.fileInput();
+    if (fileInputRef) {
+      fileInputRef.nativeElement.value = '';
+    }
+  }
+
+  private cleanupImageUrl(): void {
+    const imageUrl = this.selectedImageUrl();
+    if (imageUrl && imageUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(imageUrl);
+    }
+  }
+
+  private handleImageUploadSuccess(base64Image: string): void {
+    this.selectedImageUrl.set(base64Image);
+    this.cleanupImageUrl();
+  }
+
+  private handleImageUploadError(err: any): void {
+    console.error('Upload error:', err);
+    this.uploadError.set('Erreur lors de la sauvegarde. Veuillez réessayer.');
   }
 
   private initializeForm(): FormGroup {
     return this.fb.group({
-      eventName: [{value: '', disabled: false}, Validators.required],
-      eventURL: {value: '', disabled: true},
+      eventName: [{ value: '', disabled: false }, Validators.required],
+      eventURL: { value: '', disabled: true },
       weblink: ['']
     });
   }
@@ -349,9 +425,7 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
 
       if (showEmailModal === 'true') {
         const modal = document.getElementById('crud-modal');
-        if (modal) {
-          modal.classList.remove('hidden');
-        }
+        modal?.classList.remove('hidden');
       }
     });
   }
@@ -377,11 +451,11 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
 
   private handleEventDataError(err: any): void {
     console.error('Error loading event data:', err);
-    this.error = 'Failed to load event details. Please try again.';
-    this.isLoading = false;
+    this.error.set('Failed to load event details. Please try again.');
+    this.isLoading.set(false);
   }
 
-  setupNameChangeListener(): void {
+  private setupNameChangeListener(): void {
     if (this.nameChangeSubscription) {
       this.nameChangeSubscription.unsubscribe();
     }
@@ -400,21 +474,17 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
   }
 
   private handleEventUpdated(event: any): void {
-    this.eventName = event.eventName || event.name;
-    this.eventUrl = event.url || '';
+    this.eventName.set(event.eventName || event.name);
+    this.eventUrl.set(event.url || '');
   }
 
   private handleEventUpdateError(err: any): void {
-    this.error = 'Failed to update event. Please try again.';
+    this.error.set('Failed to update event. Please try again.');
   }
 
   private unsubscribeAll(): void {
-    if (this.nameChangeSubscription) {
-      this.nameChangeSubscription.unsubscribe();
-    }
-    if (this.routeSubscription) {
-      this.routeSubscription.unsubscribe();
-    }
+    this.nameChangeSubscription?.unsubscribe();
+    this.routeSubscription?.unsubscribe();
   }
 
   private convertToBase64(file: File): Promise<string> {
@@ -427,63 +497,5 @@ export class CustomizeEventComponent implements OnInit, OnDestroy {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
-  }
-
-  onImageError(event: Event): void {
-    console.error('Error loading image:', event);
-    this.uploadError = 'Erreur lors du chargement de l\'image.';
-    this.selectedImageUrl = null;
-  }
-
-  removeImage(event: Event): void {
-    event.stopPropagation();
-
-    const isExistingImage = this.selectedImageUrl && this.selectedImageUrl.startsWith('data:image');
-
-    if (isExistingImage) {
-      const updateData = {
-        idEvent: this.eventId,
-        logoBase64: ''
-      };
-
-      this.isUploading = true;
-      this.eventService.updateEvent(updateData).subscribe({
-        next: (response) => {
-          console.log('Logo deleted successfully', response);
-          if (!response.logoBase64 || response.logoBase64.trim() === '') {
-            this.resetImageState();
-          } else {
-            this.uploadError = 'Erreur: le logo n\'a pas été supprimé côté serveur.';
-          }
-        },
-        error: (err) => {
-          console.error('Error deleting logo:', err);
-          this.uploadError = 'Erreur lors de la suppression du logo.';
-        },
-        complete: () => {
-          this.isUploading = false;
-        }
-      });
-    } else {
-      this.resetImageState();
-    }
-  }
-
-  private resetImageState(): void {
-    if (this.selectedImageUrl && this.selectedImageUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(this.selectedImageUrl);
-    }
-
-    this.selectedImageUrl = null;
-    this.selectedFile = null;
-    this.uploadError = null;
-
-    if (this.fileInput) {
-      this.fileInput.nativeElement.value = '';
-    }
-  }
-
-  get isProcessing(): boolean {
-    return this.isUploading || this.isLoading;
   }
 }

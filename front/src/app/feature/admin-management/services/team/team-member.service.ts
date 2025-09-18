@@ -50,7 +50,7 @@ export class TeamMemberService {
             ).pipe(
               catchError(error => {
                 console.error('Failed to send invitation email:', error);
-                return of(null);
+                return of({ success: false, error: error.message });
               }),
               map(() => addedMember)
             );

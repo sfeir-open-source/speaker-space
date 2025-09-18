@@ -12,7 +12,6 @@ import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from '@angular/material/
 })
 export class AuthErrorDialogComponent {
   constructor(
-    public dialogRef: MatDialogRef<AuthErrorDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: {
       email?: string,
       message: string,

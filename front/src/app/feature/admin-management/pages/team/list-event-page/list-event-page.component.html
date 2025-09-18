@@ -1,7 +1,7 @@
 <app-navbar-team-page
-  [teamUrl]="teamUrl"
-  [teamId]="teamId"
-  [teamName]="teamName"
+  [teamUrl]="teamUrl()"
+  [teamId]="teamId()"
+  [teamName]="teamName()"
 />
 
 <main class="flex flex-col mt-5 w-full items-center relative">
@@ -19,34 +19,42 @@
              aria-label="Event filters">
           <button
             class="flex items-center rounded-md py-0.5 px-6 sm:px-12 text-sm cursor-pointer transition-all"
-            [ngClass]="activeTab === 'Archived' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-800'"
+            [class.bg-white]="activeTab() === 'Archived'"
+            [class.text-gray-800]="true"
+            [class.shadow-sm]="activeTab() === 'Archived'"
             (click)="setActiveTab('Archived')"
-            [attr.aria-selected]="activeTab === 'Archived'">
+            [attr.aria-selected]="activeTab() === 'Archived'"
+            type="button">
             Archived
           </button>
 
           <button
             class="flex items-center rounded-md py-0.5 px-6 sm:px-12 text-sm cursor-pointer transition-all"
-            [ngClass]="activeTab === 'Active' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-800'"
+            [class.bg-white]="activeTab() === 'Active'"
+            [class.text-gray-800]="true"
+            [class.shadow-sm]="activeTab() === 'Active'"
             (click)="setActiveTab('Active')"
-            [attr.aria-selected]="activeTab === 'Active'">
+            [attr.aria-selected]="activeTab() === 'Active'"
+            type="button">
             Active
           </button>
         </nav>
+
         <app-button-grey
           type="submit"
           [buttonHandler]="addEvent.bind(this)"
           materialIcon="add"
-          customTextClass = "text-gray-600 hover:text-gray-600"
+          customTextClass="text-gray-600 hover:text-gray-600"
           class="rounded-md text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
           New Event
         </app-button-grey>
       </article>
     </div>
   </section>
+
   <section class="w-full px-4 md:px-0 sm:w-4/5 max-w-5xl">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      @for(field of formFields; track field.title){
+      @for(field of formFields(); track field.idEvent) {
         <app-event-team-card [field]="field"/>
       }
     </div>

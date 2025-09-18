@@ -1,7 +1,7 @@
 <main class="flex flex-col mt-10 items-center" xmlns="http://www.w3.org/1999/html">
   <section class="w-full sm:w-4/5 max-w-5xl">
     <article class="w-full p-2 sm:w-4/5 max-w-5xl">
-      @if (activePage === 'pageOne') {
+      @if (activePage() === 'pageOne') {
         <h1 class="text-2xl font-medium">Create a new event.</h1>
         <p class="mt-2 text-sm text-gray-600">
           You will able to setup the call for paper later and make the event public or private.
@@ -14,14 +14,14 @@
       }
       <div class="radio-container flex mt-4 space-x-4 pb-4">
         <p class="text-sm font-semibold text-gray-600">
-          Step {{ activePage === 'pageOne' ? '1' : '2' }} of 2
+          Step {{ activePage() === 'pageOne' ? '1' : '2' }} of 2
         </p>
         <label class="flex items-center cursor-pointer">
           <input
             type="radio"
             class="custom-radio"
             name="pageSelector"
-            [checked]="activePage === 'pageOne'"
+            [checked]="activePage() === 'pageOne'"
             (change)="changePage('pageOne')"
           />
         </label>
@@ -31,14 +31,14 @@
             type="radio"
             class="custom-radio"
             name="pageSelector"
-            [checked]="activePage === 'pageTwo'"
+            [checked]="activePage() === 'pageTwo'"
             (change)="changePage('pageTwo')"
           />
         </label>
       </div>
     </article>
 
-    @if (activePage === 'pageOne') {
+    @if (activePage() === 'pageOne') {
       <app-general-info-event
         mode="create"
         (formSubmitted)="onGeneralFormSubmitted($event)"

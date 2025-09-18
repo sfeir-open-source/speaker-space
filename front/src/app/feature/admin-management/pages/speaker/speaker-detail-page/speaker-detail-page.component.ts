@@ -26,13 +26,11 @@ export class SpeakerDetailPageComponent implements OnInit, OnDestroy {
   speaker: Speaker | null = null;
 
   readonly detailService = inject(BaseDetailService);
-  readonly state$: Observable<DetailState> = this.detailService.state$;
+  readonly route = inject(ActivatedRoute);
+  readonly speakerService = inject(SpeakerService);
+  readonly socialLinkService = inject(SocialLinkService);
 
-  constructor(
-    private route: ActivatedRoute,
-    private speakerService: SpeakerService,
-    private socialLinkService: SocialLinkService
-  ) {}
+  readonly state$: Observable<DetailState> = this.detailService.state$;
 
   ngOnInit(): void {
     this.initializeRouteSubscription();
@@ -54,7 +52,7 @@ export class SpeakerDetailPageComponent implements OnInit, OnDestroy {
     this.speakerId = params['speakerId'];
     const eventId = params['eventId'];
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       this.speakerService.getSpeakerById(eventId, this.speakerId)
         .pipe(takeUntilDestroyed(this.detailService['destroyRef']))
         .subscribe({
@@ -62,7 +60,7 @@ export class SpeakerDetailPageComponent implements OnInit, OnDestroy {
             this.speaker = speaker;
             resolve();
           },
-          error: (err) => {
+          error: (err: Error) => {
             this.detailService.updateState({
               error: 'Failed to load speaker data. Please check if the speaker exists.'
             });
@@ -77,7 +75,7 @@ export class SpeakerDetailPageComponent implements OnInit, OnDestroy {
       return [];
     }
 
-    return this.speaker.socialLinks.map(link =>
+    return this.speaker.socialLinks.map((link: string) =>
       this.socialLinkService.parseSocialLink(link)
     );
   }
