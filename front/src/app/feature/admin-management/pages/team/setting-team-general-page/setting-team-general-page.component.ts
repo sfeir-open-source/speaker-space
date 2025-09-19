@@ -3,7 +3,7 @@ import { FormBuilder, FormControl, FormGroup, FormsModule, Validators } from '@a
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { InputComponent } from '../../../../../shared/input/input.component';
+import { FieldComponent } from '../../../../../shared/input/field.component';
 import { NavbarTeamPageComponent } from '../../../components/team/navbar-team-page/navbar-team-page.component';
 import { SidebarTeamComponent } from '../../../components/team/sidebar-team/sidebar-team.component';
 import { FormField } from '../../../../../shared/input/interface/form-field';
@@ -20,7 +20,7 @@ import { DangerZoneConfig } from '../../../type/components/danger-zone';
   selector: 'app-setting-team-general-page',
   standalone: true,
   imports: [
-    InputComponent,
+    FieldComponent,
     NavbarTeamPageComponent,
     FormsModule,
     SidebarTeamComponent,

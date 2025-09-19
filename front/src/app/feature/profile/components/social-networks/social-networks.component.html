@@ -6,7 +6,7 @@
 
   <h2 class="mt-2 text-xl font-medium">Social links</h2>
   @for(field of socialLinkFields; track field.name) {
-    <app-input
+    <app-field
       [label]="field.label"
       [placeholder]="field.placeholder"
       [type]="field.type"
@@ -14,7 +14,7 @@
       [required]="field.required || false"
       [iconPath]="field.iconPath || ''"
       [name]="field.name">
-    </app-input>
+    </app-field>
   }
 
   <div class="flex justify-start my-4">
@@ -29,12 +29,12 @@
 
   <h2 class="mt-2 text-xl font-medium">Other Links</h2>
   <div class="mt-3">
-    <app-input
+    <app-field
       [type]="otherLinkField.type"
       [control]="getFormControl(otherLinkField.name)"
       [icon]="otherLinkField.icon || ''"
       [name]="otherLinkField.name">
-    </app-input>
+    </app-field>
   </div>
 
   <div class="flex justify-start my-4">

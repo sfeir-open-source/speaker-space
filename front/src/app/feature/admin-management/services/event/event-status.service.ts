@@ -1,5 +1,12 @@
 import { Injectable } from '@angular/core';
-import {Event} from '../../type/event/event';
+import {
+  isBefore,
+  startOfDay,
+  differenceInDays,
+  parseISO,
+  isValid
+} from 'date-fns';
+import { Event } from '../../type/event/event';
 
 export interface EventStatus {
   isFinished: boolean;
@@ -14,9 +21,6 @@ export interface EventStatus {
 export class EventStatusService {
 
   getEventStatus(event: Event): EventStatus {
-    const now = new Date();
-    const endDate : Date | null = event.endDate ? new Date(event.endDate) : null;
-
     if (event.isFinish === true) {
       return {
         isFinished: true,
@@ -25,6 +29,15 @@ export class EventStatusService {
       };
     }
 
+    if (!event.endDate) {
+      return {
+        isFinished: false,
+        statusText: 'Open',
+        statusClass: 'bg-green-500'
+      };
+    }
+
+    const endDate = this.parseEventDate(event.endDate);
     if (!endDate) {
       return {
         isFinished: false,
@@ -33,15 +46,14 @@ export class EventStatusService {
       };
     }
 
-    const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-    const nowDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = startOfDay(new Date());
+    const eventEndDay = startOfDay(endDate);
 
-    const isFinished : boolean = endDateOnly < nowDateOnly;
+    const isFinished = isBefore(eventEndDay, today);
 
     let daysRemaining: number | undefined;
     if (!isFinished) {
-      const timeDiff : number = endDateOnly.getTime() - nowDateOnly.getTime();
-      daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      daysRemaining = differenceInDays(eventEndDay, today) + 1;
     }
 
     return {
@@ -59,18 +71,20 @@ export class EventStatusService {
     });
   }
 
-  getEventCounts(events: Event[]): { active: number; archived: number } {
-    const counts = { active: 0, archived: 0 };
-
-    events.forEach(event => {
-      const status = this.getEventStatus(event);
-      if (status.isFinished) {
-        counts.archived++;
-      } else {
-        counts.active++;
+  private parseEventDate(dateInput: string | Date): Date | null {
+    try {
+      if (dateInput instanceof Date) {
+        return isValid(dateInput) ? dateInput : null;
       }
-    });
 
-    return counts;
+      if (typeof dateInput === 'string') {
+        const parsed = parseISO(dateInput);
+        return isValid(parsed) ? parsed : null;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
   }
 }

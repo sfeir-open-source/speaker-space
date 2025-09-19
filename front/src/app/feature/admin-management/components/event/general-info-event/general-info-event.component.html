@@ -28,7 +28,7 @@
           </p>
         }
 
-        <app-input
+        <app-field
           [label]="field.label"
           [placeholder]="field.placeholder"
           [paragraph]="field.paragraph"
@@ -39,7 +39,7 @@
           [options]="field.options || []"
           [disabled]="field.disabled"
           [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted">
-        </app-input>
+        </app-field>
       </div>
     }
 

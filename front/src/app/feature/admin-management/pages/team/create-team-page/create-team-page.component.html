@@ -10,13 +10,13 @@
     <article class="mt-5 w-full max-w-5xl flex-grow bg-white shadow-xs border border-gray-200 rounded-lg p-5">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         @for(field of formFields; track field.name) {
-          <app-input
+          <app-field
             [label]="field.label"
             [placeholder]="field.placeholder"
             [type]="field.type"
             [control]="getFormControl(field.name)"
             [name]="field.name">
-          </app-input>
+          </app-field>
         }
 
         <div class="flex justify-end p-4">

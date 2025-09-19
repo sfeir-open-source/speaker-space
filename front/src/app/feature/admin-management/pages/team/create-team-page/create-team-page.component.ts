@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { InputComponent } from '../../../../../shared/input/input.component';
+import { FieldComponent } from '../../../../../shared/input/field.component';
 import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
 import { TeamService } from '../../../services/team/team.service';
 import { FormField } from '../../../../../shared/input/interface/form-field';
@@ -14,7 +14,7 @@ import { Team } from '../../../type/team/team';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    InputComponent,
+    FieldComponent,
     ButtonGreenActionsComponent,
   ],
   templateUrl: './create-team-page.component.html',

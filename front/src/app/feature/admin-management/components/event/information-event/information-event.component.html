@@ -25,7 +25,7 @@
             </p>
           }
 
-          <app-input
+          <app-field
             [label]="field.label"
             [placeholder]="field.placeholder"
             [type]="field.type"
@@ -33,7 +33,7 @@
             [name]="field.name"
             [required]="field.required"
             [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted">
-          </app-input>
+          </app-field>
         </div>
       }
     </div>
@@ -59,31 +59,31 @@
       </div>
     </div>
 
-    <app-input
+    <app-field
       [label]="additionalFields[0].label"
       [placeholder]="additionalFields[0].placeholder"
       [type]="additionalFields[0].type"
       [control]="getFormControl(additionalFields[0].name)"
       [name]="additionalFields[0].name">
-    </app-input>
+    </app-field>
 
-    <app-input
+    <app-field
       [label]="additionalFields[1].label"
       [placeholder]="additionalFields[1].placeholder"
       [type]="additionalFields[1].type"
       [control]="getFormControl(additionalFields[1].name)"
       [name]="additionalFields[1].name">
-    </app-input>
+    </app-field>
 
     <div class="input-markdown-container">
-      <app-input
+      <app-field
         [label]="additionalFields[2].label"
         [type]="additionalFields[2].type"
         [control]="getFormControl(additionalFields[2].name)"
         [name]="additionalFields[2].name"
         [rows]="7"
         [customClass]="'!resize-none rounded-b-none border-b-0'">
-      </app-input>
+      </app-field>
     </div>
 
     @if (showNavigationButtons) {

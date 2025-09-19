@@ -1,31 +1,32 @@
 import {
-  booleanAttribute,
   Component,
   output,
   input,
   computed,
   effect,
   signal,
-  DestroyRef,
   inject
 } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import {Observable} from 'rxjs';
+import {IconService} from './service/icon.service';
 
 @Component({
-  selector: 'app-input',
+  selector: 'app-field',
   standalone: true,
   imports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
   ],
-  templateUrl: './input.component.html',
-  styleUrl: './input.component.scss'
+  templateUrl: './field.component.html',
+  styleUrl: './field.component.scss'
 })
-export class InputComponent {
+export class FieldComponent {
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly iconService = inject(IconService);
 
   readonly iconViewBox = input<string>('0 0 16 16');
   readonly label = input<string | undefined>(undefined);
@@ -62,6 +63,7 @@ export class InputComponent {
   readonly blur = output<void>();
 
   private readonly sanitizedIconPath = signal<SafeHtml>('');
+  readonly errorIcon = signal<Observable<SafeHtml> | null>(null);
 
   readonly hasLabel = computed(() => {
     const label = this.label();
@@ -155,6 +157,7 @@ export class InputComponent {
   readonly sanitizedIcon = computed(() => this.sanitizedIconPath());
 
   constructor() {
+    this.errorIcon.set(this.iconService.getIcon('error-outline'));
     effect(() => {
       const iconPath = this.iconPath();
       const iconViewBox = this.iconViewBox();

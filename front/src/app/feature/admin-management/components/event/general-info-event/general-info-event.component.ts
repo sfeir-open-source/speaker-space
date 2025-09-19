@@ -17,7 +17,7 @@ import { BehaviorSubject, debounceTime, Subject } from 'rxjs';
 import 'moment-timezone';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
-import {InputComponent} from '../../../../../shared/input/input.component';
+import {FieldComponent} from '../../../../../shared/input/field.component';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {TimezoneOption} from '../../../type/event/time-zone-option';
 import {Team} from '../../../type/team/team';
@@ -34,7 +34,7 @@ import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-in
 @Component({
   selector: 'app-general-info-event',
   standalone: true,
-  imports: [CommonModule, ButtonGreenActionsComponent, InputComponent, ReactiveFormsModule, ButtonGreyComponent, FormsModule, SaveIndicatorComponent],
+  imports: [CommonModule, ButtonGreenActionsComponent, FieldComponent, ReactiveFormsModule, ButtonGreyComponent, FormsModule, SaveIndicatorComponent],
   templateUrl: './general-info-event.component.html',
   styleUrl: './general-info-event.component.scss'
 })

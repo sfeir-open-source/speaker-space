@@ -1,6 +1,6 @@
 import {Component, inject, Signal} from '@angular/core';
 import { FormControl } from '@angular/forms';
-import {InputComponent} from '../../../../shared/input/input.component';
+import {FieldComponent} from '../../../../shared/input/field.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
 import {ProfileService} from '../../services/profile.service';
 import {UserStateService} from '../../../../core/services/user-services/user-state.service';
@@ -10,7 +10,7 @@ import {UserStateService} from '../../../../core/services/user-services/user-sta
   standalone: true,
   templateUrl: './personal-info.component.html',
   imports: [
-    InputComponent,
+    FieldComponent,
   ],
   styleUrls: ['./personal-info.component.scss']
 })

@@ -1,13 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { InputComponent } from './input.component';
+import { FieldComponent } from './field.component';
 import { ButtonGreenActionsComponent } from '../button-green-actions/button-green-actions.component';
 import { FormField } from './interface/form-field';
 
 describe('FormComponent', () => {
-  let component: InputComponent;
-  let fixture: ComponentFixture<InputComponent>;
+  let component: FieldComponent;
+  let fixture: ComponentFixture<FieldComponent>;
 
   const mockFields: FormField[] = [
     {
@@ -29,14 +29,14 @@ describe('FormComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        InputComponent,
+        FieldComponent,
         ReactiveFormsModule,
         ButtonGreenActionsComponent
       ]
     })
       .compileComponents();
 
-    fixture = TestBed.createComponent(InputComponent);
+    fixture = TestBed.createComponent(FieldComponent);
     component = fixture.componentInstance;
 
     component.fields = mockFields;

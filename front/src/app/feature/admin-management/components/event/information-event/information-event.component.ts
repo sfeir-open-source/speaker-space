@@ -3,7 +3,7 @@ import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, V
 import {Subject, Subscription} from 'rxjs';
 import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
-import {InputComponent} from '../../../../../shared/input/input.component';
+import {FieldComponent} from '../../../../../shared/input/field.component';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {EventDataService} from '../../../services/event/event-data.service';
 import {TeamService} from '../../../services/team/team.service';
@@ -22,7 +22,7 @@ import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-in
     ButtonGreyComponent,
     ReactiveFormsModule,
     FormsModule,
-    InputComponent,
+    FieldComponent,
     SaveIndicatorComponent
   ],
   templateUrl: './information-event.component.html',

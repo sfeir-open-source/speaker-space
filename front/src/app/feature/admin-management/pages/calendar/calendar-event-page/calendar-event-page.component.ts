@@ -36,7 +36,7 @@ export class CalendarEventPageComponent implements OnInit, OnDestroy {
 
   readonly HOUR_HEIGHT: number = 120;
   readonly START_HOUR: number = 9;
-  readonly END_HOUR: number = 19;
+  readonly END_HOUR: number = 18;
 
   readonly listService = inject(BaseListService<CalendarSessionData>);
   readonly state$: Observable<ListState> = this.listService.state$;
@@ -120,14 +120,6 @@ export class CalendarEventPageComponent implements OnInit, OnDestroy {
 
   get eventName(): string {
     return this.listService.getCurrentState().eventName;
-  }
-
-  get eventUrl(): string {
-    return this.listService.getCurrentState().eventUrl;
-  }
-
-  get eventId(): string {
-    return this.listService.getCurrentState().eventId;
   }
 
   get teamId(): string {
@@ -215,7 +207,6 @@ export class CalendarEventPageComponent implements OnInit, OnDestroy {
       day: 'numeric'
     });
   }
-
   formatSessionTime(session: CalendarSession): string {
     const start: string = session.startTime.toLocaleTimeString('en-EN', {
       hour: '2-digit',

@@ -1,17 +1,34 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import {environment} from '../../../../../environments/environment.development';
-import {CalendarDayData, CalendarSession, CalendarSessionData, TrackColumn} from '../../type/calendar/calendar';
+import {
+  parseISO,
+  isSameDay,
+  differenceInMinutes,
+  getHours,
+  getMinutes,
+  isValid,
+  min,
+  max
+} from 'date-fns';
+import { environment } from '../../../../../environments/environment.development';
+import {
+  CalendarDayData,
+  CalendarSession,
+  CalendarSessionData,
+  TrackColumn
+} from '../../type/calendar/calendar';
 
-const HOUR_HEIGHT : number = 120;
+const HOUR_HEIGHT = 120 as const;
+const DEFAULT_START_HOUR = 9 as const;
+const MIN_SESSION_HEIGHT = 30 as const;
 
 @Injectable({
   providedIn: 'root'
 })
 export class CalendarService {
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   getCalendarSessions(eventId: string): Observable<CalendarSessionData[]> {
     return this.http.get<CalendarSessionData[]>(
@@ -46,11 +63,11 @@ export class CalendarService {
   }
 
   private getSessionsForDate(sessions: CalendarSessionData[], date: Date): CalendarSessionData[] {
-    const targetDate : string = this.formatDateOnly(date);
     return sessions.filter(session => {
       if (!session.start) return false;
-      const sessionDate : string = this.formatDateOnly(new Date(session.start));
-      return sessionDate === targetDate;
+
+      const sessionDate = this.parseSessionDate(session.start);
+      return sessionDate ? isSameDay(sessionDate, date) : false;
     });
   }
 
@@ -64,49 +81,80 @@ export class CalendarService {
       session.end
     );
 
-    return trackSessions.map(session => {
-      const startTime = new Date(session.start);
-      const endTime = new Date(session.end);
-      const duration: number = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-
-      return {
-        session,
-        startTime,
-        endTime,
-        duration,
-        track,
-        topPosition: this.calculateTopPosition(startTime),
-        height: this.calculateHeight(duration)
-      };
-    }).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    return trackSessions
+      .map(session => this.createCalendarSession(session, track))
+      .filter((session): session is CalendarSession => session !== null)
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }
 
-  private calculateTopPosition(startTime: Date, startHour: number = 8): number {
-    const hours : number = startTime.getHours();
-    const minutes: number = startTime.getMinutes();
-    const totalMinutes: number = (hours - startHour) * 60 + minutes;
+  private createCalendarSession(
+    session: CalendarSessionData,
+    track: string
+  ): CalendarSession | null {
+    const startTime = this.parseSessionDate(session.start);
+    const endTime = this.parseSessionDate(session.end);
+
+    if (!startTime || !endTime) {
+      console.warn('Session avec dates invalides ignorée:', session);
+      return null;
+    }
+
+    const duration : number = differenceInMinutes(endTime, startTime);
+
+    return {
+      session,
+      startTime,
+      endTime,
+      duration,
+      track,
+      topPosition: this.calculateTopPosition(startTime),
+      height: this.calculateHeight(duration)
+    };
+  }
+
+  private calculateTopPosition(
+    startTime: Date,
+    startHour: number = DEFAULT_START_HOUR
+  ): number {
+    const hours : number = getHours(startTime);
+    const minutes : number = getMinutes(startTime);
+    const totalMinutes : number = (hours - startHour) * 60 + minutes;
     return (totalMinutes / 60) * HOUR_HEIGHT;
   }
 
   private calculateHeight(durationMinutes: number): number {
-    return Math.max((durationMinutes / 60) * HOUR_HEIGHT, 30);
+    return Math.max((durationMinutes / 60) * HOUR_HEIGHT, MIN_SESSION_HEIGHT);
   }
 
-  private formatDateOnly(date: Date): string {
-    return date.toISOString().split('T')[0];
+  private parseSessionDate(dateInput: string | Date | undefined): Date | null {
+    if (!dateInput) return null;
+
+    try {
+      if (dateInput instanceof Date) {
+        return isValid(dateInput) ? dateInput : null;
+      }
+
+      if (typeof dateInput === 'string') {
+        const parsed = parseISO(dateInput);
+        return isValid(parsed) ? parsed : null;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   getEventDateRange(sessions: CalendarSessionData[]): { start: Date; end: Date } | null {
-    if (!sessions.length) return null;
+    const validDates = sessions
+      .map(s => this.parseSessionDate(s.start))
+      .filter((date): date is Date => date !== null);
 
-    const dates = sessions
-      .filter(s => s.start)
-      .map(s => new Date(s.start))
-      .sort((a, b) => a.getTime() - b.getTime());
+    if (validDates.length === 0) return null;
 
     return {
-      start: dates[0],
-      end: dates[dates.length - 1]
+      start: min(validDates),
+      end: max(validDates)
     };
   }
 }

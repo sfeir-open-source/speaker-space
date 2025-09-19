@@ -6,7 +6,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 })
 export class UserRoleService {
   private roleSubject = new BehaviorSubject<string>('');
-  public role$ = this.roleSubject.asObservable();
+  private role$ = this.roleSubject.asObservable();
 
   setRole(role: string): void {
     this.roleSubject.next(role);
