@@ -16,7 +16,7 @@ import { NavbarButton, NavbarConfig } from '../../type/components/navbar-config'
   templateUrl: './navbar-admin-page.component.html',
   styleUrl: './navbar-admin-page.component.scss'
 })
-export class NavbarAdminPageComponent implements OnInit, OnDestroy {
+export class NavbarAdminPageComponent implements OnInit {
   readonly config = input<NavbarConfig>({ leftButtons: [] });
   readonly activePage = input<string>('');
   readonly userRole = input<string>('');
@@ -68,11 +68,6 @@ export class NavbarAdminPageComponent implements OnInit, OnDestroy {
           this._currentUserRole.set(role);
         }
       });
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   onButtonClick(button: NavbarButton): void {

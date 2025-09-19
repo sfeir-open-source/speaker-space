@@ -1,10 +1,10 @@
-import { Component, OnDestroy, OnInit, input, signal, effect } from '@angular/core';
+import {Component, OnInit, input, signal, effect, inject, DestroyRef} from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
 import { AuthService } from '../../../../../core/login/services/auth.service';
 import { UserRoleService } from '../../../services/team/user-role.service';
 import { NavbarAdminPageComponent } from '../../navbar-admin-page/navbar-admin-page.component';
 import { NavbarConfig } from '../../../type/components/navbar-config';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-navbar-session-page',
@@ -15,31 +15,28 @@ import { NavbarConfig } from '../../../type/components/navbar-config';
   templateUrl: './navbar-session-page.component.html',
   styleUrl: './navbar-session-page.component.scss'
 })
-export class NavbarSessionPageComponent implements OnInit, OnDestroy {
-  eventId = input<string>('');
-  eventUrl = input<string>('');
-  eventName = input<string>('');
-  userRole = input<string>('');
-  sessionId = input<string>('');
+export class NavbarSessionPageComponent implements OnInit {
+  readonly eventId = input<string>('');
+  readonly eventUrl = input<string>('');
+  readonly eventName = input<string>('');
+  readonly userRole = input<string>('');
+  readonly sessionId = input<string>('');
 
-  activePage = signal<string>('');
-  currentUserRole = signal<string>('Member');
-  navbarConfig = signal<NavbarConfig>({
+  readonly activePage = signal<string>('');
+  readonly currentUserRole = signal<string>('Member');
+  readonly navbarConfig = signal<NavbarConfig>({
     leftButtons: [],
     rightContent: undefined,
     rightButtonConfig: undefined
   });
 
   private currentUser = signal<any>(null);
-  private userSubscription?: Subscription;
-  private roleSubscription?: Subscription;
-  private routerSubscription?: Subscription;
+  private readonly router = inject(Router);
+  private readonly authService = inject(AuthService);
+  private readonly userRoleService = inject(UserRoleService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  constructor(
-    private router: Router,
-    private authService: AuthService,
-    private userRoleService: UserRoleService,
-  ) {
+  constructor() {
     effect(() => {
       const userRoleValue = this.userRole();
       if (userRoleValue) {
@@ -51,7 +48,7 @@ export class NavbarSessionPageComponent implements OnInit, OnDestroy {
       const eventIdValue = this.eventId();
       const currentUserValue = this.currentUser();
 
-      if (eventIdValue && currentUserValue) {
+      if (eventIdValue && currentUserValue?.uid) {
         this.loadUserRole(currentUserValue.uid);
       }
     });
@@ -68,24 +65,25 @@ export class NavbarSessionPageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.setupNavbarConfig();
-    this.userSubscription = this.authService.user$.subscribe(user => {
-      this.currentUser.set(user);
-      if (user && this.eventId()) {
-        this.loadUserRole(user.uid);
-      }
-    });
-
-    this.userRoleService.getRole().subscribe(role => {
-      if (role) {
-        this.currentUserRole.set(role);
-      }
-    });
+    this.initializeSubscriptions();
   }
 
-  ngOnDestroy(): void {
-    this.userSubscription?.unsubscribe();
-    this.roleSubscription?.unsubscribe();
-    this.routerSubscription?.unsubscribe();
+  private initializeSubscriptions(): void {
+    this.authService.user$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(user => {
+        this.currentUser.set(user);
+        if (user?.uid && this.eventId()) {
+          this.loadUserRole(user.uid);
+        }
+      });
+    this.userRoleService.getRole()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(role => {
+        if (role) {
+          this.currentUserRole.set(role);
+        }
+      });
   }
 
   private setupNavbarConfig(): void {
@@ -95,7 +93,7 @@ export class NavbarSessionPageComponent implements OnInit, OnDestroy {
       rightButtonConfig: {
         label: 'Sessions page',
         icon: 'arrow_forward',
-        handler: this.goToSessionsPage.bind(this),
+        handler: () => this.goToSessionsPage(),
         cssClass: 'flex items-center justify-between text-blue-600 text-sm py-0.5 px-2 rounded-md cursor-pointer hover:bg-blue-50 transition-colors'
       }
     };
@@ -106,8 +104,6 @@ export class NavbarSessionPageComponent implements OnInit, OnDestroy {
   private loadUserRole(userId: string): void {
     const eventIdValue = this.eventId();
     if (!eventIdValue) return;
-
-    this.roleSubscription?.unsubscribe();
   }
 
   private goToSessionsPage(): void {
