@@ -1,11 +1,18 @@
-import { Injectable } from '@angular/core';
-import {SocialLinkInfo} from '../../types/social-link-info';
-import {SocialPlatformConfig} from '../../types/social-platform-config.type';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map, shareReplay } from 'rxjs';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { SocialLinkInfo } from '../../types/social-link-info';
+import { SocialPlatformConfig } from '../../types/social-platform-config.type';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SocialLinkService {
+  private readonly http = inject(HttpClient);
+  private readonly sanitizer = inject(DomSanitizer);
+
+  private readonly svgCache = new Map<string, Observable<SafeHtml>>();
 
   private readonly socialPlatforms: Record<string, SocialPlatformConfig> = {
     github: {
@@ -32,15 +39,37 @@ export class SocialLinkService {
 
   private readonly defaultIconPath = 'assets/icons/social/default-link.svg';
 
-  private getDefaultLinkInfo(url: string, urlObj?: URL): SocialLinkInfo {
-    const displayUrl :string = urlObj ? this.getDisplayUrl(urlObj) : url.replace(/^https?:\/\//, '');
+  loadSvgIcon(iconPath: string, size: string = '16'): Observable<SafeHtml> {
+    const cacheKey = `${iconPath}_${size}`;
 
-    return {
-      platform: 'Website',
-      iconSvg: this.defaultIconPath,
-      displayUrl,
-      fullUrl: url
-    };
+    if (this.svgCache.has(cacheKey)) {
+      return this.svgCache.get(cacheKey)!;
+    }
+
+    const svgObservable = this.http.get(iconPath, { responseType: 'text' }).pipe(
+      map((svgText: string) => {
+        const modifiedSvg = svgText.replace(
+          /<svg([^>]*)>/,
+          `<svg$1 width="${size}" height="${size}" class="text-gray-600 fill-current">`
+        );
+        return this.sanitizer.bypassSecurityTrustHtml(modifiedSvg);
+      }),
+      shareReplay(1)
+    );
+
+    this.svgCache.set(cacheKey, svgObservable);
+    return svgObservable;
+  }
+
+  parseSocialLinkWithIcon(url: string, iconSize: string = '16'): Observable<SocialLinkInfo & { iconContent: SafeHtml }> {
+    const linkInfo = this.parseSocialLink(url);
+
+    return this.loadSvgIcon(linkInfo.iconSvg, iconSize).pipe(
+      map(iconContent => ({
+        ...linkInfo,
+        iconContent
+      }))
+    );
   }
 
   parseSocialLink(url: string): SocialLinkInfo {
@@ -49,9 +78,9 @@ export class SocialLinkService {
     }
 
     try {
-      const normalizedUrl : string = this.normalizeUrl(url);
+      const normalizedUrl: string = this.normalizeUrl(url);
       const urlObj = new URL(normalizedUrl);
-      const domain : string = urlObj.hostname.toLowerCase();
+      const domain: string = urlObj.hostname.toLowerCase();
 
       const platformEntry = Object.entries(this.socialPlatforms)
         .find(([, config]) =>
@@ -75,6 +104,17 @@ export class SocialLinkService {
     }
   }
 
+  private getDefaultLinkInfo(url: string, urlObj?: URL): SocialLinkInfo {
+    const displayUrl: string = urlObj ? this.getDisplayUrl(urlObj) : url.replace(/^https?:\/\//, '');
+
+    return {
+      platform: 'Website',
+      iconSvg: this.defaultIconPath,
+      displayUrl,
+      fullUrl: url
+    };
+  }
+
   private normalizeUrl(url: string): string {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       return `https://${url}`;
@@ -83,7 +123,7 @@ export class SocialLinkService {
   }
 
   private getDisplayUrl(urlObj: URL): string {
-    let displayUrl : string = urlObj.hostname;
+    let displayUrl: string = urlObj.hostname;
 
     if (urlObj.pathname && urlObj.pathname !== '/') {
       displayUrl += urlObj.pathname;

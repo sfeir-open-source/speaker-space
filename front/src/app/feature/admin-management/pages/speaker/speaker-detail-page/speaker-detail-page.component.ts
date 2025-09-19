@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, combineLatest } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AsyncPipe } from '@angular/common';
-
+import { HttpClientModule } from '@angular/common/http';
+import { SafeHtml } from '@angular/platform-browser';
 import { Speaker } from '../../../type/session/session';
 import { NavbarSpeakerPageComponent } from '../../../components/speaker/navbar-speaker-page/navbar-speaker-page.component';
 import { SpeakerService } from '../../../services/speaker/speaker.service';
@@ -11,11 +12,16 @@ import { SocialLinkService } from '../../../../../core/services/social-link-serv
 import { SocialLinkInfo } from '../../../../../core/types/social-link-info';
 import { BaseDetailService, DetailState } from '../../../components/services/base-detail.service';
 
+interface SocialLinkWithIcon extends SocialLinkInfo {
+  iconContent: SafeHtml;
+}
+
 @Component({
   selector: 'app-speaker-detail-page',
   imports: [
     NavbarSpeakerPageComponent,
-    AsyncPipe
+    AsyncPipe,
+    HttpClientModule
   ],
   providers: [BaseDetailService],
   templateUrl: './speaker-detail-page.component.html',
@@ -24,6 +30,8 @@ import { BaseDetailService, DetailState } from '../../../components/services/bas
 export class SpeakerDetailPageComponent implements OnInit, OnDestroy {
   speakerId: string = '';
   speaker: Speaker | null = null;
+
+  readonly socialLinksWithIcons = signal<SocialLinkWithIcon[]>([]);
 
   readonly detailService = inject(BaseDetailService);
   readonly route = inject(ActivatedRoute);
@@ -58,6 +66,7 @@ export class SpeakerDetailPageComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (speaker: Speaker) => {
             this.speaker = speaker;
+            this.loadSocialLinksWithIcons();
             resolve();
           },
           error: (err: Error) => {
@@ -70,14 +79,21 @@ export class SpeakerDetailPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  getParsedSocialLinks(): SocialLinkInfo[] {
+  private loadSocialLinksWithIcons(): void {
     if (!this.speaker?.socialLinks || this.speaker.socialLinks.length === 0) {
-      return [];
+      this.socialLinksWithIcons.set([]);
+      return;
     }
 
-    return this.speaker.socialLinks.map((link: string) =>
-      this.socialLinkService.parseSocialLink(link)
+    const socialLinkObservables = this.speaker.socialLinks.map(link =>
+      this.socialLinkService.parseSocialLinkWithIcon(link, '16')
     );
+
+    combineLatest(socialLinkObservables)
+      .pipe(takeUntilDestroyed(this.detailService['destroyRef']))
+      .subscribe(socialLinksWithIcons => {
+        this.socialLinksWithIcons.set(socialLinksWithIcons);
+      });
   }
 
   onImageError = (event: Event): void => {

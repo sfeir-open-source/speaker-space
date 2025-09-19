@@ -1,6 +1,8 @@
-import {Component, Input} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {SaveStatus} from '../types/save-status.types';
+import { Component, computed, input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { SaveStatus } from '../types/save-status.types';
+
+export type Position = 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 
 @Component({
   selector: 'app-save-indicator',
@@ -10,40 +12,33 @@ import {SaveStatus} from '../types/save-status.types';
   styleUrl: './save-indicator.component.scss'
 })
 export class SaveIndicatorComponent {
-  @Input() status: SaveStatus = 'idle';
-  @Input() savingMessage: string = 'Saving changes...';
-  @Input() savedMessage: string = 'Changes saved!';
-  @Input() errorMessage: string = 'Error saving changes';
-  @Input() position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' = 'bottom-right';
+  status = input<SaveStatus>('idle');
+  savingMessage = input('Saving changes...');
+  savedMessage = input('Changes saved!');
+  errorMessage = input('Error saving changes');
+  position = input<Position>('bottom-right');
 
-  getIcon(): string {
-    switch (this.status) {
+  icon = computed(() => {
+    switch (this.status()) {
       case 'saving': return 'autorenew';
       case 'saved': return 'check_circle';
       case 'error': return 'error';
       default: return '';
     }
-  }
+  });
 
-  getPositionClasses(): string[] {
-    const positionClasses =
-      this.position === 'bottom-right' ? 'bottom-4 right-4' :
-        this.position === 'bottom-left' ? 'bottom-4 left-4' :
-          this.position === 'top-right' ? 'top-4 right-4' :
-            'top-4 left-4';
-
-    return [
-      positionClasses,
-      this.status === 'idle' ? 'opacity-0' : 'opacity-100'
-    ];
-  }
-
-  getMessage(): string {
-    switch (this.status) {
-      case 'saving': return this.savingMessage;
-      case 'saved': return this.savedMessage;
-      case 'error': return this.errorMessage;
+  message = computed(() => {
+    switch (this.status()) {
+      case 'saving': return this.savingMessage();
+      case 'saved': return this.savedMessage();
+      case 'error': return this.errorMessage();
       default: return '';
     }
-  }
+  });
+
+  containerClasses = computed(() => [
+    'save-indicator',
+    this.position(),
+    this.status() === 'idle' ? 'hidden' : 'visible'
+  ]);
 }

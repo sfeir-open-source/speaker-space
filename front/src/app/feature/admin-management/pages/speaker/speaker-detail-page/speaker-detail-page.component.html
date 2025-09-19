@@ -54,11 +54,15 @@
             </address>
 
             <nav class="px-3 pb-6" aria-label="Social media links">
-              @if (speaker.socialLinks && speaker.socialLinks.length > 0) {
+              @if (socialLinksWithIcons() && socialLinksWithIcons().length > 0) {
                 <ul class="space-y-3" role="list">
-                  @for (socialLink of getParsedSocialLinks(); track socialLink.fullUrl) {
+                  @for (socialLink of socialLinksWithIcons(); track socialLink.fullUrl) {
                     <li class="flex items-center gap-3">
-                      <div class="flex-shrink-0 text-gray-600" [innerHTML]="socialLink.iconSvg" aria-hidden="true"></div>
+                      <div
+                        class="flex-shrink-0 w-4 h-4 flex items-center justify-center"
+                        [innerHTML]="socialLink.iconContent"
+                        aria-hidden="true">
+                      </div>
                       <a
                         [href]="socialLink.fullUrl"
                         target="_blank"

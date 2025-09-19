@@ -1,0 +1,90 @@
+:host {
+  --blue-bg: #dbeafe;
+  --blue-icon: #3b82f6;
+  --blue-text: #1d4ed8;
+
+  --green-bg: #dcfce7;
+  --green-icon: #22c55e;
+  --green-text: #15803d;
+
+  --red-bg: #fee2e2;
+  --red-icon: #ef4444;
+  --red-text: #dc2626;
+
+  --spacing: 1rem;
+}
+
+.save-indicator {
+  &.bottom-right, &.bottom-left {
+    bottom: var(--spacing);
+  }
+
+  &.top-right, &.top-left {
+    top: var(--spacing);
+  }
+
+  &.bottom-right, &.top-right {
+    right: var(--spacing);
+  }
+
+  &.bottom-left, &.top-left {
+    left: var(--spacing);
+  }
+
+  &.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &.visible {
+    opacity: 1;
+  }
+}
+
+.indicator-content {
+  &[data-status="saving"] {
+    background-color: var(--blue-bg);
+
+    .indicator-icon {
+      color: var(--blue-icon);
+      animation: spin 1s linear infinite;
+    }
+
+    .indicator-message {
+      color: var(--blue-text);
+    }
+  }
+
+  &[data-status="saved"] {
+    background-color: var(--green-bg);
+
+    .indicator-icon {
+      color: var(--green-icon);
+    }
+
+    .indicator-message {
+      color: var(--green-text);
+    }
+  }
+
+  &[data-status="error"] {
+    background-color: var(--red-bg);
+
+    .indicator-icon {
+      color: var(--red-icon);
+    }
+
+    .indicator-message {
+      color: var(--red-text);
+    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
