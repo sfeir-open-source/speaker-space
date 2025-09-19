@@ -36,3 +36,9 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Angular environments
+src/environments/environment.development.ts
+
+#App Engine environment
+src/main/appengine/app.yaml

@@ -1,0 +1,296 @@
+import {Component, input, OnDestroy, OnInit, output, signal} from '@angular/core';
+import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {Subject, Subscription} from 'rxjs';
+import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
+import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
+import {FieldComponent} from '../../../../../shared/input/field.component';
+import {EventDTO} from '../../../type/event/eventDTO';
+import {EventDataService} from '../../../services/event/event-data.service';
+import {TeamService} from '../../../services/team/team.service';
+import {FormField} from '../../../../../shared/input/interface/form-field';
+import {SaveStatus} from '../../../../../core/types/save-status.types';
+import {AutoSaveService} from '../../services/auto-save.service';
+import {EventService} from '../../../services/event/event.service';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-indicator.component';
+
+@Component({
+  selector: 'app-information-event',
+  standalone: true,
+  imports: [
+    ButtonGreenActionsComponent,
+    ButtonGreyComponent,
+    ReactiveFormsModule,
+    FormsModule,
+    FieldComponent,
+    SaveIndicatorComponent
+  ],
+  templateUrl: './information-event.component.html',
+  styleUrl: './information-event.component.scss'
+})
+export class InformationEventComponent implements OnInit, OnDestroy {
+  mode = input<'create' | 'edit'>('create');
+  initialData = input<Partial<EventDTO> | null>(null);
+
+  formSubmitted = output<any>();
+  doItLater = output<void>();
+
+  isSubmitted = signal<boolean>(false);
+  eventId = signal<string>('');
+  teamId = signal<string | null>(null);
+  teamUrl = signal<string | null>(null);
+  eventName = signal<string>('');
+  currentEvent = signal<EventDTO>({} as EventDTO);
+  saveStatus = signal<SaveStatus>('idle');
+
+  form!: FormGroup;
+  private autoSaveDestroy$ = new Subject<void>();
+  private subscriptions = new Subscription();
+
+  constructor(
+    private fb: FormBuilder,
+    private autoSaveService: AutoSaveService,
+    private eventService: EventService,
+    private eventDataService: EventDataService,
+    private snackBar: MatSnackBar,
+    private teamService: TeamService
+  ) {
+    this.initializeForm();
+  }
+
+  ngOnInit(): void {
+    this.setupSubscriptions();
+
+    if (this.initialData() && this.mode() === 'edit') {
+      this.loadInitialData(this.initialData()!);
+      this.setupAutoSave();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+    this.autoSaveDestroy$.next();
+    this.autoSaveDestroy$.complete();
+  }
+
+  private setupSubscriptions(): void {
+    this.subscriptions.add(
+      this.eventDataService.eventId$.subscribe(id => {
+        this.eventId.set(id);
+      })
+    );
+
+    this.subscriptions.add(
+      this.eventDataService.eventName$.subscribe(name => {
+        this.eventName.set(name);
+      })
+    );
+
+    this.subscriptions.add(
+      this.eventDataService.event$.subscribe(event => {
+        this.currentEvent.set(event);
+        this.loadEventData(event);
+      })
+    );
+  }
+
+  private loadEventData(event: EventDTO): void {
+    if (event.teamId) {
+      this.teamId.set(event.teamId);
+      this.teamService.getTeamById(event.teamId).subscribe(team => {
+        if (team?.id) {
+          this.teamId.set(team.id.split('/').pop() || null);
+        }
+      });
+    }
+    this.loadInitialData(event);
+  }
+
+  private setupAutoSave(): void {
+    if (this.mode() !== 'edit' || !this.initialData()?.idEvent) {
+      return;
+    }
+
+    const { destroy$ } = this.autoSaveService.setupAutoSave<EventDTO>(
+      this.form,
+      (data: Partial<EventDTO>) => this.eventService.updateEvent(data),
+      {
+        extractValidFields: () => this.extractValidEventData(),
+        onSaveStart: () => {
+          this.form.markAsPristine();
+          this.saveStatus.set('saving');
+        },
+        onSaveSuccess: (result: EventDTO) => {
+          console.log('Event information auto-saved successfully:', result);
+          this.saveStatus.set('saved');
+        },
+        onSaveError: (error: any) => {
+          console.error('Auto-save failed:', error);
+          this.saveStatus.set('error');
+          this.snackBar.open('Erreur lors de la sauvegarde automatique', 'Fermer', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+          this.form.markAsDirty();
+        }
+      }
+    );
+
+    this.autoSaveDestroy$ = destroy$;
+  }
+
+  private extractValidEventData(): Partial<EventDTO> {
+    const formValue = this.form.value;
+    const initialData = this.initialData();
+    const data: Partial<EventDTO> = {
+      idEvent: initialData?.idEvent
+    };
+
+    if (formValue.startDate !== undefined && formValue.startDate !== this.formatDateForInput(initialData?.startDate)) {
+      data.startDate = formValue.startDate ? new Date(formValue.startDate).toISOString() : undefined;
+    }
+
+    if (formValue.endDate !== undefined && formValue.endDate !== this.formatDateForInput(initialData?.endDate)) {
+      data.endDate = formValue.endDate ? new Date(formValue.endDate).toISOString() : undefined;
+    }
+
+    if (formValue.venueLocation !== initialData?.location) {
+      data.location = formValue.venueLocation;
+    }
+
+    if (formValue.description !== initialData?.description) {
+      data.description = formValue.description;
+    }
+
+    if (formValue.isOnline !== initialData?.isOnline) {
+      data.isOnline = formValue.isOnline;
+    }
+
+    if (formValue.webLinkUrl !== initialData?.webLinkUrl) {
+      data.webLinkUrl = formValue.webLinkUrl;
+    }
+
+    return data;
+  }
+
+  async onSubmit(): Promise<void> {
+    if (this.mode() === 'edit') {
+      return;
+    }
+
+    this.isSubmitted.set(true);
+
+    if (this.form.invalid || !this.validateDates()) {
+      return;
+    }
+
+    const formValues = this.form.value;
+    const formData = {
+      startDate: formValues.startDate ? new Date(formValues.startDate).toISOString() : undefined,
+      endDate: formValues.endDate ? new Date(formValues.endDate).toISOString() : undefined,
+      location: formValues.venueLocation,
+      description: formValues.description,
+      isOnline: formValues.isOnline,
+      webLinkUrl: formValues.webLinkUrl,
+    };
+
+    this.formSubmitted.emit(formData);
+  }
+
+  get showNavigationButtons(): boolean {
+    return this.mode() === 'create';
+  }
+
+  get showAutoSaveIndicator(): boolean {
+    return this.mode() === 'edit';
+  }
+
+  onGoBack(): void {
+    this.doItLater.emit();
+  }
+
+  getFormControl(name: string): FormControl {
+    return this.form.get(name) as FormControl;
+  }
+
+  private initializeForm(): void {
+    this.form = this.fb.group({
+      startDate: ['', Validators.required],
+      endDate: ['', Validators.required],
+      isOnline: [false],
+      venueLocation: [''],
+      description: [''],
+      webLinkUrl: ['']
+    });
+
+    this.form.get('isOnline')?.valueChanges.subscribe(isOnline => {
+      const venueLocationControl = this.form.get('venueLocation');
+      if (!isOnline) {
+        venueLocationControl?.setValidators([Validators.required]);
+      } else {
+        venueLocationControl?.clearValidators();
+      }
+      venueLocationControl?.updateValueAndValidity();
+    });
+  }
+
+  private loadInitialData(data: Partial<EventDTO>): void {
+    if (data.startDate) {
+      this.form.get('startDate')?.setValue(this.formatDateForInput(data.startDate));
+    }
+    if (data.endDate) {
+      this.form.get('endDate')?.setValue(this.formatDateForInput(data.endDate));
+    }
+    this.form.get('isOnline')?.setValue(data.isOnline === true);
+    if (data.webLinkUrl) {
+      this.form.get('webLinkUrl')?.setValue(data.webLinkUrl);
+    }
+    if (data.location) {
+      this.form.get('venueLocation')?.setValue(data.location);
+    }
+    if (data.description) {
+      this.form.get('description')?.setValue(data.description);
+    }
+  }
+
+  validateDates(): boolean {
+    const startDate = this.form.value.startDate ? new Date(this.form.value.startDate) : null;
+    const endDate = this.form.value.endDate ? new Date(this.form.value.endDate) : null;
+
+    this.form.get('endDate')?.setErrors(null);
+
+    if (startDate && endDate && endDate <= startDate) {
+      this.form.get('endDate')?.setErrors({'endBeforeStart': true});
+      return false;
+    }
+
+    return true;
+  }
+
+  private formatDateForInput(date: Date | string | undefined): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toISOString().split('T')[0];
+  }
+
+  formFields: FormField[] = [
+    {
+      name: 'startDate',
+      label: 'Start date',
+      type: 'date',
+      required: true,
+    },
+    {
+      name: 'endDate',
+      label: 'End date',
+      type: 'date',
+      required: true,
+    }
+  ];
+
+  additionalFields: FormField[] = [
+    {name: 'webLinkUrl', label: 'Event web link', type: 'text'},
+    {name: 'venueLocation', label: 'Venue location (address, city, country)', type: 'text'},
+    {name: 'description', label: 'Description', type: 'textarea'}
+  ];
+}

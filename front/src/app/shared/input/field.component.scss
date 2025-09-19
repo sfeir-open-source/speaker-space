@@ -1,0 +1,4 @@
+.required:after {
+  content: ' *';
+  color: var(--color-text-invalidated-form);
+}

@@ -1,0 +1,47 @@
+<main class="flex flex-col p-2 lg:p-2">
+  <img src="assets/img/logo-speaker-space.svg" alt="Logo speaker space login" class="mt-16 w-30 h-30 mx-auto"/>
+  <h1 class="mt-6 text-center text-2xl font-medium">
+    Sign in to your account
+  </h1>
+  <section class="mt-10 sm:mx-auto sm:w-full sm:max-w-md flex-grow bg-white shadow-xs border border-gray-200 rounded-lg p-12">
+
+    <div class="relative">
+      <hr class="w-full border-t border-gray-200" aria-hidden="true">
+      <p class="absolute inset-0 flex justify-center">
+        <span class="bg-white px-6 text-sm font-medium leading-6 text-gray-900">
+          Continue with
+        </span>
+      </p>
+    </div>
+
+    <nav class="mt-8 flex flex-col gap-4" role="navigation" aria-label="Authentication options">
+
+      <app-button-login buttonType="button-red"
+                        iconSrc="assets/icons/auth/google.svg"
+                        iconAlt="Google logo"
+                        (click)="googleLogin()">
+        Google
+      </app-button-login>
+
+      <app-button-login buttonType="button-black"
+                        iconSrc="assets/icons/auth/github.svg"
+                        iconAlt="GitHub logo"
+                        (click)="gitHubLogin()">
+        GitHub
+      </app-button-login>
+
+      <app-button-login buttonType="button-white"
+                        iconSrc="assets/icons/auth/email.svg"
+                        iconAlt="Email icon"
+                        (click)="openEmailModal()">
+        Sign in with email
+      </app-button-login>
+
+    </nav>
+  </section>
+</main>
+
+<app-email-modal
+  [isOpen]="isEmailModalOpen()"
+  (closeEvent)="closeEmailModal()"
+  (submitEvent)="onEmailSubmit($event)"/>

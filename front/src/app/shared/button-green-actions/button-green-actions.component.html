@@ -1,0 +1,16 @@
+<button
+  (click)="handleButtonClick()"
+  [type]="type()"
+  [disabled]="disabled()"
+  [attr.aria-label]="ariaLabel()"
+  class="flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-1.5 px-3 rounded-md transition-colors">
+
+  @if (materialIcon()) {
+    <div class="relative inline-flex items-center justify-center">
+      <span class="material-symbols-outlined" aria-hidden="true">
+        {{ materialIcon() }}
+      </span>
+    </div>
+  }
+  <ng-content/>
+</button>

@@ -16,3 +16,9 @@ target/
 
 ### Firestore key ###
 firestore-key.json
+
+### Firebase key ###
+firebase-service.json
+
+### Appengine config ###
+src/main/appengine/app.yaml

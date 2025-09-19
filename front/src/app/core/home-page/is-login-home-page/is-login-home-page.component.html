@@ -1,0 +1,70 @@
+<section class="mt-5 mb-8">
+  <header class="relative flex flex-col md:flex-row gap-4 md:items-center md:justify-between text-center md:text-left">
+    <h1 class="text-gray-900 text-2xl md:ml-10 text-primaryColor font-medium md:pt-0 pt-10">
+      Events where you speak
+    </h1>
+
+    <nav class="flex gap-1 rounded-md bg-action px-1 py-1 md:static absolute top-0 left-1/2 transform -translate-x-1/2 md:ml-auto md:-mr-25"
+         aria-label="Event filters">
+      <button
+        class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
+        [ngClass]="activeTab() === 'currents' ? 'bg-white text-primaryColor shadow-sm' : 'text-secondary'"
+        (click)="setActiveTab('currents')"
+        [attr.aria-selected]="activeTab() === 'currents'"
+        [disabled]="isLoading()">
+        Currents
+      </button>
+
+      <button
+        class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
+        [ngClass]="activeTab() === 'passed' ? 'bg-white text-primaryColor shadow-sm' : 'text-secondary'"
+        (click)="setActiveTab('passed')"
+        [attr.aria-selected]="activeTab() === 'passed'"
+        [disabled]="isLoading()">
+        Passed
+      </button>
+    </nav>
+  </header>
+</section>
+
+<section class="w-full px-4 max-w-screen-xl mx-auto">
+  @if (isLoading()) {
+    <div class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primaryColor"></div>
+      <span class="ml-3 text-gray-600">Loading your events...</span>
+    </div>
+  }
+
+  @else if (hasEvents()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for(event of displayedEvents(); track event.idEvent) {
+        <div class="w-full">
+          <app-event-team-card [field]="event"/>
+        </div>
+      }
+    </div>
+  }
+
+  @else {
+    <div class="text-center py-12">
+      <div class="mx-auto h-12 w-12 text-gray-400 mb-4">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+
+      <h3 class="text-lg font-medium text-gray-900 mb-2">
+        @if (activeTab() === 'currents') {
+          No current events
+        } @else {
+          No past events
+        }
+      </h3>
+
+      <p class="text-sm text-gray-500 max-w-md mx-auto">
+        {{ emptyStateMessage() }}
+      </p>
+    </div>
+  }
+</section>

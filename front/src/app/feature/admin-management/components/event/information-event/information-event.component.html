@@ -1,0 +1,112 @@
+<article class="w-full flex-grow bg-white shadow-md rounded-lg px-5 pb-8">
+  @if (showAutoSaveIndicator) {
+    <app-save-indicator
+      [status]="saveStatus()"
+      position="top-right">
+    </app-save-indicator>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="flex flex-col md:flex-row w-full gap-4">
+      @for(field of formFields; track field.name) {
+        <div class="flex-1">
+          @if(getFormControl(field.name).hasError('required') && isSubmitted()) {
+            <p class="text-red-500 text-sm mt-1"
+               [attr.aria-describedby]="field.name + '-error'"
+               role="alert">
+              This field is required
+            </p>
+          }
+          @if(field.name === 'endDate' && getFormControl(field.name).hasError('endBeforeStart')) {
+            <p class="text-red-500 text-sm mt-1"
+               [attr.aria-describedby]="field.name + '-error'"
+               role="alert">
+              End date must be after start date
+            </p>
+          }
+
+          <app-field
+            [label]="field.label"
+            [placeholder]="field.placeholder"
+            [type]="field.type"
+            [control]="getFormControl(field.name)"
+            [name]="field.name"
+            [required]="field.required"
+            [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted">
+          </app-field>
+        </div>
+      }
+    </div>
+
+    <div class="online-switch flex justify-start mt-5">
+      <div class="switch-container mr-4">
+        <input
+          id="online-toggle"
+          type="checkbox"
+          class="toggle-input"
+          formControlName="isOnline"
+          [attr.aria-describedby]="'online-description'"
+        />
+        <label for="online-toggle" class="toggle-label">
+          <span class="toggle-button"></span>
+        </label>
+      </div>
+      <div>
+        <p class="text-sm">Is online event?</p>
+        <p id="online-description" class="text-sm text-gray-600">
+          Indicate whether the event will be held online.
+        </p>
+      </div>
+    </div>
+
+    <app-field
+      [label]="additionalFields[0].label"
+      [placeholder]="additionalFields[0].placeholder"
+      [type]="additionalFields[0].type"
+      [control]="getFormControl(additionalFields[0].name)"
+      [name]="additionalFields[0].name">
+    </app-field>
+
+    <app-field
+      [label]="additionalFields[1].label"
+      [placeholder]="additionalFields[1].placeholder"
+      [type]="additionalFields[1].type"
+      [control]="getFormControl(additionalFields[1].name)"
+      [name]="additionalFields[1].name">
+    </app-field>
+
+    <div class="input-markdown-container">
+      <app-field
+        [label]="additionalFields[2].label"
+        [type]="additionalFields[2].type"
+        [control]="getFormControl(additionalFields[2].name)"
+        [name]="additionalFields[2].name"
+        [rows]="7"
+        [customClass]="'!resize-none rounded-b-none border-b-0'">
+      </app-field>
+    </div>
+
+    @if (showNavigationButtons) {
+    <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+    }
+
+    @if (showNavigationButtons) {
+      <div class="flex justify-end p-4">
+        <app-button-grey
+          type="button"
+          (click)="onGoBack()"
+          customTextClass="text-gray-600 hover:text-gray-600"
+          class="rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+          Go back
+        </app-button-grey>
+
+        <app-button-green-actions
+          [type]="'submit'"
+          materialIcon="arrow_forward"
+          [attr.aria-label]="'Continue to next step'">
+          Continue
+        </app-button-green-actions>
+      </div>
+    }
+  </form>
+</article>

@@ -1,0 +1,54 @@
+package com.speakerspace.config;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Service;
+
+@Service
+public class CookieService {
+
+    private static final int COOKIE_MAX_AGE = 3600 * 24 * 30;
+    private static final boolean SECURE = true;
+    private static final boolean HTTP_ONLY = true;
+    private static final String COOKIE_PATH = "/";
+    private static final String AUTH_COOKIE_NAME = "auth_token";
+
+    public void setAuthCookie(HttpServletResponse response, String token) {
+        ResponseCookie cookie = ResponseCookie.from(AUTH_COOKIE_NAME, token)
+                .maxAge(COOKIE_MAX_AGE)
+                .httpOnly(HTTP_ONLY)
+                .secure(SECURE)
+                .path(COOKIE_PATH)
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public void clearAuthCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from(AUTH_COOKIE_NAME, "")
+                .maxAge(0)
+                .httpOnly(HTTP_ONLY)
+                .secure(SECURE)
+                .path(COOKIE_PATH)
+                .sameSite("Lax")
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public String getAuthTokenFromCookies(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (AUTH_COOKIE_NAME.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+}

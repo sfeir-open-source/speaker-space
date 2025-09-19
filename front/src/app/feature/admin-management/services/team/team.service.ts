@@ -1,0 +1,146 @@
+import { Injectable } from '@angular/core';
+import {HttpClient, HttpErrorResponse} from '@angular/common/http';
+import {BehaviorSubject, Observable, throwError} from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
+import {environment} from '../../../../../environments/environment.development';
+import {Team} from '../../type/team/team';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TeamService {
+  private teamsSubject: BehaviorSubject<Team[]> = new BehaviorSubject<Team[]>([]);
+  public teams$:Observable<Team[]> = this.teamsSubject.asObservable();
+
+  constructor(
+    private http: HttpClient,
+  ) {
+    this.loadUserTeams();
+  }
+
+  loadUserTeams(): void {
+    this.http.get<Team[]>(`${environment.apiUrl}/team/user-teams`, { withCredentials: true })
+      .pipe(
+        map(teams => teams.map(team => ({
+          ...team,
+          id: team.id || ''
+        }))),
+        catchError(this.handleError('Error loading teams'))
+      )
+      .subscribe(teams => {
+        this.teamsSubject.next(teams);
+      });
+  }
+
+  createTeam(team: Team): Observable<Team> {
+    return this.http.post<Team>(`${environment.apiUrl}/team/create`, team, { withCredentials: true })
+      .pipe(
+        map(newTeam => ({
+          ...newTeam,
+          id: newTeam.id || ''
+        })),
+        tap(newTeam => {
+          const currentTeams: Team[] = this.teamsSubject.value;
+          this.teamsSubject.next([...currentTeams, newTeam]);
+        }),
+        catchError(this.handleError('Error creating team'))
+      );
+  }
+
+  getTeamByUrl(teamId: string): Observable<Team> {
+    const urlId: string = this.extractUrlId(teamId);
+
+    return this.http.get<Team>(`${environment.apiUrl}/team/by-url/${urlId}`, { withCredentials: true })
+      .pipe(
+        map(team => ({
+          ...team,
+          id: team.id || ''
+        })),
+        catchError(this.handleError('Error getting team'))
+      );
+  }
+
+  updateTeam(teamId: string, team: Partial<Team>): Observable<Team> {
+    return this.http.put<Team>(`${environment.apiUrl}/team/${teamId}`, team, { withCredentials: true })
+      .pipe(
+        tap(updatedTeam => this.updateTeamInList(updatedTeam)),
+        catchError(error => {
+          if (error.status === 403) {
+            return throwError(() => ({
+              error: error.error || {},
+              status: error.status,
+              message: 'You do not have permission to update this team. Only Owners can update teams.',
+            }));
+          }
+          return this.handleError('Error updating team')(error);
+        })
+      );
+  }
+  deleteTeam(teamId: string): Observable<{message: string, teamId: string}> {
+    return this.http.delete<{message: string, teamId: string}>(
+      `${environment.apiUrl}/team/${teamId}`,
+      { withCredentials: true }
+    ).pipe(
+      tap(() => {
+        const updatedTeams = this.teamsSubject.value.filter(team => team.id !== teamId);
+        this.teamsSubject.next(updatedTeams);
+      }),
+      catchError((error: HttpErrorResponse) => {
+        let errorMessage = 'Failed to delete team';
+
+        switch (error.status) {
+          case 403:
+            errorMessage = 'You don\'t have permission to delete this team';
+            break;
+          case 404:
+            errorMessage = 'Team not found';
+            break;
+          case 500:
+            errorMessage = 'Internal server error occurred while deleting team';
+            break;
+        }
+
+        return throwError(() => new Error(errorMessage));
+      })
+    );
+  }
+  extractUrlId(url: string): string {
+    if (url.includes('/team/')) {
+      return url.split('/team/').pop() || url;
+    }
+    return url;
+  }
+
+  private updateTeamInList(updatedTeam: Team): void {
+    const currentTeams = this.teamsSubject.value;
+    const updatedTeams = currentTeams.map(t =>
+      t.id === updatedTeam.id ? { ...updatedTeam, id: updatedTeam.id || '' } : t
+    );
+    this.teamsSubject.next(updatedTeams);
+  }
+
+  private removeTeamFromList(teamId: string): void {
+    const currentTeams = this.teamsSubject.value;
+    const updatedTeams = currentTeams.filter(t => t.id !== teamId);
+    this.teamsSubject.next(updatedTeams);
+  }
+
+  private handleError(operation: string) {
+    return (error: any) => {
+      return throwError(() => ({
+        error: error.error || {},
+        status: error.status,
+        message: error.error?.message || 'An unknown error occurred',
+      }));
+    };
+  }
+
+  getTeamById(id: string): Observable<Team | null> {
+    return this.http.get<Team>(`${environment.apiUrl}/team/${id}`, { withCredentials: true })
+      .pipe(
+        catchError(error => {
+          return throwError(() => error);
+        })
+      );
+  }
+}

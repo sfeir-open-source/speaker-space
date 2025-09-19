@@ -1,0 +1,254 @@
+@if (state$ | async; as state) {
+  <app-navbar-event-page
+    [eventUrl]="state.eventUrl"
+    [eventId]="state.eventId"
+    [eventName]="state.eventName"
+    [teamId]="state.teamId">
+  </app-navbar-event-page>
+
+  <div class="px-0 sm:px-10 md:px-10 lg:px-10 xl:px-20 2xl:px-70 w-full">
+    <main class="flex">
+      <section class="flex-1 p-4" aria-labelledby="speakers-heading">
+        <h1 id="speakers-heading" class="sr-only">Speakers Management</h1>
+
+        @if (state.isLoading) {
+          <div class="flex justify-center items-center h-40" role="status" aria-label="Loading">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" aria-hidden="true"></div>
+            <span class="sr-only">Loading...</span>
+          </div>
+        }
+
+        @if (state.error) {
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+            <p>{{ state.error }}</p>
+          </div>
+        }
+
+        @if (!state.isLoading && !state.error) {
+          <form class="mx-auto" (ngSubmit)="onSubmit($event)" role="search">
+            <article class="w-full items-center bg-white shadow-md rounded-lg py-4">
+              @if (totalSpeakers !== 0) {
+                <header class="px-4 pb-4">
+                  <div class="flex items-center gap-3">
+                    <div class="relative flex-1">
+                      <label for="speaker-search" class="sr-only">Search for speakers</label>
+                      <input
+                        id="speaker-search"
+                        type="text"
+                        name="searchInput"
+                        placeholder="Search for speakers..."
+                        class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        (input)="onSearch($event)"
+                        [value]="searchTerm"
+                        aria-describedby="search-help"
+                      />
+                      <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" aria-hidden="true">
+                        <i class="material-icons text-lg">search</i>
+                      </span>
+                      <span id="search-help" class="sr-only">Search by name, email, company or biography</span>
+                    </div>
+
+                    <app-button-green-actions
+                      type="button"
+                      [materialIcon]="'add'"
+                      aria-label="Create new speaker">
+                      Create speaker
+                    </app-button-green-actions>
+
+                    <app-button-grey
+                      type="button"
+                      [materialIcon]="'tune'"
+                      customTextClass="text-gray-600 hover:text-gray-600"
+                      class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm relative"
+                      (click)="openFilterPopup()"
+                      [attr.aria-label]="'Open filters' + (hasActiveFilters ? ' (' + activeFiltersCount + ' active)' : '')"
+                      [attr.aria-expanded]="showFilterPopup">
+                      Filters
+                      @if (hasActiveFilters) {
+                        <span class="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                              [attr.aria-label]="activeFiltersCount + ' active filters'">
+                          {{ activeFiltersCount }}
+                        </span>
+                      }
+                    </app-button-grey>
+
+                    @if (showFilterPopup) {
+                      <app-speaker-filter-popup
+                        [availableFormats]="availableFormats"
+                        [availableCategories]="availableCategories"
+                        [currentFilters]="currentFilters"
+                        (filtersApplied)="onFiltersApplied($event)"
+                        (filtersReset)="onFiltersReset()"
+                        (popupClosed)="closeFilterPopup()"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="filter-dialog-title">
+                      </app-speaker-filter-popup>
+                    }
+                  </div>
+                </header>
+              }
+
+              @if (isLoadingSpeakers) {
+                <div class="flex justify-center items-center h-32 px-4" role="status" aria-label="Loading speakers">
+                  <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" aria-hidden="true"></div>
+                  <span class="ml-2 text-gray-600">Loading speakers...</span>
+                </div>
+              } @else {
+                <div class="relative overflow-x-auto sm:rounded-lg">
+                  <table class="w-full text-sm text-left rtl:text-right text-gray-500"
+                         role="table"
+                         aria-label="Speakers list">
+                    @if (totalSpeakers !== 0) {
+                      <thead class="text-xs text-gray-700 bg-gray-50">
+                      <tr>
+                        <th scope="col" class="p-4">
+                          <div class="flex items-center">
+                            <input
+                              id="checkbox-all-search"
+                              type="checkbox"
+                              [checked]="selectAll"
+                              (change)="toggleSelectAll()"
+                              class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500"
+                              [attr.aria-label]="'Select all ' + totalSpeakers + ' speakers'">
+                            <label for="checkbox-all-search" class="sr-only">Select all speakers</label>
+                          </div>
+                        </th>
+                        <th scope="col" class="px-2 py-3 font-normal">
+                          {{ totalSpeakers }} speaker{{ totalSpeakers > 1 ? 's' : '' }}
+                        </th>
+                      </tr>
+                      </thead>
+                    }
+                    <tbody>
+                      @if (paginatedSpeakers.length === 0) {
+                        <tr class="bg-white">
+                          <td colspan="2" class="px-4 py-8 text-center text-gray-500">
+                            @if (searchTerm) {
+                              <div class="flex flex-col items-center">
+                                <i class="material-icons text-4xl text-gray-300 mb-2" aria-hidden="true">search_off</i>
+                                <p class="text-lg font-medium text-gray-600">No speakers found</p>
+                                <p class="text-sm text-gray-500">for "{{ searchTerm }}"</p>
+                              </div>
+                            } @else {
+                              <div class="flex flex-col items-center">
+                                <i class="material-icons text-4xl text-gray-300 mb-2" aria-hidden="true">people_outline</i>
+                                <p class="text-lg font-medium text-gray-600">No speakers available</p>
+                                <p class="text-sm text-gray-500">Import speakers to get speakers</p>
+                              </div>
+                            }
+                          </td>
+                        </tr>
+                      } @else {
+                        @for (speaker of paginatedSpeakers; track speaker.email) {
+                          <tr class="bg-white border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                              (click)="openItemDetail(speaker.id)"
+                              [attr.aria-label]="'View details for ' + speaker.name"
+                              role="button"
+                              tabindex="0"
+                              (keydown.enter)="openItemDetail(speaker.id)"
+                              (keydown.space)="openItemDetail(speaker.id)">
+                            <td class="w-4 p-4" (click)="$event.stopPropagation()">
+                              <div class="flex items-center">
+                                <input
+                                  [id]="'checkbox-speaker-' + speaker.name"
+                                  type="checkbox"
+                                  [checked]="isSpeakerSelected(speaker.name)"
+                                  (change)="toggleSpeakerSelection(speaker.name!)"
+                                  (click)="$event.stopPropagation()"
+                                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500"
+                                  [attr.aria-label]="'Select ' + speaker.name">
+                                <label [for]="'checkbox-speaker-' + speaker.name" class="sr-only">
+                                  Select {{ speaker.name }}
+                                </label>
+                              </div>
+                            </td>
+                            <th scope="row" class="px-2 py-2 font-medium text-gray-900">
+                              <div class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-1 pr-3 py-1 bg-white shadow-sm">
+                                <div class="flex-shrink-0">
+                                  <img
+                                    [src]="speaker.picture || 'assets/img/profil-picture.svg'"
+                                    class="h-10 w-10 rounded-full object-cover border-2 border-gray-100"
+                                    [alt]="'Photo de ' + speaker.name"
+                                    referrerpolicy="no-referrer"
+                                    (error)="onImageError($event)">
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                  <h3 class="font-medium text-gray-900 text-sm truncate">
+                                    {{ speaker.name }}
+                                  </h3>
+                                  @if (speaker.company) {
+                                    <p class="text-gray-600 text-xs truncate">
+                                      {{ speaker.company }}
+                                    </p>
+                                  }
+                                </div>
+                              </div>
+                            </th>
+                          </tr>
+                        }
+                      }
+                    </tbody>
+                  </table>
+
+                  @if (totalPages > 1) {
+                    <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4"
+                         aria-label="Speakers pagination navigation">
+                      <span class="text-sm font-normal text-gray-600 mb-4 md:mb-0 block w-full md:inline md:w-auto"
+                            role="status"
+                            aria-live="polite">
+                        Showing {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, totalSpeakers) }} of {{ totalSpeakers }} speakers
+                      </span>
+                      <ul class="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8" role="list">
+                        <li>
+                          <button
+                            type="button"
+                            (click)="goToPage(currentPage - 1)"
+                            [disabled]="currentPage === 1"
+                            [class]="currentPage === 1 ?
+                              'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-s-lg cursor-not-allowed' :
+                              'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer'"
+                            [attr.aria-label]="'Go to previous page' + (currentPage === 1 ? ' (disabled)' : '')">
+                            Previous
+                          </button>
+                        </li>
+
+                        @for (pageNum of pageNumbers; track pageNum) {
+                          <li>
+                            <button
+                              type="button"
+                              (click)="goToPage(pageNum)"
+                              [class]="pageNum === currentPage ?
+                                'flex items-center justify-center px-3 h-8 text-blue-600 border border-gray-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700' :
+                                'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 cursor-pointer'"
+                              [attr.aria-label]="'Go to page ' + pageNum"
+                              [attr.aria-current]="pageNum === currentPage ? 'page' : null">
+                              {{ pageNum }}
+                            </button>
+                          </li>
+                        }
+
+                        <li>
+                          <button
+                            type="button"
+                            (click)="goToPage(currentPage + 1)"
+                            [disabled]="currentPage === totalPages"
+                            [class]="currentPage === totalPages ?
+                              'flex items-center justify-center px-3 h-8 leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-e-lg cursor-not-allowed' :
+                              'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer'"
+                            [attr.aria-label]="'Go to next page' + (currentPage === totalPages ? ' (disabled)' : '')">
+                            Next
+                          </button>
+                        </li>
+                      </ul>
+                    </nav>
+                  }
+                </div>
+              }
+            </article>
+          </form>
+        }
+      </section>
+    </main>
+  </div>
+}

@@ -1,0 +1,60 @@
+<main class="mx-4 flex flex-col h-full items-center bg-white border border-gray-200 rounded-xs shadow-sm sm:flex-row hover:bg-gray-100">
+  <div class="p-3 flex items-center justify-center overflow-hidden rounded-full">
+    <img class="w-15 aspect-square object-cover rounded-full"
+         [src]="member().photoURL || getDefaultAvatar()"
+         [alt]="member().displayName || 'Team member'" referrerpolicy="no-referrer">
+  </div>
+  <section class="flex items-center justify-between p-3 leading-normal w-full">
+    <article class="flex flex-col justify-center">
+      <h1 class="text-md font-medium text-gray-900">
+        {{ member().displayName || 'User' }}
+        @if (member().status === 'invited') {
+          <span class="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">Invited</span>
+        }
+      </h1>
+      <p class="text-sm text-gray-500">
+        {{ member().role }}
+      </p>
+    </article>
+    <article class="flex flex-col sm:flex-row items-center justify-between">
+      @if (canManageRoles()) {
+        <button
+          (click)="openChangeRoleModal()"
+          type="button"
+          [disabled]="member().userId === currentUserId()"
+          [class.opacity-50]="member().userId === currentUserId()"
+          class="bg-white text-sm mr-0 sm:mr-1 hover:bg-gray-100 mb-1 sm:mb-0 text-gray-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
+          <span>Change role</span>
+        </button>
+        <button
+          (click)="openDeleteModal()"
+          type="button"
+          [disabled]="!canRemoveThisMember()"
+          [class.opacity-50]="!canRemoveThisMember()"
+          class="bg-white text-sm ml-0 sm:ml-1 hover:bg-gray-100 text-red-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
+          <span>Remove</span>
+        </button>
+      }
+    </article>
+  </section>
+</main>
+
+@if(showRoleModal){
+  <app-role-popup
+    [member]="member()"
+    [selectedRole]="selectedRole()"
+    [isOpen]="showRoleModal"
+    (onClose)="closeChangeRoleModal()"
+    (onConfirm)="changeRole($event)"
+  />
+}
+
+@if(showDeleteModal) {
+  <app-delete-popup
+    [member]="member()"
+    [isDeleting]="isDeleting"
+    [isOpen]="showDeleteModal"
+    (confirm)="confirmDelete()"
+    (cancel)="closeDeleteModal()">
+  </app-delete-popup>
+}

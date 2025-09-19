@@ -1,0 +1,23 @@
+<aside class="hidden lg:block bg-white p-4 ml-3 mt-4 shadow-md rounded-md sticky top-4 self-start max-h-screen overflow-y-auto">
+  <app-button-with-icon
+    materialIcon="person"
+    route="#personal-info"
+    [customClass]="isActive('#personal-info') ? 'bg-gray-100' : ''"
+    (itemClick)="navigateTo($event)">
+    Personnal informations
+  </app-button-with-icon>
+  <app-button-with-icon
+    materialIcon="description"
+    route="#biography"
+    [customClass]="isActive('#biography') ? 'bg-gray-100' : ''"
+    (itemClick)="navigateTo($event)">
+    Biography
+  </app-button-with-icon>
+  <app-button-with-icon
+    materialIcon="link"
+    route="#social-networks"
+    [customClass]="isActive('#social-networks') ? 'bg-gray-100' : ''"
+    (itemClick)="navigateTo($event)">
+    Social networks & more
+  </app-button-with-icon>
+</aside>

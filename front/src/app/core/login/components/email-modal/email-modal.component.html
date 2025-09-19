@@ -1,0 +1,38 @@
+@if(isOpen()){
+  <div
+    class="fixed inset-0 bg-gray-300/75 overflow-y-auto z-50 flex justify-center items-center"
+    (click)="onBackdropClick($event)">
+
+    <section class="bg-white rounded-lg shadow p-10 w-full max-w-md lg:max-w-[400px] m-2 transition-transform scale-100"
+             (click)="$event.stopPropagation()">
+
+      <header class="flex justify-between border-b border-gray-200 pb-4">
+        <h2 class="text-lg font-medium">Sign in with email</h2>
+        <button type="button"
+                (click)="closeModal()"
+                class="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Close modal">
+          ✕
+        </button>
+      </header>
+
+      <form class="mt-4" (ngSubmit)="onSubmit()" #emailForm="ngForm">
+        <label for="email" class="sr-only">Email address</label>
+        <input type="email"
+               id="email"
+               name="email"
+               placeholder="Email"
+               required
+               class="w-full p-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+               [(ngModel)]="email">
+
+        <app-button-login
+          buttonType="button-white"
+          (click)="mailLinkLogin(email); $event.preventDefault()">
+          Sign in
+        </app-button-login>
+      </form>
+    </section>
+
+  </div>
+}

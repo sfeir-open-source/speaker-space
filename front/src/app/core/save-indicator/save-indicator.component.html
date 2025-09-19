@@ -1,0 +1,8 @@
+<div class="fixed transition-opacity duration-300 z-50"
+     [ngClass]="containerClasses()">
+  <div class="flex items-center p-1 rounded-md shadow-md indicator-content"
+       [attr.data-status]="status()">
+    <span class="material-icons mr-2 indicator-icon">{{ icon() }}</span>
+    <span class="indicator-message">{{ message() }}</span>
+  </div>
+</div>

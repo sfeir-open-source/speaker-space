@@ -1,0 +1,106 @@
+<section
+  class="fixed inset-0 bg-slate-800/50 z-40 transition-opacity duration-300"
+  [class.opacity-0]="!userDataService.isSidebarOpen()"
+  [class.opacity-100]="userDataService.isSidebarOpen()"
+  [class.pointer-events-none]="!userDataService.isSidebarOpen()"
+  (click)="closeSidebar()">
+</section>
+
+<main
+  class="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out rounded-l-xl"
+  [ngClass]="userDataService.isSidebarOpen() ? 'translate-x-0' : 'translate-x-full'"
+  (click)="$event.stopPropagation()">
+
+  <header class="p-4 flex justify-between items-center">
+    <article class="flex items-center gap-3">
+      <img [src]="userDataService.userPhotoURL() || 'assets/img/profil-picture.svg'"
+           alt="profile"
+           class="w-12 h-12 rounded-full border-none" referrerpolicy="no-referrer" >
+      <section>
+        <p class="text-sm font-medium">{{ userDataService.displayName() }}</p>
+        <p class="text-xs text-gray-500">{{ userDataService.userName() ? userDataService.userEmail() : '' }}</p>
+      </section>
+    </article>
+    <button (click)="closeSidebar()" class="text-gray-500 hover:text-gray-800" aria-label="Close sidebar">
+      ✖
+    </button>
+  </header>
+
+  <nav>
+    <article class="p-4">
+      <app-button-with-icon
+        materialIcon="notifications"
+        route="/notifications"
+        [hasNotification]="hasUnreadNotifications()"
+        [notificationCount]="notificationCount()"
+        (itemClick)="navigateTo($event)">
+        Notifications
+      </app-button-with-icon>
+    </article>
+
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+
+    <article class="p-4">
+      <p class="font-medium text-lg mb-2">Speaker</p>
+
+      <app-button-with-icon
+        materialIcon="book_2"
+        route="/"
+        (itemClick)="navigateTo($event)">
+        My Talks
+      </app-button-with-icon>
+
+      <app-button-with-icon
+        materialIcon="luggage"
+        route="/travel"
+        (itemClick)="navigateTo($event)">
+        Travel Information
+      </app-button-with-icon>
+    </article>
+
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+
+    <article class="p-4">
+      <p class="font-medium text-lg mb-2">Organizer</p>
+
+      @if(isLoadingTeams()) {
+        <div class="flex justify-center py-2">
+          <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+        </div>
+      } @else {
+        @if(hasTeams()) {
+          <div class="space-y-1">
+            @for(team of teams(); track team.id ?? $index) {
+              <app-button-with-icon
+                materialIcon="group"
+                [route]="'/team/' + (team.id)"
+                (itemClick)="navigateToTeam(team.id)">
+                {{ team.name }}
+              </app-button-with-icon>
+            }
+          </div>
+        } @else {
+          <p class="text-sm text-gray-500 italic mb-2">No teams yet</p>
+        }
+      }
+
+      <app-button-with-icon
+        class="font-medium"
+        materialIcon="add_box"
+        [buttonHandler]="createNewTeam.bind(this)">
+        New team
+      </app-button-with-icon>
+    </article>
+
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+
+    <article class="p-4">
+      <app-button-with-icon
+        class="font-medium"
+        materialIcon="logout"
+        [buttonHandler]="logout.bind(this)">
+        Log out
+      </app-button-with-icon>
+    </article>
+  </nav>
+</main>

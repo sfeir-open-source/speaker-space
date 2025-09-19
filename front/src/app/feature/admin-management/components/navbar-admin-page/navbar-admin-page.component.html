@@ -1,0 +1,32 @@
+<main class="relative bg-white h-[50px] w-full px-4 lg:px-8 flex justify-around items-center shadow-sm">
+  <section class="flex items-center gap-4">
+    @for (button of visibleLeftButtons(); track button.id) {
+      <app-button-grey
+        [materialIcon]="button.materialIcon"
+        [buttonHandler]="getButtonHandler(button)"
+        [route]="button.route || ''"
+        [isActivePage]="isButtonActive(button)"
+        [ngClass]="button.cssClass"
+      >
+        {{ button.label }}
+      </app-button-grey>
+    }
+  </section>
+
+  @if (config().rightContent === 'role') {
+    <p class="bg-blue-50 text-blue-600 border-blue-500 text-sm py-0.5 px-2 border rounded-md">
+      {{ currentUserRole() }}
+    </p>
+  }
+
+  @if (rightButtonConfig()) {
+    <button
+      [ngClass]="rightButtonCssClass()"
+      (click)="onRightButtonClick()"
+      [attr.aria-label]="rightButtonConfig()!.label"
+    >
+      <span>{{ rightButtonConfig()!.label }}</span>
+      <span class="material-icons text-lg ml-2">{{ rightButtonConfig()!.icon }}</span>
+    </button>
+  }
+</main>
