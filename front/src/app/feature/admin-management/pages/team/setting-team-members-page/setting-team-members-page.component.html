@@ -51,9 +51,9 @@
                     (inputChanged)="onSearchInputChanged($event)">
                   </app-auto-complete>
 
-                  <app-button-green-actions
+                  <app-button
                     materialIcon="person_add"
-                    class="text-xs sm:text-sm lg:text-base"
+                    [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm rounded-md transition-colors'"
                     (click)="addMember()">
                     <span class="hidden lg:inline">
                       @if (isAddingMember()) {
@@ -62,7 +62,7 @@
                         Invite member
                       }
                     </span>
-                  </app-button-green-actions>
+                  </app-button>
                 </div>
               </section>
             }

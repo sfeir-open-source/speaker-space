@@ -11,24 +11,25 @@ import {
   EventTeamField
 } from '../../../feature/admin-management/components/event/event-team-card/interface/event-team-field';
 import { Event } from '../../../feature/admin-management/type/event/event';
+import { ButtonComponent } from '../../../shared/button/button.component';
 
 @Component({
   selector: 'app-is-login-home-page',
   standalone: true,
-  imports: [CommonModule, EventTeamCardComponent],
+  imports: [CommonModule, EventTeamCardComponent, ButtonComponent],
   templateUrl: './is-login-home-page.component.html',
   styleUrl: './is-login-home-page.component.scss'
 })
 export class IsLoginHomePageComponent {
-  activeTab = signal<'currents' | 'passed'>('currents');
-  userEvents = signal<Event[]>([]);
-  isLoading = signal<boolean>(true);
-  error = signal<string | null>(null);
+  readonly activeTab = signal<'currents' | 'passed'>('currents');
+  readonly userEvents = signal<Event[]>([]);
+  readonly isLoading = signal<boolean>(true);
+  readonly error = signal<string | null>(null);
 
-  private eventService = inject(EventService);
-  private eventStatusService = inject(EventStatusService);
+  private readonly eventService = inject(EventService);
+  private readonly eventStatusService = inject(EventStatusService);
 
-  eventCounts = computed(() => {
+  readonly eventCounts = computed(() => {
     let currentCount = 0;
     let passedCount = 0;
 
@@ -44,7 +45,7 @@ export class IsLoginHomePageComponent {
     return { current: currentCount, passed: passedCount };
   });
 
-  private filteredAndSortedEvents = computed(() => {
+  private readonly filteredAndSortedEvents = computed(() => {
     const filteredEvents = this.eventStatusService.filterEventsByStatus(
       this.userEvents(),
       this.activeTab() === 'passed'
@@ -53,12 +54,13 @@ export class IsLoginHomePageComponent {
     return this.sortEventsByDate(filteredEvents);
   });
 
-  displayedEvents = computed(() =>
+  readonly displayedEvents = computed(() =>
     this.transformEventsToFields(this.filteredAndSortedEvents())
   );
-  hasEvents = computed(() => this.displayedEvents().length > 0);
 
-  emptyStateMessage = computed(() => {
+  readonly hasEvents = computed(() => this.displayedEvents().length > 0);
+
+  readonly emptyStateMessage = computed(() => {
     const counts = this.eventCounts();
     if (this.activeTab() === 'currents') {
       return counts.current === 0
@@ -71,6 +73,14 @@ export class IsLoginHomePageComponent {
     }
   });
 
+  readonly currentsTabClasses = computed(() =>
+    this.getTabClasses('currents')
+  );
+
+  readonly passedTabClasses = computed(() =>
+    this.getTabClasses('passed')
+  );
+
   constructor() {
     effect(() => {
       if (this.userEvents().length === 0 && !this.isLoading()) {
@@ -78,6 +88,31 @@ export class IsLoginHomePageComponent {
       }
     }, { allowSignalWrites: true });
     this.loadUserEvents();
+  }
+
+  private getTabClasses(tab: 'currents' | 'passed'): string {
+    const baseClasses = 'flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all';
+    const activeClasses = this.activeTab() === tab
+      ? 'bg-white text-primaryColor shadow-sm'
+      : 'text-secondary hover:text-white';
+
+    return `${baseClasses} ${activeClasses}`.trim();
+  }
+
+  getCurrentsTabClasses(): string {
+    return this.currentsTabClasses();
+  }
+
+  getPassedTabClasses(): string {
+    return this.passedTabClasses();
+  }
+
+  getCurrentsTabHandler(): () => void {
+    return () => this.setActiveTab('currents');
+  }
+
+  getPassedTabHandler(): () => void {
+    return () => this.setActiveTab('passed');
   }
 
   private loadUserEvents(): void {

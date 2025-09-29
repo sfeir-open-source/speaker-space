@@ -1,8 +1,6 @@
 import {Component, input, OnDestroy, OnInit, output, signal} from '@angular/core';
 import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Subject, Subscription} from 'rxjs';
-import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {FieldComponent} from '../../../../../shared/input/field.component';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {EventDataService} from '../../../services/event/event-data.service';
@@ -13,17 +11,17 @@ import {AutoSaveService} from '../../services/auto-save.service';
 import {EventService} from '../../../services/event/event.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-indicator.component';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-information-event',
   standalone: true,
   imports: [
-    ButtonGreenActionsComponent,
-    ButtonGreyComponent,
     ReactiveFormsModule,
     FormsModule,
     FieldComponent,
-    SaveIndicatorComponent
+    SaveIndicatorComponent,
+    ButtonComponent
   ],
   templateUrl: './information-event.component.html',
   styleUrl: './information-event.component.scss'

@@ -15,6 +15,7 @@ import { DangerZoneComponent } from '../../../components/danger-zone/danger-zone
 import { DeleteConfirmationPopupComponent } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
 import { DeleteConfirmationConfig } from '../../../type/components/delete-confirmation';
 import { DangerZoneConfig } from '../../../type/components/danger-zone';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-setting-team-general-page',
@@ -25,7 +26,8 @@ import { DangerZoneConfig } from '../../../type/components/danger-zone';
     FormsModule,
     SidebarTeamComponent,
     DangerZoneComponent,
-    DeleteConfirmationPopupComponent
+    DeleteConfirmationPopupComponent,
+    ButtonComponent
   ],
   templateUrl: './setting-team-general-page.component.html',
   styleUrl: './setting-team-general-page.component.scss'

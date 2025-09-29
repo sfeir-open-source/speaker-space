@@ -16,9 +16,7 @@ import 'moment-timezone';
 import { BehaviorSubject, debounceTime, Subject } from 'rxjs';
 import 'moment-timezone';
 import {EventDTO} from '../../../type/event/eventDTO';
-import {ButtonGreenActionsComponent} from '../../../../../shared/button-green-actions/button-green-actions.component';
 import {FieldComponent} from '../../../../../shared/input/field.component';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {TimezoneOption} from '../../../type/event/time-zone-option';
 import {Team} from '../../../type/team/team';
 import {TeamService} from '../../../services/team/team.service';
@@ -30,11 +28,12 @@ import {AutoSaveService} from '../../services/auto-save.service';
 import {EventService} from '../../../services/event/event.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-indicator.component';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-general-info-event',
   standalone: true,
-  imports: [CommonModule, ButtonGreenActionsComponent, FieldComponent, ReactiveFormsModule, ButtonGreyComponent, FormsModule, SaveIndicatorComponent],
+  imports: [CommonModule, FieldComponent, ReactiveFormsModule, FormsModule, SaveIndicatorComponent, ButtonComponent],
   templateUrl: './general-info-event.component.html',
   styleUrl: './general-info-event.component.scss'
 })

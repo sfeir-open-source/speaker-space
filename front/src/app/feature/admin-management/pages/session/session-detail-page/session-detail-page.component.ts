@@ -1,6 +1,5 @@
 import { Component, DestroyRef, HostListener, inject, OnInit, signal, computed } from '@angular/core';
 import { Category, Format, SessionImportData } from '../../../type/session/session';
-import { ButtonGreyComponent } from '../../../../../shared/button-grey/button-grey.component';
 import { finalize, Observable } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SessionService } from '../../../services/sessions/session.service';
@@ -14,11 +13,11 @@ import {
   Validators
 } from '@angular/forms';
 import { SessionScheduleUpdate } from '../../../type/session/schedule-json-data';
-import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isDefined } from '../../../../../shared/type/predicates';
 import { BaseDetailService, DetailState } from '../../../components/services/base-detail.service';
 import { AsyncPipe } from '@angular/common';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 interface DurationOption {
   readonly label: string;
@@ -29,11 +28,10 @@ interface DurationOption {
   selector: 'app-session-detail-page',
   standalone: true,
   imports: [
-    ButtonGreyComponent,
     NavbarSessionPageComponent,
     ReactiveFormsModule,
-    ButtonGreenActionsComponent,
-    AsyncPipe
+    AsyncPipe,
+    ButtonComponent
   ],
   providers: [BaseDetailService],
   templateUrl: './session-detail-page.component.html',

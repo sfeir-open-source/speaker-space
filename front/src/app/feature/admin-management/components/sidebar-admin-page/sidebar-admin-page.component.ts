@@ -3,14 +3,14 @@ import { SidebarButton, SidebarConfig } from '../../type/components/sidebar-conf
 import { Subject, takeUntil, filter } from 'rxjs';
 import { NavigationEnd, Router } from '@angular/router';
 import { NgClass } from '@angular/common';
-import { ButtonWithIconComponent } from '../../../../shared/button-with-icon/button-with-icon.component';
+import {ButtonComponent} from '../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-sidebar-admin-page',
   standalone: true,
   imports: [
     NgClass,
-    ButtonWithIconComponent
+    ButtonComponent
   ],
   templateUrl: './sidebar-admin-page.component.html',
   styleUrl: './sidebar-admin-page.component.scss'
@@ -96,7 +96,7 @@ export class SidebarAdminPageComponent implements OnInit, OnDestroy {
   }
 
   private calculateButtonClasses(button: SidebarButton, isActive: boolean): string {
-    const baseClasses = button.cssClass || '';
+    const baseClasses = "const baseClasses = 'group flex items-center gap-x-3 w-full text-left p-2 leading-6 transition-colors hover:bg-gray-100'";
     const activeClasses = isActive ? 'bg-gray-100' : '';
 
     return `${baseClasses} ${activeClasses}`.trim();

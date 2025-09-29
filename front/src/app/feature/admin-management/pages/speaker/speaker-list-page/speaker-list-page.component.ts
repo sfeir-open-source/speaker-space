@@ -5,10 +5,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AsyncPipe } from '@angular/common';
 import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ButtonGreyComponent } from '../../../../../shared/button-grey/button-grey.component';
 import { Category, Format, Speaker } from '../../../type/session/session';
 import { SpeakerFilters } from '../../../type/speaker/speaker-filters';
-import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
 import { SpeakerWithSessionsDTO } from '../../../type/speaker/speaker-with-sessions';
 import { SpeakerService } from '../../../services/speaker/speaker.service';
 import { SpeakerFilterPopupComponent } from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
@@ -16,6 +14,7 @@ import { isDefined } from '../../../../../shared/type/predicates';
 import { BaseListService, ListState } from '../../../components/services/base-list.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -23,10 +22,9 @@ import { EventDataService } from '../../../services/event/event-data.service';
     NavbarEventPageComponent,
     FormsModule,
     ReactiveFormsModule,
-    ButtonGreyComponent,
-    ButtonGreenActionsComponent,
     SpeakerFilterPopupComponent,
-    AsyncPipe
+    AsyncPipe,
+    ButtonComponent
   ],
   providers: [BaseListService],
   templateUrl: './speaker-list-page.component.html',

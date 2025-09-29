@@ -25,12 +25,13 @@
             </label>
             <div class="flex justify-center gap-4">
               @for (option of button.options; track option.value) {
-                <button
+                <app-button
                   type="button"
-                  (click)="onButtonChange(button.id, option.value)"
-                  [class]="workingFilters()[button.id] === option.value ? option.activeClass : option.inactiveClass">
+                  [customClass]="workingFilters()[button.id] === option.value ? option.activeClass : option.inactiveClass"
+                  [buttonHandler]="getButtonClickHandler(button.id, option.value)"
+                  [ariaLabel]="'Select ' + option.label">
                   {{ option.label }}
-                </button>
+                </app-button>
               }
             </div>
           </article>
@@ -44,22 +45,23 @@
               {{ dropdown.label }}
             </label>
             <div class="relative">
-              <button
+              <app-button
                 type="button"
-                [id]="dropdown.id + '-select'"
-                (click)="toggleDropdown(dropdown.id)"
-                class="w-full bg-white border border-gray-300 rounded-md px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                [class.border-blue-500]="isDropdownOpen(dropdown.id)"
-                aria-haspopup="listbox"
+                [customClass]="getDropdownButtonClasses(dropdown.id)"
+                [buttonHandler]="getDropdownToggleHandler(dropdown.id)"
+                [ariaLabel]="'Open ' + dropdown.label + ' dropdown'"
+                [attr.id]="dropdown.id + '-select'"
+                [attr.aria-haspopup]="'listbox'"
                 [attr.aria-expanded]="isDropdownOpen(dropdown.id)">
-                <span class="block truncate text-gray-600">
+
+                <span class="block truncate text-gray-600 flex-1 text-left">
                   {{ getDropdownDisplayText(dropdown) }}
                 </span>
-                <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <span class="flex items-center pointer-events-none ml-2">
                   <i class="material-icons text-gray-400 transform transition-transform duration-200"
                      [class.rotate-180]="isDropdownOpen(dropdown.id)">expand_more</i>
                 </span>
-              </button>
+              </app-button>
 
               @if (isDropdownOpen(dropdown.id)) {
                 <div class="fixed z-[60] border border-gray-200 mt-1 bg-white shadow-xl max-h-60 rounded-lg py-1 text-base overflow-auto focus:outline-none"
@@ -98,20 +100,21 @@
     </main>
 
     <footer class="flex items-center justify-between px-4 py-1.5 border-t border-gray-200 bg-gray-50 flex-shrink-0 rounded-b-lg">
-      <app-button-grey
+      <app-button
         type="button"
-        (click)="onReset()"
-        customTextClass="text-gray-600 hover:text-gray-600"
-        class="rounded-md px-3 mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+        [buttonHandler]="getResetHandler()"
+        [customClass]="'text-gray-600 hover:text-gray-600 bg-white hover:bg-gray-100 border border-gray-300 shadow-sm px-3 mr-5'"
+        [ariaLabel]="'Reset all filters'">
         Reset
-      </app-button-grey>
+      </app-button>
 
-      <app-button-green-actions
+      <app-button
         type="button"
-        (click)="onApply()"
-        class="px-3 py-1 text-sm border border-transparent rounded-md">
+        [buttonHandler]="getApplyHandler()"
+        [customClass]="'px-3 py-1 text-sm border border-transparent bg-action hover:bg-action-hover text-white'"
+        [ariaLabel]="'Apply selected filters'">
         Apply Filters
-      </app-button-green-actions>
+      </app-button>
     </footer>
   </section>
 </div>

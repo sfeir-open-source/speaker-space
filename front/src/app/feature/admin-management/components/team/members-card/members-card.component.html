@@ -18,22 +18,23 @@
     </article>
     <article class="flex flex-col sm:flex-row items-center justify-between">
       @if (canManageRoles()) {
-        <button
+        <app-button
           (click)="openChangeRoleModal()"
           type="button"
           [disabled]="member().userId === currentUserId()"
           [class.opacity-50]="member().userId === currentUserId()"
-          class="bg-white text-sm mr-0 sm:mr-1 hover:bg-gray-100 mb-1 sm:mb-0 text-gray-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
-          <span>Change role</span>
-        </button>
-        <button
+          [customClass]="'bg-white text-sm mr-0 sm:mr-1 hover:bg-gray-100 mb-1 sm:mb-0 text-gray-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center'">
+          Change role
+        </app-button>
+
+        <app-button
           (click)="openDeleteModal()"
           type="button"
           [disabled]="!canRemoveThisMember()"
           [class.opacity-50]="!canRemoveThisMember()"
-          class="bg-white text-sm ml-0 sm:ml-1 hover:bg-gray-100 text-red-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center">
-          <span>Remove</span>
-        </button>
+          [customClass]="'bg-white text-sm ml-0 sm:ml-1 hover:bg-gray-100 text-red-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center'">
+          Remove
+        </app-button>
       }
     </article>
   </section>

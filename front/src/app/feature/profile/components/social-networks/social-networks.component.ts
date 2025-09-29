@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormControl } from '@angular/forms';
 import {FieldComponent} from '../../../../shared/input/field.component';
-import {ButtonWithIconComponent} from '../../../../shared/button-with-icon/button-with-icon.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
 import {ProfileService} from '../../services/profile.service';
 
@@ -11,7 +10,6 @@ import {ProfileService} from '../../services/profile.service';
   standalone: true,
   imports: [
     FieldComponent,
-    ButtonWithIconComponent
   ],
   templateUrl: './social-networks.component.html',
   styleUrl: './social-networks.component.scss'
@@ -51,17 +49,5 @@ export class SocialNetworksComponent {
 
   getFormControl(name: string): FormControl {
     return this.profileService.getForm().get(name) as FormControl;
-  }
-
-  navigateTo(path: string) {
-    if (path.startsWith('#')) {
-      const elementId = path.substring(1);
-      const element = document.getElementById(elementId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    } else {
-      this.router.navigate([path]);
-    }
   }
 }
