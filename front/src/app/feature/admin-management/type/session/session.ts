@@ -1,3 +1,5 @@
+import {Observable} from 'rxjs';
+
 export type SessionImportData = {
   id?: string;
   title: string;
@@ -29,6 +31,12 @@ export type ImportResult = {
   successCount: number;
   totalCount: number;
   errors: string[];
+}
+
+export type ImportCallbacks = {
+  onValidateData: (data: any) => void;
+  onProcessData: (data: any) => Observable<ImportResult>;
+  onImportComplete?: (result: ImportResult) => void;
 }
 
 export type Format = {
