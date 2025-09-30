@@ -23,76 +23,20 @@
       }
 
       @if (!isLoading() && !error()) {
-        <form class="w-full mx-auto" (ngSubmit)="onSubmit()">
-          <article class="w-full items-center bg-white shadow-md rounded-lg">
+        <form class="w-full mx-auto" (ngSubmit)="onSubmit()" [formGroup]="eventForm">
+          <article class="w-full bg-white shadow-md rounded-lg">
             <header class="p-4">
               <h1 class="text-md font-medium">Customize event logo</h1>
               <p class="mt-2 text-sm text-gray-600">
                 Upload a beautiful logo for your event.
               </p>
 
-              <section class="mt-6">
-                <input
-                  #fileInput
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/avif"
-                  class="hidden"
-                  (change)="onFileSelected($event)"
-                  [disabled]="isUploading()"
-                  aria-label="Select image file">
-
-                <div
-                  class="relative w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors duration-200 flex items-center justify-center overflow-hidden"
-                  [class.border-blue-500]="isDragOver()"
-                  [class.bg-blue-50]="isDragOver()"
-                  [class.cursor-not-allowed]="!canUpload()"
-                  (click)="triggerFileInput()"
-                  (dragover)="onDragOver($event)"
-                  (dragleave)="onDragLeave($event)"
-                  (drop)="onDrop($event)"
-                  role="button"
-                  tabindex="0"
-                  [attr.aria-label]="selectedImageUrl() ? 'Change event logo' : 'Upload event logo'"
-                  (keydown.enter)="triggerFileInput()"
-                  (keydown.space)="triggerFileInput()">
-
-                  @if (showUploadArea()) {
-                    <div class="text-center">
-                      <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                      <p class="mt-1 text-xs text-gray-500">Click to upload</p>
-                    </div>
-                  }
-
-                  @if (isUploading()) {
-                    <div class="flex flex-col items-center">
-                      <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" aria-hidden="true"></div>
-                      <p class="mt-2 text-xs text-gray-500">Uploading...</p>
-                    </div>
-                  }
-
-                  @if (hasSelectedImage()) {
-                    <img
-                      [src]="selectedImageUrl()"
-                      alt="Event logo preview"
-                      class="w-full h-full object-cover rounded-lg"
-                      (error)="onImageError($event)">
-                    <app-button
-                      type="button"
-                      [customClass]="'absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2'"
-                      (click)="removeImage($event)"
-                      aria-label="Remove image"
-                      title="Remove image">
-                      ×
-                    </app-button>
-                  }
-                </div>
-
-                @if (uploadError()) {
-                  <p class="mt-2 text-sm text-red-600" role="alert">{{ uploadError() }}</p>
-                }
-              </section>
+              <app-event-logo-uploader
+                [initialImageUrl]="logoBase64()"
+                [disabled]="isProcessing()"
+                (imageSelected)="onImageSelected($event)"
+                (imageRemoved)="onImageRemoved()"
+              />
 
               <section class="flex flex-col p-5 bg-indigo-100 mt-5 rounded-md">
                 <span class="block text-md font-medium text-indigo-900">
@@ -102,25 +46,25 @@
                   JPEG, PNG, WEBP or AVIF formats supported with optimal resolution of 500x500.<br>
                   300kB max. You can optimize your logo with
                   <a href="https://squoosh.app"
-                     class="text-black underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                     target="_blank"
-                     rel="noopener noreferrer">
+                    class="text-black underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    target="_blank"
+                    rel="noopener noreferrer">
                     squoosh.app
                   </a>
                 </span>
               </section>
             </header>
 
-            <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+            <hr class="mt-6 rounded-lg w-full mx-auto border-gray-200">
 
             @if (currentUserRole() === 'Owner') {
               <footer class="flex justify-end mt-4 p-4">
                 <app-button
                   type="submit"
-                  [disabled]="isProcessing()"
+                  [disabled]="!canSave()"
                   [customClass]="'bg-action hover:bg-action-hover text-white px-4 py-2 rounded-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-action focus:ring-offset-2 transition-colors duration-200'"
-                  [attr.aria-label]="isProcessing() ? 'Saving changes' : 'Save changes'">
-                  {{ isProcessing() ? 'Saving...' : 'Save' }}
+                  [attr.aria-label]="isSaving() ? 'Saving changes' : 'Save changes'">
+                  {{ isSaving() ? 'Saving...' : 'Save' }}
                 </app-button>
               </footer>
             }
