@@ -1,0 +1,33 @@
+<form class="w-full mx-auto" (ngSubmit)="onSubmit()">
+  <article class="w-full items-center bg-white shadow-md rounded-lg">
+    <header class="p-4">
+      <h1 class="text-xl font-medium">General</h1>
+      <p class="mt-2 text-sm text-gray-600">
+        Change team name and URL
+      </p>
+
+      @for(field of formFields; track field.name) {
+        <app-field
+          [label]="field.label"
+          [type]="field.type"
+          [required]="field.required || false"
+          [control]="getFormControl(field.name)"
+          [name]="field.name">
+        </app-field>
+      }
+    </header>
+
+    <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+
+    @if (currentUserRole() === 'Owner') {
+      <footer class="flex justify-end mt-4 p-4">
+        <app-button
+          type="submit"
+          [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-2 px-3 rounded-md transition-colors'"
+          [disabled]="!formService.isFormValid()">
+          Save
+        </app-button>
+      </footer>
+    }
+  </article>
+</form>
