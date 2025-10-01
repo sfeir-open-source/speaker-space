@@ -1,0 +1,25 @@
+<article class="w-full items-center bg-white shadow-md rounded-lg mb-5">
+  <header class="p-4 flex items-center justify-between">
+    <h1 class="text-xl font-medium">General Information</h1>
+    <p class="mt-1 sm:mt-0 text-xs text-gray-600">
+      Please note that if the data is modified, it is automatically saved!
+    </p>
+  </header>
+
+  <app-general-info-event
+    mode="edit"
+    [initialData]="generalData()"
+    [initialVisibility]="visibility()">
+  </app-general-info-event>
+</article>
+
+<article class="w-full items-center bg-white shadow-md rounded-lg">
+  <header class="flex items-center justify-between p-4">
+    <h1 class="text-xl font-medium">Event Details</h1>
+  </header>
+
+  <app-information-event
+    mode="edit"
+    [initialData]="informationData()">
+  </app-information-event>
+</article>
