@@ -1,0 +1,22 @@
+@if (control().hasError('required') && isSubmitted()) {
+  <p
+    class="text-red-500 text-sm mt-1"
+    [attr.aria-describedby]="fieldName() + '-error'"
+    role="alert">
+    This field is required
+  </p>
+}
+
+@if (isNameField() && isSubmitted()) {
+  @if (control().hasError('minlength')) {
+    <p class="text-red-500 text-sm mt-1" role="alert">
+      Name must be at least 2 characters long
+    </p>
+  }
+
+  @if (control().hasError('maxlength')) {
+    <p class="text-red-500 text-sm mt-1" role="alert">
+      Name must not exceed 50 characters
+    </p>
+  }
+}

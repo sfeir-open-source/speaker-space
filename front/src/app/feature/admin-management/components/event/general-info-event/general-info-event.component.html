@@ -9,28 +9,11 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     @for (field of formFields(); track field.name) {
       <div class="mb-4">
-        @if (getFormControl(field.name).hasError('required') && isSubmitted) {
-          <p
-            class="text-red-500 text-sm mt-1"
-            [attr.aria-describedby]="field.name + '-error'"
-            role="alert">
-            This field is required
-          </p>
-        }
-
-        @if ((field.name === 'name' || field.name === 'eventName') && isSubmitted) {
-          @if (getFormControl(field.name).hasError('minlength')) {
-            <p class="text-red-500 text-sm mt-1" role="alert">
-              Name must be at least 2 characters long
-            </p>
-          }
-
-          @if (getFormControl(field.name).hasError('maxlength')) {
-            <p class="text-red-500 text-sm mt-1" role="alert">
-              Name must not exceed 50 characters
-            </p>
-          }
-        }
+        <app-form-field-errors
+          [control]="getFormControl(field.name)"
+          [fieldName]="field.name"
+          [isSubmitted]="isSubmitted">
+        </app-form-field-errors>
 
         <app-field
           [label]="field.label"
