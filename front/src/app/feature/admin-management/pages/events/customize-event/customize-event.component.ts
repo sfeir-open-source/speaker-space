@@ -189,12 +189,12 @@ export class CustomizeEventComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.handleUpdateSuccess(response);
-          this.isSaving.set(false); // ✅ Désactive le saving
+          this.isSaving.set(false);
         },
         error: (err) => {
           console.error('Update error:', err);
           this.error.set('Failed to update event. Please try again.');
-          this.isSaving.set(false); // ✅ Désactive le saving
+          this.isSaving.set(false);
         }
       });
   }
