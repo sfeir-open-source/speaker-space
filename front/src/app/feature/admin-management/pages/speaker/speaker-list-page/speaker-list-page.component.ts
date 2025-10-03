@@ -1,4 +1,4 @@
-import { Component, input, OnInit, OnDestroy, inject } from '@angular/core';
+import {Component, input, OnInit, OnDestroy, inject, computed} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -11,10 +11,12 @@ import { SpeakerWithSessionsDTO } from '../../../type/speaker/speaker-with-sessi
 import { SpeakerService } from '../../../services/speaker/speaker.service';
 import { SpeakerFilterPopupComponent } from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
 import { isDefined } from '../../../../../shared/type/predicates';
-import { BaseListService, ListState } from '../../../components/services/base-list.service';
+import { BaseListService } from '../../../components/services/base-list.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import {ButtonComponent} from '../../../../../shared/button/button.component';
+import {PaginationListComponent} from '../../../components/pagination-list/pagination-list.component';
+import {ListState} from '../../../components/type/liste-state';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -24,7 +26,8 @@ import {ButtonComponent} from '../../../../../shared/button/button.component';
     ReactiveFormsModule,
     SpeakerFilterPopupComponent,
     AsyncPipe,
-    ButtonComponent
+    ButtonComponent,
+    PaginationListComponent
   ],
   providers: [BaseListService],
   templateUrl: './speaker-list-page.component.html',
@@ -54,6 +57,34 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
   readonly state$: Observable<ListState> = this.listService.state$;
 
   readonly Math = Math;
+
+  readonly totalSpeakers = computed(() =>
+    this.listService.paginationService.totalItemsSignal()
+  );
+
+  readonly isLoadingSpeakers = computed(() =>
+    this.listService.getCurrentState().isLoadingItems
+  );
+
+  readonly paginatedSpeakers = computed(() =>
+    this.listService.paginationService.paginatedItemsSignal()
+  );
+
+  readonly totalPages = computed(() =>
+    this.listService.paginationService.totalPagesSignal()
+  );
+
+  readonly selectAll = computed(() =>
+    this.listService.getCurrentState().selectAll
+  );
+
+  readonly selectedItems = computed(() =>
+    this.listService.getCurrentState().selectedItems
+  );
+
+  readonly searchTerm = computed(() =>
+    this.listService.getCurrentState().searchTerm
+  );
 
   constructor() {
     (this.listService as any).eventService = this.eventService;
@@ -89,8 +120,6 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
         )
         .subscribe({
           next: (speakersWithSessions: SpeakerWithSessionsDTO[]) => {
-            console.log('Received speakers with sessions:', speakersWithSessions);
-
             this.speakersWithSessions = speakersWithSessions;
 
             const speakers: Speaker[] = speakersWithSessions.map(sws => sws.speaker);
@@ -121,46 +150,6 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
 
     this.listService.updateItems([]);
     this.speakersWithSessions = [];
-  }
-
-  get totalSpeakers(): number {
-    return this.listService.getCurrentState().totalItems;
-  }
-
-  get isLoadingSpeakers(): boolean {
-    return this.listService.getCurrentState().isLoadingItems;
-  }
-
-  get paginatedSpeakers(): Speaker[] {
-    return this.listService.getPaginatedItems();
-  }
-
-  get currentPage(): number {
-    return this.listService.getCurrentState().currentPage;
-  }
-
-  get totalPages(): number {
-    return this.listService.getCurrentState().totalPages;
-  }
-
-  get itemsPerPage(): number {
-    return this.listService.getCurrentState().itemsPerPage;
-  }
-
-  get pageNumbers(): number[] {
-    return this.listService.getPageNumbers();
-  }
-
-  get selectAll(): boolean {
-    return this.listService.getCurrentState().selectAll;
-  }
-
-  get selectedItems(): string[] {
-    return this.listService.getCurrentState().selectedItems;
-  }
-
-  get searchTerm(): string {
-    return this.listService.getCurrentState().searchTerm;
   }
 
   onFiltersApplied(filters: SpeakerFilters): void {
@@ -207,10 +196,6 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  goToPage(page: number): void {
-    this.listService.goToPage(page);
-  }
-
   onSubmit(event: Event): void {
     event.preventDefault();
   }
@@ -221,7 +206,7 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
 
   isSpeakerSelected(speakerName: string | undefined): boolean {
     if (!speakerName) return false;
-    return this.selectedItems.includes(speakerName);
+    return this.selectedItems().includes(speakerName);
   }
 
   toggleSpeakerSelection(speakerName: string): void {

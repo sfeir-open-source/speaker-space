@@ -3,16 +3,17 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AsyncPipe } from '@angular/common';
-
 import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Category, Format, SessionImportData, Speaker } from '../../../type/session/session';
 import { SessionFilters } from '../../../type/session/session-filters';
 import { SessionFilterPopupComponent } from '../../../components/session/session-filter-popup/session-filter-popup.component';
-import { BaseListService, ListState } from '../../../components/services/base-list.service';
+import { BaseListService } from '../../../components/services/base-list.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
-import {ButtonComponent} from '../../../../../shared/button/button.component';
+import { ButtonComponent } from '../../../../../shared/button/button.component';
+import { PaginationListComponent } from '../../../components/pagination-list/pagination-list.component';
+import {ListState} from '../../../components/type/liste-state';
 
 @Component({
   selector: 'app-session-list-page',
@@ -23,7 +24,8 @@ import {ButtonComponent} from '../../../../../shared/button/button.component';
     ReactiveFormsModule,
     SessionFilterPopupComponent,
     AsyncPipe,
-    ButtonComponent
+    ButtonComponent,
+    PaginationListComponent
   ],
   providers: [BaseListService],
   templateUrl: './session-list-page.component.html',
@@ -31,7 +33,6 @@ import {ButtonComponent} from '../../../../../shared/button/button.component';
 })
 export class SessionListPageComponent implements OnInit {
   readonly icon = input<string>('search');
-
   readonly showFilterPopup = signal<boolean>(false);
   readonly availableFormats = signal<Format[]>([]);
   readonly availableCategories = signal<Category[]>([]);
@@ -42,7 +43,8 @@ export class SessionListPageComponent implements OnInit {
 
   readonly hasActiveFilters = computed(() => {
     const filters = this.currentFilters();
-    return filters.selectedFormats.length > 0 || filters.selectedCategories.length > 0;
+    return filters.selectedFormats.length > 0 ||
+      filters.selectedCategories.length > 0;
   });
 
   readonly activeFiltersCount = computed(() => {
@@ -50,31 +52,33 @@ export class SessionListPageComponent implements OnInit {
     return filters.selectedFormats.length + filters.selectedCategories.length;
   });
 
-  readonly totalSessions = computed(() => this.listService.getCurrentState().totalItems);
-  readonly isLoadingSessions = computed(() => this.listService.getCurrentState().isLoadingItems);
-  readonly paginatedSessions = computed(() => this.listService.getPaginatedItems());
-  readonly currentPage = computed(() => this.listService.getCurrentState().currentPage);
-  readonly totalPages = computed(() => this.listService.getCurrentState().totalPages);
-  readonly itemsPerPage = computed(() => this.listService.getCurrentState().itemsPerPage);
-  readonly pageNumbers = computed(() => this.listService.getPageNumbers());
-  readonly selectAll = computed(() => this.listService.getCurrentState().selectAll);
-  readonly selectedItems = computed(() => this.listService.getCurrentState().selectedItems);
-  readonly searchTerm = computed(() => this.listService.getCurrentState().searchTerm);
+  readonly totalSessions = computed(() =>
+    this.listService.paginationService.totalItemsSignal()
+  );
 
-  readonly paginationInfo = computed(() => {
-    const current = this.currentPage();
-    const itemsPerPageValue = this.itemsPerPage();
-    const total = this.totalSessions();
+  readonly isLoadingSessions = computed(() =>
+    this.listService.getCurrentState().isLoadingItems
+  );
 
-    return {
-      start: (current - 1) * itemsPerPageValue + 1,
-      end: Math.min(current * itemsPerPageValue, total),
-      total
-    };
-  });
+  readonly paginatedSessions = computed(() =>
+    this.listService.paginationService.paginatedItemsSignal()
+  );
 
-  readonly canGoToPreviousPage = computed(() => this.currentPage() > 1);
-  readonly canGoToNextPage = computed(() => this.currentPage() < this.totalPages());
+  readonly totalPages = computed(() =>
+    this.listService.paginationService.totalPagesSignal()
+  );
+
+  readonly selectAll = computed(() =>
+    this.listService.getCurrentState().selectAll
+  );
+
+  readonly selectedItems = computed(() =>
+    this.listService.getCurrentState().selectedItems
+  );
+
+  readonly searchTerm = computed(() =>
+    this.listService.getCurrentState().searchTerm
+  );
 
   readonly Math = Math;
   readonly listService = inject(BaseListService<SessionImportData>);
@@ -156,11 +160,6 @@ export class SessionListPageComponent implements OnInit {
     this.applyFilters();
   }
 
-  goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages()) return;
-    this.listService.goToPage(page);
-  }
-
   onSubmit(event: Event): void {
     event.preventDefault();
   }
@@ -183,7 +182,9 @@ export class SessionListPageComponent implements OnInit {
   }
 
   toggleSelectAll(): void {
-    this.listService.toggleSelectAll((session: SessionImportData) => this.getItemId(session));
+    this.listService.toggleSelectAll(
+      (session: SessionImportData) => this.getItemId(session)
+    );
   }
 
   onRowClick(session: SessionImportData, event: Event): void {
@@ -284,7 +285,10 @@ export class SessionListPageComponent implements OnInit {
     this.listService.updateFilteredItems(filtered);
   }
 
-  private filterByFormats(sessions: SessionImportData[], selectedFormats: string[]): SessionImportData[] {
+  private filterByFormats(
+    sessions: SessionImportData[],
+    selectedFormats: string[]
+  ): SessionImportData[] {
     return sessions.filter(session =>
       session.formats?.some(format =>
         selectedFormats.includes(format.id)
@@ -292,7 +296,10 @@ export class SessionListPageComponent implements OnInit {
     );
   }
 
-  private filterByCategories(sessions: SessionImportData[], selectedCategories: string[]): SessionImportData[] {
+  private filterByCategories(
+    sessions: SessionImportData[],
+    selectedCategories: string[]
+  ): SessionImportData[] {
     return sessions.filter(session =>
       session.categories?.some(category =>
         selectedCategories.includes(category.id)
@@ -300,7 +307,10 @@ export class SessionListPageComponent implements OnInit {
     );
   }
 
-  private filterBySearchTerm(sessions: SessionImportData[], searchTerm: string): SessionImportData[] {
+  private filterBySearchTerm(
+    sessions: SessionImportData[],
+    searchTerm: string
+  ): SessionImportData[] {
     const searchLower = searchTerm.toLowerCase();
 
     return sessions.filter(session =>
@@ -310,17 +320,5 @@ export class SessionListPageComponent implements OnInit {
         speaker.name?.toLowerCase().includes(searchLower)
       )
     );
-  }
-
-  goToPreviousPage(): void {
-    if (this.canGoToPreviousPage()) {
-      this.goToPage(this.currentPage() - 1);
-    }
-  }
-
-  goToNextPage(): void {
-    if (this.canGoToNextPage()) {
-      this.goToPage(this.currentPage() + 1);
-    }
   }
 }
