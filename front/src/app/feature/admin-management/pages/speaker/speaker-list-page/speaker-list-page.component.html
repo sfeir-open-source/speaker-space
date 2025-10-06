@@ -62,22 +62,22 @@
                       customTextClass="text-gray-600 hover:text-gray-600"
                       [customClass]="'text-gray-600 hover:text-gray-600 flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm relative'"
                       (click)="openFilterPopup()"
-                      [attr.aria-label]="'Open filters' + (hasActiveFilters ? ' (' + activeFiltersCount + ' active)' : '')"
-                      [attr.aria-expanded]="showFilterPopup">
+                      [attr.aria-label]="'Open filters' + (hasActiveFilters() ? ' (' + activeFiltersCount + ' active)' : '')"
+                      [attr.aria-expanded]="showFilterPopup()">
                       Filters
-                      @if (hasActiveFilters) {
+                      @if (hasActiveFilters()) {
                         <span class="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
                               [attr.aria-label]="activeFiltersCount + ' active filters'">
-                          {{ activeFiltersCount }}
+                          {{ activeFiltersCount() }}
                         </span>
                       }
                     </app-button>
 
-                    @if (showFilterPopup) {
+                    @if (showFilterPopup()) {
                       <app-speaker-filter-popup
-                        [availableFormats]="availableFormats"
-                        [availableCategories]="availableCategories"
-                        [currentFilters]="currentFilters"
+                        [availableFormats]="availableFormats()"
+                        [availableCategories]="availableCategories()"
+                        [currentFilters]="currentFilters()"
                         (filtersApplied)="onFiltersApplied($event)"
                         (filtersReset)="onFiltersReset()"
                         (popupClosed)="closeFilterPopup()"
@@ -164,7 +164,7 @@
                                 </label>
                               </div>
                             </td>
-                            <th scope="row" class="px-2 py-2 font-medium text-gray-900">
+                            <th scope="row" class="px-2 py-2 font-medium text-gray-900 whitespace-nowrap">
                               <div class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-1 pr-3 py-1 bg-white shadow-sm">
                                 <div class="flex-shrink-0">
                                   <img

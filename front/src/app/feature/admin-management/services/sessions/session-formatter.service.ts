@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import {SessionImportData, Speaker} from '../../type/session/session';
 
 @Injectable({ providedIn: 'root' })
 export class SessionFormatterService {
@@ -64,5 +65,26 @@ export class SessionFormatterService {
     }
 
     return parts.join(' ');
+  }
+
+  formatSpeakers(speakers: Speaker[] | undefined): string {
+    if (!speakers || speakers.length === 0) return 'Aucun speaker';
+
+    return speakers
+      .map(speaker => speaker.name)
+      .filter(name => name)
+      .join(', ');
+  }
+
+  sortByTitle(sessions: SessionImportData[]): SessionImportData[] {
+    return sessions.sort((a, b) => {
+      const titleA = a.title?.toLowerCase() || '';
+      const titleB = b.title?.toLowerCase() || '';
+      return titleA.localeCompare(titleB);
+    });
+  }
+
+  getSessionId(session: SessionImportData): string {
+    return session.id || '';
   }
 }
