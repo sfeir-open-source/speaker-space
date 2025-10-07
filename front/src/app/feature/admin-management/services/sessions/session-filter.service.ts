@@ -101,7 +101,7 @@ export class SessionFilterService {
 
     return sessions.filter(session =>
       session.title?.toLowerCase().includes(searchLower) ||
-      session.abstractText?.toLowerCase().includes(searchLower) ||
+      session.abstract?.toLowerCase().includes(searchLower) ||
       session.speakers?.some(speaker => speaker.name?.toLowerCase().includes(searchLower))
     );
   }

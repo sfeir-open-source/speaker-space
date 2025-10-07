@@ -2,8 +2,9 @@ import {Observable} from 'rxjs';
 
 export type SessionImportData = {
   id?: string;
+  idConferenceHall?: string;
   title: string;
-  abstractText: string;
+  abstract: string;
   deliberationStatus: string;
   confirmationStatus: string;
   level: string;
@@ -53,6 +54,7 @@ export type Category = {
 
 export type Speaker = {
   id: string;
+  idConferenceHall?: string;
   name: string;
   bio: string;
   company: string;

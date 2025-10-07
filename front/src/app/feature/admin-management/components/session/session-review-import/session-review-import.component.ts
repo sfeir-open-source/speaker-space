@@ -99,7 +99,7 @@ export class SessionReviewImportComponent {
     return reviewData.map(session => ({
       id: session.id,
       title: session.title,
-      abstractText: session.abstract,
+      abstract: session.abstract,
       deliberationStatus: session.deliberationStatus || '',
       confirmationStatus: session.confirmationStatus || '',
       level: session.level || '',

@@ -1,45 +1,43 @@
 package com.speakerspace.model.session;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.cloud.spring.data.firestore.Document;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Builder
 @Document
-public class Session {
+public class SessionImportData {
+
     @NotBlank(message = "ID is required")
     @EqualsAndHashCode.Include
     private String id;
-    private String idConferenceHall;
-    private Date start;
-    private Date end;
-    private String track;
     private String title;
+
+    @JsonProperty("abstract")
     private String abstractText;
+
     private String deliberationStatus;
     private String confirmationStatus;
     private String level;
     private String references;
-    private List<Format> formats;
-    private List<Category> categories;
-    private List<String> tags;
-    private List<String> languages;
-    private List<Speaker> speakers;
-    private Reviews reviews;
     private String eventId;
-    private Date createdAt;
-    private Date updatedAt;
-
-    public Session() {
-        Date now = new Date();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
+    private List<Format> formats = new ArrayList<>();
+    private List<Category> categories = new ArrayList<>();
+    private List<String> tags = new ArrayList<>();
+    private List<String> languages = new ArrayList<>();
+    private List<Speaker> speakers = new ArrayList<>();
+    private Reviews reviews;
+    private Date start;
+    private Date end;
+    private String track;
 }

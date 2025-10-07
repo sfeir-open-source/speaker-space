@@ -1,12 +1,16 @@
 package com.speakerspace.controller;
 
+import com.speakerspace.dto.session.SpeakerCreateRequestDTO;
 import com.speakerspace.dto.session.SpeakerDTO;
 import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.EventAuthorizationHelper;
 import com.speakerspace.mapper.session.SpeakerMapper;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.service.SpeakerService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -24,18 +28,15 @@ public class SpeakerController {
     private final SpeakerMapper speakerMapper;
     private final EventAuthorizationHelper authorizationHelper;
 
-    @PostMapping("/event/{eventId}")
-    public ResponseEntity<SpeakerDTO> createSpeaker(
-            @PathVariable String eventId,
-            @RequestBody SpeakerDTO speakerDTO,
+    @PostMapping("/event/{eventId}/new-speaker")
+    public ResponseEntity<ResponseEntity<SpeakerDTO>> createNewSpeaker(
+            @PathVariable @NotBlank String eventId,
+            @RequestBody @Valid SpeakerCreateRequestDTO createRequest,
             Authentication authentication) throws AccessDeniedException {
 
         return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
-            Speaker speaker = speakerMapper.convertToEntity(speakerDTO);
-            speaker.setEventId(eventId);
-
-            Speaker savedSpeaker = speakerService.saveSpeaker(speaker);
-            return speakerMapper.convertToDTO(savedSpeaker);
+            SpeakerDTO createdSpeaker = speakerService.createSpeaker(eventId, createRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdSpeaker);
         });
     }
 
@@ -52,19 +53,21 @@ public class SpeakerController {
         });
     }
 
-    @GetMapping("/{speakerId}")
+    @GetMapping("/{speakerId}/event/{eventId}")
     public ResponseEntity<SpeakerDTO> getSpeaker(
             @PathVariable String speakerId,
+            @PathVariable String eventId,
             Authentication authentication) throws AccessDeniedException {
 
-        Speaker speaker = speakerService.findById(speakerId);
-        if (speaker == null) {
-            throw new EntityNotFoundException("Speaker not found with id: " + speakerId);
-        }
-
-        return authorizationHelper.executeWithEventAuthorization(speaker.getEventId(), authentication, () ->
-                speakerMapper.convertToDTO(speaker));
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
+            Speaker speaker = speakerService.findByIdAndEventId(speakerId, eventId);
+            if (speaker == null) {
+                throw new EntityNotFoundException("Speaker not found with id: " + speakerId);
+            }
+            return speakerMapper.convertToDTO(speaker);
+        });
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSpeaker(@PathVariable String id) {
