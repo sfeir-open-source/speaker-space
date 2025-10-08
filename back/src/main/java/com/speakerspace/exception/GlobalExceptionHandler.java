@@ -1,7 +1,6 @@
 package com.speakerspace.exception;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -9,17 +8,14 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.nio.file.AccessDeniedException;
-import java.util.HashMap;
-import java.util.Map;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
-
-    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<AppError> handleNullPointerException(NullPointerException ex) {
-        logger.error("Null pointer exception: {}", ex.getMessage(), ex);
+        log.error("Null pointer exception: {}", ex.getMessage(), ex);
         AppError errorResponse = new AppError(
                 "Data validation error",
                 "Required data is missing or invalid"
@@ -29,14 +25,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<AppError> handleIllegalArgumentException(IllegalArgumentException ex) {
-        logger.error("Illegal argument/validation error: {}", ex.getMessage(), ex);
+        log.error("Illegal argument/validation error: {}", ex.getMessage(), ex);
         return ResponseEntity.badRequest()
                 .body(new AppError("Invalid input",ex.getMessage()));
     }
 
     @ExceptionHandler(UnsupportedOperationException.class)
     public ResponseEntity<AppError> handleUnsupportedOperation(UnsupportedOperationException ex) {
-        logger.error("Unsupported operation error: {}", ex.getMessage(), ex);
+        log.error("Unsupported operation error: {}", ex.getMessage(), ex);
         AppError errorResponse = new AppError(
                 "Operation not supported",
                 "An internal error occurred while processing your request"
@@ -46,7 +42,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<AppError> handleAccessDenied(AccessDeniedException ex) {
-        logger.warn("Access denied: {}", ex.getMessage());
+        log.warn("Access denied: {}", ex.getMessage());
         AppError errorResponse = new AppError(
                 "Access denied",
                 "You do not have permission to perform this action."
@@ -56,28 +52,28 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<AppError> handleEntityNotFound(EntityNotFoundException ex) {
-        logger.warn("Entity not found: {}", ex.getMessage());
+        log.warn("Entity not found: {}", ex.getMessage());
         return ResponseEntity.badRequest()
                 .body(new AppError("Resource not found",ex.getMessage()));
     }
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<AppError> handleValidationException(ValidationException ex) {
-        logger.error("Validation error: {}", ex.getMessage());
+        log.error("Validation error: {}", ex.getMessage());
         return ResponseEntity.badRequest()
                 .body(new AppError("Validation failed",ex.getMessage(),ex.getErrors()));
     }
 
     @ExceptionHandler(FirebaseAuthenticationException.class)
     public ResponseEntity<AppError> handleFirebaseAuth(FirebaseAuthenticationException ex) {
-        logger.error("Firebase authentication error: {}", ex.getMessage());
+        log.error("Firebase authentication error: {}", ex.getMessage());
         return ResponseEntity.badRequest()
                 .body(new AppError("Authentication failed",ex.getMessage()));
     }
 
     @ExceptionHandler(TokenExpiredException.class)
     public ResponseEntity<AppError> handleTokenExpired(TokenExpiredException ex) {
-        logger.warn("Token expired: {}", ex.getMessage());
+        log.warn("Token expired: {}", ex.getMessage());
         AppError errorResponse = new AppError(
                 "Token expired",
                 "Please refresh your authentication"
@@ -87,7 +83,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<AppError> handleJsonParseError(HttpMessageNotReadableException ex) {
-        logger.error("JSON parsing error: {}", ex.getMessage());
+        log.error("JSON parsing error: {}", ex.getMessage());
         AppError errorResponse = new AppError(
                 "Invalid JSON format",
                 "Please check your JSON structure"
@@ -97,7 +93,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<AppError> handleRuntimeException(RuntimeException ex) {
-        logger.error("Runtime error: {}", ex.getMessage(), ex);
+        log.error("Runtime error: {}", ex.getMessage(), ex);
         AppError errorResponse = new AppError(
                 "Server error",
                 "An error occurred while processing your request"
@@ -107,7 +103,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<AppError> handleGenericException(Exception ex) {
-        logger.error("Unexpected error: {}", ex.getMessage(), ex);
+        log.error("Unexpected error: {}", ex.getMessage(), ex);
         AppError errorResponse = new AppError(
                 "Server error",
                 "Please try again later"

@@ -11,8 +11,7 @@ import com.speakerspace.repository.SessionRepository;
 import com.speakerspace.repository.SpeakerRepository;
 import com.speakerspace.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -21,11 +20,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TeamService {
-
-    private static final Logger logger = LoggerFactory.getLogger(TeamService.class);
 
     private final TeamMapper teamMapper;
     private final EventRepository eventRepository;
@@ -161,13 +159,13 @@ public class TeamService {
 
             teamRepository.deleteTeam(teamId);
 
-            logger.info("Team deleted successfully: {} (with {} events, {} sessions, {} speakers)",
+            log.info("Team deleted successfully: {} (with {} events, {} sessions, {} speakers)",
                     teamId, deletedEventsCount, totalDeletedSessions, totalDeletedSpeakers);
 
             return true;
 
         } catch (Exception e) {
-            logger.error("Error in Firestore transaction for team deletion: {}", e.getMessage(), e);
+            log.error("Error in Firestore transaction for team deletion: {}", e.getMessage(), e);
             throw e;
         }
     }

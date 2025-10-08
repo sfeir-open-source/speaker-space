@@ -1,6 +1,5 @@
 package com.speakerspace.controller;
 
-import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.EventAuthorizationHelper;
 import com.speakerspace.model.session.SessionImportData;
@@ -19,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/speaker-sessions")
@@ -37,7 +35,7 @@ public class SpeakerSessionController {
             Authentication authentication) {
 
         return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
-            String userEmail = extractEmailFromAuthentication(authentication);
+            String userEmail = speakerService.extractEmailFromAuthentication(authentication);
 
             List<SessionImportData> sessions = speakerService.getSessionsByEventAndSpeakerEmail(eventId, userEmail);
 
@@ -57,7 +55,7 @@ public class SpeakerSessionController {
             Authentication authentication) {
 
         return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
-            String userEmail = extractEmailFromAuthentication(authentication);
+            String userEmail = speakerService.extractEmailFromAuthentication(authentication);
 
             SessionImportData session = sessionService.getSessionByIdForSpeaker(eventId, sessionId, userEmail);
 
@@ -76,7 +74,7 @@ public class SpeakerSessionController {
             Authentication authentication) {
 
         return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
-            String userEmail = extractEmailFromAuthentication(authentication);
+            String userEmail = speakerService.extractEmailFromAuthentication(authentication);
 
             Speaker speaker = speakerService.getSpeakerByEmailAndEventId(userEmail, eventId);
 
@@ -88,15 +86,5 @@ public class SpeakerSessionController {
         });
     }
 
-    private String extractEmailFromAuthentication(org.springframework.security.core.Authentication authentication) {
-        if (authentication.getPrincipal() instanceof FirebaseToken token) {
-            return token.getEmail();
-        }
 
-        if (authentication.getDetails() instanceof Map<?, ?> details) {
-            return (String) details.get("email");
-        }
-
-        throw new IllegalStateException("Unable to extract email from authentication");
-    }
 }

@@ -335,6 +335,31 @@ public class SessionService {
         return sessionMapper.convertToDTO(updatedSession);
     }
 
+
+    public void validateEventIdMatch(String pathEventId, String bodyEventId) {
+        if (!pathEventId.equals(bodyEventId)) {
+            throw new IllegalArgumentException("Event ID mismatch");
+        }
+    }
+
+    public void validateSessionsData(List<SessionScheduleImportDataDTO> sessions) {
+        if (sessions == null || sessions.isEmpty()) {
+            throw new IllegalArgumentException("No sessions data provided");
+        }
+    }
+
+    public void validateCreateRequest(SessionCreateRequestDTO request) {
+        if (request.title() == null || request.title().trim().isEmpty()) {
+            throw new IllegalArgumentException("Session title is required");
+        }
+        if (request.title().length() > 200) {
+            throw new IllegalArgumentException("Session title must not exceed 200 characters");
+        }
+        if (request.abstractText() != null && request.abstractText().length() > 2000) {
+            throw new IllegalArgumentException("Abstract must not exceed 2000 characters");
+        }
+    }
+
     private String generateSessionId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }

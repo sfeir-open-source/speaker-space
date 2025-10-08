@@ -1,18 +1,23 @@
 package com.speakerspace.mapper;
 
 import com.speakerspace.dto.EventDTO;
+import com.speakerspace.exception.UnauthorizedException;
 import com.speakerspace.model.Event;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.speakerspace.security.AuthenticationHelper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.Optional;
 
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class EventMapper {
 
-    private static final Logger logger = LoggerFactory.getLogger(EventMapper.class);
+    private final AuthenticationHelper authHelper;
 
     public EventDTO convertToDTO(Event event) {
         if (event == null) return null;
@@ -74,13 +79,68 @@ public class EventMapper {
         return event;
     }
 
+    public EventDTO eventWithUserId(EventDTO eventDTO, Authentication authentication) {
+        if (eventDTO == null) return null;
+        if (authentication == null) {
+            throw new UnauthorizedException("Authentication required");
+        }
+
+        return EventDTO.builder()
+                .idEvent(eventDTO.idEvent())
+                .eventName(eventDTO.eventName())
+                .description(eventDTO.description())
+                .endDate(eventDTO.endDate())
+                .url(eventDTO.url())
+                .startDate(eventDTO.startDate())
+                .isOnline(eventDTO.isOnline())
+                .location(eventDTO.location())
+                .isPrivate(eventDTO.isPrivate())
+                .webLinkUrl(eventDTO.webLinkUrl())
+                .isFinish(eventDTO.isFinish())
+                .userCreateId(authHelper.getUserId(authentication))
+                .conferenceHallUrl(eventDTO.conferenceHallUrl())
+                .teamId(eventDTO.teamId())
+                .timeZone(eventDTO.timeZone())
+                .logoBase64(eventDTO.logoBase64())
+                .type(eventDTO.type())
+                .build();
+    }
+
+    public EventDTO mergeForUpdate(EventDTO updated, EventDTO existing, Authentication authentication) {
+        if (updated == null || existing == null)
+            throw new IllegalArgumentException("Updated and existing events must not be null");
+        if (authentication == null)
+            throw new UnauthorizedException("Authentication required");
+
+        return EventDTO.builder()
+                .idEvent(existing.idEvent())
+                .eventName(updated.eventName())
+                .description(updated.description())
+                .endDate(updated.endDate())
+                .url(updated.url())
+                .startDate(updated.startDate())
+                .isOnline(updated.isOnline())
+                .location(updated.location())
+                .isPrivate(updated.isPrivate())
+                .webLinkUrl(updated.webLinkUrl())
+                .isFinish(updated.isFinish())
+                .userCreateId(existing.userCreateId())
+                .conferenceHallUrl(updated.conferenceHallUrl())
+                .teamId(updated.teamId())
+                .timeZone(updated.timeZone())
+                .logoBase64(updated.logoBase64())
+                .type(updated.type())
+                .build();
+    }
+
+
     private com.google.cloud.Timestamp parseStringToTimestamp(String dateString) {
         try {
             Instant instant = Instant.parse(dateString);
             return com.google.cloud.Timestamp.ofTimeSecondsAndNanos(
                     instant.getEpochSecond(), instant.getNano());
         } catch (Exception e) {
-            logger.error("Failed to parse date: {}", dateString, e);
+            log.error("Failed to parse date: {}", dateString, e);
             throw new IllegalArgumentException("Invalid date format: " + dateString, e);
         }
     }

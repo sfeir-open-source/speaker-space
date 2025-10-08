@@ -1,5 +1,6 @@
 package com.speakerspace.service;
 
+import com.google.firebase.auth.FirebaseToken;
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.session.*;
 import com.speakerspace.mapper.session.SessionMapper;
@@ -85,7 +86,17 @@ public class SpeakerService {
         return speakerRepository.deleteSpeaker(id);
     }
 
+    public String extractEmailFromAuthentication(org.springframework.security.core.Authentication authentication) {
+        if (authentication.getPrincipal() instanceof FirebaseToken token) {
+            return token.getEmail();
+        }
 
+        if (authentication.getDetails() instanceof Map<?, ?> details) {
+            return (String) details.get("email");
+        }
+
+        throw new IllegalStateException("Unable to extract email from authentication");
+    }
 
     private void validateBusinessRules(String eventId, SpeakerCreateRequestDTO createRequest) {
         EventDTO event = eventService.getEventById(eventId);

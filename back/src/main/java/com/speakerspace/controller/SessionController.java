@@ -33,7 +33,7 @@ public class SessionController {
             Authentication authentication) throws AccessDeniedException {
 
         return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
-            validateEventIdMatch(eventId, importRequest.eventId());
+            sessionService.validateEventIdMatch(eventId, importRequest.eventId());
             return sessionService.importSessionsReview(eventId, importRequest.sessions());
         });
     }
@@ -45,8 +45,8 @@ public class SessionController {
             Authentication authentication) throws AccessDeniedException {
 
         return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
-            validateEventIdMatch(eventId, importRequest.eventId());
-            validateSessionsData(importRequest.sessions());
+            sessionService.validateEventIdMatch(eventId, importRequest.eventId());
+            sessionService.validateSessionsData(importRequest.sessions());
             return sessionService.importSessionsSchedule(eventId, importRequest.sessions());
         });
     }
@@ -59,7 +59,7 @@ public class SessionController {
             Authentication authentication) throws AccessDeniedException {
 
         return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
-            validateCreateRequest(createRequest);
+            sessionService.validateCreateRequest(createRequest);
             return sessionService.createSession(eventId, createRequest);
         });
     }
@@ -185,30 +185,6 @@ public class SessionController {
             throw new EntityNotFoundException("Session not found with id: " + id);
         }
         return ResponseEntity.noContent().build();
-    }
-
-    private void validateEventIdMatch(String pathEventId, String bodyEventId) {
-        if (!pathEventId.equals(bodyEventId)) {
-            throw new IllegalArgumentException("Event ID mismatch");
-        }
-    }
-
-    private void validateSessionsData(List<SessionScheduleImportDataDTO> sessions) {
-        if (sessions == null || sessions.isEmpty()) {
-            throw new IllegalArgumentException("No sessions data provided");
-        }
-    }
-
-    private void validateCreateRequest(SessionCreateRequestDTO request) {
-        if (request.title() == null || request.title().trim().isEmpty()) {
-            throw new IllegalArgumentException("Session title is required");
-        }
-        if (request.title().length() > 200) {
-            throw new IllegalArgumentException("Session title must not exceed 200 characters");
-        }
-        if (request.abstractText() != null && request.abstractText().length() > 2000) {
-            throw new IllegalArgumentException("Abstract must not exceed 2000 characters");
-        }
     }
 
     @GetMapping("/event/{eventId}/empty-sessions")
