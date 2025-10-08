@@ -5,6 +5,7 @@ import {Speaker} from '../../../type/session/session';
   selector: 'app-session-speakers',
   imports: [],
   templateUrl: './session-speakers.component.html',
+  standalone: true,
   styleUrl: './session-speakers.component.scss'
 })
 export class SessionSpeakersComponent {
