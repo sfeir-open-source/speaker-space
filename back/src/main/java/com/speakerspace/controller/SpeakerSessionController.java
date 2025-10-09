@@ -85,6 +85,4 @@ public class SpeakerSessionController {
             return speaker;
         });
     }
-
-
 }

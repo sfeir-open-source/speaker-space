@@ -1,4 +1,4 @@
-import { Component, input, OnInit, inject, signal } from '@angular/core';
+import { Component, input, OnInit, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,8 +12,10 @@ import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import { ButtonComponent } from '../../../../../shared/button/button.component';
 import { PaginationListComponent } from '../../../components/pagination-list/pagination-list.component';
-import {SessionFilterService} from '../../../services/sessions/session-filter.service';
-import {SessionFormatterService} from '../../../services/sessions/session-formatter.service';
+import { SessionFilterService } from '../../../services/sessions/session-filter.service';
+import { SessionFormatterService } from '../../../services/sessions/session-formatter.service';
+import { SessionCreatePopupComponent } from '../../../components/session/session-create-popup/session-create-popup.component';
+import { SessionService } from '../../../services/sessions/session.service';
 
 @Component({
   selector: 'app-session-list-page',
@@ -25,7 +27,8 @@ import {SessionFormatterService} from '../../../services/sessions/session-format
     SessionFilterPopupComponent,
     AsyncPipe,
     ButtonComponent,
-    PaginationListComponent
+    PaginationListComponent,
+    SessionCreatePopupComponent
   ],
   providers: [BaseListService, SessionFilterService],
   templateUrl: './session-list-page.component.html',
@@ -33,28 +36,36 @@ import {SessionFormatterService} from '../../../services/sessions/session-format
 })
 export class SessionListPageComponent implements OnInit {
   readonly icon = input<string>('search');
-  readonly listService = inject(BaseListService<SessionImportData>);
-  readonly filterService = inject(SessionFilterService);
-  readonly formatterService = inject(SessionFormatterService);
+  private readonly listService = inject(BaseListService<SessionImportData>);
+  private readonly filterService = inject(SessionFilterService);
+  private readonly formatterService = inject(SessionFormatterService);
+  private readonly sessionService = inject(SessionService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly eventService = inject(EventService);
 
   readonly showFilterPopup = signal<boolean>(false);
+  readonly showCreatePopup = signal<boolean>(false);
+  readonly availableTracks = signal<string[]>([]);
+  readonly eventStartDate = signal<Date | undefined>(undefined);
+  readonly eventEndDate = signal<Date | undefined>(undefined);
 
   readonly state$ = this.listService.state$;
   readonly totalSessions = this.listService.paginationService.totalItemsSignal;
-  readonly isLoadingSessions = () => this.listService.getCurrentState().isLoadingItems;
+  readonly isLoadingSessions = computed(() => this.listService.getCurrentState().isLoadingItems);
   readonly paginatedSessions = this.listService.paginationService.paginatedItemsSignal;
   readonly totalPages = this.listService.paginationService.totalPagesSignal;
-  readonly selectAll = () => this.listService.getCurrentState().selectAll;
-  readonly selectedItems = () => this.listService.getCurrentState().selectedItems;
-  readonly searchTerm = () => this.listService.getCurrentState().searchTerm;
+  readonly selectAll = computed(() => this.listService.getCurrentState().selectAll);
+  readonly selectedItems = computed(() => this.listService.getCurrentState().selectedItems);
+  readonly searchTerm = computed(() => this.listService.getCurrentState().searchTerm);
+  readonly eventId = computed(() => this.listService.getCurrentState().eventId);
+
   readonly availableFormats = this.filterService.availableFormats;
   readonly availableCategories = this.filterService.availableCategories;
   readonly currentFilters = this.filterService.currentFilters;
   readonly hasActiveFilters = this.filterService.hasActiveFilters;
   readonly activeFiltersCount = this.filterService.activeFiltersCount;
+
   formatSpeakers = this.formatterService.formatSpeakers.bind(this.formatterService);
 
   readonly Math = Math;
@@ -167,5 +178,18 @@ export class SessionListPageComponent implements OnInit {
     } else {
       this.openItemDetail(sessionId);
     }
+  }
+
+  onCreateSession(): void {
+    this.showCreatePopup.set(true);
+  }
+
+  onCloseCreatePopup(): void {
+    this.showCreatePopup.set(false);
+  }
+
+  onSessionCreated(): void {
+    this.showCreatePopup.set(false);
+    this.loadItems();
   }
 }

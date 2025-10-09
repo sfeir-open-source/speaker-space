@@ -1,4 +1,4 @@
-import { Component, input, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import {Component, input, OnInit, OnDestroy, inject, signal, computed} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,6 +17,12 @@ import { PaginationListComponent } from '../../../components/pagination-list/pag
 import { ListState } from '../../../components/type/liste-state';
 import { SpeakerFilterService } from '../../../services/speaker/speaker-filter.service';
 import { SpeakerFormatterService } from '../../../services/speaker/speaker-formatter.service';
+import {
+  SessionCreatePopupComponent
+} from '../../../components/session/session-create-popup/session-create-popup.component';
+import {
+  SpeakerCreatePopupComponent
+} from '../../../components/speaker/speaker-create-popup/speaker-create-popup.component';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -27,7 +33,9 @@ import { SpeakerFormatterService } from '../../../services/speaker/speaker-forma
     SpeakerFilterPopupComponent,
     AsyncPipe,
     ButtonComponent,
-    PaginationListComponent
+    PaginationListComponent,
+    SessionCreatePopupComponent,
+    SpeakerCreatePopupComponent
   ],
   providers: [BaseListService, SpeakerFilterService],
   templateUrl: './speaker-list-page.component.html',
@@ -37,6 +45,10 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
   readonly icon = input<string>('person');
 
   readonly showFilterPopup = signal<boolean>(false);
+  readonly showCreatePopup = signal<boolean>(false);
+  readonly availableTracks = signal<string[]>([]);
+  readonly eventStartDate = signal<Date | undefined>(undefined);
+  readonly eventEndDate = signal<Date | undefined>(undefined);
 
   private speakersWithSessions: SpeakerWithSessionsDTO[] = [];
 
@@ -50,12 +62,13 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
 
   readonly state$: Observable<ListState> = this.listService.state$;
   readonly totalSpeakers = this.listService.paginationService.totalItemsSignal;
-  readonly isLoadingSpeakers = () => this.listService.getCurrentState().isLoadingItems;
+  readonly isLoadingSpeakers = computed(() => this.listService.getCurrentState().isLoadingItems);
   readonly paginatedSpeakers = this.listService.paginationService.paginatedItemsSignal;
   readonly totalPages = this.listService.paginationService.totalPagesSignal;
-  readonly selectAll = () => this.listService.getCurrentState().selectAll;
-  readonly selectedItems = () => this.listService.getCurrentState().selectedItems;
-  readonly searchTerm = () => this.listService.getCurrentState().searchTerm;
+  readonly selectAll = computed(() => this.listService.getCurrentState().selectAll);
+  readonly selectedItems = computed(() => this.listService.getCurrentState().selectedItems);
+  readonly searchTerm = computed(() => this.listService.getCurrentState().searchTerm);
+  readonly eventId = computed(() => this.listService.getCurrentState().eventId);
   readonly availableFormats = this.filterService.availableFormats;
   readonly availableCategories = this.filterService.availableCategories;
   readonly currentFilters = this.filterService.currentFilters;
@@ -174,5 +187,18 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
   openItemDetail(speakerId: string): void {
     const currentState = this.listService.getCurrentState();
     this.router.navigate(['event', currentState.eventId, 'speaker', speakerId]);
+  }
+
+  onCreateSpeaker(): void {
+    this.showCreatePopup.set(true);
+  }
+
+  onCloseCreatePopup(): void {
+    this.showCreatePopup.set(false);
+  }
+
+  onSpeakerCreated(): void {
+    this.showCreatePopup.set(false);
+    this.loadItems();
   }
 }

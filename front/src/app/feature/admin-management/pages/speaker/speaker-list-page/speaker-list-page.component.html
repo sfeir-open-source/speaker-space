@@ -51,6 +51,7 @@
                     <app-button
                       type="button"
                       [materialIcon]="'add'"
+                      (click)="onCreateSpeaker()"
                       [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-1.5 px-3 rounded-md transition-colors'"
                       aria-label="Create new speaker">
                       Create speaker
@@ -194,6 +195,14 @@
 
                   @if (totalPages() > 1) {
                     <app-pagination-list></app-pagination-list>
+                  }
+
+                  @if (showCreatePopup()) {
+                    <app-speaker-create-popup
+                      [eventId]="eventId()"
+                      (speakerCreated)="onSpeakerCreated()"
+                      (popupClosed)="onCloseCreatePopup()">
+                    </app-speaker-create-popup>
                   }
                 </div>
               }

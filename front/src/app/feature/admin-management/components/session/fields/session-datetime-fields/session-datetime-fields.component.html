@@ -1,0 +1,32 @@
+<fieldset class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+  <div>
+    <label
+      for="start-date"
+      class="mt-5 block text-start text-md"
+      [class.required]="required()">
+      Start Date
+    </label>
+
+    <input
+      id="start-date"
+      type="date"
+      formControlName="startDate"
+      [min]="eventStartDateForInput()"
+      [max]="eventEndDateForInput()"
+      class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6" />
+
+    @if (eventDateRange()) {
+      <p class="mt-1 text-xs text-gray-500">
+        Event dates: {{ eventDateRange() }}
+      </p>
+    }
+  </div>
+
+  <app-field
+    name="startTime"
+    label="Start Time"
+    type="time"
+    [control]="form().get('startTime')!"
+    errorMessage="Please select a valid time">
+  </app-field>
+</fieldset>
