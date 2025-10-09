@@ -9,7 +9,6 @@ import { Component, computed, input, output, signal } from '@angular/core';
 })
 export class SessionDurationFieldComponent {
   selectedDuration = input<number>(60);
-
   durationChange = output<number>();
 
   showDropdown = signal<boolean>(false);
@@ -35,9 +34,8 @@ export class SessionDurationFieldComponent {
     return duration ? duration.label : `${this.selectedDuration()} minutes`;
   });
 
-  getDurationLabel(minutes: number): string {
-    const duration = this.durations.find(d => d.value === minutes);
-    return duration ? duration.label : `${minutes} minutes`;
+  toggleDropdown(): void {
+    this.showDropdown.update(show => !show);
   }
 
   onDurationSelect(duration: number): void {
@@ -52,9 +50,5 @@ export class SessionDurationFieldComponent {
     if (!container) {
       this.showDropdown.set(false);
     }
-  }
-
-  toggleDropdown(): void {
-    this.showDropdown.update(show => !show);
   }
 }

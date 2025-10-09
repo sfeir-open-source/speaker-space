@@ -18,9 +18,6 @@ import { ListState } from '../../../components/type/liste-state';
 import { SpeakerFilterService } from '../../../services/speaker/speaker-filter.service';
 import { SpeakerFormatterService } from '../../../services/speaker/speaker-formatter.service';
 import {
-  SessionCreatePopupComponent
-} from '../../../components/session/session-create-popup/session-create-popup.component';
-import {
   SpeakerCreatePopupComponent
 } from '../../../components/speaker/speaker-create-popup/speaker-create-popup.component';
 
@@ -34,7 +31,6 @@ import {
     AsyncPipe,
     ButtonComponent,
     PaginationListComponent,
-    SessionCreatePopupComponent,
     SpeakerCreatePopupComponent
   ],
   providers: [BaseListService, SpeakerFilterService],

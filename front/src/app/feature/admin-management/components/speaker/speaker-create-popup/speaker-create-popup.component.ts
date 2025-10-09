@@ -1,24 +1,29 @@
+// components/speaker-create-popup.component.ts
 import {
-  Component, computed,
-  inject, input,
-  OnInit, output,
+  Component,
+  computed,
+  inject,
+  input,
+  OnInit,
+  output,
   signal,
+  DestroyRef
 } from '@angular/core';
 import {
-  AbstractControl,
+  FormBuilder,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
-  ValidationErrors,
   Validators
 } from '@angular/forms';
-import {SpeakerService} from '../../../services/speaker/speaker.service';
-import {SpeakerCreateRequest, SpeakerImportData} from '../../../type/speaker/speaker-create';
-import {HttpErrorResponse} from '@angular/common/http';
-import {ModalPopupCreateComponent} from '../../modal/modal-popup-create.component';
-import {Observable} from 'rxjs';
-import {FormModalService} from '../../services/form-modal.service';
-import {SpeakerFormFieldsComponent} from '../fields/speaker-form-fields/speaker-form-fields.component';
+import { SpeakerService } from '../../../services/speaker/speaker.service';
+import { SpeakerCreateRequest, SpeakerImportData } from '../../../type/speaker/speaker-create';
+import { ModalPopupCreateComponent } from '../../modal/modal-popup-create.component';
+import { SpeakerFormFieldsComponent } from '../fields/speaker-form-fields/speaker-form-fields.component';
+import { FormSubmissionService } from '../../services/form-submission.service';
+import {SpeakerRequestBuilderService} from '../../services/speaker-request-builder.service';
+import {SpeakerValidationService} from '../../services/speaker-validation.service';
+import {SpeakerErrorHandlerService} from '../../services/speaker-error-handler.service';
 
 @Component({
   selector: 'app-speaker-create-popup',
@@ -29,18 +34,25 @@ import {SpeakerFormFieldsComponent} from '../fields/speaker-form-fields/speaker-
     ModalPopupCreateComponent,
   ],
   templateUrl: './speaker-create-popup.component.html',
-  styleUrl: './speaker-create-popup.component.scss'
+  styleUrl: './speaker-create-popup.component.scss',
+  providers: [
+    FormSubmissionService,
+    SpeakerRequestBuilderService
+  ]
 })
-
-export class SpeakerCreatePopupComponent
-  extends FormModalService<any, SpeakerCreateRequest, SpeakerImportData>
-  implements OnInit {
-
+export class SpeakerCreatePopupComponent implements OnInit {
   eventId = input.required<string>();
+
   speakerCreated = output<void>();
   popupClosed = output<void>();
 
+  private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly speakerService = inject(SpeakerService);
+  private readonly formSubmission = inject(FormSubmissionService<SpeakerCreateRequest, SpeakerImportData>);
+  private readonly validationService = inject(SpeakerValidationService);
+  private readonly requestBuilder = inject(SpeakerRequestBuilderService);
+  private readonly errorHandler = inject(SpeakerErrorHandlerService);
 
   speakerForm!: FormGroup;
   isSubmitting = signal(false);
@@ -51,21 +63,17 @@ export class SpeakerCreatePopupComponent
     this.speakerForm?.valid && !this.isSubmitting()
   );
 
-  get form(): FormGroup<any> {
-    return this.speakerForm;
-  }
-
   ngOnInit(): void {
     this.initializeForm();
   }
 
-  protected initializeForm(): void {
+  private initializeForm(): void {
     this.speakerForm = this.fb.group({
       name: ['', [
         Validators.required,
         Validators.minLength(2),
         Validators.maxLength(100),
-        this.noWhitespaceValidator
+        this.validationService.noWhitespaceValidator
       ]],
       email: ['', [
         Validators.required,
@@ -75,58 +83,38 @@ export class SpeakerCreatePopupComponent
       bio: ['', [Validators.maxLength(2000)]],
       company: ['', [Validators.maxLength(100)]],
       location: ['', [Validators.maxLength(100)]],
-      picture: ['', [Validators.maxLength(500), this.urlValidator]],
+      picture: ['', [
+        Validators.maxLength(500),
+        this.validationService.urlValidator
+      ]],
       references: ['', [Validators.maxLength(2000)]]
     });
   }
 
-  protected buildCreateRequest(): SpeakerCreateRequest {
+  onSubmit(): void {
+    this.formSubmission.submit({
+      form: this.speakerForm,
+      isSubmitting: this.isSubmitting,
+      errorMessage: this.errorMessage,
+      buildRequest: () => this.buildCreateRequest(),
+      submitRequest: (request) => this.speakerService.createSpeaker(this.eventId(), request),
+      onSuccess: (response) => this.onSuccess(response),
+      extractError: (error) => this.errorHandler.extractSpeakerErrorMessage(error)
+    });
+  }
+
+  private buildCreateRequest(): SpeakerCreateRequest {
     const formValue = this.speakerForm.value;
-    const links = this.socialLinks();
-
-    return {
-      name: formValue.name.trim(),
-      email: formValue.email.trim().toLowerCase(),
-      bio: this.trimOrUndefined(formValue.bio),
-      company: this.trimOrUndefined(formValue.company),
-      location: this.trimOrUndefined(formValue.location),
-      picture: this.trimOrUndefined(formValue.picture),
-      references: this.trimOrUndefined(formValue.references),
-      eventId: this.eventId(),
-      socialLinks: links.length > 0 ? [...links] : undefined
-    };
+    return this.requestBuilder.buildCreateRequest(
+      formValue,
+      this.eventId(),
+      this.socialLinks()
+    );
   }
 
-  protected submitRequest(request: SpeakerCreateRequest): Observable<SpeakerImportData> {
-    return this.speakerService.createSpeaker(this.eventId(), request);
-  }
-
-  protected onSuccess(response: SpeakerImportData): void {
+  private onSuccess(response: SpeakerImportData): void {
     this.speakerCreated.emit();
     this.onClose();
-  }
-
-  protected extractErrorMessage(error: HttpErrorResponse): string {
-    if (error.status === 400 && error.error?.errors) {
-      const validationErrors = error.error.errors;
-      if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-        return validationErrors[0].defaultMessage || validationErrors[0];
-      }
-    }
-
-    if (error.error?.message) {
-      return error.error.message;
-    }
-
-    const statusMessages: Record<number, string> = {
-      400: 'Invalid data provided. Please check your inputs.',
-      409: 'A speaker with this email already exists in this event.',
-      403: 'You do not have permission to create speakers for this event.',
-      404: 'Event not found.',
-      500: 'Server error. Please try again later.'
-    };
-
-    return statusMessages[error.status] || 'Failed to create speaker. Please try again.';
   }
 
   onSocialLinksChange(links: string[]): void {
@@ -136,30 +124,5 @@ export class SpeakerCreatePopupComponent
   onClose(): void {
     if (this.isSubmitting()) return;
     this.popupClosed.emit();
-  }
-
-  private noWhitespaceValidator(control: AbstractControl): ValidationErrors | null {
-    if (control.value && control.value.trim().length === 0) {
-      return { whitespace: true };
-    }
-    return null;
-  }
-
-  private urlValidator(control: AbstractControl): ValidationErrors | null {
-    if (!control.value || control.value.trim() === '') {
-      return null;
-    }
-
-    try {
-      new URL(control.value);
-      return null;
-    } catch {
-      return { invalidUrl: true };
-    }
-  }
-
-  private trimOrUndefined(value: string | null | undefined): string | undefined {
-    if (!value || value.trim() === '') return undefined;
-    return value.trim();
   }
 }

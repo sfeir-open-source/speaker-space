@@ -3,27 +3,40 @@
   <div class="relative" data-duration-dropdown>
     <button
       type="button"
-      (click)="!showDropdown()"
-      class="w-full h-[42px] px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white text-left flex items-center justify-between focus:outline-2 focus:outline-blue-600">
-      <span>{{ getDurationLabel(selectedDuration()) }}</span>
-      <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      (click)="toggleDropdown()"
+      class="w-full h-[42px] px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white text-left flex items-center justify-between focus:outline-2 focus:outline-blue-600 hover:bg-gray-50 transition-colors"
+      [attr.aria-expanded]="showDropdown()"
+      aria-haspopup="listbox">
+      <span>{{ currentDurationLabel() }}</span>
+      <svg
+        class="w-4 h-4 text-gray-400 transition-transform"
+        [class.rotate-180]="showDropdown()"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
       </svg>
     </button>
 
     @if (showDropdown()) {
-      <div class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+      <ul
+        role="listbox"
+        class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
         @for (duration of durations; track duration.value) {
-          <button
-            type="button"
-            (click)="onDurationSelect(duration.value)"
-            [class.bg-blue-50]="selectedDuration() === duration.value"
-            [class.text-blue-600]="selectedDuration() === duration.value"
-            class="w-full px-3 py-2 text-left hover:bg-gray-50 text-sm border-0 bg-transparent">
-            {{ duration.label }}
-          </button>
+          <li role="option" [attr.aria-selected]="selectedDuration() === duration.value">
+            <button
+              type="button"
+              (click)="onDurationSelect(duration.value)"
+              [class.bg-blue-50]="selectedDuration() === duration.value"
+              [class.text-blue-600]="selectedDuration() === duration.value"
+              [class.font-medium]="selectedDuration() === duration.value"
+              class="w-full px-3 py-2 text-left hover:bg-gray-50 text-sm border-0 bg-transparent transition-colors">
+              {{ duration.label }}
+            </button>
+          </li>
         }
-      </div>
+      </ul>
     }
   </div>
 </div>

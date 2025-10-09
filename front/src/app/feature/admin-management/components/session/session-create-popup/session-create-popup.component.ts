@@ -1,42 +1,25 @@
-import { Component, computed, DestroyRef, effect, inject, input, OnInit, output, signal } from '@angular/core';
-import {
-  AbstractControl,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators
-} from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { finalize } from 'rxjs/operators';
+import { Component, OnInit, inject, input, output, signal, computed, effect, DestroyRef } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http';
-
-import { SessionService } from '../../../services/sessions/session.service';
-import { SpeakerService } from '../../../services/speaker/speaker.service';
-import { Category, Format, SessionImportData, Speaker } from '../../../type/session/session';
-import { SessionCreateRequest } from '../../../type/session/session-create';
-import { ModalPopupCreateComponent } from '../../modal/modal-popup-create.component';
-import { FormModalService } from '../../services/form-modal.service';
-import { SessionFormFieldsComponent } from '../fields/session-form-fields/session-form-fields.component';
+import { finalize } from 'rxjs/operators';
+import {FormSubmissionService} from '../../services/form-submission.service';
+import {SessionRequestBuilderService} from '../../services/session-request-builder.service';
+import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
+import {SessionService} from '../../../services/sessions/session.service';
+import {SpeakerService} from '../../../services/speaker/speaker.service';
+import {HttpErrorHandlerService} from '../../services/http-error-handler.service';
+import {SessionDateCalculatorService} from '../../services/session-date-calculator.service';
+import {SessionCreateRequest} from '../../../type/session/session-create';
+import {ModalPopupCreateComponent} from '../../modal/modal-popup-create.component';
+import {SessionFormFieldsComponent} from '../fields/session-form-fields/session-form-fields.component';
 
 @Component({
   selector: 'app-session-create-popup',
-  standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    FormsModule,
-    ModalPopupCreateComponent,
-    SessionFormFieldsComponent
-  ],
   templateUrl: './session-create-popup.component.html',
-  styleUrl: './session-create-popup.component.scss'
+  imports: [ ModalPopupCreateComponent, ReactiveFormsModule, SessionFormFieldsComponent ],
+  providers: [ FormSubmissionService, SessionRequestBuilderService ]
 })
-export class SessionCreatePopupComponent
-  extends FormModalService<any, SessionCreateRequest, SessionImportData>
-  implements OnInit {
+export class SessionCreatePopupComponent implements OnInit {
   eventId = input.required<string>();
   availableFormats = input<Format[]>([]);
   availableCategories = input<Category[]>([]);
@@ -47,20 +30,22 @@ export class SessionCreatePopupComponent
   sessionCreated = output<void>();
   popupClosed = output<void>();
 
+  private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly sessionService = inject(SessionService);
   private readonly speakerService = inject(SpeakerService);
-  protected override readonly _destroyRef = inject(DestroyRef);
+  private readonly formSubmission = inject(FormSubmissionService<SessionCreateRequest, SessionImportData>);
+  private readonly errorHandler = inject(HttpErrorHandlerService);
+  private readonly dateCalculator = inject(SessionDateCalculatorService);
+  private readonly requestBuilder = inject(SessionRequestBuilderService);
 
   sessionForm!: FormGroup;
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
   isLoadingSpeakers = signal(false);
   isLoadingEmptySessions = signal(false);
-
   availableSpeakers = signal<Speaker[]>([]);
   availableEmptySessions = signal<SessionImportData[]>([]);
-  selectedEmptySession = signal<SessionImportData | null>(null);
-
   selectedFormats = signal<string[]>([]);
   selectedCategories = signal<string[]>([]);
   selectedSpeakers = signal<Speaker[]>([]);
@@ -89,13 +74,7 @@ export class SessionCreatePopupComponent
     ) || null;
   });
 
-  get form(): FormGroup<any> {
-    return this.sessionForm;
-  }
-
   constructor() {
-    super();
-
     effect(() => {
       const emptySession = this.matchingEmptySession();
       if (emptySession) {
@@ -111,7 +90,7 @@ export class SessionCreatePopupComponent
     this.setDefaultStartDate();
   }
 
-  protected initializeForm(): void {
+  private initializeForm(): void {
     this.sessionForm = this.fb.group({
       title: ['', [
         Validators.required,
@@ -130,62 +109,43 @@ export class SessionCreatePopupComponent
     });
   }
 
-  protected buildCreateRequest(): SessionCreateRequest {
+  onSubmit(): void {
+    this.formSubmission.submit({
+      form: this.sessionForm,
+      isSubmitting: this.isSubmitting,
+      errorMessage: this.errorMessage,
+      buildRequest: () => this.buildCreateRequest(),
+      submitRequest: (request) => this.sessionService.createSession(this.eventId(), request),
+      onSuccess: (response) => this.onSuccess(response),
+      extractError: (error) => this.errorHandler.extractSessionErrorMessage(error)
+    });
+  }
+
+  private buildCreateRequest(): SessionCreateRequest {
     const formValue = this.sessionForm.value;
-    const { startDateTime, endDateTime } = this.calculateSessionTimes(
-      formValue.startDate,
-      formValue.startTime,
-      this.selectedDuration().toString()
+    const selectedFormats = this.requestBuilder.getSelectedFormats(
+      this.availableFormats(),
+      this.selectedFormats()
+    );
+    const selectedCategories = this.requestBuilder.getSelectedCategories(
+      this.availableCategories(),
+      this.selectedCategories()
     );
 
-    return {
-      title: formValue.title.trim(),
-      abstractText: formValue.abstractText?.trim() || '',
-      references: formValue.references?.trim() || '',
-      level: formValue.level || '',
-      track: formValue.track?.trim() || '',
-      languages: [...this.selectedLanguages()],
-      formats: this.getSelectedFormats(),
-      categories: this.getSelectedCategories(),
-      speakers: [...this.selectedSpeakers()],
-      eventId: this.eventId(),
-      deliberationStatus: 'ACCEPTED',
-      confirmationStatus: 'CONFIRMED',
-      start: startDateTime,
-      end: endDateTime
-    };
+    return this.requestBuilder.buildCreateRequest(
+      formValue,
+      this.eventId(),
+      this.selectedDuration(),
+      this.selectedLanguages(),
+      selectedFormats,
+      selectedCategories,
+      this.selectedSpeakers()
+    );
   }
 
-  protected submitRequest(request: SessionCreateRequest): Observable<SessionImportData> {
-    return this.sessionService.createSession(this.eventId(), request);
-  }
-
-  protected onSuccess(response: SessionImportData): void {
+  private onSuccess(response: SessionImportData): void {
     this.sessionCreated.emit();
     this.onClose();
-  }
-
-  protected extractErrorMessage(error: HttpErrorResponse): string {
-    if (error.status === 400 && error.error?.errors) {
-      const validationErrors = error.error.errors;
-      if (Array.isArray(validationErrors) && validationErrors.length > 0) {
-        return validationErrors[0].defaultMessage || validationErrors[0];
-      }
-    }
-
-    if (error.error?.message) {
-      return error.error.message;
-    }
-
-    const statusMessages: Record<number, string> = {
-      400: 'Invalid session data. Please check your inputs.',
-      403: 'You do not have permission to create sessions for this event.',
-      404: 'Event not found.',
-      409: 'A session with this title already exists.',
-      500: 'Server error. Please try again later.'
-    };
-
-    return statusMessages[error.status] || 'Failed to create session. Please try again.';
   }
 
   onDurationChange(duration: number): void {
@@ -218,13 +178,11 @@ export class SessionCreatePopupComponent
 
     this.speakerService.getSpeakersByEventId(this.eventId())
       .pipe(
-        takeUntilDestroyed(this._destroyRef),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoadingSpeakers.set(false))
       )
       .subscribe({
-        next: (speakers) => {
-          this.availableSpeakers.set(speakers);
-        },
+        next: (speakers) => this.availableSpeakers.set(speakers),
         error: (error) => {
           console.error('Error loading speakers:', error);
           this.availableSpeakers.set([]);
@@ -237,13 +195,11 @@ export class SessionCreatePopupComponent
 
     this.sessionService.getEmptySessionsForEvent(this.eventId())
       .pipe(
-        takeUntilDestroyed(this._destroyRef),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoadingEmptySessions.set(false))
       )
       .subscribe({
-        next: (sessions) => {
-          this.availableEmptySessions.set(sessions);
-        },
+        next: (sessions) => this.availableEmptySessions.set(sessions),
         error: (error) => {
           console.error('Error loading empty sessions:', error);
           this.availableEmptySessions.set([]);
@@ -254,46 +210,9 @@ export class SessionCreatePopupComponent
   private setDefaultStartDate(): void {
     const startDate = this.eventStartDate();
     if (startDate) {
-      const defaultDate = this.formatDateForInput(startDate);
+      const defaultDate = this.dateCalculator.formatDateForInput(startDate);
       this.sessionForm.patchValue({ startDate: defaultDate });
     }
-  }
-
-  private formatDateForInput(date: Date): string {
-    if (!date || isNaN(date.getTime())) return '';
-    return date.toISOString().split('T')[0];
-  }
-
-  private calculateSessionTimes(
-    startDate: string,
-    startTime: string,
-    duration: string
-  ): { startDateTime: Date | null; endDateTime: Date | null } {
-    if (!startDate || !startTime || !duration) {
-      return { startDateTime: null, endDateTime: null };
-    }
-
-    try {
-      const startDateTime = new Date(`${startDate}T${startTime}:00`);
-      const durationMinutes = parseInt(duration, 10);
-      const endDateTime = new Date(startDateTime.getTime() + (durationMinutes * 60 * 1000));
-      return { startDateTime, endDateTime };
-    } catch (error) {
-      console.error('Error calculating session times:', error);
-      return { startDateTime: null, endDateTime: null };
-    }
-  }
-
-  private getSelectedFormats(): Format[] {
-    const formats = this.availableFormats();
-    const selected = this.selectedFormats();
-    return formats.filter(format => selected.includes(format.id));
-  }
-
-  private getSelectedCategories(): Category[] {
-    const categories = this.availableCategories();
-    const selected = this.selectedCategories();
-    return categories.filter(category => selected.includes(category.id));
   }
 
   private eventDateRangeValidator(control: AbstractControl): ValidationErrors | null {
