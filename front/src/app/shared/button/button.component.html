@@ -3,25 +3,21 @@
   [class]="buttonClasses()"
   [disabled]="disabled()"
   [attr.aria-label]="ariaLabel()"
-  [attr.form]="form()"
   (click)="handleButtonClick()">
 
   @if (materialIcon()) {
     <div class="relative inline-flex items-center justify-center">
-      <span
-        [class]="materialIconClass()"
-        class="material-symbols-outlined"
-        aria-hidden="true">
+      <span class="material-symbols-outlined" aria-hidden="true">
         {{ materialIcon() }}
       </span>
 
-      @if (hasNotification()) {
-        <span
-          class="absolute bottom-0 -right-1 w-3 h-3 bg-primaryColor border-none rounded-full"
-          [attr.aria-label]="notificationAriaLabel()"
-          role="status">
+        @if (hasNotification()) {
+          <span
+            class="absolute bottom-0 -right-1 w-3 h-3 bg-primaryColor border-none rounded-full"
+            [attr.aria-label]="notificationAriaLabel()"
+            role="status">
         </span>
-      }
+        }
     </div>
   }
 

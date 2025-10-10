@@ -1,46 +1,46 @@
-<app-modal-popup-create
-  title="Create New Session"
-  submitText="Create Session"
-  submittingText="Creating..."
-  [isSubmitting]="isSubmitting()"
-  [isFormValid]="isFormValid()"
-  [formId]="'session-create-form'"
-  (closed)="onClose()"
-  (submitted)="onSubmit()">
+<!--<app-modal-popup-create-->
+<!--  title="Create New Session"-->
+<!--  submitText="Create Session"-->
+<!--  submittingText="Creating..."-->
+<!--  [isSubmitting]="isSubmitting()"-->
+<!--  [isFormValid]="isFormValid()"-->
+<!--  [formId]="'session-create-form'"-->
+<!--  (closed)="onClose()"-->
+<!--  (submitted)="onSubmit()">-->
 
-  <form
-    id="session-create-form"
-    [formGroup]="sessionForm"
-    (ngSubmit)="onSubmit()"
-    class="space-y-6">
+<!--  <form-->
+<!--    id="session-create-form"-->
+<!--    [formGroup]="sessionForm"-->
+<!--    (ngSubmit)="onSubmit()"-->
+<!--    class="space-y-6">-->
 
-    @if (errorMessage()) {
-      <div
-        class="p-4 bg-red-50 border border-red-200 rounded-md"
-        role="alert">
-        <p class="text-sm text-red-800">{{ errorMessage() }}</p>
-      </div>
-    }
+<!--    @if (errorMessage()) {-->
+<!--      <div-->
+<!--        class="p-4 bg-red-50 border border-red-200 rounded-md"-->
+<!--        role="alert">-->
+<!--        <p class="text-sm text-red-800">{{ errorMessage() }}</p>-->
+<!--      </div>-->
+<!--    }-->
 
-    <app-session-form-fields
-      [form]="sessionForm"
-      [availableFormats]="availableFormats()"
-      [availableCategories]="availableCategories()"
-      [availableTracks]="availableTracks()"
-      [eventStartDate]="eventStartDate()"
-      [eventEndDate]="eventEndDate()"
-      [selectedSpeakers]="selectedSpeakers()"
-      [availableSpeakers]="sortedAvailableSpeakers()"
-      [isLoadingSpeakers]="isLoadingSpeakers()"
-      [selectedDuration]="selectedDuration()"
-      [selectedFormats]="selectedFormats()"
-      [selectedCategories]="selectedCategories()"
-      [selectedLanguages]="selectedLanguages()"
-      (durationChange)="onDurationChange($event)"
-      (speakersChange)="onSpeakersChange($event)"
-      (formatsChange)="onFormatsChange($event)"
-      (categoriesChange)="onCategoriesChange($event)"
-      (languagesChange)="onLanguagesChange($event)">
-    </app-session-form-fields>
-  </form>
-</app-modal-popup-create>
+<!--    <app-session-form-fields-->
+<!--      [form]="sessionForm"-->
+<!--      [availableFormats]="availableFormats()"-->
+<!--      [availableCategories]="availableCategories()"-->
+<!--      [availableTracks]="availableTracks()"-->
+<!--      [eventStartDate]="eventStartDate()"-->
+<!--      [eventEndDate]="eventEndDate()"-->
+<!--      [selectedSpeakers]="selectedSpeakers()"-->
+<!--      [availableSpeakers]="sortedAvailableSpeakers()"-->
+<!--      [isLoadingSpeakers]="isLoadingSpeakers()"-->
+<!--      [selectedDuration]="selectedDuration()"-->
+<!--      [selectedFormats]="selectedFormats()"-->
+<!--      [selectedCategories]="selectedCategories()"-->
+<!--      [selectedLanguages]="selectedLanguages()"-->
+<!--      (durationChange)="onDurationChange($event)"-->
+<!--      (speakersChange)="onSpeakersChange($event)"-->
+<!--      (formatsChange)="onFormatsChange($event)"-->
+<!--      (categoriesChange)="onCategoriesChange($event)"-->
+<!--      (languagesChange)="onLanguagesChange($event)">-->
+<!--    </app-session-form-fields>-->
+<!--  </form>-->
+<!--</app-modal-popup-create>-->

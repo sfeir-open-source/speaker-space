@@ -14,12 +14,11 @@ export class ButtonComponent {
   readonly buttonHandler = input<(() => void) | null>(null);
   readonly isActivePage = input<boolean>(false);
   readonly disabled = input<boolean>(false);
+  readonly ariaLabel = input<string | null>(null);
   readonly hasNotification = input<boolean>(false);
   readonly notificationCount = input<number>(1);
   readonly customClass = input<string>('');
   readonly materialIconClass = input<string>('text-base');
-  readonly ariaLabel = input<string | null>(null);
-  readonly form = input<string | null>(null);
 
   readonly itemClick = output<string>();
 
@@ -45,14 +44,21 @@ export class ButtonComponent {
       : 'You have notifications';
   });
 
-  handleButtonClick(): void {
+
+
+  navigate(): void {
     if (this.disabled()) {
       return;
     }
 
-    const isFormSubmit = this.type() === 'submit' && this.form();
-    if (isFormSubmit) {
-      console.log('🔘 Submit button clicked (linked to form)', this.form());
+    const routeValue = this.route();
+    if (routeValue) {
+      this.itemClick.emit(routeValue);
+    }
+  }
+
+  handleButtonClick(): void {
+    if (this.disabled()) {
       return;
     }
 

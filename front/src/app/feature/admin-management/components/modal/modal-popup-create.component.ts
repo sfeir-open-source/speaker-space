@@ -13,8 +13,6 @@ export class ModalPopupCreateComponent {
   submitText = input.required<string>();
   submittingText = input.required<string>();
   isSubmitting = input<boolean>(false);
-  isFormValid = input<boolean>(false);
-  formId = input<string>('session-create-form');
 
   closed = output<void>();
   submitted = output<void>();
@@ -22,13 +20,6 @@ export class ModalPopupCreateComponent {
   readonly titleId = signal(`modal-title-${crypto.randomUUID()}`);
 
   readonly isBlocked = computed(() => this.isSubmitting());
-
-  readonly isSubmitDisabled = computed(() => {
-    const blocked = this.isBlocked();
-    const formValid = this.isFormValid();
-
-    return blocked || !formValid;
-  });
 
   readonly submitButtonText = computed(() =>
     this.isSubmitting() ? this.submittingText() : this.submitText()
@@ -39,6 +30,11 @@ export class ModalPopupCreateComponent {
       return;
     }
     this.closed.emit();
+  }
+
+  onSubmit(): void {
+    if (this.isBlocked()) return;
+    this.submitted.emit();
   }
 
   onOverlayClick(event: Event): void {

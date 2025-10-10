@@ -1,7 +1,5 @@
-// components/speaker-create-popup.component.ts
 import {
   Component,
-  computed,
   inject,
   input,
   OnInit,
