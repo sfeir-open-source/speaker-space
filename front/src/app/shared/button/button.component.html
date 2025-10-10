@@ -3,11 +3,15 @@
   [class]="buttonClasses()"
   [disabled]="disabled()"
   [attr.aria-label]="ariaLabel()"
+  [attr.form]="form()"
   (click)="handleButtonClick()">
 
   @if (materialIcon()) {
     <div class="relative inline-flex items-center justify-center">
-      <span class="material-symbols-outlined" aria-hidden="true">
+      <span
+        [class]="materialIconClass()"
+        class="material-symbols-outlined"
+        aria-hidden="true">
         {{ materialIcon() }}
       </span>
 

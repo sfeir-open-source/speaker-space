@@ -7,11 +7,11 @@ import {EventDataService} from '../../../services/event/event-data.service';
 import {TeamService} from '../../../services/team/team.service';
 import {FormField} from '../../../../../shared/input/interface/form-field';
 import {SaveStatus} from '../../../../../core/types/save-status.types';
-import {AutoSaveService} from '../../services/auto-save.service';
 import {EventService} from '../../../services/event/event.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-indicator.component';
 import {ButtonComponent} from '../../../../../shared/button/button.component';
+import {AutoSaveService} from '../../../services/event/auto-save.service';
 
 @Component({
   selector: 'app-information-event',

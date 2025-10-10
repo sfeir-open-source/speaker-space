@@ -20,10 +20,10 @@ import { SpeakerService } from '../../../services/speaker/speaker.service';
 import { SpeakerCreateRequest, SpeakerImportData } from '../../../type/speaker/speaker-create';
 import { ModalPopupCreateComponent } from '../../modal/modal-popup-create.component';
 import { SpeakerFormFieldsComponent } from '../fields/speaker-form-fields/speaker-form-fields.component';
-import { FormSubmissionService } from '../../services/form-submission.service';
-import {SpeakerRequestBuilderService} from '../../services/speaker-request-builder.service';
-import {SpeakerValidationService} from '../../services/speaker-validation.service';
-import {SpeakerErrorHandlerService} from '../../services/speaker-error-handler.service';
+import {FormSubmissionService} from '../../services/create/form-submission.service';
+import {SpeakerRequestBuilderService} from '../../services/create/speaker-request-builder.service';
+import {SpeakerValidationService} from '../../services/create/speaker-validation.service';
+import {SpeakerErrorHandlerService} from '../../services/create/speaker-error-handler.service';
 
 @Component({
   selector: 'app-speaker-create-popup',
@@ -35,6 +35,7 @@ import {SpeakerErrorHandlerService} from '../../services/speaker-error-handler.s
   ],
   templateUrl: './speaker-create-popup.component.html',
   styleUrl: './speaker-create-popup.component.scss',
+  standalone: true,
   providers: [
     FormSubmissionService,
     SpeakerRequestBuilderService
@@ -58,10 +59,6 @@ export class SpeakerCreatePopupComponent implements OnInit {
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
   socialLinks = signal<string[]>([]);
-
-  isFormValid = computed(() =>
-    this.speakerForm?.valid && !this.isSubmitting()
-  );
 
   ngOnInit(): void {
     this.initializeForm();

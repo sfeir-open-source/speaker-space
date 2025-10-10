@@ -7,6 +7,7 @@ import {FormsModule} from '@angular/forms';
     FormsModule
   ],
   templateUrl: './session-languages-field.component.html',
+  standalone: true,
   styleUrl: './session-create-popup.component.scss'
 })
 export class SessionLanguagesFieldComponent {

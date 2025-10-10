@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import {SpeakerFilters} from '../../type/speaker/speaker-filters';
-import {SessionFilters} from '../../type/session/session-filters';
-import {ButtonConfig, DropdownConfig, FilterConfig} from '../../type/components/filter.type';
-import {Category, Format} from '../../type/session/session';
+import {ButtonConfig, DropdownConfig, FilterConfig} from '../../../type/components/filter.type';
+import {Category, Format} from '../../../type/session/session';
+import {SessionFilters} from '../../../type/session/session-filters';
+import {SpeakerFilters} from '../../../type/speaker/speaker-filters';
 
 @Injectable({
   providedIn: 'root'

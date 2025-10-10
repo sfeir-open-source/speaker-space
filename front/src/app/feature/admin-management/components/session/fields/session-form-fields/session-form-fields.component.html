@@ -5,8 +5,7 @@
   [control]="form().get('title')!"
   [required]="true"
   placeholder="Enter session title"
-  errorMessage="Title is required (3-200 characters)">
-</app-field>
+  errorMessage="Title is required (3-200 characters)"/>
 
 <app-field
   name="abstractText"
@@ -41,16 +40,15 @@
     type="select"
     [control]="form().get('level')!"
     [options]="levelOptions"
-    placeholder="Select level...">
-  </app-field>
+    placeholder="Select level..."/>
 
   <app-field
     name="track"
     label="Track"
-    [type]="availableTracks.length > 0 ? 'select' : 'text'"
+    [type]="'select'"
     [control]="form().get('track')!"
     [options]="trackOptions()"
-    [placeholder]="availableTracks.length > 0 ? 'Select track...' : 'Enter track name'">
+    [placeholder]="'Select track'">
   </app-field>
 
   <app-session-duration-field
@@ -62,15 +60,13 @@
 <app-session-datetime-fields
   [form]="form()"
   [eventStartDate]="eventStartDate()"
-  [eventEndDate]="eventEndDate()">
-</app-session-datetime-fields>
+  [eventEndDate]="eventEndDate()"/>
 
 <app-session-speakers-field
   [selectedSpeakers]="selectedSpeakers()"
   [availableSpeakers]="availableSpeakers()"
   [isLoading]="isLoadingSpeakers()"
-  (speakersChange)="onSpeakersChange($event)">
-</app-session-speakers-field>
+  (speakersChange)="onSpeakersChange($event)"/>
 
 <app-session-categories-formats-field
   [availableFormats]="availableFormats()"
@@ -78,7 +74,6 @@
   [selectedFormats]="selectedFormats()"
   [selectedCategories]="selectedCategories()"
   (formatsChange)="onFormatsChange($event)"
-  (categoriesChange)="onCategoriesChange($event)">
-</app-session-categories-formats-field>
+  (categoriesChange)="onCategoriesChange($event)"/>
 
-<app-session-languages-field></app-session-languages-field>
+<app-session-languages-field/>

@@ -2,22 +2,23 @@ import { Component, OnInit, inject, input, output, signal, computed, effect, Des
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs/operators';
-import {FormSubmissionService} from '../../services/form-submission.service';
-import {SessionRequestBuilderService} from '../../services/session-request-builder.service';
 import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
 import {SessionService} from '../../../services/sessions/session.service';
 import {SpeakerService} from '../../../services/speaker/speaker.service';
-import {HttpErrorHandlerService} from '../../services/http-error-handler.service';
-import {SessionDateCalculatorService} from '../../services/session-date-calculator.service';
 import {SessionCreateRequest} from '../../../type/session/session-create';
 import {ModalPopupCreateComponent} from '../../modal/modal-popup-create.component';
 import {SessionFormFieldsComponent} from '../fields/session-form-fields/session-form-fields.component';
+import {HttpErrorHandlerService} from '../../services/create/http-error-handler.service';
+import {SessionDateCalculatorService} from '../../services/create/session-date-calculator.service';
+import {FormSubmissionService} from '../../services/create/form-submission.service';
+import {SessionRequestBuilderService} from '../../services/create/session-request-builder.service';
 
 @Component({
   selector: 'app-session-create-popup',
   templateUrl: './session-create-popup.component.html',
-  imports: [ ModalPopupCreateComponent, ReactiveFormsModule, SessionFormFieldsComponent ],
-  providers: [ FormSubmissionService, SessionRequestBuilderService ]
+  imports: [ModalPopupCreateComponent, ReactiveFormsModule, SessionFormFieldsComponent],
+  standalone: true,
+  providers: [FormSubmissionService, SessionRequestBuilderService]
 })
 export class SessionCreatePopupComponent implements OnInit {
   eventId = input.required<string>();
@@ -52,9 +53,23 @@ export class SessionCreatePopupComponent implements OnInit {
   selectedLanguages = signal<string[]>([]);
   selectedDuration = signal(60);
 
-  isFormValid = computed(() =>
-    this.sessionForm?.valid && !this.isSubmitting()
-  );
+  isFormValid = computed(() => {
+    const formValid = this.sessionForm?.valid ?? false;
+    const notSubmitting = !this.isSubmitting();
+
+    Object.keys(this.sessionForm?.controls || {}).forEach(key => {
+      const control = this.sessionForm.get(key);
+      console.log(`Field "${key}":`, {
+        value: control?.value,
+        valid: control?.valid,
+        errors: control?.errors,
+        touched: control?.touched,
+        dirty: control?.dirty
+      });
+    });
+
+    return formValid && notSubmitting;
+  });
 
   sortedAvailableSpeakers = computed(() =>
     [...this.availableSpeakers()].sort((a, b) => a.name.localeCompare(b.name))
@@ -107,17 +122,54 @@ export class SessionCreatePopupComponent implements OnInit {
       ]],
       startTime: ['']
     });
+
+    this.sessionForm.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        console.log(' Form changed, triggering validation check');
+      });
+
+    this.sessionForm.statusChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(status => {
+        console.log('Form status changed:', status);
+      });
   }
 
   onSubmit(): void {
+
+    if (!this.sessionForm.valid) {
+      this.sessionForm.markAllAsTouched();
+      console.log('Form errors:', this.sessionForm.errors);
+
+      Object.keys(this.sessionForm.controls).forEach(key => {
+        const control = this.sessionForm.get(key);
+        if (control?.invalid) {
+          console.error(`Field "${key}" errors:`, control.errors);
+        }
+      });
+
+      console.groupEnd();
+      return;
+    }
+
     this.formSubmission.submit({
       form: this.sessionForm,
       isSubmitting: this.isSubmitting,
       errorMessage: this.errorMessage,
-      buildRequest: () => this.buildCreateRequest(),
-      submitRequest: (request) => this.sessionService.createSession(this.eventId(), request),
-      onSuccess: (response) => this.onSuccess(response),
-      extractError: (error) => this.errorHandler.extractSessionErrorMessage(error)
+      buildRequest: () => {
+        const request = this.buildCreateRequest();
+        return request;
+      },
+      submitRequest: (request) => {
+        return this.sessionService.createSession(this.eventId(), request);
+      },
+      onSuccess: (response) => {
+        this.onSuccess(response);
+      },
+      extractError: (error) => {
+        return this.errorHandler.extractSessionErrorMessage(error);
+      }
     });
   }
 

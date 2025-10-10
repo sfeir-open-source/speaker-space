@@ -23,15 +23,4 @@ export class SpeakerValidationService {
       return { invalidUrl: true };
     }
   }
-
-  urlArrayValidator(urls: string[]): boolean {
-    return urls.every(url => {
-      try {
-        new URL(url);
-        return true;
-      } catch {
-        return false;
-      }
-    });
-  }
 }

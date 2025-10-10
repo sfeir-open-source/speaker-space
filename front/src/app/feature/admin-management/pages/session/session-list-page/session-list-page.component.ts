@@ -1,13 +1,12 @@
 import { Component, input, OnInit, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import {finalize, forkJoin} from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AsyncPipe } from '@angular/common';
 import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SessionImportData } from '../../../type/session/session';
 import { SessionFilterPopupComponent } from '../../../components/session/session-filter-popup/session-filter-popup.component';
-import { BaseListService } from '../../../components/services/base-list.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import { ButtonComponent } from '../../../../../shared/button/button.component';
@@ -16,6 +15,7 @@ import { SessionFilterService } from '../../../services/sessions/session-filter.
 import { SessionFormatterService } from '../../../services/sessions/session-formatter.service';
 import { SessionCreatePopupComponent } from '../../../components/session/session-create-popup/session-create-popup.component';
 import { SessionService } from '../../../services/sessions/session.service';
+import {BaseListService} from '../../../components/services/list/base-list.service';
 
 @Component({
   selector: 'app-session-list-page',
@@ -86,22 +86,40 @@ export class SessionListPageComponent implements OnInit {
     this.listService.updateState({ isLoadingItems: true });
 
     return new Promise((resolve, reject) => {
-      this.eventService.getSessionsByEventId(currentState.eventId)
+      forkJoin({
+        event: this.eventService.getEventById(currentState.eventId),
+        sessions: this.eventService.getSessionsByEventId(currentState.eventId)
+      })
         .pipe(
           finalize(() => this.listService.updateState({ isLoadingItems: false })),
           takeUntilDestroyed(this.listService['destroyRef'])
         )
         .subscribe({
-          next: (sessions: SessionImportData[]) => {
+          next: ({ event, sessions }) => {
+            console.log('📅 Event loaded:', {
+              id: event.idEvent,
+              startDate: event.startDate,
+              endDate: event.endDate
+            });
+
+            const startDate = event.startDate ? new Date(event.startDate) : undefined;
+            const endDate = event.endDate ? new Date(event.endDate) : undefined;
+
+            this.eventStartDate.set(startDate);
+            this.eventEndDate.set(endDate);
+
             const sortedSessions = this.formatterService.sortByTitle(sessions);
             this.listService.updateItems(sortedSessions);
             this.filterService.extractFiltersFromSessions(sessions);
+
             resolve();
           },
-          error: () => {
-            this.listService.updateState({ error: 'Failed to load sessions. Please try again.' });
+          error: (error) => {
+            this.listService.updateState({
+              error: 'Failed to load sessions. Please try again.'
+            });
             this.listService.updateItems([]);
-            reject();
+            reject(error);
           }
         });
     });
@@ -181,6 +199,9 @@ export class SessionListPageComponent implements OnInit {
   }
 
   onCreateSession(): void {
+    const startDate = this.eventStartDate();
+    const endDate = this.eventEndDate();
+
     this.showCreatePopup.set(true);
   }
 

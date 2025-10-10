@@ -1,4 +1,4 @@
-import {Component, computed, EventEmitter, input, Input, output, Output, signal} from '@angular/core';
+import {Component, computed, input, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ButtonComponent} from '../../../../../../shared/button/button.component';
 
@@ -9,6 +9,7 @@ import {ButtonComponent} from '../../../../../../shared/button/button.component'
     ButtonComponent
   ],
   templateUrl: './social-links-field.component.html',
+  standalone: true,
   styleUrl: './social-links-field.component.scss'
 })
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import {SpeakerCreateRequest} from '../../type/speaker/speaker-create';
+import {SpeakerCreateRequest} from '../../../type/speaker/speaker-create';
 
 export interface SpeakerFormValue {
   name: string;

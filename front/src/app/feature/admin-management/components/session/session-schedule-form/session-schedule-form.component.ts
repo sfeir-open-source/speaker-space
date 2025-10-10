@@ -10,6 +10,7 @@ import {SessionScheduleFormService} from '../../../services/sessions/session-sch
     ButtonComponent
   ],
   templateUrl: './session-schedule-form.component.html',
+  standalone: true,
   styleUrl: './session-schedule-form.component.scss'
 })
 export class SessionScheduleFormComponent {

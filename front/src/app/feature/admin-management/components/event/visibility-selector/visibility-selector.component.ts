@@ -8,6 +8,7 @@ import {VisibilityOption} from '../../../type/event/event-visibility';
     ReactiveFormsModule
   ],
   templateUrl: './visibility-selector.component.html',
+  standalone: true,
   styleUrl: './visibility-selector.component.scss'
 })
 export class VisibilitySelectorComponent {

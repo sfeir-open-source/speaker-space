@@ -10,6 +10,7 @@ import 'moment-timezone';
     ReactiveFormsModule
   ],
   templateUrl: './timezone-selector.component.html',
+  standalone: true,
   styleUrl: './timezone-selector.component.scss'
 })
 export class TimezoneSelectorComponent {

@@ -1,4 +1,4 @@
-import {Component, computed, EventEmitter, input, Input, output, Output} from '@angular/core';
+import {Component, computed, input, output} from '@angular/core';
 import {FormGroup} from '@angular/forms';
 import {Category, Format, Speaker} from '../../../../type/session/session';
 import {SessionSpeakersFieldComponent} from '../session-speakers-field/session-speakers-field.component';
@@ -21,6 +21,7 @@ import {SessionDurationFieldComponent} from '../session-duration-field/session-d
     FieldComponent
   ],
   templateUrl: './session-form-fields.component.html',
+  standalone: true,
   styleUrl: './session-form-fields.component.scss'
 })
 export class SessionFormFieldsComponent {
@@ -50,7 +51,7 @@ export class SessionFormFieldsComponent {
     { value: 'advanced', label: 'Advanced' }
   ];
 
-  trackOptions = computed(() =>
+  readonly trackOptions = computed(() =>
     this.availableTracks().map(track => ({
       value: track,
       label: track
@@ -71,9 +72,5 @@ export class SessionFormFieldsComponent {
 
   onCategoriesChange(categories: string[]): void {
     this.categoriesChange.emit(categories);
-  }
-
-  onLanguagesChange(languages: string[]): void {
-    this.languagesChange.emit(languages);
   }
 }

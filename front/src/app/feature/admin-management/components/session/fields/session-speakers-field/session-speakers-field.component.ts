@@ -7,6 +7,7 @@ import { Speaker } from '../../../../type/session/session';
   imports: [FormsModule],
   templateUrl: './session-speakers-field.component.html',
   styleUrl: './session-speakers-field.component.scss',
+  standalone: true,
   host: {
     '(document:click)': 'onDocumentClick($event)'
   }

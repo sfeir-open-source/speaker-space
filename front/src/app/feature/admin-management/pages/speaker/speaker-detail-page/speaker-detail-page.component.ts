@@ -10,7 +10,7 @@ import { NavbarSpeakerPageComponent } from '../../../components/speaker/navbar-s
 import { SpeakerService } from '../../../services/speaker/speaker.service';
 import { SocialLinkService } from '../../../../../core/services/social-link-service/social-link.service';
 import { SocialLinkInfo } from '../../../../../core/types/social-link-info';
-import { BaseDetailService, DetailState } from '../../../components/services/base-detail.service';
+import {BaseDetailService, DetailState} from '../../../components/services/detail/base-detail.service';
 
 interface SocialLinkWithIcon extends SocialLinkInfo {
   iconContent: SafeHtml;
@@ -25,6 +25,7 @@ interface SocialLinkWithIcon extends SocialLinkInfo {
   ],
   providers: [BaseDetailService],
   templateUrl: './speaker-detail-page.component.html',
+  standalone: true,
   styleUrl: './speaker-detail-page.component.scss'
 })
 export class SpeakerDetailPageComponent implements OnInit, OnDestroy {

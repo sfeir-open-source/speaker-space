@@ -8,9 +8,9 @@ import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import { CalendarDayData, CalendarSession, CalendarSessionData } from '../../../type/calendar/calendar';
-import { BaseListService } from '../../../components/services/base-list.service';
 import {ButtonComponent} from '../../../../../shared/button/button.component';
 import {ListState} from '../../../components/type/liste-state';
+import {BaseListService} from '../../../components/services/list/base-list.service';
 
 @Component({
   selector: 'app-calendar-event-page',
@@ -22,6 +22,7 @@ import {ListState} from '../../../components/type/liste-state';
     ButtonComponent
   ],
   providers: [BaseListService],
+  standalone: true,
   styleUrls: ['./calendar-event-page.component.css']
 })
 export class CalendarEventPageComponent implements OnInit, OnDestroy {

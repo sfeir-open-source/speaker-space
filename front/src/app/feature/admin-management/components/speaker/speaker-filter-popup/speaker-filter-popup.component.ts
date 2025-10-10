@@ -3,7 +3,7 @@ import { GenericFilterPopupComponent } from '../../filter-popup/generic-filter-p
 import { Category, Format } from '../../../type/session/session';
 import { SpeakerFilters } from '../../../type/speaker/speaker-filters';
 import { FilterConfig } from '../../../type/components/filter.type';
-import { GenericFilterService } from '../../services/generic-filter.service';
+import {GenericFilterService} from '../../services/filter/generic-filter.service';
 
 @Component({
   selector: 'app-speaker-filter-popup',
@@ -11,6 +11,7 @@ import { GenericFilterService } from '../../services/generic-filter.service';
     GenericFilterPopupComponent
   ],
   templateUrl: './speaker-filter-popup.component.html',
+  standalone: true,
   styleUrl: './speaker-filter-popup.component.scss'
 })
 export class SpeakerFilterPopupComponent implements OnInit {

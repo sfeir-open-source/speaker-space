@@ -5,6 +5,7 @@ import {Category, Format} from '../../../../type/session/session';
   selector: 'app-session-categories-formats-field',
   imports: [],
   templateUrl: './session-categories-formats-field.component.html',
+  standalone: true,
   styleUrl: './session-categories-formats-field.component.scss'
 })
 
@@ -38,13 +39,5 @@ export class SessionCategoriesFormatsFieldComponent {
       : this.selectedCategories().filter(id => id !== categoryId);
 
     this.categoriesChange.emit(updatedCategories);
-  }
-
-  isFormatSelected(formatId: string): boolean {
-    return this.selectedFormats().includes(formatId);
-  }
-
-  isCategorySelected(categoryId: string): boolean {
-    return this.selectedCategories().includes(categoryId);
   }
 }

@@ -9,7 +9,6 @@ import { Speaker} from '../../../type/session/session';
 import { SpeakerWithSessionsDTO } from '../../../type/speaker/speaker-with-sessions';
 import { SpeakerService } from '../../../services/speaker/speaker.service';
 import { SpeakerFilterPopupComponent } from '../../../components/speaker/speaker-filter-popup/speaker-filter-popup.component';
-import { BaseListService } from '../../../components/services/base-list.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import { ButtonComponent } from '../../../../../shared/button/button.component';
@@ -20,6 +19,7 @@ import { SpeakerFormatterService } from '../../../services/speaker/speaker-forma
 import {
   SpeakerCreatePopupComponent
 } from '../../../components/speaker/speaker-create-popup/speaker-create-popup.component';
+import {BaseListService} from '../../../components/services/list/base-list.service';
 
 @Component({
   selector: 'app-speaker-list-page',
@@ -35,6 +35,7 @@ import {
   ],
   providers: [BaseListService, SpeakerFilterService],
   templateUrl: './speaker-list-page.component.html',
+  standalone: true,
   styleUrl: './speaker-list-page.component.scss'
 })
 export class SpeakerListPageComponent implements OnInit, OnDestroy {
@@ -42,9 +43,6 @@ export class SpeakerListPageComponent implements OnInit, OnDestroy {
 
   readonly showFilterPopup = signal<boolean>(false);
   readonly showCreatePopup = signal<boolean>(false);
-  readonly availableTracks = signal<string[]>([]);
-  readonly eventStartDate = signal<Date | undefined>(undefined);
-  readonly eventEndDate = signal<Date | undefined>(undefined);
 
   private speakersWithSessions: SpeakerWithSessionsDTO[] = [];
 

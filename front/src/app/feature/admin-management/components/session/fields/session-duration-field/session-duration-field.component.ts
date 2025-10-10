@@ -5,7 +5,8 @@ import { Component, computed, input, output, signal } from '@angular/core';
   imports: [],
   templateUrl: './session-duration-field.component.html',
   styleUrl: './session-duration-field.component.scss',
-  host: { '(document:click)': 'onDocumentClick($event)' }
+  standalone: true,
+  host: {'(document:click)': 'onDocumentClick($event)'}
 })
 export class SessionDurationFieldComponent {
   selectedDuration = input<number>(60);

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { SessionDateCalculatorService } from './session-date-calculator.service';
-import {Category, Format, Speaker} from '../../type/session/session';
-import {SessionCreateRequest} from '../../type/session/session-create';
+import {Category, Format, Speaker} from '../../../type/session/session';
+import {SessionCreateRequest} from '../../../type/session/session-create';
 
 export interface SessionFormValue {
   title: string;

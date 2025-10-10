@@ -5,7 +5,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SessionService } from '../../../services/sessions/session.service';
 import { NavbarSessionPageComponent } from '../../../components/session/navbar-session-page/navbar-session-page.component';
 import { isDefined } from '../../../../../shared/type/predicates';
-import { BaseDetailService, DetailState } from '../../../components/services/base-detail.service';
 import { AsyncPipe } from '@angular/common';
 import { ButtonComponent } from '../../../../../shared/button/button.component';
 import {SessionSpeakersComponent} from '../../../components/session/session-speakers/session-speakers.component';
@@ -14,6 +13,7 @@ import {
 } from '../../../components/session/session-schedule-form/session-schedule-form.component';
 import {SessionScheduleFormService} from '../../../services/sessions/session-schedule-form.service';
 import {SessionFormatterService} from '../../../services/sessions/session-formatter.service';
+import {BaseDetailService, DetailState} from '../../../components/services/detail/base-detail.service';
 
 @Component({
   selector: 'app-session-detail-page',

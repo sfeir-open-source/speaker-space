@@ -2,8 +2,8 @@ import { Injectable, DestroyRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {EventDTO} from '../../type/event/eventDTO';
-import {EventService} from '../../services/event/event.service';
+import {EventDTO} from '../../../type/event/eventDTO';
+import {EventService} from '../../../services/event/event.service';
 
 export type DetailState = {
   eventId: string;

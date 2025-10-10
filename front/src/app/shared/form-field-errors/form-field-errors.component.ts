@@ -5,6 +5,7 @@ import {FormControl} from '@angular/forms';
   selector: 'app-form-field-errors',
   imports: [],
   templateUrl: './form-field-errors.component.html',
+  standalone: true,
   styleUrl: './form-field-errors.component.scss'
 })
 

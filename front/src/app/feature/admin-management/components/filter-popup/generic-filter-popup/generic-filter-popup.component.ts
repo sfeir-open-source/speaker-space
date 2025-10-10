@@ -18,6 +18,7 @@ import {ButtonComponent} from '../../../../../shared/button/button.component';
     ButtonComponent
   ],
   templateUrl: './generic-filter-popup.component.html',
+  standalone: true,
   styleUrl: './generic-filter-popup.component.scss'
 })
 export class GenericFilterPopupComponent implements OnInit, OnDestroy {

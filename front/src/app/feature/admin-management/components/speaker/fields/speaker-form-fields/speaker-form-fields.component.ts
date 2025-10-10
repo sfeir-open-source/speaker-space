@@ -10,6 +10,7 @@ import {FieldComponent} from '../../../../../../shared/input/field.component';
     FieldComponent,
   ],
   templateUrl: './speaker-form-fields.component.html',
+  standalone: true,
   styleUrl: './speaker-form-fields.component.scss'
 })
 

@@ -1,12 +1,13 @@
 import { Component, computed, inject } from '@angular/core';
 import { ButtonComponent } from '../../../../shared/button/button.component';
-import { BaseListService } from '../services/base-list.service';
 import { SessionImportData } from '../../type/session/session';
+import {BaseListService} from '../services/list/base-list.service';
 
 @Component({
   selector: 'app-pagination-list',
   imports: [ButtonComponent],
   templateUrl: './pagination-list.component.html',
+  standalone: true,
   styleUrl: './pagination-list.component.scss'
 })
 export class PaginationListComponent {

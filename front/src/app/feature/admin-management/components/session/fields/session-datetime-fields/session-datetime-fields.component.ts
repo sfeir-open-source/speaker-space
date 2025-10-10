@@ -10,6 +10,7 @@ import {FieldComponent} from '../../../../../../shared/input/field.component';
     FieldComponent
   ],
   templateUrl: './session-datetime-fields.component.html',
+  standalone: true,
   styleUrl: './session-datetime-fields.component.scss'
 })
 export class SessionDatetimeFieldsComponent {

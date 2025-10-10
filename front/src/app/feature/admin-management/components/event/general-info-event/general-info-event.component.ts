@@ -11,7 +11,6 @@ import { SaveStatus } from '../../../../../core/types/save-status.types';
 
 import { TeamService } from '../../../services/team/team.service';
 import { EventService } from '../../../services/event/event.service';
-import { AutoSaveService } from '../../services/auto-save.service';
 import { FormFieldConfig, FormFieldConfigService } from '../../../services/event/event-form-config.service';
 import { EventFormService } from '../../../services/event/event-form.service';
 import { EventDataMapperService } from '../../../services/event/event-data-mapper.service';
@@ -22,6 +21,7 @@ import { ButtonComponent } from '../../../../../shared/button/button.component';
 import { VisibilitySelectorComponent } from '../visibility-selector/visibility-selector.component';
 import { TimezoneSelectorComponent } from '../timezone-selector/timezone-selector.component';
 import {FormFieldErrorsComponent} from '../../../../../shared/form-field-errors/form-field-errors.component';
+import {AutoSaveService} from '../../../services/event/auto-save.service';
 
 @Component({
   selector: 'app-general-info-event',

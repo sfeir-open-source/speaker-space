@@ -36,7 +36,7 @@ export class SessionDateCalculatorService {
     }
   }
 
-  formatDateForInput(date: Date | undefined): string {
+  formatDateForInput(date: Date): string {
     if (!date || isNaN(date.getTime())) return '';
     return date.toISOString().split('T')[0];
   }

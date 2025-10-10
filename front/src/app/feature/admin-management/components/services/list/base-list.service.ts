@@ -2,11 +2,11 @@ import { Injectable, DestroyRef, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EventDTO } from '../../type/event/eventDTO';
-import { EventService } from '../../services/event/event.service';
-import { EventDataService } from '../../services/event/event-data.service';
 import { PaginationService } from './pagination.service';
-import {ListState} from '../type/liste-state';
+import {ListState} from '../../type/liste-state';
+import {EventService} from '../../../services/event/event.service';
+import {EventDataService} from '../../../services/event/event-data.service';
+import {EventDTO} from '../../../type/event/eventDTO';
 
 @Injectable()
 export class BaseListService<T> {
