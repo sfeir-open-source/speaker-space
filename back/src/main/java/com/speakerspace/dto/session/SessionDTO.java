@@ -1,5 +1,6 @@
 package com.speakerspace.dto.session;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.util.List;
 public record SessionDTO (
         String id,
         String title,
+        @JsonProperty("abstract")
         String abstractText,
         String deliberationStatus,
         String confirmationStatus,

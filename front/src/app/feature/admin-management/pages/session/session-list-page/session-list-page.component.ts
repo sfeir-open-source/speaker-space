@@ -13,7 +13,7 @@ import { ButtonComponent } from '../../../../../shared/button/button.component';
 import { PaginationListComponent } from '../../../components/pagination-list/pagination-list.component';
 import { SessionFilterService } from '../../../services/sessions/session-filter.service';
 import { SessionFormatterService } from '../../../services/sessions/session-formatter.service';
-// import { SessionCreatePopupComponent } from '../../../components/session/session-create-popup/session-create-popup.component';
+import { SessionCreatePopupComponent } from '../../../components/session/session-create-popup/session-create-popup.component';
 import { SessionService } from '../../../services/sessions/session.service';
 import {BaseListService} from '../../../components/services/list/base-list.service';
 
@@ -28,7 +28,7 @@ import {BaseListService} from '../../../components/services/list/base-list.servi
     AsyncPipe,
     ButtonComponent,
     PaginationListComponent,
-    // SessionCreatePopupComponent
+    SessionCreatePopupComponent
   ],
   providers: [BaseListService, SessionFilterService],
   templateUrl: './session-list-page.component.html',

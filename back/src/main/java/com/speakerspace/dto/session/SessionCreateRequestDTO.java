@@ -1,5 +1,6 @@
 package com.speakerspace.dto.session;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -14,6 +15,7 @@ public record SessionCreateRequestDTO(
         String title,
 
         @Size(max = 2000, message = "Abstract must not exceed 2000 characters")
+        @JsonProperty("abstract")
         String abstractText,
 
         @Size(max = 1000, message = "References must not exceed 1000 characters")

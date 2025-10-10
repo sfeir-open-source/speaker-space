@@ -43,14 +43,14 @@
                       </span>
                     </div>
 
-<!--                    <app-button-->
-<!--                      type="button"-->
-<!--                      [materialIcon]="'add'"-->
-<!--                      (click)="onCreateSession()"-->
-<!--                      [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-1.5 px-3 rounded-md transition-colors'"-->
-<!--                      aria-label="Create new session">-->
-<!--                      Create session-->
-<!--                    </app-button>-->
+                    <app-button
+                      type="button"
+                      [materialIcon]="'add'"
+                      (click)="onCreateSession()"
+                      [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-1.5 px-3 rounded-md transition-colors'"
+                      aria-label="Create new session">
+                      Create session
+                    </app-button>
 
                     <app-button
                       type="button"
@@ -179,18 +179,18 @@
                     <app-pagination-list></app-pagination-list>
                   }
 
-<!--                  @if (showCreatePopup()) {-->
-<!--                    <app-session-create-popup-->
-<!--                      [eventId]="eventId()"-->
-<!--                      [availableFormats]="availableFormats()"-->
-<!--                      [availableCategories]="availableCategories()"-->
-<!--                      [availableTracks]="availableTracks()"-->
-<!--                      [eventStartDate]="eventStartDate()"-->
-<!--                      [eventEndDate]="eventEndDate()"-->
-<!--                      (sessionCreated)="onSessionCreated()"-->
-<!--                      (popupClosed)="onCloseCreatePopup()">-->
-<!--                    </app-session-create-popup>-->
-<!--                  }-->
+                  @if (showCreatePopup()) {
+                    <app-session-create-popup
+                      [eventId]="eventId()"
+                      [availableFormats]="availableFormats()"
+                      [availableCategories]="availableCategories()"
+                      [availableTracks]="availableTracks()"
+                      [eventStartDate]="eventStartDate()"
+                      [eventEndDate]="eventEndDate()"
+                      (sessionCreated)="onSessionCreated()"
+                      (popupClosed)="onCloseCreatePopup()">
+                    </app-session-create-popup>
+                  }
                 </div>
               }
             </article>
