@@ -1,6 +1,6 @@
 import { Component, input, OnInit, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import {finalize, forkJoin} from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AsyncPipe } from '@angular/common';
 import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
@@ -15,7 +15,7 @@ import { SessionFilterService } from '../../../services/sessions/session-filter.
 import { SessionFormatterService } from '../../../services/sessions/session-formatter.service';
 import { SessionCreatePopupComponent } from '../../../components/session/session-create-popup/session-create-popup.component';
 import { SessionService } from '../../../services/sessions/session.service';
-import {BaseListService} from '../../../components/services/list/base-list.service';
+import { BaseListService } from '../../../components/services/list/base-list.service';
 
 @Component({
   selector: 'app-session-list-page',
@@ -88,25 +88,22 @@ export class SessionListPageComponent implements OnInit {
     return new Promise((resolve, reject) => {
       forkJoin({
         event: this.eventService.getEventById(currentState.eventId),
-        sessions: this.eventService.getSessionsByEventId(currentState.eventId)
+        sessions: this.eventService.getSessionsByEventId(currentState.eventId),
+        tracks: this.sessionService.getAvailableTracksForEvent(currentState.eventId)
       })
         .pipe(
           finalize(() => this.listService.updateState({ isLoadingItems: false })),
           takeUntilDestroyed(this.listService['destroyRef'])
         )
         .subscribe({
-          next: ({ event, sessions }) => {
-            console.log('📅 Event loaded:', {
-              id: event.idEvent,
-              startDate: event.startDate,
-              endDate: event.endDate
-            });
+          next: ({ event, sessions, tracks }) => {
 
             const startDate = event.startDate ? new Date(event.startDate) : undefined;
             const endDate = event.endDate ? new Date(event.endDate) : undefined;
 
             this.eventStartDate.set(startDate);
             this.eventEndDate.set(endDate);
+            this.availableTracks.set(tracks);
 
             const sortedSessions = this.formatterService.sortByTitle(sessions);
             this.listService.updateItems(sortedSessions);
@@ -115,10 +112,12 @@ export class SessionListPageComponent implements OnInit {
             resolve();
           },
           error: (error) => {
+            console.error('Error loading data:', error);
             this.listService.updateState({
               error: 'Failed to load sessions. Please try again.'
             });
             this.listService.updateItems([]);
+            this.availableTracks.set([]);
             reject(error);
           }
         });
@@ -199,9 +198,6 @@ export class SessionListPageComponent implements OnInit {
   }
 
   onCreateSession(): void {
-    const startDate = this.eventStartDate();
-    const endDate = this.eventEndDate();
-
     this.showCreatePopup.set(true);
   }
 

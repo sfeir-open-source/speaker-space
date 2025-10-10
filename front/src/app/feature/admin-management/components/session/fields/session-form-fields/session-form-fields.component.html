@@ -45,10 +45,10 @@
   <app-field
     name="track"
     label="Track"
-    [type]="availableTracks.length > 0 ? 'select' : 'text'"
+    [type]="availableTracks().length > 0 ? 'select' : 'text'"
     [control]="form().get('track')!"
     [options]="trackOptions()"
-    [placeholder]="availableTracks.length > 0 ? 'Select track...' : 'Enter track name'">
+    [placeholder]="availableTracks().length > 0 ? 'Select track...' : 'Enter track name'">
   </app-field>
 
   <app-session-duration-field

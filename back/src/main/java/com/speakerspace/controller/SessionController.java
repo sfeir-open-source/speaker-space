@@ -143,8 +143,10 @@ public class SessionController {
             @PathVariable String eventId,
             Authentication authentication) throws AccessDeniedException {
 
-        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () ->
-                sessionService.getDistinctTracksByEventId(eventId));
+        authorizationHelper.validateEventAuthorization(eventId, authentication);
+        List<String> tracks = sessionService.getAvailableTracksForEvent(eventId);
+
+        return ResponseEntity.ok(tracks);
     }
 
     @GetMapping("/event/{eventId}/calendar")

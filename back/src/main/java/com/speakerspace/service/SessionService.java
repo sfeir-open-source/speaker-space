@@ -360,6 +360,11 @@ public class SessionService {
         }
     }
 
+    public List<String> getAvailableTracksForEvent(String eventId) {
+        List<String> tracks = sessionRepository.findDistinctTracksByEventId(eventId);
+        return tracks;
+    }
+
     private String generateSessionId() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }

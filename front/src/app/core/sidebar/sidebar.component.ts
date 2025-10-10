@@ -51,16 +51,6 @@ export class SidebarComponent implements OnInit {
     return teamsData !== null && teamsData.length > 0;
   });
 
-  constructor() {
-    effect(() => {
-      console.log('Teams state:', {
-        teams: this.teams(),
-        isLoading: this.isLoadingTeams(),
-        hasTeams: this.hasTeams()
-      });
-    });
-  }
-
   ngOnInit(): void {
     this.teamService.loadUserTeams();
   }

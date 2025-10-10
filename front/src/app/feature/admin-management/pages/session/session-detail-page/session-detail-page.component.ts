@@ -7,13 +7,12 @@ import { NavbarSessionPageComponent } from '../../../components/session/navbar-s
 import { isDefined } from '../../../../../shared/type/predicates';
 import { AsyncPipe } from '@angular/common';
 import { ButtonComponent } from '../../../../../shared/button/button.component';
-import {SessionSpeakersComponent} from '../../../components/session/session-speakers/session-speakers.component';
-import {
-  SessionScheduleFormComponent
-} from '../../../components/session/session-schedule-form/session-schedule-form.component';
-import {SessionScheduleFormService} from '../../../services/sessions/session-schedule-form.service';
-import {SessionFormatterService} from '../../../services/sessions/session-formatter.service';
-import {BaseDetailService, DetailState} from '../../../components/services/detail/base-detail.service';
+import { SessionSpeakersComponent } from '../../../components/session/session-speakers/session-speakers.component';
+import { SessionScheduleFormComponent } from '../../../components/session/session-schedule-form/session-schedule-form.component';
+import { SessionScheduleFormService } from '../../../services/sessions/session-schedule-form.service';
+import { SessionFormatterService } from '../../../services/sessions/session-formatter.service';
+import { BaseDetailService, DetailState } from '../../../components/services/detail/base-detail.service';
+import { EventService } from '../../../services/event/event.service';
 
 @Component({
   selector: 'app-session-detail-page',
@@ -32,6 +31,7 @@ import {BaseDetailService, DetailState} from '../../../components/services/detai
 export class SessionDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly sessionService = inject(SessionService);
+  private readonly eventService = inject(EventService);
   private readonly router = inject(Router);
   readonly detailService = inject(BaseDetailService);
   readonly scheduleFormService = inject(SessionScheduleFormService);
@@ -42,6 +42,8 @@ export class SessionDetailPageComponent implements OnInit {
   readonly format = signal<Format | null>(null);
   readonly category = signal<Category | null>(null);
   readonly availableTracks = signal<string[]>([]);
+  readonly eventStartDate = signal<Date | undefined>(undefined);
+  readonly eventEndDate = signal<Date | undefined>(undefined);
 
   readonly hasSessionData = computed(() => !!this.session());
   readonly canEditSchedule = computed(() =>
@@ -79,15 +81,21 @@ export class SessionDetailPageComponent implements OnInit {
     this.sessionId.set(sessionId);
 
     try {
-      const [session, tracks] = await Promise.all([
+      const [session, tracks, event] = await Promise.all([
         this.sessionService.getSessionById(eventId, sessionId).toPromise(),
-        this.sessionService.getAvailableTracksForEvent(eventId).toPromise()
+        this.sessionService.getAvailableTracksForEvent(eventId).toPromise(),
+        this.eventService.getEventById(eventId).toPromise()
       ]);
 
       this.session.set(session!);
       this.availableTracks.set(tracks || []);
       this.format.set(session!.formats?.[0] || null);
       this.category.set(session!.categories?.[0] || null);
+
+      if (event) {
+        this.eventStartDate.set(event.startDate ? new Date(event.startDate) : undefined);
+        this.eventEndDate.set(event.endDate ? new Date(event.endDate) : undefined);
+      }
     } catch (error) {
       this.detailService.updateState({ error: 'Failed to load session data' });
       throw error;
