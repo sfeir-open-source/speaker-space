@@ -3,15 +3,15 @@ import { NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { UserDataService } from '../services/user-services/user-data.service';
 import { AuthService } from '../login/services/auth.service';
-import {ButtonWithIconComponent} from '../../shared/button-with-icon/button-with-icon.component';
-import {CommonModule} from '@angular/common';
-import {TeamService} from '../../feature/admin-management/services/team/team.service';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
+import { ButtonComponent } from '../../shared/button/button.component';
+import { CommonModule } from '@angular/common';
+import { TeamService } from '../../feature/admin-management/services/team/team.service';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [ButtonWithIconComponent, CommonModule],
+  imports: [ButtonComponent, CommonModule],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
@@ -51,18 +51,20 @@ export class SidebarComponent implements OnInit {
     return teamsData !== null && teamsData.length > 0;
   });
 
-  constructor() {
-    effect(() => {
-      console.log('Teams state:', {
-        teams: this.teams(),
-        isLoading: this.isLoadingTeams(),
-        hasTeams: this.hasTeams()
-      });
-    });
-  }
-
   ngOnInit(): void {
     this.teamService.loadUserTeams();
+  }
+
+  getSidebarButtonClasses(additionalClasses: string = ''): string {
+    const baseClasses = 'group flex items-center gap-x-3 w-full text-left p-2 leading-6 transition-colors hover:bg-gray-100 rounded-md text-left hover:text-gray-900';
+
+    return additionalClasses
+      ? `${baseClasses} ${additionalClasses}`.trim()
+      : baseClasses;
+  }
+
+  getCloseSidebarHandler(): () => void {
+    return () => this.closeSidebar();
   }
 
   closeSidebar(): void {
@@ -71,7 +73,7 @@ export class SidebarComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
-    this.closeSidebar();
+    this.getCloseSidebarHandler();
   }
 
   navigateTo(path: string): void {

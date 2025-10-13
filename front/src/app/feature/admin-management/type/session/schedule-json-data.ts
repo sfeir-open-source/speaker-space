@@ -60,3 +60,15 @@ export type SessionScheduleUpdate = {
   end?: Date;
   track?: string;
 }
+
+export type DurationOption = {
+  readonly label: string;
+  readonly value: number;
+}
+
+export type ScheduleFormValues = {
+  startDate: string;
+  startTime: string;
+  duration: number;
+  track: string;
+}

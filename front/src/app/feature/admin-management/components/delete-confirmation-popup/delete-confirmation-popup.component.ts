@@ -1,11 +1,13 @@
 import { Component, input, output, computed, signal } from '@angular/core';
 import { DeleteConfirmationConfig } from '../../type/components/delete-confirmation';
 import { FormsModule } from '@angular/forms';
+import {ButtonComponent} from '../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-delete-confirmation-popup',
   imports: [
-    FormsModule
+    FormsModule,
+    ButtonComponent
   ],
   templateUrl: './delete-confirmation-popup.component.html',
   styleUrl: './delete-confirmation-popup.component.scss'
@@ -126,4 +128,24 @@ export class DeleteConfirmationPopupComponent {
   private resetForm(): void {
     this.userConfirmationText.set('');
   }
+
+  getCancelButtonClass(): string {
+    const baseClasses = 'px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none';
+    return `${baseClasses} text-lg`;
+  }
+
+  readonly deleteButtonFocusClasses = computed<string>(() => {
+    return this.isDeleteButtonDisabled()
+      ? 'focus:ring-red-300 focus:ring-opacity-50'
+      : 'focus:ring-red-500 focus:ring-offset-2 hover:bg-red-700';
+  });
+
+  readonly deleteButtonClasses = computed<string>(() => {
+    const baseClasses = 'px-4 py-2 bg-red-600 text-white rounded-md flex items-center text-lg transition-colors duration-200 focus:outline-none focus:ring-2';
+    const focusClasses = this.deleteButtonFocusClasses();
+    const interactionClasses = 'hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600';
+
+    return `${baseClasses} ${focusClasses} ${interactionClasses}`;
+  });
+
 }

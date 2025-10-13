@@ -2,6 +2,7 @@ package com.speakerspace.repository;
 
 import com.google.cloud.firestore.*;
 import com.speakerspace.model.session.Speaker;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Repository
 public class SpeakerRepositoryImpl extends AbstractFirestoreRepository<Speaker, String>
         implements SpeakerRepository {
@@ -52,7 +54,14 @@ public class SpeakerRepositoryImpl extends AbstractFirestoreRepository<Speaker, 
 
     @Override
     public List<Speaker> findByEventId(String eventId) {
-        return executeQuery(getCollection().whereEqualTo("eventId", eventId));
+        try {
+            List<Speaker> speakers = executeQuery(getCollection().whereEqualTo("eventId", eventId));
+            log.debug("Found {} speakers for eventId: {}", speakers.size(), eventId);
+            return speakers;
+        } catch (Exception e) {
+            log.error("Failed to find speakers by eventId {}: {}", eventId, e.getMessage(), e);
+            return new ArrayList<>();
+        }
     }
 
     @Override

@@ -1,17 +1,17 @@
-import { Component, OnDestroy, OnInit, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { UserRoleService } from '../../services/team/user-role.service';
-import { ButtonGreyComponent } from '../../../../shared/button-grey/button-grey.component';
 import { NgClass } from '@angular/common';
 import { NavbarButton, NavbarConfig } from '../../type/components/navbar-config';
+import {ButtonComponent} from '../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-navbar-admin-page',
   standalone: true,
   imports: [
-    ButtonGreyComponent,
-    NgClass
+    NgClass,
+    ButtonComponent
   ],
   templateUrl: './navbar-admin-page.component.html',
   styleUrl: './navbar-admin-page.component.scss'

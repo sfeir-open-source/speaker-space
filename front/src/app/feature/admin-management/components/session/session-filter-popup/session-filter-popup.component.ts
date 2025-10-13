@@ -1,8 +1,8 @@
 import {Component, computed, effect, input, output} from '@angular/core';
 import {SessionFilters} from '../../../type/session/session-filters';
 import {Category, Format} from '../../../type/session/session';
-import {GenericFilterService} from '../../services/generic-filter.service';
 import {GenericFilterPopupComponent} from '../../filter-popup/generic-filter-popup/generic-filter-popup.component';
+import {GenericFilterService} from '../../services/filter/generic-filter.service';
 
 @Component({
   selector: 'app-session-filter-popup',
@@ -10,6 +10,7 @@ import {GenericFilterPopupComponent} from '../../filter-popup/generic-filter-pop
     GenericFilterPopupComponent
   ],
   templateUrl: './session-filter-popup.component.html',
+  standalone: true,
   styleUrl: './session-filter-popup.component.scss'
 })
 export class SessionFilterPopupComponent {

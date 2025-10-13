@@ -7,11 +7,18 @@ import {
   signal,
   inject
 } from '@angular/core';
-import { FormControl, FormsModule, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  FormsModule,
+  ReactiveFormsModule,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import {Observable} from 'rxjs';
-import {IconService} from './service/icon.service';
+import { Observable } from 'rxjs';
+import { IconService } from './service/icon.service';
 
 @Component({
   selector: 'app-field',
@@ -33,7 +40,7 @@ export class FieldComponent {
   readonly paragraph = input<string | undefined>(undefined);
   readonly placeholder = input<string | undefined>(undefined);
   readonly type = input<string>('text');
-  readonly control = input.required<FormControl>();
+  readonly control = input.required<AbstractControl>();
 
   readonly required = input<boolean, boolean | undefined>(false, {
     transform: (value: boolean | undefined) => value ?? false
@@ -65,15 +72,7 @@ export class FieldComponent {
   private readonly sanitizedIconPath = signal<SafeHtml>('');
   readonly errorIcon = signal<Observable<SafeHtml> | null>(null);
 
-  readonly hasLabel = computed(() => {
-    const label = this.label();
-    return label !== undefined && label !== '' && label !== 'undefined';
-  });
-
-  readonly effectiveLabel = computed(() => {
-    const label = this.label();
-    return label && label !== 'undefined' ? label : '';
-  });
+  readonly formControl = computed(() => this.control() as FormControl);
 
   readonly effectivePlaceholder = computed(() => {
     const staticPlaceholder = this.staticPlaceholder();

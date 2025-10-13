@@ -1,5 +1,5 @@
 <article class="w-full flex-grow bg-white shadow-md rounded-lg px-5 pb-8">
-  @if (showAutoSaveIndicator) {
+  @if (showAutoSaveIndicator()) {
     <app-save-indicator
       [status]="saveStatus()"
       position="top-right">
@@ -86,26 +86,26 @@
       </app-field>
     </div>
 
-    @if (showNavigationButtons) {
+    @if (showNavigationButtons()) {
     <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
     }
 
-    @if (showNavigationButtons) {
+    @if (showNavigationButtons()) {
       <div class="flex justify-end p-4">
-        <app-button-grey
+        <app-button
           type="button"
           (click)="onGoBack()"
-          customTextClass="text-gray-600 hover:text-gray-600"
-          class="rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+          [customClass]="'text-gray-700 hover:text-gray-700 px-6 py-2 rounded-md mr-5 text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm'">
           Go back
-        </app-button-grey>
+        </app-button>
 
-        <app-button-green-actions
+        <app-button
           [type]="'submit'"
-          materialIcon="arrow_forward"
-          [attr.aria-label]="'Continue to next step'">
+          [attr.aria-label]="'Continue to next step'"
+          [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm px-3 rounded-md transition-colors'"
+          materialIcon="arrow_forward">
           Continue
-        </app-button-green-actions>
+        </app-button>
       </div>
     }
   </form>

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { RolePopupComponent } from './components/role-popup/role-popup.component';
 import { DeletePopupComponent } from './components/delete-popup/delete-popup.component';
 import { TeamMember } from '../../../type/team/team-member';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-members-card',
@@ -13,6 +14,7 @@ import { TeamMember } from '../../../type/team/team-member';
     FormsModule,
     RolePopupComponent,
     DeletePopupComponent,
+    ButtonComponent,
   ],
   templateUrl: './members-card.component.html',
   styleUrl: './members-card.component.scss'

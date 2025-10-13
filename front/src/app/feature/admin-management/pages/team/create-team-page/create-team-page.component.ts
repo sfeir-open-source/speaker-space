@@ -3,10 +3,10 @@ import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } 
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FieldComponent } from '../../../../../shared/input/field.component';
-import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
 import { TeamService } from '../../../services/team/team.service';
 import { FormField } from '../../../../../shared/input/interface/form-field';
 import { Team } from '../../../type/team/team';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-create-team-page',
@@ -15,7 +15,7 @@ import { Team } from '../../../type/team/team';
     CommonModule,
     ReactiveFormsModule,
     FieldComponent,
-    ButtonGreenActionsComponent,
+    ButtonComponent,
   ],
   templateUrl: './create-team-page.component.html',
   styleUrl: './create-team-page.component.scss'

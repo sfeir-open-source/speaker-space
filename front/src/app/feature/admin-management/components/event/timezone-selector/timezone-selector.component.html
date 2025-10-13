@@ -1,0 +1,24 @@
+<div class="mt-20 mb-6">
+  <label for="timezone-selector" class="block text-start text-md font-medium text-gray-700">
+    Event timezone
+  </label>
+
+  <div class="relative mt-2">
+    <select
+      id="timezone-selector"
+      [formControl]="control()"
+      class="block w-full rounded-md bg-white px-3 py-2.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6 resize-none"
+      aria-describedby="timezone-description">
+
+      @for (tz of timezoneOptions(); track tz.name) {
+        <option [value]="tz.name">
+          {{ formatTimezoneOption(tz) }}
+        </option>
+      }
+    </select>
+
+    <p id="timezone-description" class="sr-only">
+      Select the timezone for your event
+    </p>
+  </div>
+</div>

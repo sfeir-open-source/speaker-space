@@ -13,8 +13,7 @@ import com.speakerspace.repository.SpeakerRepository;
 import com.speakerspace.repository.TeamRepository;
 import com.speakerspace.utils.date.EventDateCalculator;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -23,11 +22,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class EventService {
 
     private static final String BASE_URL = "https://speaker-space.io/event/";
-    private static final Logger logger = LoggerFactory.getLogger(EventService.class);
 
     private final EventMapper eventMapper;
     private final EventRepository eventRepository;
@@ -164,11 +163,11 @@ public class EventService {
         boolean eventDeleted = eventRepository.deleteEvent(eventId);
 
         if (eventDeleted) {
-            logger.info("Event deleted successfully: {} (with {} sessions and {} speakers)",
+            log.info("Event deleted successfully: {} (with {} sessions and {} speakers)",
                     eventId, deletedSessionsCount, deletedSpeakersCount);
             return true;
         } else {
-            logger.error("Failed to delete event: {}", eventId);
+            log.error("Failed to delete event: {}", eventId);
             return false;
         }
     }
@@ -264,7 +263,7 @@ public class EventService {
         EventDateCalculator.DateRange dateRange = EventDateCalculator.calculateEventDateRange(sessions);
 
         if (dateRange == null) {
-            logger.debug("No valid date range found in sessions for event: {}", eventId);
+            log.debug("No valid date range found in sessions for event: {}", eventId);
             return;
         }
 
@@ -302,10 +301,10 @@ public class EventService {
 
             updateEvent(updatedEvent);
 
-            logger.info("Updated event {} dates from sessions: start={}, end={}",
+            log.info("Updated event {} dates from sessions: start={}, end={}",
                     eventId, newStartDate, newEndDate);
         } else {
-            logger.debug("Event {} dates are already up to date", eventId);
+            log.debug("Event {} dates are already up to date", eventId);
         }
     }
 
@@ -315,14 +314,14 @@ public class EventService {
             UserDTO currentUser = userService.getUserByUid(currentUserId);
 
             if (currentUser == null || currentUser.email() == null) {
-                logger.debug("No current user or email found for speaker events");
+                log.debug("No current user or email found for speaker events");
                 return Collections.emptyList();
             }
 
             List<Speaker> userSpeakers = speakerRepository.findByEmail(currentUser.email());
 
             if (userSpeakers.isEmpty()) {
-                logger.debug("No speaker records found for email: {}", currentUser.email());
+                log.debug("No speaker records found for email: {}", currentUser.email());
                 return Collections.emptyList();
             }
 
@@ -333,7 +332,7 @@ public class EventService {
                     .collect(Collectors.toSet());
 
             if (eventIds.isEmpty()) {
-                logger.debug("No valid event IDs found in speaker records");
+                log.debug("No valid event IDs found in speaker records");
                 return Collections.emptyList();
             }
 
@@ -349,11 +348,11 @@ public class EventService {
                 return e2.idEvent().compareTo(e1.idEvent());
             });
 
-            logger.debug("Found {} speaker events for user {}", speakerEvents.size(), currentUser.email());
+            log.debug("Found {} speaker events for user {}", speakerEvents.size(), currentUser.email());
             return speakerEvents;
 
         } catch (Exception e) {
-            logger.error("Error retrieving events by speaker email", e);
+            log.error("Error retrieving events by speaker email", e);
             return Collections.emptyList();
         }
     }
@@ -373,7 +372,7 @@ public class EventService {
             return !speakers.isEmpty();
 
         } catch (Exception e) {
-            logger.error("Error checking if user is speaker of event: {}", eventId, e);
+            log.error("Error checking if user is speaker of event: {}", eventId, e);
             return false;
         }
     }
@@ -384,16 +383,16 @@ public class EventService {
         try {
             List<EventDTO> createdEvents = getEventsForCurrentUser();
             allEvents.addAll(createdEvents);
-            logger.debug("Found {} created events", createdEvents.size());
+            log.debug("Found {} created events", createdEvents.size());
 
             String currentUserId = userService.getCurrentUserId();
             List<EventDTO> teamEvents = getEventsFromUserTeams(currentUserId);
             allEvents.addAll(teamEvents);
-            logger.debug("Found {} team events", teamEvents.size());
+            log.debug("Found {} team events", teamEvents.size());
 
             List<EventDTO> speakerEvents = getEventsBySpeakerEmail();
             allEvents.addAll(speakerEvents);
-            logger.debug("Found {} speaker events", speakerEvents.size());
+            log.debug("Found {} speaker events", speakerEvents.size());
 
             List<EventDTO> result = new ArrayList<>(allEvents);
             result.sort((e1, e2) -> {
@@ -405,7 +404,7 @@ public class EventService {
             return result;
 
         } catch (Exception e) {
-            logger.error("Error retrieving all user related events", e);
+            log.error("Error retrieving all user related events", e);
             return Collections.emptyList();
         }
     }
@@ -428,7 +427,7 @@ public class EventService {
             return new ArrayList<>(teamEvents);
 
         } catch (Exception e) {
-            logger.error("Error retrieving events from user teams for user: {}", userId, e);
+            log.error("Error retrieving events from user teams for user: {}", userId, e);
             return Collections.emptyList();
         }
     }

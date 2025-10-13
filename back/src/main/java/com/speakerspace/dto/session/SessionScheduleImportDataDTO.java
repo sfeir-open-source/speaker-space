@@ -15,4 +15,3 @@ public record SessionScheduleImportDataDTO (
         ProposalScheduleDTO proposal,
         String eventId
 ) {}
-

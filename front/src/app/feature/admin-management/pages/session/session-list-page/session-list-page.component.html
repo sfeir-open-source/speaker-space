@@ -43,18 +43,19 @@
                       </span>
                     </div>
 
-                    <app-button-green-actions
+                    <app-button
                       type="button"
                       [materialIcon]="'add'"
+                      (click)="onCreateSession()"
+                      [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-1.5 px-3 rounded-md transition-colors'"
                       aria-label="Create new session">
                       Create session
-                    </app-button-green-actions>
+                    </app-button>
 
-                    <app-button-grey
+                    <app-button
                       type="button"
                       [materialIcon]="'tune'"
-                      customTextClass="text-gray-600 hover:text-gray-600"
-                      class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm relative"
+                      [customClass]="'text-gray-600 hover:text-gray-600 flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm relative'"
                       (click)="openFilterPopup()"
                       [attr.aria-label]="hasActiveFilters() ? 'Filters (' + activeFiltersCount() + ' active)' : 'Filters'"
                       [attr.aria-expanded]="showFilterPopup()">
@@ -65,7 +66,7 @@
                           {{ activeFiltersCount() }}
                         </span>
                       }
-                    </app-button-grey>
+                    </app-button>
 
                     @if (showFilterPopup()) {
                       <app-session-filter-popup
@@ -132,97 +133,63 @@
                         </tr>
                       } @else {
                         @for (session of paginatedSessions(); track session.id) {
-                          <tr class="bg-white border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-                              (click)="onRowClick(session, $event)"
-                              [attr.aria-label]="'Session: ' + (session.title || 'Untitled') + ' by ' + formatSpeakers(session.speakers)"
-                              tabindex="0"
-                              (keydown.enter)="onRowClick(session, $event)"
-                              (keydown.space)="onRowClick(session, $event)">
-                            <td class="w-4 p-4 checkbox-area" (click)="$event.stopPropagation()">
-                              <div class="flex items-center">
-                                <input
-                                  [id]="'checkbox-table-search-' + session.id"
-                                  type="checkbox"
-                                  [checked]="isSessionSelected(session.id)"
-                                  (change)="toggleSessionSelection(session.id!)"
-                                  (click)="$event.stopPropagation()"
-                                  class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500"
-                                  [attr.aria-label]="'Select session: ' + (session.title || 'Untitled')"
-                                />
-                                <label [for]="'checkbox-table-search-' + session.id" class="sr-only">
-                                  Select session {{ session.title || 'Untitled' }}
-                                </label>
-                              </div>
-                            </td>
-                            <th scope="row" class="px-2 py-2 font-medium text-gray-900 whitespace-nowrap">
-                              <div class="flex min-w-0 gap-x-2">
-                                <div class="min-w-0 flex-auto">
-                                  <p class="text-sm/6 text-gray-900 font-medium">
-                                    {{ session.title || 'Titre non défini' }}
-                                  </p>
-                                  <p class="truncate text-xs/5 text-gray-500">
-                                    by {{ formatSpeakers(session.speakers) }}
-                                  </p>
+                          @if(session.title!){
+                            <tr class="bg-white border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                                (click)="onRowClick(session, $event)"
+                                [attr.aria-label]="'Session: ' + (session.title || 'Untitled') + ' by ' + formatSpeakers(session.speakers)"
+                                tabindex="0"
+                                (keydown.enter)="onRowClick(session, $event)"
+                                (keydown.space)="onRowClick(session, $event)">
+                              <td class="w-4 p-4 checkbox-area" (click)="$event.stopPropagation()">
+                                <div class="flex items-center">
+                                  <input
+                                    [id]="'checkbox-table-search-' + session.id"
+                                    type="checkbox"
+                                    [checked]="isSessionSelected(session.id)"
+                                    (change)="toggleSessionSelection(session.id!)"
+                                    (click)="$event.stopPropagation()"
+                                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded-sm focus:ring-blue-500"
+                                    [attr.aria-label]="'Select session: ' + (session.title || 'Untitled')"
+                                  />
+                                  <label [for]="'checkbox-table-search-' + session.id" class="sr-only">
+                                    Select session {{ session.title }}
+                                  </label>
                                 </div>
-                              </div>
-                            </th>
-                          </tr>
+                              </td>
+                              <th scope="row" class="px-2 py-2 font-medium text-gray-900">
+                                <div class="flex min-w-0 gap-x-2">
+                                  <div class="min-w-0 flex-auto">
+                                    <p class="text-sm/6 text-gray-900 font-medium line-clamp-2">
+                                      {{ session.title || 'Titre non défini' }}
+                                    </p>
+                                    <p class="truncate text-xs/5 text-gray-500">
+                                      by {{ formatSpeakers(session.speakers) }}
+                                    </p>
+                                  </div>
+                                </div>
+                              </th>
+                            </tr>
+                          }
                         }
                       }
                     </tbody>
                   </table>
 
                   @if (totalPages() > 1) {
-                    <nav class="flex items-center flex-column flex-wrap md:flex-row justify-between p-4"
-                         aria-label="Sessions pagination navigation">
-                      <span class="text-sm font-normal text-gray-600 mb-4 md:mb-0 block w-full md:inline md:w-auto">
-                        Showing {{ paginationInfo().start }}-{{ paginationInfo().end }} of {{ paginationInfo().total }} results
-                      </span>
-                      <ul class="inline-flex -space-x-px rtl:space-x-reverse text-sm h-8" role="list">
-                        <li>
-                          <button
-                            type="button"
-                            (click)="goToPreviousPage()"
-                            [disabled]="!canGoToPreviousPage()"
-                            [class]="!canGoToPreviousPage() ?
-                              'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-s-lg cursor-not-allowed' :
-                              'flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer'"
-                            [attr.aria-label]="canGoToPreviousPage() ? 'Go to previous page' : 'Previous page (disabled)'"
-                            [attr.aria-disabled]="!canGoToPreviousPage()">
-                            Previous
-                          </button>
-                        </li>
+                    <app-pagination-list></app-pagination-list>
+                  }
 
-                        @for (pageNum of pageNumbers(); track pageNum) {
-                          <li>
-                            <button
-                              type="button"
-                              (click)="goToPage(pageNum)"
-                              [class]="pageNum === currentPage() ?
-                                'flex items-center justify-center px-3 h-8 text-blue-600 border border-gray-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700' :
-                                'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 cursor-pointer'"
-                              [attr.aria-label]="pageNum === currentPage() ? 'Current page ' + pageNum : 'Go to page ' + pageNum"
-                              [attr.aria-current]="pageNum === currentPage() ? 'page' : null">
-                              {{ pageNum }}
-                            </button>
-                          </li>
-                        }
-
-                        <li>
-                          <button
-                            type="button"
-                            (click)="goToNextPage()"
-                            [disabled]="!canGoToNextPage()"
-                            [class]="!canGoToNextPage() ?
-                              'flex items-center justify-center px-3 h-8 leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-e-lg cursor-not-allowed' :
-                              'flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 cursor-pointer'"
-                            [attr.aria-label]="canGoToNextPage() ? 'Go to next page' : 'Next page (disabled)'"
-                            [attr.aria-disabled]="!canGoToNextPage()">
-                            Next
-                          </button>
-                        </li>
-                      </ul>
-                    </nav>
+                  @if (showCreatePopup()) {
+                    <app-session-create-popup
+                      [eventId]="eventId()"
+                      [availableFormats]="availableFormats()"
+                      [availableCategories]="availableCategories()"
+                      [availableTracks]="availableTracks()"
+                      [eventStartDate]="eventStartDate()"
+                      [eventEndDate]="eventEndDate()"
+                      (sessionCreated)="onSessionCreated()"
+                      (popupClosed)="onCloseCreatePopup()">
+                    </app-session-create-popup>
                   }
                 </div>
               }
@@ -233,4 +200,3 @@
     </main>
   </div>
 }
-

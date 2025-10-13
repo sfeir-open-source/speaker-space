@@ -1,0 +1,38 @@
+<section class="px-4 pb-4">
+  <div class="flex items-center justify-between">
+    <app-auto-complete
+      class="flex-1 mr-4"
+      [control]="searchService.searchControl"
+      [results]="searchService.searchResults()"
+      [isLoading]="searchService.isSearching()"
+      [placeholder]="'Find member by email'"
+      [icon]="'search'"
+      [itemTemplate]="userItemTemplate"
+      (itemSelected)="searchService.selectUser($event)"
+      (inputChanged)="onSearchInputChanged($event)">
+    </app-auto-complete>
+
+    <app-button
+      materialIcon="person_add"
+      [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm rounded-md transition-colors'"
+      (click)="addMember()">
+          <span class="hidden lg:inline">
+            {{ isAddingMember() ? 'Adding...' : 'Invite member' }}
+          </span>
+    </app-button>
+  </div>
+</section>
+
+<ng-template #userItemTemplate let-user>
+  <div class="flex items-center">
+    <img
+      [src]="user.photoURL || 'assets/images/profile-placeholder.svg'"
+      [alt]="'Avatar of ' + (user.displayName || 'Unknown user')"
+      class="w-8 h-8 rounded-full mr-3"
+    />
+    <div>
+      <div class="font-medium">{{ user.displayName || 'Unknown user' }}</div>
+      <div class="text-sm text-gray-500">{{ user.email }}</div>
+    </div>
+  </div>
+</ng-template>

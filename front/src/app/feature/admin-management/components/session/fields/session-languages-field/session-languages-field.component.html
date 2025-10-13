@@ -1,0 +1,15 @@
+<article class ="mt-5">
+  <label class="block text-start text-md mb-2">Languages</label>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-1 mb-3">
+    @for (lang of commonLanguages; track lang.code) {
+      <label class="flex items-center space-x-2 cursor-pointer block text-start text-md mb-2">
+        <input
+          type="checkbox"
+          [value]="lang.code"
+          (change)="onLanguageChange(lang.code, $event)"
+          class="rounded border-gray-300 text-blue-600">
+        <span>{{ lang.name }}</span>
+      </label>
+    }
+  </div>
+</article>

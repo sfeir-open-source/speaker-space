@@ -1,30 +1,43 @@
 package com.speakerspace.service;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
+import com.speakerspace.config.CookieService;
 import com.speakerspace.dto.TeamMemberDTO;
 import com.speakerspace.dto.UserDTO;
+import com.speakerspace.exception.FirebaseAuthenticationException;
+import com.speakerspace.exception.TokenExpiredException;
+import com.speakerspace.exception.UnauthorizedException;
 import com.speakerspace.exception.ValidationException;
 import com.speakerspace.mapper.UserMapper;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.User;
 import com.speakerspace.repository.TeamRepository;
 import com.speakerspace.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.net.URL;
+import java.nio.file.AccessDeniedException;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final TeamRepository teamRepository;
+    private final FirebaseAuth firebaseAuth;
+    private final CookieService cookieService;
     private static final int MIN_LENGTH = 2;
 
     public UserDTO saveUser(UserDTO userDTO) {
@@ -309,5 +322,94 @@ public class UserService {
         });
 
         return updatedUser;
+    }
+
+    public FirebaseToken verifyFirebaseToken(String idToken) {
+        try {
+            return firebaseAuth.verifyIdToken(idToken);
+        } catch (FirebaseAuthException e) {
+            log.error("Firebase token verification failed: {}", e.getMessage());
+            throw new FirebaseAuthenticationException("Invalid token");
+        }
+    }
+
+    public UserDTO createNewUser(FirebaseToken decodedToken) {
+        UserDTO userDTO = UserDTO.builder()
+                .uid(decodedToken.getUid())
+                .email(decodedToken.getEmail())
+                .displayName(decodedToken.getName())
+                .photoURL(decodedToken.getPicture())
+                .build();
+
+        UserDTO createdUser = this.saveUser(userDTO);
+        if (createdUser == null) {
+            throw new RuntimeException("Failed to create user");
+        }
+        return createdUser;
+    }
+
+    public UserDTO updateExistingUserIfNeeded(UserDTO existingUser, FirebaseToken decodedToken) {
+        boolean needsUpdate = false;
+        UserDTO.UserDTOBuilder builder = UserDTO.builder()
+                .uid(existingUser.uid())
+                .email(existingUser.email())
+                .displayName(existingUser.displayName())
+                .photoURL(existingUser.photoURL())
+                .company(existingUser.company())
+                .city(existingUser.city())
+                .phoneNumber(existingUser.phoneNumber())
+                .githubLink(existingUser.githubLink())
+                .twitterLink(existingUser.twitterLink())
+                .blueSkyLink(existingUser.blueSkyLink())
+                .linkedInLink(existingUser.linkedInLink())
+                .biography(existingUser.biography())
+                .otherLink(existingUser.otherLink());
+
+        if (existingUser.email() == null && decodedToken.getEmail() != null) {
+            builder.email(decodedToken.getEmail());
+            needsUpdate = true;
+        }
+
+        if ((existingUser.displayName() == null || existingUser.displayName().isEmpty())
+                && decodedToken.getName() != null) {
+            builder.displayName(decodedToken.getName());
+            needsUpdate = true;
+        }
+
+        if ((existingUser.photoURL() == null || existingUser.photoURL().isEmpty())
+                && decodedToken.getPicture() != null) {
+            builder.photoURL(decodedToken.getPicture());
+            needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+            UserDTO updatedUserDTO = builder.build();
+            return this.saveUser(updatedUserDTO);
+        }
+
+        return existingUser;
+    }
+
+    public String authenticateAndAuthorize(HttpServletRequest request, String targetUid) {
+        String token = cookieService.getAuthTokenFromCookies(request);
+        if (token == null) {
+            throw new UnauthorizedException("Authentication required");
+        }
+
+        try {
+            FirebaseToken decodedToken = firebaseAuth.verifyIdToken(token);
+            String tokenUid = decodedToken.getUid();
+
+            if (!tokenUid.equals(targetUid)) {
+                throw new AccessDeniedException("Not authorized to access this profile");
+            }
+
+            return tokenUid;
+        } catch (FirebaseAuthException | AccessDeniedException e) {
+            if (e.getMessage().contains("expired")) {
+                throw new TokenExpiredException("Token expired, please refresh");
+            }
+            throw new FirebaseAuthenticationException("Token verification failed", e);
+        }
     }
 }

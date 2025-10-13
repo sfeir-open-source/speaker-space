@@ -6,6 +6,7 @@ import {environment} from '../../../../../environments/environment.development';
 import {map} from 'rxjs/operators';
 import {convertToDate} from '../../utils/date.utils';
 import {SessionScheduleUpdate} from '../../type/session/schedule-json-data';
+import {SessionCreateRequest} from '../../type/session/session-create';
 
 @Injectable({
   providedIn: 'root'
@@ -53,6 +54,25 @@ export class SessionService {
   getSessionsByEventId(eventId: string): Observable<SessionImportData[]> {
     return this.http.get<any[]>(
       `${environment.apiUrl}/session/event/${eventId}`,
+      { withCredentials: true }
+    ).pipe(
+      map(sessions => sessions.map(session => this.convertSessionDates(session)))
+    );
+  }
+
+  createSession(eventId: string, sessionData: SessionCreateRequest): Observable<SessionImportData> {
+    return this.http.post<any>(
+      `${environment.apiUrl}/session/event/${eventId}`,
+      sessionData,
+      { withCredentials: true }
+    ).pipe(
+      map(sessionData => this.convertSessionDates(sessionData))
+    );
+  }
+
+  getEmptySessionsForEvent(eventId: string): Observable<SessionImportData[]> {
+    return this.http.get<SessionImportData[]>(
+      `${environment.apiUrl}/session/event/${eventId}/empty-sessions`,
       { withCredentials: true }
     ).pipe(
       map(sessions => sessions.map(session => this.convertSessionDates(session)))

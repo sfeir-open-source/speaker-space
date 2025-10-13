@@ -3,9 +3,11 @@
   <app-profile-sidebar [activeSection]="activeSection()"/>
   <section class="flex-1 p-4">
     <article class="flex justify-start items-center bg-white shadow-md p-4 rounded-md">
-      <button class="bg-action hover:bg-action-hover text-white mr-3 px-2 py-2 rounded-md flex items-center gap-2 cursor-pointer">
+      <app-button
+        type="button"
+        [customClass]="'bg-action hover:bg-action-hover text-white mr-3 px-2 py-2 rounded-md flex items-center gap-2 cursor-pointer'">
         <span class="material-icons">cached</span>
-      </button>
+      </app-button>
       <h1 class="text-xl">Refresh data with datas in Conference Hall</h1>
     </article>
 

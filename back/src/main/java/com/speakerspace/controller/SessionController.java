@@ -4,9 +4,10 @@ import com.speakerspace.dto.session.*;
 import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.exception.EventAuthorizationHelper;
 import com.speakerspace.model.session.Session;
-import com.speakerspace.model.session.SessionReviewImportData;
+import com.speakerspace.model.session.SessionImportData;
 import com.speakerspace.model.session.Speaker;
 import com.speakerspace.service.SessionService;
+import com.speakerspace.service.SpeakerService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class SessionController {
 
     private final SessionService sessionService;
     private final EventAuthorizationHelper authorizationHelper;
+    private final SpeakerService speakerService;
 
     @PostMapping("/event/{eventId}/import")
     public ResponseEntity<ImportResultDTO> importSessionsReview(
@@ -31,7 +33,7 @@ public class SessionController {
             Authentication authentication) throws AccessDeniedException {
 
         return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
-            validateEventIdMatch(eventId, importRequest.eventId());
+            sessionService.validateEventIdMatch(eventId, importRequest.eventId());
             return sessionService.importSessionsReview(eventId, importRequest.sessions());
         });
     }
@@ -43,21 +45,34 @@ public class SessionController {
             Authentication authentication) throws AccessDeniedException {
 
         return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
-            validateEventIdMatch(eventId, importRequest.eventId());
-            validateSessionsData(importRequest.sessions());
+            sessionService.validateEventIdMatch(eventId, importRequest.eventId());
+            sessionService.validateSessionsData(importRequest.sessions());
             return sessionService.importSessionsSchedule(eventId, importRequest.sessions());
         });
     }
 
+    @PostMapping("/event/{eventId}")
+    public ResponseEntity<SessionDTO> createSession(
+            @PathVariable String eventId,
+            @RequestBody
+            SessionCreateRequestDTO createRequest,
+            Authentication authentication) throws AccessDeniedException {
+
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
+            sessionService.validateCreateRequest(createRequest);
+            return sessionService.createSession(eventId, createRequest);
+        });
+    }
+
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<SessionReviewImportData>> getSessionsByEventId(
+    public ResponseEntity<List<SessionImportData>> getSessionsByEventId(
             @PathVariable String eventId,
             HttpServletRequest request,
             Authentication authentication) {
 
         return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
-            List<SessionReviewImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
-            List<SessionReviewImportData> mutableSessions = new ArrayList<>(sessions);
+            List<SessionImportData> sessions = sessionService.getSessionsReviewAsImportData(eventId);
+            List<SessionImportData> mutableSessions = new ArrayList<>(sessions);
             mutableSessions.sort(Comparator.comparing(s ->
                     s.getTitle() != null ? s.getTitle().toLowerCase() : ""
             ));
@@ -66,7 +81,7 @@ public class SessionController {
     }
 
     @GetMapping("/event/{eventId}/session/{sessionId}/review")
-    public ResponseEntity<SessionReviewImportData> getSessionReviewById(
+    public ResponseEntity<SessionImportData> getSessionReviewById(
             @PathVariable String eventId,
             @PathVariable String sessionId,
             HttpServletRequest request,
@@ -77,13 +92,19 @@ public class SessionController {
     }
 
     @GetMapping("/event/{eventId}/session/{sessionId}")
-    public ResponseEntity<SessionDTO> getSessionDetailById(
+    public ResponseEntity<SessionImportData> getSessionDetailById(
             @PathVariable String eventId,
             @PathVariable String sessionId,
-            Authentication authentication) throws AccessDeniedException {
+            HttpServletRequest request,
+            Authentication authentication) {
 
-        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () ->
-                sessionService.getSessionByIdAndEventId(sessionId, eventId));
+        return authorizationHelper.executeWithUserAuthentication(request, authentication, () -> {
+            SessionImportData session = sessionService.getSessionById(eventId, sessionId);
+            if (session == null) {
+                throw new EntityNotFoundException("Session not found with id: " + sessionId);
+            }
+            return session;
+        });
     }
 
     @GetMapping("/event/{eventId}/speakers")
@@ -122,8 +143,10 @@ public class SessionController {
             @PathVariable String eventId,
             Authentication authentication) throws AccessDeniedException {
 
-        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () ->
-                sessionService.getDistinctTracksByEventId(eventId));
+        authorizationHelper.validateEventAuthorization(eventId, authentication);
+        List<String> tracks = sessionService.getAvailableTracksForEvent(eventId);
+
+        return ResponseEntity.ok(tracks);
     }
 
     @GetMapping("/event/{eventId}/calendar")
@@ -166,15 +189,14 @@ public class SessionController {
         return ResponseEntity.noContent().build();
     }
 
-    private void validateEventIdMatch(String pathEventId, String bodyEventId) {
-        if (!pathEventId.equals(bodyEventId)) {
-            throw new IllegalArgumentException("Event ID mismatch");
-        }
-    }
+    @GetMapping("/event/{eventId}/empty-sessions")
+    public ResponseEntity<List<SessionDTO>> getEmptySessionsForEvent(
+            @PathVariable String eventId,
+            Authentication authentication) throws AccessDeniedException {
 
-    private void validateSessionsData(List<SessionScheduleImportDataDTO> sessions) {
-        if (sessions == null || sessions.isEmpty()) {
-            throw new IllegalArgumentException("No sessions data provided");
-        }
+        return authorizationHelper.executeWithEventAuthorization(eventId, authentication, () -> {
+            List<SessionDTO> emptySessions = speakerService.getEmptySessionsForEvent(eventId);
+            return emptySessions;
+        });
     }
 }

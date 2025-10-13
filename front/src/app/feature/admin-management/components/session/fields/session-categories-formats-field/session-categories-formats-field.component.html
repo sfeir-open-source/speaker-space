@@ -1,0 +1,45 @@
+<fieldset class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+    <legend class="block text-start text-md mb-2">Formats</legend>
+
+    @if (hasFormats()) {
+      <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
+        @for (format of availableFormats(); track format.id) {
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              [value]="format.id"
+              [checked]="selectedFormats().includes(format.id)"
+              (change)="onFormatChange(format.id, $event)"
+              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">{{ format.name }}</span>
+          </label>
+        }
+      </div>
+    } @else {
+      <p class="text-sm text-gray-500 italic">No formats available</p>
+    }
+  </div>
+
+  <div>
+    <legend class="block text-start text-md mb-2">Categories</legend>
+
+    @if (hasCategories()) {
+      <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
+        @for (category of availableCategories(); track category.id) {
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              [value]="category.id"
+              [checked]="selectedCategories().includes(category.id)"
+              (change)="onCategoryChange(category.id, $event)"
+              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <span class="text-sm text-gray-700">{{ category.name }}</span>
+          </label>
+        }
+      </div>
+    } @else {
+      <p class="text-sm text-gray-500 italic">No categories available</p>
+    }
+  </div>
+</fieldset>

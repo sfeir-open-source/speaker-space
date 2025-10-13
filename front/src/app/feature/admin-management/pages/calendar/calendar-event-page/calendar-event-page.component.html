@@ -34,38 +34,38 @@
           </div>
 
           <nav class="flex items-center space-x-2" aria-label="Navigation des jours">
-            <button
+            <app-button
               type="button"
               (click)="goToPreviousDay()"
               [disabled]="!canGoToPreviousDay()"
               [class.opacity-50]="!canGoToPreviousDay()"
               [class.cursor-not-allowed]="!canGoToPreviousDay()"
-              class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md disabled:hover:bg-transparent disabled:hover:text-gray-400"
+              [customClass]="'p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md disabled:hover:bg-transparent disabled:hover:text-gray-400'"
               aria-label="Jour précédent">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
               </svg>
-            </button>
+            </app-button>
 
-            <button
+            <app-button
               type="button"
               (click)="goToEventStart()"
-              class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+              [customClass]="'px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50'">
               {{ formatDisplayDate(selectedDate()) }}
-            </button>
+            </app-button>
 
-            <button
+            <app-button
               type="button"
               (click)="goToNextDay()"
               [disabled]="!canGoToNextDay()"
               [class.opacity-50]="!canGoToNextDay()"
               [class.cursor-not-allowed]="!canGoToNextDay()"
-              class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md disabled:hover:bg-transparent disabled:hover:text-gray-400"
+              [customClass]="'p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md disabled:hover:bg-transparent disabled:hover:text-gray-400'"
               aria-label="Jour suivant">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
               </svg>
-            </button>
+            </app-button>
           </nav>
         </div>
       </div>
