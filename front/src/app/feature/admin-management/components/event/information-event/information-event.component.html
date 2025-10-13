@@ -1,5 +1,5 @@
 <article class="w-full flex-grow bg-white shadow-md rounded-lg px-5 pb-8">
-  @if (showAutoSaveIndicator) {
+  @if (showAutoSaveIndicator()) {
     <app-save-indicator
       [status]="saveStatus()"
       position="top-right">
@@ -86,11 +86,11 @@
       </app-field>
     </div>
 
-    @if (showNavigationButtons) {
+    @if (showNavigationButtons()) {
     <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
     }
 
-    @if (showNavigationButtons) {
+    @if (showNavigationButtons()) {
       <div class="flex justify-end p-4">
         <app-button
           type="button"

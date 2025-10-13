@@ -2,38 +2,38 @@
   title="Create New Session"
   submitText="Create Session"
   submittingText="Creating..."
-  [isSubmitting]="isSubmitting()"
+  [isSubmitting]="state.isSubmitting()"
   (closed)="onClose()"
   (submitted)="onSubmit()">
 
   <form
     id="session-create-form"
-    [formGroup]="sessionForm"
+    [formGroup]="state.sessionForm"
     (ngSubmit)="onSubmit()"
     class="space-y-6 m-4">
 
-    @if (errorMessage()) {
+    @if (state.errorMessage()) {
       <div
         class="p-4 bg-red-50 border border-red-200 rounded-md"
         role="alert">
-        <p class="text-sm text-red-800">{{ errorMessage() }}</p>
+        <p class="text-sm text-red-800">{{ state.errorMessage() }}</p>
       </div>
     }
 
     <app-session-form-fields
-      [form]="sessionForm"
+      [form]="state.sessionForm"
       [availableFormats]="availableFormats()"
       [availableCategories]="availableCategories()"
       [availableTracks]="availableTracks()"
       [eventStartDate]="eventStartDate()"
       [eventEndDate]="eventEndDate()"
-      [selectedSpeakers]="selectedSpeakers()"
-      [availableSpeakers]="sortedAvailableSpeakers()"
-      [isLoadingSpeakers]="isLoadingSpeakers()"
-      [selectedDuration]="selectedDuration()"
-      [selectedFormats]="selectedFormats()"
-      [selectedCategories]="selectedCategories()"
-      [selectedLanguages]="selectedLanguages()"
+      [selectedSpeakers]="state.selectedSpeakers()"
+      [availableSpeakers]="state.sortedAvailableSpeakers()"
+      [isLoadingSpeakers]="state.isLoadingSpeakers()"
+      [selectedDuration]="state.selectedDuration()"
+      [selectedFormats]="state.selectedFormats()"
+      [selectedCategories]="state.selectedCategories()"
+      [selectedLanguages]="state.selectedLanguages()"
       (durationChange)="onDurationChange($event)"
       (speakersChange)="onSpeakersChange($event)"
       (formatsChange)="onFormatsChange($event)"

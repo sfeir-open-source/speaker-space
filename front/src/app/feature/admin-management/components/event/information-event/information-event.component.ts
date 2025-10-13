@@ -1,17 +1,18 @@
-import {Component, input, OnDestroy, OnInit, output, signal} from '@angular/core';
-import {FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Subject, Subscription} from 'rxjs';
-import {FieldComponent} from '../../../../../shared/input/field.component';
-import {EventDTO} from '../../../type/event/eventDTO';
-import {EventDataService} from '../../../services/event/event-data.service';
-import {TeamService} from '../../../services/team/team.service';
-import {FormField} from '../../../../../shared/input/interface/form-field';
-import {SaveStatus} from '../../../../../core/types/save-status.types';
-import {EventService} from '../../../services/event/event.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-indicator.component';
-import {ButtonComponent} from '../../../../../shared/button/button.component';
-import {AutoSaveService} from '../../../services/event/auto-save.service';
+import { Component, input, OnDestroy, OnInit, output, signal, inject, effect } from '@angular/core';
+import { FormGroup, FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { FieldComponent } from '../../../../../shared/input/field.component';
+import { SaveIndicatorComponent } from '../../../../../core/save-indicator/save-indicator.component';
+import { ButtonComponent } from '../../../../../shared/button/button.component';
+import { EventDTO } from '../../../type/event/eventDTO';
+import { SaveStatus } from '../../../../../core/types/save-status.types';
+import { EventDataService } from '../../../services/event/event-data.service';
+import { TeamService } from '../../../services/team/team.service';
+import { EventService } from '../../../services/event/event.service';
+import { AutoSaveService } from '../../../services/event/auto-save.service';
+import {EventFormService} from '../../../services/event/event-form.service';
+import {EVENT_ADDITIONAL_FIELDS, EVENT_FORM_FIELDS} from '../../../services/event/event-form-fields.service';
 
 @Component({
   selector: 'app-information-event',
@@ -23,44 +24,47 @@ import {AutoSaveService} from '../../../services/event/auto-save.service';
     SaveIndicatorComponent,
     ButtonComponent
   ],
+  providers: [EventFormService],
   templateUrl: './information-event.component.html',
   styleUrl: './information-event.component.scss'
 })
 export class InformationEventComponent implements OnInit, OnDestroy {
-  mode = input<'create' | 'edit'>('create');
-  initialData = input<Partial<EventDTO> | null>(null);
+  private readonly eventFormService = inject(EventFormService);
+  private readonly autoSaveService = inject(AutoSaveService);
+  private readonly eventService = inject(EventService);
+  private readonly eventDataService = inject(EventDataService);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly teamService = inject(TeamService);
 
-  formSubmitted = output<any>();
-  doItLater = output<void>();
+  readonly mode = input<'create' | 'edit'>('create');
+  readonly initialData = input<Partial<EventDTO> | null>(null);
+  readonly formSubmitted = output<Partial<EventDTO>>();
+  readonly doItLater = output<void>();
 
-  isSubmitted = signal<boolean>(false);
-  eventId = signal<string>('');
-  teamId = signal<string | null>(null);
-  teamUrl = signal<string | null>(null);
-  eventName = signal<string>('');
-  currentEvent = signal<EventDTO>({} as EventDTO);
-  saveStatus = signal<SaveStatus>('idle');
+  readonly isSubmitted = signal<boolean>(false);
+  readonly eventId = signal<string>('');
+  readonly teamId = signal<string | null>(null);
+  readonly teamUrl = signal<string | null>(null);
+  readonly eventName = signal<string>('');
+  readonly currentEvent = signal<EventDTO>({} as EventDTO);
+  readonly saveStatus = signal<SaveStatus>('idle');
+
+  readonly formFields = EVENT_FORM_FIELDS;
+  readonly additionalFields = EVENT_ADDITIONAL_FIELDS;
+
+  readonly showNavigationButtons = (): boolean => this.mode() === 'create';
+  readonly showAutoSaveIndicator = (): boolean => this.mode() === 'edit';
 
   form!: FormGroup;
   private autoSaveDestroy$ = new Subject<void>();
   private subscriptions = new Subscription();
 
-  constructor(
-    private fb: FormBuilder,
-    private autoSaveService: AutoSaveService,
-    private eventService: EventService,
-    private eventDataService: EventDataService,
-    private snackBar: MatSnackBar,
-    private teamService: TeamService
-  ) {
-    this.initializeForm();
-  }
-
   ngOnInit(): void {
+    this.form = this.eventFormService.createEventForm();
     this.setupSubscriptions();
 
     if (this.initialData() && this.mode() === 'edit') {
-      this.loadInitialData(this.initialData()!);
+      this.eventFormService.loadFormData(this.form, this.initialData()!);
       this.setupAutoSave();
     }
   }
@@ -73,15 +77,11 @@ export class InformationEventComponent implements OnInit, OnDestroy {
 
   private setupSubscriptions(): void {
     this.subscriptions.add(
-      this.eventDataService.eventId$.subscribe(id => {
-        this.eventId.set(id);
-      })
+      this.eventDataService.eventId$.subscribe(id => this.eventId.set(id))
     );
 
     this.subscriptions.add(
-      this.eventDataService.eventName$.subscribe(name => {
-        this.eventName.set(name);
-      })
+      this.eventDataService.eventName$.subscribe(name => this.eventName.set(name))
     );
 
     this.subscriptions.add(
@@ -101,7 +101,7 @@ export class InformationEventComponent implements OnInit, OnDestroy {
         }
       });
     }
-    this.loadInitialData(event);
+    this.eventFormService.loadFormData(this.form, event);
   }
 
   private setupAutoSave(): void {
@@ -113,7 +113,7 @@ export class InformationEventComponent implements OnInit, OnDestroy {
       this.form,
       (data: Partial<EventDTO>) => this.eventService.updateEvent(data),
       {
-        extractValidFields: () => this.extractValidEventData(),
+        extractValidFields: () => this.eventFormService.extractValidEventData(this.form, this.initialData()),
         onSaveStart: () => {
           this.form.markAsPristine();
           this.saveStatus.set('saving');
@@ -122,7 +122,7 @@ export class InformationEventComponent implements OnInit, OnDestroy {
           console.log('Event information auto-saved successfully:', result);
           this.saveStatus.set('saved');
         },
-        onSaveError: (error: any) => {
+        onSaveError: (error: unknown) => {
           console.error('Auto-save failed:', error);
           this.saveStatus.set('error');
           this.snackBar.open('Erreur lors de la sauvegarde automatique', 'Fermer', {
@@ -137,40 +137,6 @@ export class InformationEventComponent implements OnInit, OnDestroy {
     this.autoSaveDestroy$ = destroy$;
   }
 
-  private extractValidEventData(): Partial<EventDTO> {
-    const formValue = this.form.value;
-    const initialData = this.initialData();
-    const data: Partial<EventDTO> = {
-      idEvent: initialData?.idEvent
-    };
-
-    if (formValue.startDate !== undefined && formValue.startDate !== this.formatDateForInput(initialData?.startDate)) {
-      data.startDate = formValue.startDate ? new Date(formValue.startDate).toISOString() : undefined;
-    }
-
-    if (formValue.endDate !== undefined && formValue.endDate !== this.formatDateForInput(initialData?.endDate)) {
-      data.endDate = formValue.endDate ? new Date(formValue.endDate).toISOString() : undefined;
-    }
-
-    if (formValue.venueLocation !== initialData?.location) {
-      data.location = formValue.venueLocation;
-    }
-
-    if (formValue.description !== initialData?.description) {
-      data.description = formValue.description;
-    }
-
-    if (formValue.isOnline !== initialData?.isOnline) {
-      data.isOnline = formValue.isOnline;
-    }
-
-    if (formValue.webLinkUrl !== initialData?.webLinkUrl) {
-      data.webLinkUrl = formValue.webLinkUrl;
-    }
-
-    return data;
-  }
-
   async onSubmit(): Promise<void> {
     if (this.mode() === 'edit') {
       return;
@@ -178,29 +144,12 @@ export class InformationEventComponent implements OnInit, OnDestroy {
 
     this.isSubmitted.set(true);
 
-    if (this.form.invalid || !this.validateDates()) {
+    if (this.form.invalid || !this.eventFormService.validateDates(this.form)) {
       return;
     }
 
-    const formValues = this.form.value;
-    const formData = {
-      startDate: formValues.startDate ? new Date(formValues.startDate).toISOString() : undefined,
-      endDate: formValues.endDate ? new Date(formValues.endDate).toISOString() : undefined,
-      location: formValues.venueLocation,
-      description: formValues.description,
-      isOnline: formValues.isOnline,
-      webLinkUrl: formValues.webLinkUrl,
-    };
-
+    const formData = this.eventFormService.prepareSubmitData(this.form);
     this.formSubmitted.emit(formData);
-  }
-
-  get showNavigationButtons(): boolean {
-    return this.mode() === 'create';
-  }
-
-  get showAutoSaveIndicator(): boolean {
-    return this.mode() === 'edit';
   }
 
   onGoBack(): void {
@@ -210,85 +159,4 @@ export class InformationEventComponent implements OnInit, OnDestroy {
   getFormControl(name: string): FormControl {
     return this.form.get(name) as FormControl;
   }
-
-  private initializeForm(): void {
-    this.form = this.fb.group({
-      startDate: ['', Validators.required],
-      endDate: ['', Validators.required],
-      isOnline: [false],
-      venueLocation: [''],
-      description: [''],
-      webLinkUrl: ['']
-    });
-
-    this.form.get('isOnline')?.valueChanges.subscribe(isOnline => {
-      const venueLocationControl = this.form.get('venueLocation');
-      if (!isOnline) {
-        venueLocationControl?.setValidators([Validators.required]);
-      } else {
-        venueLocationControl?.clearValidators();
-      }
-      venueLocationControl?.updateValueAndValidity();
-    });
-  }
-
-  private loadInitialData(data: Partial<EventDTO>): void {
-    if (data.startDate) {
-      this.form.get('startDate')?.setValue(this.formatDateForInput(data.startDate));
-    }
-    if (data.endDate) {
-      this.form.get('endDate')?.setValue(this.formatDateForInput(data.endDate));
-    }
-    this.form.get('isOnline')?.setValue(data.isOnline === true);
-    if (data.webLinkUrl) {
-      this.form.get('webLinkUrl')?.setValue(data.webLinkUrl);
-    }
-    if (data.location) {
-      this.form.get('venueLocation')?.setValue(data.location);
-    }
-    if (data.description) {
-      this.form.get('description')?.setValue(data.description);
-    }
-  }
-
-  validateDates(): boolean {
-    const startDate = this.form.value.startDate ? new Date(this.form.value.startDate) : null;
-    const endDate = this.form.value.endDate ? new Date(this.form.value.endDate) : null;
-
-    this.form.get('endDate')?.setErrors(null);
-
-    if (startDate && endDate && endDate <= startDate) {
-      this.form.get('endDate')?.setErrors({'endBeforeStart': true});
-      return false;
-    }
-
-    return true;
-  }
-
-  private formatDateForInput(date: Date | string | undefined): string {
-    if (!date) return '';
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
-  }
-
-  formFields: FormField[] = [
-    {
-      name: 'startDate',
-      label: 'Start date',
-      type: 'date',
-      required: true,
-    },
-    {
-      name: 'endDate',
-      label: 'End date',
-      type: 'date',
-      required: true,
-    }
-  ];
-
-  additionalFields: FormField[] = [
-    {name: 'webLinkUrl', label: 'Event web link', type: 'text'},
-    {name: 'venueLocation', label: 'Venue location (address, city, country)', type: 'text'},
-    {name: 'description', label: 'Description', type: 'textarea'}
-  ];
 }
