@@ -182,18 +182,6 @@ export class EventService {
     );
   }
 
-  getSpeakersByEventId(eventId: string): Observable<Speaker[]> {
-    return this.http.get<Speaker[]>(
-      `${environment.apiUrl}/session/event/${eventId}/speakers`,
-      {
-        withCredentials: true,
-        headers: this.getHeaders()
-      }
-    ).pipe(
-      catchError(error => throwError(() => error))
-    );
-  }
-
   private removeUndefinedFields(obj: any): any {
     const cleaned: any = {};
     Object.keys(obj).forEach(key => {
@@ -224,23 +212,49 @@ export class EventService {
         { headers, withCredentials: true }
       )
     ).pipe(
-      catchError(this.handleError('Error loading speaker events'))
+      catchError(error => {
+        console.error('❌ Error loading speaker events:', error);
+        return of([]);
+      })
     );
   }
 
   getAllUserRelatedEvents(): Observable<Event[]> {
     return forkJoin({
-      ownEvents: this.http.get<Event[]>(`${environment.apiUrl}/event/my-events`, { withCredentials: true }),
-      speakerEvents: this.getUserSpeakerEvents()
+      ownEvents: this.http.get<Event[]>(
+        `${environment.apiUrl}/event/my-events`,
+        { withCredentials: true }
+      ).pipe(
+        map(events => events.map(e => ({ ...e, userRole: 'admin' as const }))),
+        catchError(err => {
+          console.warn('Error loading own events:', err);
+          return of([]);
+        })
+      ),
+      speakerEvents: this.getUserSpeakerEvents().pipe(
+        map(events => events.map(e => ({ ...e, userRole: 'speaker' as const }))),
+        catchError(err => {
+          console.warn('Error loading speaker events:', err);
+          return of([]);
+        })
+      )
     }).pipe(
       map(({ ownEvents, speakerEvents }) => {
+        console.log('📊 Own events:', ownEvents.length);
+        console.log('📊 Speaker events:', speakerEvents.length);
+
         const allEvents = [...ownEvents, ...speakerEvents];
         const uniqueEvents = allEvents.filter((event, index, self) =>
           index === self.findIndex(e => e.idEvent === event.idEvent)
         );
+
+        console.log('📊 Total unique events:', uniqueEvents.length);
         return uniqueEvents;
       }),
-      catchError(this.handleError('Error loading all user related events'))
+      catchError(error => {
+        console.error('❌ Error in getAllUserRelatedEvents:', error);
+        return throwError(() => error);
+      })
     );
   }
 }

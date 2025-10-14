@@ -1,17 +1,14 @@
-import { Component, computed, signal, effect, inject } from '@angular/core';
+import { Component, computed, signal, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs/operators';
-import {
-  EventTeamCardComponent
-} from '../../../feature/admin-management/components/event/event-team-card/event-team-card.component';
+import { EventTeamCardComponent } from '../../../feature/admin-management/components/event/event-team-card/event-team-card.component';
 import { EventService } from '../../../feature/admin-management/services/event/event.service';
 import { EventStatusService } from '../../../feature/admin-management/services/event/event-status.service';
-import {
-  EventTeamField
-} from '../../../feature/admin-management/components/event/event-team-card/interface/event-team-field';
+import { EventTeamField } from '../../../feature/admin-management/components/event/event-team-card/interface/event-team-field';
 import { Event } from '../../../feature/admin-management/type/event/event';
 import { ButtonComponent } from '../../../shared/button/button.component';
+import { UserRoleService } from '../../services/user-services/user-role.service';
 
 @Component({
   selector: 'app-is-login-home-page',
@@ -28,12 +25,15 @@ export class IsLoginHomePageComponent {
 
   private readonly eventService = inject(EventService);
   private readonly eventStatusService = inject(EventStatusService);
+  private readonly userRoleService = inject(UserRoleService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly eventCounts = computed(() => {
+    const events = this.userEvents();
     let currentCount = 0;
     let passedCount = 0;
 
-    this.userEvents().forEach(event => {
+    events.forEach(event => {
       const status = this.eventStatusService.getEventStatus(event);
       if (status.isFinished) {
         passedCount++;
@@ -73,20 +73,10 @@ export class IsLoginHomePageComponent {
     }
   });
 
-  readonly currentsTabClasses = computed(() =>
-    this.getTabClasses('currents')
-  );
-
-  readonly passedTabClasses = computed(() =>
-    this.getTabClasses('passed')
-  );
+  readonly currentsTabClasses = computed(() => this.getTabClasses('currents'));
+  readonly passedTabClasses = computed(() => this.getTabClasses('passed'));
 
   constructor() {
-    effect(() => {
-      if (this.userEvents().length === 0 && !this.isLoading()) {
-        this.loadUserEvents();
-      }
-    }, { allowSignalWrites: true });
     this.loadUserEvents();
   }
 
@@ -121,16 +111,17 @@ export class IsLoginHomePageComponent {
 
     this.eventService.getAllUserRelatedEvents()
       .pipe(
-        takeUntilDestroyed(),
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isLoading.set(false))
       )
       .subscribe({
         next: (events: Event[]) => {
+          console.log('✅ Events loaded:', events);
           this.userEvents.set(events);
         },
-        error: (err: any) => {
-          console.error('Error loading user events:', err);
-          this.error.set('Failed to load your events');
+        error: (err: unknown) => {
+          console.error('❌ Error loading user events:', err);
+          this.error.set('Failed to load your events. Please try again.');
           this.userEvents.set([]);
         }
       });
@@ -139,6 +130,7 @@ export class IsLoginHomePageComponent {
   private transformEventsToFields(events: Event[]): EventTeamField[] {
     return events.map(event => {
       const status = this.eventStatusService.getEventStatus(event);
+      const userRole = event.userRole || this.userRoleService.getUserRoleFromContext(event);
 
       return {
         idEvent: event.idEvent ?? '',
@@ -151,21 +143,20 @@ export class IsLoginHomePageComponent {
         publicUrl: event.url ?? '',
         logoBase64: event.logoBase64,
         daysRemaining: status.daysRemaining,
-        isFinished: status.isFinished
+        isFinished: status.isFinished,
+        userRole
       };
     });
   }
 
   private sortEventsByDate(events: Event[]): Event[] {
-    return events.sort((a, b) => {
-      const dateA = new Date(a.startDate || a.endDate || '');
-      const dateB = new Date(b.startDate || b.endDate || '');
+    return [...events].sort((a, b) => {
+      const dateA = new Date(a.startDate || a.endDate || '').getTime();
+      const dateB = new Date(b.startDate || b.endDate || '').getTime();
 
-      if (this.activeTab() === 'currents') {
-        return dateA.getTime() - dateB.getTime();
-      } else {
-        return dateB.getTime() - dateA.getTime();
-      }
+      return this.activeTab() === 'currents'
+        ? dateA - dateB
+        : dateB - dateA;
     });
   }
 

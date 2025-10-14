@@ -7,7 +7,7 @@ import {AuthBackendService} from './auth-backend.service';
 import {UserStateService} from '../../services/user-services/user-state.service';
 import {AuthProvidersService} from './auth-providers.service';
 import {EmailLinkHandlerService} from './email-link-handler.service';
-import {BehaviorSubject, from, Observable, of, switchMap} from 'rxjs';
+import {BehaviorSubject, from, Observable, of, switchMap, take} from 'rxjs';
 import {AuthErrorHandlerService} from './auth-error-handler';
 import {catchError} from 'rxjs/operators';
 import {Router} from '@angular/router';
@@ -98,5 +98,20 @@ export class AuthService {
       switchMap(user => user ? from(user.getIdToken()) : of(null)),
       catchError(() => of(null))
     );
+  }
+
+  getCurrentUserSync(): { uid: string; email?: string } | null {
+    let currentUser: { uid: string; email?: string } | null = null;
+
+    this.user$.pipe(take(1)).subscribe(user => {
+      if (user) {
+        currentUser = {
+          uid: user.uid,
+          email: user.email || undefined
+        };
+      }
+    });
+
+    return currentUser;
   }
 }

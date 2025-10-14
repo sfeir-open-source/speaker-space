@@ -10,4 +10,5 @@ export type EventTeamField = {
   publicUrl?: string | null;
   daysRemaining?: number;
   isFinished?: boolean;
+  userRole?: 'admin' | 'speaker';
 }

@@ -1,7 +1,8 @@
-import {Component, input} from '@angular/core';
+import {Component, inject, Input, input, signal} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {EventTeamField} from './interface/event-team-field';
 import {Router} from '@angular/router';
+import {UserRoleService} from '../../../../../core/services/user-services/user-role.service';
 
 @Component({
   selector: 'app-event-team-card',
@@ -11,13 +12,26 @@ import {Router} from '@angular/router';
   styleUrl: './event-team-card.component.scss'
 })
 export class EventTeamCardComponent {
-  field = input.required<EventTeamField>();
+  readonly field = input.required<EventTeamField>();
 
-  constructor(private router: Router) {}
+  private readonly router = inject(Router);
+  private readonly userRoleService = inject(UserRoleService);
 
-  navigateToEvent(eventUrl: string): void {
-    if (eventUrl) {
-      this.router.navigate(['/event-sessions', eventUrl]);
+  async navigateToEvent(eventId: string): Promise<void> {
+    if (!eventId) return;
+
+    try {
+      const role = this.field().userRole || await this.userRoleService.getUserRoleForEvent(eventId);
+      if (role === 'admin') {
+        this.router.navigate(['/event-sessions', eventId]);
+      } else {
+        this.router.navigate(['/speaker/event', eventId]);
+        console.log("test !")
+      }
+    } catch (error) {
+      console.error('Error determining user role:', error);
+      this.router.navigate(['/speaker/event', eventId]);
+      console.log("test hello !")
     }
   }
 

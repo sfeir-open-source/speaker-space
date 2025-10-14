@@ -3,6 +3,7 @@ package com.speakerspace.service;
 import com.speakerspace.dto.EventDTO;
 import com.speakerspace.dto.UserDTO;
 import com.speakerspace.dto.session.SessionScheduleImportDataDTO;
+import com.speakerspace.exception.EntityNotFoundException;
 import com.speakerspace.mapper.EventMapper;
 import com.speakerspace.model.Event;
 import com.speakerspace.model.Team;
@@ -431,4 +432,13 @@ public class EventService {
             return Collections.emptyList();
         }
     }
+
+    public Record getEventByIdForCurrentUser(String id) {
+        EventDTO event = getEventById(id);
+        if (event == null) {
+            throw new EntityNotFoundException("Event not found with id: " + id);
+        }
+        return event;
+    }
+
 }
