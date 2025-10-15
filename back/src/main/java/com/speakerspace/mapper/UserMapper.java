@@ -13,17 +13,16 @@ public class UserMapper {
         return new UserDTO(
             user.getUid(),
             user.getEmail(),
-            user.getDisplayName(),
+            user.getName(),
             user.getPhotoURL(),
             user.getCompany(),
-            user.getCity(),
+            user.getLocation(),
             user.getPhoneNumber(),
-            user.getGithubLink(),
-            user.getTwitterLink(),
-            user.getBlueSkyLink(),
-            user.getLinkedInLink(),
-            user.getBiography(),
-            user.getOtherLink()
+            user.getBio(),
+            user.getSocialLinks(),
+            user.getSpeakerIds(),
+            user.getEventIds(),
+            user.getSessionIds()
         );
     }
 
@@ -33,17 +32,16 @@ public class UserMapper {
         User user = new User();
         user.setUid(userDTO.uid());
         user.setEmail(userDTO.email());
-        user.setDisplayName(userDTO.displayName());
+        user.setName(userDTO.name());
         user.setPhotoURL(userDTO.photoURL());
         user.setCompany(userDTO.company());
-        user.setCity(userDTO.city());
+        user.setLocation(userDTO.location());
         user.setPhoneNumber(userDTO.phoneNumber());
-        user.setGithubLink(userDTO.githubLink());
-        user.setTwitterLink(userDTO.twitterLink());
-        user.setBlueSkyLink(userDTO.blueSkyLink());
-        user.setLinkedInLink(userDTO.linkedInLink());
-        user.setBiography(userDTO.biography());
-        user.setOtherLink(userDTO.otherLink());
+        user.setBio(userDTO.bio());
+        user.setSocialLinks(userDTO.socialLinks());
+        user.setSpeakerIds(userDTO.speakerIds());
+        user.setEventIds(userDTO.eventIds());
+        user.setSessionIds(userDTO.sessionIds());
         return user;
     }
 
@@ -52,8 +50,8 @@ public class UserMapper {
             return existingUser;
         }
 
-        if (dto.displayName() != null) {
-            existingUser.setDisplayName(dto.displayName());
+        if (dto.name() != null) {
+            existingUser.setName(dto.name());
         }
 
         if (dto.photoURL() != null) {
@@ -64,36 +62,32 @@ public class UserMapper {
             existingUser.setCompany(dto.company());
         }
 
-        if (dto.city() != null) {
-            existingUser.setCity(dto.city());
+        if (dto.location() != null) {
+            existingUser.setLocation(dto.location());
         }
 
         if (dto.phoneNumber() != null) {
             existingUser.setPhoneNumber(dto.phoneNumber());
         }
 
-        if (dto.githubLink() != null) {
-            existingUser.setGithubLink(dto.githubLink());
+        if (dto.bio() != null) {
+            existingUser.setBio(dto.bio());
         }
 
-        if (dto.twitterLink() != null) {
-            existingUser.setTwitterLink(dto.twitterLink());
+        if (dto.socialLinks() != null) {
+            existingUser.setSocialLinks(dto.socialLinks());
         }
 
-        if (dto.blueSkyLink() != null) {
-            existingUser.setBlueSkyLink(dto.blueSkyLink());
+        if (dto.speakerIds() != null) {
+            existingUser.setSpeakerIds(dto.speakerIds());
         }
 
-        if (dto.linkedInLink() != null) {
-            existingUser.setLinkedInLink(dto.linkedInLink());
+        if (dto.eventIds() != null) {
+            existingUser.setEventIds(dto.eventIds());
         }
 
-        if (dto.biography() != null) {
-            existingUser.setBiography(dto.biography());
-        }
-
-        if (dto.otherLink() != null) {
-            existingUser.setOtherLink(dto.otherLink());
+        if (dto.sessionIds() != null) {
+            existingUser.setSessionIds(dto.sessionIds());
         }
 
         return existingUser;

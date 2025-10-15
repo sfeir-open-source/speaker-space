@@ -68,7 +68,7 @@ public class TeamMapper {
         TeamMember member = new TeamMember(dto.userId(), dto.role());
         member.setUserId(dto.userId());
         member.setRole(dto.role());
-        member.setDisplayName(dto.displayName());
+        member.setDisplayName(dto.name());
         member.setEmail(dto.email());
         member.setPhotoURL(dto.photoURL());
         member.setStatus(dto.status());

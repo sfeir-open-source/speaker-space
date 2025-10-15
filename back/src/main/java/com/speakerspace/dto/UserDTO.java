@@ -2,19 +2,21 @@ package com.speakerspace.dto;
 
 import lombok.Builder;
 
+import java.util.List;
+
 @Builder
-public record UserDTO (
+public record UserDTO(
         String uid,
         String email,
-        String displayName,
+        String name,
         String photoURL,
         String company,
-        String city,
+        String location,
         String phoneNumber,
-        String githubLink,
-        String twitterLink,
-        String blueSkyLink,
-        String linkedInLink,
-        String biography,
-        String otherLink
-){}
+        String bio,
+        List<String> socialLinks,
+
+        List<String> speakerIds,
+        List<String> eventIds,
+        List<String> sessionIds
+) {}

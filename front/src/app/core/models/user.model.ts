@@ -2,15 +2,14 @@ export type User = {
   token?: string;
   uid: string;
   email?: string | null;
-  displayName?: string | null;
+  name?: string | null;
   photoURL?: string | null;
   company?: string | null;
-  city?: string | null;
+  location?: string | null;
   phoneNumber?: string | null;
-  githubLink?: string | null;
-  twitterLink?: string | null;
-  blueSkyLink?: string | null;
-  linkedInLink?: string | null;
-  otherLink?: string | null;
-  biography?: string | null;
+  socialLink: string[];
+  bio?: string | null;
+  speakerIds?: string[];
+  eventIds?: string[];
+  sessionIds?: string[];
 }

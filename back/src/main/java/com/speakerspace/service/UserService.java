@@ -95,7 +95,7 @@ public class UserService {
                 .filter(user -> user.getEmail() != null)
                 .map(user -> TeamMemberDTO.builder()
                         .userId(user.getUid())
-                        .displayName(user.getDisplayName())
+                        .name(user.getName())
                         .photoURL(user.getPhotoURL())
                         .email(user.getEmail())
                         .build())
@@ -142,8 +142,8 @@ public class UserService {
     }
 
     private void preserveExistingFields(User newUser, User existingUser) {
-        if (existingUser.getDisplayName() != null && !existingUser.getDisplayName().isEmpty()) {
-            newUser.setDisplayName(existingUser.getDisplayName());
+        if (existingUser.getName() != null && !existingUser.getName().isEmpty()) {
+            newUser.setName(existingUser.getName());
         }
 
         if (existingUser.getPhotoURL() != null && !existingUser.getPhotoURL().isEmpty()) {
@@ -156,14 +156,9 @@ public class UserService {
 
         Map<Function<User, String>, BiConsumer<User, String>> fieldMap = new HashMap<>();
         fieldMap.put(User::getCompany, User::setCompany);
-        fieldMap.put(User::getCity, User::setCity);
+        fieldMap.put(User::getLocation, User::setLocation);
         fieldMap.put(User::getPhoneNumber, User::setPhoneNumber);
-        fieldMap.put(User::getGithubLink, User::setGithubLink);
-        fieldMap.put(User::getTwitterLink, User::setTwitterLink);
-        fieldMap.put(User::getBlueSkyLink, User::setBlueSkyLink);
-        fieldMap.put(User::getLinkedInLink, User::setLinkedInLink);
-        fieldMap.put(User::getBiography, User::setBiography);
-        fieldMap.put(User::getOtherLink, User::setOtherLink);
+        fieldMap.put(User::getBio, User::setBio);
 
         fieldMap.forEach((getter, setter) -> {
             if (getter.apply(newUser) == null) {
@@ -186,7 +181,7 @@ public class UserService {
             validationErrors.put("email", "Invalid email format");
         }
 
-        if (user.getDisplayName() != null && user.getDisplayName().length() == 1) {
+        if (user.getName() != null && user.getName().length() == 1) {
             validationErrors.put("displayName", "Display name must be at least 2 characters");
         }
 
@@ -208,25 +203,16 @@ public class UserService {
             validationErrors.put("email", "Invalid email format");
         }
 
-        validateOptionalField(user.getDisplayName(), "displayName",
-                "Display name must be at least 2 characters", validationErrors);
+        validateOptionalField(user.getName(), "name",
+                "Name must be at least 2 characters", validationErrors);
         validateOptionalField(user.getCompany(), "company",
                 "Company name must be at least 2 characters", validationErrors);
-        validateOptionalField(user.getCity(), "city",
-                "City must be at least 2 characters", validationErrors);
+        validateOptionalField(user.getLocation(), "location",
+                "Location must be at least 2 characters", validationErrors);
 
         validateOptionalUrl(user.getPhotoURL(), "photoURL",
                 "Invalid photo URL format", validationErrors);
-        validateOptionalUrl(user.getGithubLink(), "githubLink",
-                "Invalid GitHub URL format", validationErrors);
-        validateOptionalUrl(user.getTwitterLink(), "twitterLink",
-                "Invalid Twitter URL format", validationErrors);
-        validateOptionalUrl(user.getBlueSkyLink(), "blueSkyLink",
-                "Invalid BlueSky URL format", validationErrors);
-        validateOptionalUrl(user.getLinkedInLink(), "linkedInLink",
-                "Invalid LinkedIn URL format", validationErrors);
-        validateOptionalUrl(user.getOtherLink(), "otherLink",
-                "Invalid URL format", validationErrors);
+
 
         if (user.getPhoneNumber() != null && !user.getPhoneNumber().isEmpty()
                 && !user.getPhoneNumber().matches("^(\\+?[0-9\\s.-]{6,})?$")) {
@@ -255,25 +241,16 @@ public class UserService {
     private Map<String, String> validatePartialUser(User partialUser) {
         Map<String, String> validationErrors = new HashMap<>();
 
-        validateOptionalField(partialUser.getDisplayName(), "displayName",
-                "Display name must be at least 2 characters", validationErrors);
+        validateOptionalField(partialUser.getName(), "Name",
+                "Name must be at least 2 characters", validationErrors);
         validateOptionalField(partialUser.getCompany(), "company",
                 "Company name must be at least 2 characters", validationErrors);
-        validateOptionalField(partialUser.getCity(), "city",
-                "City must be at least 2 characters", validationErrors);
+        validateOptionalField(partialUser.getLocation(), "location",
+                "Location must be at least 2 characters", validationErrors);
 
         validateOptionalUrl(partialUser.getPhotoURL(), "photoURL",
                 "Invalid photo URL format", validationErrors);
-        validateOptionalUrl(partialUser.getGithubLink(), "githubLink",
-                "Invalid GitHub URL format", validationErrors);
-        validateOptionalUrl(partialUser.getTwitterLink(), "twitterLink",
-                "Invalid Twitter URL format", validationErrors);
-        validateOptionalUrl(partialUser.getBlueSkyLink(), "blueSkyLink",
-                "Invalid BlueSky URL format", validationErrors);
-        validateOptionalUrl(partialUser.getLinkedInLink(), "linkedInLink",
-                "Invalid LinkedIn URL format", validationErrors);
-        validateOptionalUrl(partialUser.getOtherLink(), "otherLink",
-                "Invalid URL format", validationErrors);
+
 
         if (partialUser.getPhoneNumber() != null && !partialUser.getPhoneNumber().isEmpty()
                 && !partialUser.getPhoneNumber().matches("^(\\+?[0-9\\s.-]{6,})?$")) {
@@ -303,17 +280,12 @@ public class UserService {
         updatedUser.setEmail(existingUser.getEmail());
 
         Map<Function<User, String>, BiConsumer<User, String>> fieldMap = new HashMap<>();
-        fieldMap.put(User::getDisplayName, User::setDisplayName);
+        fieldMap.put(User::getName, User::setName);
         fieldMap.put(User::getPhotoURL, User::setPhotoURL);
         fieldMap.put(User::getCompany, User::setCompany);
-        fieldMap.put(User::getCity, User::setCity);
+        fieldMap.put(User::getLocation, User::setLocation);
         fieldMap.put(User::getPhoneNumber, User::setPhoneNumber);
-        fieldMap.put(User::getGithubLink, User::setGithubLink);
-        fieldMap.put(User::getTwitterLink, User::setTwitterLink);
-        fieldMap.put(User::getBlueSkyLink, User::setBlueSkyLink);
-        fieldMap.put(User::getLinkedInLink, User::setLinkedInLink);
-        fieldMap.put(User::getBiography, User::setBiography);
-        fieldMap.put(User::getOtherLink, User::setOtherLink);
+        fieldMap.put(User::getBio, User::setBio);
 
         fieldMap.forEach((getter, setter) -> {
             String partialValue = getter.apply(partialUser);
@@ -337,7 +309,7 @@ public class UserService {
         UserDTO userDTO = UserDTO.builder()
                 .uid(decodedToken.getUid())
                 .email(decodedToken.getEmail())
-                .displayName(decodedToken.getName())
+                .name(decodedToken.getName())
                 .photoURL(decodedToken.getPicture())
                 .build();
 
@@ -353,26 +325,25 @@ public class UserService {
         UserDTO.UserDTOBuilder builder = UserDTO.builder()
                 .uid(existingUser.uid())
                 .email(existingUser.email())
-                .displayName(existingUser.displayName())
+                .name(existingUser.name())
                 .photoURL(existingUser.photoURL())
                 .company(existingUser.company())
-                .city(existingUser.city())
+                .location(existingUser.location())
                 .phoneNumber(existingUser.phoneNumber())
-                .githubLink(existingUser.githubLink())
-                .twitterLink(existingUser.twitterLink())
-                .blueSkyLink(existingUser.blueSkyLink())
-                .linkedInLink(existingUser.linkedInLink())
-                .biography(existingUser.biography())
-                .otherLink(existingUser.otherLink());
+                .bio(existingUser.bio())
+                .socialLinks(existingUser.socialLinks())
+                .speakerIds(existingUser.speakerIds())
+                .eventIds(existingUser.eventIds())
+                .sessionIds(existingUser.sessionIds());
 
         if (existingUser.email() == null && decodedToken.getEmail() != null) {
             builder.email(decodedToken.getEmail());
             needsUpdate = true;
         }
 
-        if ((existingUser.displayName() == null || existingUser.displayName().isEmpty())
+        if ((existingUser.name() == null || existingUser.name().isEmpty())
                 && decodedToken.getName() != null) {
-            builder.displayName(decodedToken.getName());
+            builder.name(decodedToken.getName());
             needsUpdate = true;
         }
 

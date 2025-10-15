@@ -48,17 +48,13 @@ export class AuthBackendService {
     return {
       uid: firebaseUser.uid,
       email: userData.email || firebaseUser.email || '',
-      displayName: userData.displayName || firebaseUser.displayName || '',
+      name: userData.name || firebaseUser.displayName || '',
       photoURL: userData.photoURL || firebaseUser.photoURL || '',
       company: userData.company || '',
-      city: userData.city || '',
+      location: userData.location || '',
       phoneNumber: userData.phoneNumber || '',
-      githubLink: userData.githubLink || '',
-      twitterLink: userData.twitterLink || '',
-      blueSkyLink: userData.blueSkyLink || '',
-      linkedInLink: userData.linkedInLink || '',
-      biography: userData.biography || '',
-      otherLink: userData.otherLink || ''
+      bio: userData.bio || '',
+      socialLink: userData.socialLink || ''
     };
   }
 
@@ -66,7 +62,7 @@ export class AuthBackendService {
     return {
       uid: user.uid,
       email: user.email,
-      displayName: user.displayName,
+      name: user.displayName,
       photoURL: user.photoURL
     };
   }

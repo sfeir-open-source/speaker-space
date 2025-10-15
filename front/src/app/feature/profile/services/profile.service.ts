@@ -33,18 +33,14 @@ export class ProfileService {
     const urlPattern = '(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?';
 
     return this.fb.group({
-      displayName: ['', [Validators.minLength(2)]],
+      name: ['', [Validators.minLength(2)]],
       emailAddress: ['', [Validators.required, Validators.email]],
       company: ['', [this.conditionalValidator(Validators.minLength(2))]],
-      city: ['', [this.conditionalValidator(Validators.minLength(2))]],
+      location: ['', [this.conditionalValidator(Validators.minLength(2))]],
       avatarPictureURL: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
       phoneNumber: ['', [this.conditionalValidator(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'))]],
-      biography: [''],
-      githubLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
-      twitterLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
-      blueSkyLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
-      linkedInLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
-      otherLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]]
+      bio: [''],
+      socialLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
     });
   }
 
@@ -59,18 +55,14 @@ export class ProfileService {
 
   private initializeForm(): void {
     this.profileForm.patchValue({
-      displayName: this.userState.displayName(),
+      name: this.userState.name(),
       emailAddress: this.userState.email(),
       avatarPictureURL: this.userState.photoURL(),
       company: this.userState.company(),
-      city: this.userState.city(),
+      location: this.userState.location(),
       phoneNumber: this.userState.phoneNumber(),
-      githubLink: this.userState.githubLink(),
-      twitterLink: this.userState.twitterLink(),
-      blueSkyLink: this.userState.blueSkyLink(),
-      linkedInLink: this.userState.linkedInLink(),
-      otherLink: this.userState.otherLink(),
-      biography: this.userState.biography()
+      socialLink: this.userState.socialLink(),
+      bio: this.userState.bio()
     });
 
     this.profileForm.get('avatarPictureURL')?.valueChanges.subscribe(url => {
@@ -94,18 +86,14 @@ export class ProfileService {
         this.userState.updateUser(userData);
 
         this.profileForm.patchValue({
-          displayName: userData.displayName || '',
+          displayName: userData.name || '',
           emailAddress: userData.email || '',
           avatarPictureURL: userData.photoURL || '',
           company: userData.company || '',
-          city: userData.city || '',
+          location: userData.location || '',
           phoneNumber: userData.phoneNumber || '',
-          githubLink: userData.githubLink || '',
-          twitterLink: userData.twitterLink || '',
-          blueSkyLink: userData.blueSkyLink || '',
-          linkedInLink: userData.linkedInLink || '',
-          otherLink: userData.otherLink || '',
-          biography: userData.biography || ''
+          socialLink: userData.socialLink || '',
+          bio: userData.bio || ''
         });
       }
     } catch (error) {

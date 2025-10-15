@@ -1,74 +1,65 @@
 import {computed, Injectable, signal} from '@angular/core';
 import {User} from '../../models/user.model';
-
-const STORAGE_TO_USER_MAPPING: Record<string, keyof User> = {
-  'userDisplayName': 'displayName',
-  'userPhotoURL': 'photoURL',
-  'userEmail': 'email',
-  'userCompany': 'company',
-  'userCity': 'city',
-  'userPhoneNumber': 'phoneNumber',
-  'userGithubLink': 'githubLink',
-  'userTwitterLink': 'twitterLink',
-  'userBlueSkyLink': 'blueSkyLink',
-  'userLinkedInLink': 'linkedInLink',
-  'userOtherLink': 'otherLink',
-  'userBiography': 'biography'
-};
-
-const STORAGE_KEYS = Object.keys(STORAGE_TO_USER_MAPPING);
-
-const USER_TO_STORAGE_MAPPING: Partial<Record<keyof User, string>> = {
-  'displayName': 'userDisplayName',
-  'photoURL': 'userPhotoURL',
-  'email': 'userEmail',
-  'company': 'userCompany',
-  'city': 'userCity',
-  'phoneNumber': 'userPhoneNumber',
-  'githubLink': 'userGithubLink',
-  'twitterLink': 'userTwitterLink',
-  'blueSkyLink': 'userBlueSkyLink',
-  'linkedInLink': 'userLinkedInLink',
-  'uid': 'userId',
-  'biography': 'userBiography',
-  'otherLink': 'userOtherLink'
-};
+import {BehaviorSubject} from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserStateService {
-  private userState = signal<User | null>(null);
+  private userSubject = new BehaviorSubject<User | null>(null);
+  public user$ = this.userSubject.asObservable();
 
-  user = computed(() => this.userState());
-  displayName = computed(() => this.userState()?.displayName || '');
-  email = computed(() => this.userState()?.email || '');
-  photoURL = computed(() => this.userState()?.photoURL || 'assets/img/profil-picture.svg');
-  company = computed(() => this.userState()?.company || '');
-  city = computed(() => this.userState()?.city || '');
-  phoneNumber = computed(() => this.userState()?.phoneNumber || '');
-  githubLink = computed(() => this.userState()?.githubLink || '');
-  twitterLink = computed(() => this.userState()?.twitterLink || '');
-  blueSkyLink = computed(() => this.userState()?.blueSkyLink || '');
-  linkedInLink = computed(() => this.userState()?.linkedInLink || '');
-  otherLink = computed(() => this.userState()?.otherLink || '');
-  biography = computed(() => this.userState()?.biography || '');
+  user = signal<User | null>(null);
+  name = computed(() => this.user()?.name || '');
+  email = computed(() => this.user()?.email || '');
+  photoURL = computed(() => this.user()?.photoURL || '');
+  company = computed(() => this.user()?.company || '');
+  location = computed(() => this.user()?.location || '');
+  phoneNumber = computed(() => this.user()?.phoneNumber || '');
+  socialLink = computed(() => this.user()?.socialLink || '');
+  bio = computed(() => this.user()?.bio || '');
 
-  updateUser(user: Partial<User>): void {
-    this.userState.update(currentUser => ({
-      ...(currentUser || {}),
-      ...user
-    } as User));
-  }
+  eventIds = computed(() => this.user()?.eventIds || []);
+  hasSpeakerRole = computed(() => this.eventIds().length > 0);
 
   loadFromStorage(): void {
     const userData: Partial<User> = {};
 
-    STORAGE_KEYS.forEach(key => {
-      const value = localStorage.getItem(key);
+    const stringKeys: Record<string, keyof Pick<User, 'name' | 'photoURL' | 'email' | 'company' | 'location' | 'phoneNumber' | 'socialLink' | 'bio'>> = {
+      'userName': 'name',
+      'userPhotoURL': 'photoURL',
+      'userEmail': 'email',
+      'userCompany': 'company',
+      'userLocation': 'location',
+      'userPhoneNumber': 'phoneNumber',
+      'userSocialLink': 'socialLink',
+      'userBio': 'bio',
+    };
+
+    const arrayKeys: Record<string, keyof Pick<User, 'speakerIds' | 'eventIds' | 'sessionIds'>> = {
+      'userSpeakerIds': 'speakerIds',
+      'userEventIds': 'eventIds',
+      'userSessionIds': 'sessionIds'
+    };
+
+    Object.entries(stringKeys).forEach(([storageKey, userKey]) => {
+      const value : string | null = localStorage.getItem(storageKey);
       if (value) {
-        const userKey = STORAGE_TO_USER_MAPPING[key] as keyof User;
-        userData[userKey] = value;
+        (userData as any)[userKey] = value;
+      }
+    });
+
+    Object.entries(arrayKeys).forEach(([storageKey, userKey]) => {
+      const value : string | null = localStorage.getItem(storageKey);
+      if (value) {
+        try {
+          const parsedValue = JSON.parse(value);
+          if (Array.isArray(parsedValue)) {
+            (userData as any)[userKey] = parsedValue;
+          }
+        } catch {
+          (userData as any)[userKey] = [];
+        }
       }
     });
 
@@ -78,21 +69,56 @@ export class UserStateService {
   }
 
   saveToStorage(): void {
-    const user = this.userState();
+    const user : User |null = this.user();
     if (!user) return;
 
-    Object.entries(user).forEach(([key, value]) => {
-      if (value && USER_TO_STORAGE_MAPPING[key as keyof User]) {
-        localStorage.setItem(<string>USER_TO_STORAGE_MAPPING[key as keyof User], value.toString());
+    const storageMapping = {
+      name: 'userName',
+      photoURL: 'userPhotoURL',
+      email: 'userEmail',
+      company: 'userCompany',
+      location: 'userLocation',
+      phoneNumber: 'userPhoneNumber',
+      socialLink: 'userSocialLink',
+      userBio: 'userBio',
+      speakerIds: 'userSpeakerIds',
+      eventIds: 'userEventIds',
+      sessionIds: 'userSessionIds'
+    };
+
+    Object.entries(storageMapping).forEach(([userKey, storageKey]) => {
+      const value = (user as any)[userKey];
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          localStorage.setItem(storageKey, JSON.stringify(value));
+        } else {
+          localStorage.setItem(storageKey, (value));
+        }
       }
     });
   }
 
-  clearUser(): void {
-    this.userState.set(null);
+  updateUser(userData: Partial<User>): void {
+    const currentUser = this.user();
+    const updatedUser = { ...currentUser, ...userData } as User;
 
-
-    STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+    this.user.set(updatedUser);
+    this.userSubject.next(updatedUser);
   }
 
+  clearUser(): void {
+    this.user.set(null);
+    this.userSubject.next(null);
+    this.clearStorage();
+  }
+
+  private clearStorage(): void {
+    const keysToRemove : string[] = [
+      'userName', 'userPhotoURL', 'userEmail', 'userCompany',
+      'userLocation', 'userPhoneNumber', 'userSocialLink', 'userBio',
+      'userSpeakerIds', 'userEventIds', 'userSessionIds'
+    ];
+
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  }
 }

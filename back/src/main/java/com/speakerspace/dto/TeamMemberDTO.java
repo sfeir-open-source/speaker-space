@@ -6,7 +6,7 @@ import lombok.Builder;
 public record TeamMemberDTO (
         String userId,
         String role,
-        String displayName,
+        String name,
         String email,
         String photoURL,
         String status,

@@ -1,11 +1,11 @@
-import {Component, inject, computed} from '@angular/core';
+import { Component, inject, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {NavigationEnd, Router, RouterModule} from '@angular/router';
-import {filter, startWith} from 'rxjs';
-import {AuthService} from '../login/services/auth.service';
-import {UserDataService} from '../services/user-services/user-data.service';
-import {takeUntilDestroyed, toSignal} from '@angular/core/rxjs-interop';
-import {map} from 'rxjs/operators';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { filter, startWith } from 'rxjs';
+import { AuthService } from '../login/services/auth.service';
+import { UserDataService } from '../services/user-services/user-data.service';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-navbar',
@@ -21,8 +21,8 @@ export class NavbarComponent {
 
   readonly isHomePage = toSignal(
     this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd),
-      map(event => event.url === '/'),
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event: NavigationEnd) => event.url === '/'),
       startWith(this.router.url === '/')
     ),
     { initialValue: this.router.url === '/' }
@@ -34,11 +34,21 @@ export class NavbarComponent {
   );
 
   readonly isLogin = computed(() => !!this.userSignal());
-  readonly userName = computed(() => this.userSignal()?.displayName || null);
-  readonly userPhotoURL = computed(() => this.userSignal()?.photoURL || null);
-  readonly userEmail = computed(() => this.userSignal()?.email || null);
+  readonly userName = computed(() => this.userSignal()?.displayName ?? null);
+  readonly userPhotoURL = computed(() => this.userSignal()?.photoURL ?? null);
+  readonly userEmail = computed(() => this.userSignal()?.email ?? null);
 
-  haveNotification: boolean = true;
+  haveNotification = true;
+
+  constructor() {
+    effect(() => {
+      const isUserLoggedIn = this.isLogin();
+
+      if (!isUserLoggedIn) {
+        this.userDataService.toggleSidebar(false, null);
+      }
+    });
+  }
 
   handlePictureError(event: Event): void {
     const target = event.target as HTMLImageElement;
@@ -47,7 +57,7 @@ export class NavbarComponent {
 
   openSidebar(): void {
     this.userDataService.toggleSidebar(true, {
-      displayName: this.userName(),
+      name: this.userName(),
       photoURL: this.userPhotoURL(),
       email: this.userEmail()
     });

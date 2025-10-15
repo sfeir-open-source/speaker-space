@@ -62,7 +62,7 @@ class AuthControllerTest {
     void setUp() {
         testUserDTO = UserDTO.builder()
                 .uid(TEST_UID)
-                .displayName("Test User")
+                .name("Test User")
                 .email("test@example.com")
                 .photoURL("https://example.com/photo.jpg")
                 .build();
@@ -71,7 +71,7 @@ class AuthControllerTest {
 
         when(firebaseToken.getUid()).thenReturn(testUserDTO.uid());
         when(firebaseToken.getEmail()).thenReturn(testUserDTO.email());
-        when(firebaseToken.getName()).thenReturn(testUserDTO.displayName());
+        when(firebaseToken.getName()).thenReturn(testUserDTO.name());
         when(firebaseToken.getPicture()).thenReturn(testUserDTO.photoURL());
     }
 
@@ -213,7 +213,7 @@ class AuthControllerTest {
         String differentUid = "different-uid";
         UserDTO differentUserDTO = UserDTO.builder()
                 .uid(differentUid)
-                .displayName("Different User")
+                .name("Different User")
                 .email("different@example.com")
                 .build();
 
