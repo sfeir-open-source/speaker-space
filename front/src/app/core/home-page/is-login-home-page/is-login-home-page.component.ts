@@ -116,11 +116,10 @@ export class IsLoginHomePageComponent {
       )
       .subscribe({
         next: (events: Event[]) => {
-          console.log('✅ Events loaded:', events);
           this.userEvents.set(events);
         },
         error: (err: unknown) => {
-          console.error('❌ Error loading user events:', err);
+          console.error('Error loading user events:', err);
           this.error.set('Failed to load your events. Please try again.');
           this.userEvents.set([]);
         }

@@ -21,7 +21,6 @@ export class SessionDateCalculatorService {
       const startDateTime = new Date(`${startDate}T${startTime}:00`);
 
       if (isNaN(startDateTime.getTime())) {
-        console.error('Invalid date/time format');
         return { startDateTime: null, endDateTime: null };
       }
 

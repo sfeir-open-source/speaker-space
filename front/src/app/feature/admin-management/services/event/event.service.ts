@@ -213,7 +213,7 @@ export class EventService {
       )
     ).pipe(
       catchError(error => {
-        console.error('❌ Error loading speaker events:', error);
+        console.error('Error loading speaker events:', error);
         return of([]);
       })
     );
@@ -240,19 +240,14 @@ export class EventService {
       )
     }).pipe(
       map(({ ownEvents, speakerEvents }) => {
-        console.log('📊 Own events:', ownEvents.length);
-        console.log('📊 Speaker events:', speakerEvents.length);
-
         const allEvents = [...ownEvents, ...speakerEvents];
         const uniqueEvents = allEvents.filter((event, index, self) =>
           index === self.findIndex(e => e.idEvent === event.idEvent)
         );
 
-        console.log('📊 Total unique events:', uniqueEvents.length);
         return uniqueEvents;
       }),
       catchError(error => {
-        console.error('❌ Error in getAllUserRelatedEvents:', error);
         return throwError(() => error);
       })
     );

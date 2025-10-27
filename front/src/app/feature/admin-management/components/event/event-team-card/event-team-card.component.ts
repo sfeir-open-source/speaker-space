@@ -26,12 +26,10 @@ export class EventTeamCardComponent {
         this.router.navigate(['/event-sessions', eventId]);
       } else {
         this.router.navigate(['/speaker/event', eventId]);
-        console.log("test !")
       }
     } catch (error) {
       console.error('Error determining user role:', error);
       this.router.navigate(['/speaker/event', eventId]);
-      console.log("test hello !")
     }
   }
 

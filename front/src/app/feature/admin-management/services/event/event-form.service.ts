@@ -1,13 +1,13 @@
-import { Injectable, Signal, inject, DestroyRef } from '@angular/core';
+import { Signal, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import {EventDataService} from './event-data.service';
-import {FormConfig} from '../../type/event/form-config';
-import {environment} from '../../../../../environments/environment.development';
-import {EventDTO} from '../../type/event/eventDTO';
+import { EventDataService } from './event-data.service';
+import { FormConfig } from '../../type/event/form-config';
+import { environment } from '../../../../../environments/environment.development';
+import { EventDTO } from '../../type/event/eventDTO';
+import {EventValidators} from './event-validators.service';
 
-@Injectable()
 export class EventFormService {
   private fb = inject(FormBuilder);
   private route = inject(ActivatedRoute);
@@ -19,7 +19,7 @@ export class EventFormService {
 
   private readonly NAME_VALIDATORS = [
     Validators.required,
-    Validators.minLength(2),
+    EventValidators.eventNameMinLength(2),
     Validators.maxLength(50)
   ];
 
@@ -95,23 +95,43 @@ export class EventFormService {
 
   createEventForm(): FormGroup {
     const form = this.fb.group({
-      startDate: ['', Validators.required],
-      endDate: ['', Validators.required],
+      startDate: ['', [
+        Validators.required,
+        EventValidators.startDateAfterToday()
+      ]],
+      endDate: ['', [
+        Validators.required,
+        EventValidators.endDateAfterStart('startDate')
+      ]],
+
       isOnline: [false],
       venueLocation: [''],
       description: [''],
-      webLinkUrl: ['']
+      webLinkUrl: ['', [
+        EventValidators.validUrl()
+      ]]
     });
 
-    form.get('isOnline')?.valueChanges.subscribe(isOnline => {
-      const venueLocationControl = form.get('venueLocation');
-      if (!isOnline) {
-        venueLocationControl?.setValidators([Validators.required]);
-      } else {
-        venueLocationControl?.clearValidators();
-      }
-      venueLocationControl?.updateValueAndValidity();
-    });
+    form.get('startDate')?.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        const endDateControl = form.get('endDate');
+        if (endDateControl?.value) {
+          endDateControl.updateValueAndValidity({ emitEvent: false });
+        }
+      });
+
+    form.get('isOnline')?.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(isOnline => {
+        const venueLocationControl = form.get('venueLocation');
+        if (!isOnline) {
+          venueLocationControl?.setValidators([Validators.required]);
+        } else {
+          venueLocationControl?.clearValidators();
+        }
+        venueLocationControl?.updateValueAndValidity();
+      });
 
     return form;
   }
@@ -133,20 +153,6 @@ export class EventFormService {
     if (data.description) {
       form.get('description')?.setValue(data.description);
     }
-  }
-
-  validateDates(form: FormGroup): boolean {
-    const startDate = form.value.startDate ? new Date(form.value.startDate) : null;
-    const endDate = form.value.endDate ? new Date(form.value.endDate) : null;
-
-    form.get('endDate')?.setErrors(null);
-
-    if (startDate && endDate && endDate <= startDate) {
-      form.get('endDate')?.setErrors({ 'endBeforeStart': true });
-      return false;
-    }
-
-    return true;
   }
 
   extractValidEventData(form: FormGroup, initialData: Partial<EventDTO> | null): Partial<EventDTO> {
@@ -183,20 +189,47 @@ export class EventFormService {
   }
 
   prepareSubmitData(form: FormGroup): Partial<EventDTO> {
-    const formValues = form.value;
-    return {
-      startDate: formValues.startDate ? new Date(formValues.startDate).toISOString() : undefined,
-      endDate: formValues.endDate ? new Date(formValues.endDate).toISOString() : undefined,
-      location: formValues.venueLocation,
-      description: formValues.description,
-      isOnline: formValues.isOnline,
-      webLinkUrl: formValues.webLinkUrl,
+    const formValues = form.getRawValue();
+
+    const data: Partial<EventDTO> = {
+      startDate: this.formatDateForBackend(formValues.startDate),
+      endDate: this.formatDateForBackend(formValues.endDate),
+      location: formValues.venueLocation?.trim() || null,
+      description: formValues.description?.trim() || null,
+      isOnline: formValues.isOnline ?? false,
+      webLinkUrl: formValues.webLinkUrl?.trim() || null
     };
+
+    return data;
   }
 
   private formatDateForInput(date: Date | string | undefined): string {
     if (!date) return '';
     const d = new Date(date);
     return d.toISOString().split('T')[0];
+  }
+
+  private formatDateForBackend(dateValue: string | null | undefined): string | undefined {
+    if (!dateValue || dateValue.trim() === '') {
+      return undefined;
+    }
+
+    try {
+      if (dateValue.includes('T')) {
+        return dateValue;
+      }
+
+      const isoString = `${dateValue}T00:00:00.000Z`;
+      const testDate = new Date(isoString);
+      if (isNaN(testDate.getTime())) {
+        return undefined;
+      }
+
+      return isoString;
+
+    } catch (error) {
+      console.error('Error formatting date:', dateValue, error);
+      return undefined;
+    }
   }
 }

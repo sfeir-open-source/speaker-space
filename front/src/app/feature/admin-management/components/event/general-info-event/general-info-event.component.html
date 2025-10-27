@@ -9,12 +9,6 @@
   <form [formGroup]="form" (ngSubmit)="onSubmit()">
     @for (field of formFields(); track field.name) {
       <div class="mb-4">
-        <app-form-field-errors
-          [control]="getFormControl(field.name)"
-          [fieldName]="field.name"
-          [isSubmitted]="isSubmitted">
-        </app-form-field-errors>
-
         <app-field
           [label]="field.label"
           [placeholder]="field.placeholder"
@@ -25,7 +19,8 @@
           [required]="field.required"
           [options]="field.options || []"
           [disabled]="field.disabled"
-          [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted">
+          [isSubmitted]="isSubmitted()"
+          [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted()">
         </app-field>
       </div>
     }
@@ -39,7 +34,7 @@
     @if (showGoBackButton()) {
       <hr class="mt-6 rounded-lg w-full mx-auto border-gray-200">
 
-      <div class="flex justify-end p-4">
+      <div class="flex justify-end p-4 items-center">
         <app-button
           type="button"
           (click)="onGoBack()"
@@ -49,7 +44,7 @@
 
         <app-button
           type="submit"
-          [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm px-3 rounded-md transition-colors'"
+          [customClass]="'flex items-center px-4 py-2 gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm px-3 rounded-md transition-colors'"
           [materialIcon]="submitButtonIcon()">
           {{ submitButtonText() }}
         </app-button>

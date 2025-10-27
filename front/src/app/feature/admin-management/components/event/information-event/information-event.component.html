@@ -10,21 +10,6 @@
     <div class="flex flex-col md:flex-row w-full gap-4">
       @for(field of formFields; track field.name) {
         <div class="flex-1">
-          @if(getFormControl(field.name).hasError('required') && isSubmitted()) {
-            <p class="text-red-500 text-sm mt-1"
-               [attr.aria-describedby]="field.name + '-error'"
-               role="alert">
-              This field is required
-            </p>
-          }
-          @if(field.name === 'endDate' && getFormControl(field.name).hasError('endBeforeStart')) {
-            <p class="text-red-500 text-sm mt-1"
-               [attr.aria-describedby]="field.name + '-error'"
-               role="alert">
-              End date must be after start date
-            </p>
-          }
-
           <app-field
             [label]="field.label"
             [placeholder]="field.placeholder"
@@ -32,7 +17,9 @@
             [control]="getFormControl(field.name)"
             [name]="field.name"
             [required]="field.required"
-            [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted">
+            [isSubmitted]="isSubmitted()"
+            [skipAutoValidators]="true"
+            [attr.aria-invalid]="getFormControl(field.name).invalid && isSubmitted()">
           </app-field>
         </div>
       }
@@ -64,7 +51,9 @@
       [placeholder]="additionalFields[0].placeholder"
       [type]="additionalFields[0].type"
       [control]="getFormControl(additionalFields[0].name)"
-      [name]="additionalFields[0].name">
+      [isSubmitted]="isSubmitted()"
+      [name]="additionalFields[0].name"
+      [skipAutoValidators]="true">
     </app-field>
 
     <app-field
@@ -72,6 +61,7 @@
       [placeholder]="additionalFields[1].placeholder"
       [type]="additionalFields[1].type"
       [control]="getFormControl(additionalFields[1].name)"
+      [isSubmitted]="isSubmitted()"
       [name]="additionalFields[1].name">
     </app-field>
 
@@ -80,6 +70,7 @@
         [label]="additionalFields[2].label"
         [type]="additionalFields[2].type"
         [control]="getFormControl(additionalFields[2].name)"
+        [isSubmitted]="isSubmitted()"
         [name]="additionalFields[2].name"
         [rows]="7"
         [customClass]="'!resize-none rounded-b-none border-b-0'">
@@ -87,11 +78,11 @@
     </div>
 
     @if (showNavigationButtons()) {
-    <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
+      <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200">
     }
 
     @if (showNavigationButtons()) {
-      <div class="flex justify-end p-4">
+      <div class="flex justify-end p-4 items-center">
         <app-button
           type="button"
           (click)="onGoBack()"
@@ -102,7 +93,7 @@
         <app-button
           [type]="'submit'"
           [attr.aria-label]="'Continue to next step'"
-          [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm px-3 rounded-md transition-colors'"
+          [customClass]="'flex items-center px-4 py-2 gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm px-3 rounded-md transition-colors'"
           materialIcon="arrow_forward">
           Continue
         </app-button>

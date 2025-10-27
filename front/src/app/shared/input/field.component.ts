@@ -1,39 +1,25 @@
-import {
-  Component,
-  output,
-  input,
-  computed,
-  effect,
-  signal,
-  inject
-} from '@angular/core';
-import {
-  AbstractControl,
-  FormControl,
-  FormsModule,
-  ReactiveFormsModule,
-  ValidatorFn,
-  Validators
-} from '@angular/forms';
+import { Component, computed, effect, inject, input, output, signal, DestroyRef } from '@angular/core';
+import { AbstractControl, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { SafeHtml } from '@angular/platform-browser';
 import { Observable } from 'rxjs';
-import { IconService } from './service/icon.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {IconService} from './service/icon.service';
+import {FieldValidationService} from './service/field-validation.service';
+import {FieldIconService} from './service/field-icon.service';
 
 @Component({
   selector: 'app-field',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-  ],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './field.component.html',
-  styleUrl: './field.component.scss'
+  styleUrls: ['./field.component.scss']
 })
 export class FieldComponent {
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly iconService = inject(IconService);
+  private readonly validationService = inject(FieldValidationService);
+  private readonly fieldIconService = inject(FieldIconService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly iconViewBox = input<string>('0 0 16 16');
   readonly label = input<string | undefined>(undefined);
@@ -41,35 +27,27 @@ export class FieldComponent {
   readonly placeholder = input<string | undefined>(undefined);
   readonly type = input<string>('text');
   readonly control = input.required<AbstractControl>();
-
+  readonly isSubmitted = input<boolean>(false);
+  readonly skipAutoValidators = input<boolean>(false);
   readonly required = input<boolean, boolean | undefined>(false, {
     transform: (value: boolean | undefined) => value ?? false
   });
-
   readonly name = input<string>('');
   readonly errorMessage = input<string>('This field is required');
-
   readonly disabled = input<boolean, boolean | undefined>(false, {
     transform: (value: boolean | undefined) => value ?? false
   });
-
   readonly rows = input<number>(6);
   readonly icon = input<string>('');
   readonly iconPath = input<string>('');
   readonly customClass = input<string>('');
   readonly staticPlaceholder = input<string>('');
-
-  readonly isRequired = input<boolean, boolean | undefined>(false, {
-    transform: (value: boolean | undefined) => value ?? false
-  });
-
   readonly minLength = input<number>(2);
-  readonly serverErrors = input<Record<string, string> | null>(null);
   readonly options = input<{ value: string; label: string }[]>([]);
 
   readonly blur = output<void>();
 
-  private readonly sanitizedIconPath = signal<SafeHtml>('');
+  private readonly errorTrigger = signal<number>(0);
   readonly errorIcon = signal<Observable<SafeHtml> | null>(null);
 
   readonly formControl = computed(() => this.control() as FormControl);
@@ -95,127 +73,79 @@ export class FieldComponent {
   });
 
   readonly hasError = computed(() => {
-    const control = this.control();
-    if (!control) {
-      return false;
-    }
-    return control.invalid && (control.touched || control.dirty);
+    this.errorTrigger();
+    return this.validationService.hasVisibleError(this.control(), this.isSubmitted());
   });
 
   readonly errorMessages = computed(() => {
+    this.errorTrigger();
+
     if (!this.hasError() || !this.control()) {
       return [];
     }
 
-    const errors = this.control().errors || {};
-    const messages: string[] = [];
-    const errorMessage = this.errorMessage();
-    const name = this.name();
-
-    if (errors['required']) {
-      messages.push(errorMessage || 'This field is required');
-    }
-
-    if (errors['email']) {
-      messages.push('Please enter a valid email address');
-    }
-
-    if (errors['minlength']) {
-      if (errorMessage && errorMessage.includes('minimum')) {
-        messages.push(errorMessage);
-      } else {
-        messages.push(`Minimum length is ${errors['minlength'].requiredLength} characters`);
-      }
-    }
-
-    if (errors['maxlength']) {
-      messages.push(`Maximum length is ${errors['maxlength'].requiredLength} characters`);
-    }
-
-    if (errors['pattern']) {
-      if (name.toLowerCase().includes('link') || name === 'avatarPictureURL') {
-        messages.push(errorMessage || 'Please enter a valid URL');
-      } else if (name === 'phoneNumber') {
-        messages.push(errorMessage || 'Please enter a valid phone number');
-      } else {
-        messages.push(errorMessage || 'The value does not match the required pattern');
-      }
-    }
-
-    if (errors['serverError']) {
-      messages.push(errors['serverError']);
-    }
-
-    if (messages.length === 0 && Object.keys(errors).length > 0) {
-      messages.push(errorMessage || 'Invalid value');
-    }
-
-    return messages;
+    return this.validationService.getErrorMessages(
+      this.control().errors,
+      this.name(),
+      this.errorMessage()
+    );
   });
 
-  readonly sanitizedIcon = computed(() => this.sanitizedIconPath());
+  readonly sanitizedIcon = computed(() => {
+    const iconPath = this.iconPath();
+    const viewBox = this.iconViewBox();
+    return this.fieldIconService.sanitizeSvgPath(iconPath, viewBox);
+  });
 
   constructor() {
-    this.errorIcon.set(this.iconService.getIcon('error-outline'));
-    effect(() => {
-      const iconPath = this.iconPath();
-      const iconViewBox = this.iconViewBox();
+    this.initializeErrorIcon();
+    this.setupControlChangeTracking();
+    this.setupAutoValidators();
+  }
 
-      if (!iconPath) {
-        this.sanitizedIconPath.set('');
+  private initializeErrorIcon(): void {
+    this.errorIcon.set(this.iconService.getIcon('error-outline'));
+  }
+
+  private setupControlChangeTracking(): void {
+    effect(() => {
+      const control = this.control();
+      if (!control) return;
+
+      control.statusChanges
+        ?.pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.errorTrigger.update(v => v + 1));
+
+      control.valueChanges
+        ?.pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.errorTrigger.update(v => v + 1));
+    }, { allowSignalWrites: true });
+  }
+
+  private setupAutoValidators(): void {
+    effect(() => {
+      if (this.skipAutoValidators()) {
         return;
       }
 
-      try {
-        if (iconPath.trim().startsWith('<svg')) {
-          this.sanitizedIconPath.set(this.sanitizer.bypassSecurityTrustHtml(iconPath));
-        } else {
-          const svgWrapper = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="${iconViewBox}" fill="currentColor">${iconPath}</svg>`;
-          this.sanitizedIconPath.set(this.sanitizer.bypassSecurityTrustHtml(svgWrapper));
-        }
-      } catch (error) {
-        console.error('Error processing SVG:', error, iconPath);
-        this.sanitizedIconPath.set('');
-      }
-    });
-
-    effect(() => {
       const control = this.control();
-      const required = this.required();
-      const minLength = this.minLength();
-      const type = this.type();
-      const name = this.name();
-
       if (!control) {
         return;
       }
 
       try {
-        const validators: ValidatorFn[] = [];
-
-        if (required) {
-          validators.push(Validators.required);
-        }
-
-        if (minLength && minLength > 0) {
-          validators.push(Validators.minLength(minLength));
-        }
-
-        if (type === 'email') {
-          validators.push(Validators.email);
-        }
-
-        if (name === 'phoneNumber') {
-          validators.push(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'));
-        } else if (name === 'avatarPictureURL' || name.toLowerCase().includes('link')) {
-          validators.push(Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?'));
-        }
+        const validators = this.validationService.buildAutoValidators({
+          required: this.required(),
+          minLength: this.minLength(),
+          type: this.type(),
+          name: this.name()
+        });
 
         control.setValidators(validators.length > 0 ? validators : null);
-        control.updateValueAndValidity();
+        control.updateValueAndValidity({ emitEvent: false });
 
       } catch (error) {
-        console.error(`Erreur lors de l'application des validateurs pour le champ '${name}':`, error);
+        console.error(`Error applying validators for field '${this.name()}':`, error);
       }
     });
   }

@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,8 +41,8 @@ public class EventService {
     public EventDTO createEvent(EventDTO eventDTO) {
         String currentUserId = userService.getCurrentUserId();
 
-        if (eventDTO.eventName() == null || eventDTO.eventName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Event name is required");
+        if (eventDTO.eventName() == null || eventDTO.eventName().trim().length() < 2) {
+            throw new IllegalArgumentException("Event name must be at least 2 characters long");
         }
 
         if (eventDTO.type() == null || eventDTO.type().trim().isEmpty()) {
@@ -68,6 +70,8 @@ public class EventService {
                 .build();
 
         Event event = eventMapper.convertToEntity(sanitizedEventDTO);
+
+        validateEventDates(event);
 
         if (event.getTeamId() != null &&
                 eventRepository.existsByEventNameAndTeamId(event.getEventName(), event.getTeamId())) {
@@ -235,8 +239,17 @@ public class EventService {
                     event.getEndDate().getNanos()
             );
 
+            Instant todayStart = Instant.now()
+                    .atZone(ZoneId.of("UTC"))
+                    .truncatedTo(ChronoUnit.DAYS)
+                    .toInstant();
+
+            if (startInstant.isBefore(todayStart)) {
+                throw new IllegalArgumentException("Start date must be today or in the future");
+            }
+
             if (endInstant.isBefore(startInstant)) {
-                throw new IllegalArgumentException("End date must be after start date");
+                throw new IllegalArgumentException("End date must be on the same day or after start date");
             }
         }
     }

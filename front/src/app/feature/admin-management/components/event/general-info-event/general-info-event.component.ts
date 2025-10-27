@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, output, DestroyRef, Signal } from '@angular/core';
+import {Component, computed, effect, inject, input, output, DestroyRef, Signal, signal} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { BehaviorSubject, debounceTime } from 'rxjs';
@@ -20,7 +20,6 @@ import { SaveIndicatorComponent } from '../../../../../core/save-indicator/save-
 import { ButtonComponent } from '../../../../../shared/button/button.component';
 import { VisibilitySelectorComponent } from '../visibility-selector/visibility-selector.component';
 import { TimezoneSelectorComponent } from '../timezone-selector/timezone-selector.component';
-import {FormFieldErrorsComponent} from '../../../../../shared/form-field-errors/form-field-errors.component';
 import {AutoSaveService} from '../../../services/event/auto-save.service';
 
 @Component({
@@ -33,8 +32,7 @@ import {AutoSaveService} from '../../../services/event/auto-save.service';
     SaveIndicatorComponent,
     ButtonComponent,
     VisibilitySelectorComponent,
-    TimezoneSelectorComponent,
-    FormFieldErrorsComponent
+    TimezoneSelectorComponent
   ],
   providers: [EventFormService],
   templateUrl: './general-info-event.component.html'
@@ -56,11 +54,11 @@ export class GeneralInfoEventComponent {
   private destroyRef = inject(DestroyRef);
 
   form!: FormGroup;
-  isSubmitted = false;
   teams: Team[] = [];
   saveStatus$ = new BehaviorSubject<SaveStatus>('idle');
   timezoneControl = new FormControl<string>('Europe/Paris', { nonNullable: true });
 
+  readonly isSubmitted = signal<boolean>(false);
   protected readonly showAutoSaveIndicator = computed(() => this.mode() === 'edit');
   protected readonly showGoBackButton = computed(() => this.mode() === 'create');
   protected readonly showVisibilitySection = computed(() => this.mode() === 'edit');
@@ -127,9 +125,6 @@ export class GeneralInfoEventComponent {
           this.initialData()
         ),
         onSaveStart: () => this.form.markAsPristine(),
-        onSaveSuccess: (result: EventDTO) => {
-          console.log('Event auto-saved successfully:', result);
-        },
         onSaveError: (error: unknown) => {
           console.error('Auto-save failed:', error);
           this.snackBar.open(
@@ -172,10 +167,11 @@ export class GeneralInfoEventComponent {
   onSubmit(): void {
     if (this.mode() === 'edit') return;
 
-    this.isSubmitted = true;
+    this.isSubmitted.set(true);
 
     if (this.form.invalid) {
-      console.warn('Form invalid:', this.form.errors);
+      this.form.markAllAsTouched();
+      this.logFormErrors();
       return;
     }
 
@@ -185,6 +181,17 @@ export class GeneralInfoEventComponent {
     );
 
     this.formSubmitted.emit(newEvent);
+  }
+
+  private logFormErrors(): void {
+    const errors: Record<string, unknown> = {};
+
+    Object.keys(this.form.controls).forEach(key => {
+      const control = this.form.get(key);
+      if (control?.errors) {
+        errors[key] = control.errors;
+      }
+    });
   }
 
   onGoBack(): void {
