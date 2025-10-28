@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import {booleanAttribute, Component, computed, input, output, signal} from '@angular/core';
 
 @Component({
   selector: 'app-session-duration-field',
@@ -10,6 +10,8 @@ import { Component, computed, input, output, signal } from '@angular/core';
 })
 export class SessionDurationFieldComponent {
   selectedDuration = input<number>(60);
+  isSubmitted = input<boolean>(false);
+  required = input(true, { transform: booleanAttribute });
   durationChange = output<number>();
 
   showDropdown = signal<boolean>(false);
@@ -33,6 +35,10 @@ export class SessionDurationFieldComponent {
   currentDurationLabel = computed(() => {
     const duration = this.durations.find(d => d.value === this.selectedDuration());
     return duration ? duration.label : `${this.selectedDuration()} minutes`;
+  });
+
+  hasError = computed(() => {
+    return this.required() && this.isSubmitted() && !this.selectedDuration();
   });
 
   toggleDropdown(): void {

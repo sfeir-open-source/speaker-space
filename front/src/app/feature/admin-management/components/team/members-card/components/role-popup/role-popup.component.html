@@ -24,7 +24,7 @@
             value="Owner"
             [(ngModel)]="selectedRole"
           />
-          <label class="text-md text-gray-900" for="owner-{{ member().userId }}">Owner</label>
+          <label for="owner" class="text-md text-gray-900">Owner</label>
           <p class="text-sm text-gray-500">Full control over team and events, including member management, event creation, and proposal publishing.</p>
         </div>
 
@@ -37,7 +37,7 @@
             value="Member"
             [(ngModel)]="selectedRole"
           />
-          <label class="text-md text-gray-900" for="member-{{ member().userId }}">Member</label>
+          <label class="text-md text-gray-900" for="member">Member</label>
           <p class="text-sm text-gray-500">Can view team, access and edit events, deliberate on proposals, and publish results. Cannot create events or manage team settings.</p>
         </div>
       </article>

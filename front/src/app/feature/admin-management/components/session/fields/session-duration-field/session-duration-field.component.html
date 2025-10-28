@@ -1,10 +1,16 @@
 <div class="mt-5">
-  <label class="block text-start text-md">Duration</label>
+  <label class="block text-start text-md" [class.required]="required()">
+    Duration
+  </label>
   <div class="relative" data-duration-dropdown>
     <button
       type="button"
       (click)="toggleDropdown()"
-      class="w-full h-[42px] px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm bg-white text-left flex items-center justify-between focus:outline-2 focus:outline-blue-600 hover:bg-gray-50 transition-colors"
+      [attr.aria-required]="required()"
+      [attr.aria-invalid]="hasError()"
+      class="w-full h-[42px] px-3 py-2 border rounded-md shadow-sm text-sm bg-white text-left flex items-center justify-between focus:outline-2 focus:outline-blue-600 hover:bg-gray-50 transition-colors"
+      [class.border-gray-300]="!hasError()"
+      [class.border-red-300]="hasError()"
       [attr.aria-expanded]="showDropdown()"
       aria-haspopup="listbox">
       <span>{{ currentDurationLabel() }}</span>
@@ -39,4 +45,10 @@
       </ul>
     }
   </div>
+
+  @if (hasError()) {
+    <p class="mt-1 text-sm text-red-600" role="alert">
+      Duration is required
+    </p>
+  }
 </div>

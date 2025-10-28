@@ -6,6 +6,7 @@
     [control]="form().get('name')!"
     [required]="true"
     placeholder="Enter full name"
+    [isSubmitted]="isSubmitted()"
     errorMessage="Name is required (2-100 characters)">
   </app-field>
 
@@ -15,6 +16,7 @@
     type="email"
     [control]="form().get('email')!"
     [required]="true"
+    [isSubmitted]="isSubmitted()"
     placeholder="Enter email address"
     errorMessage="Valid email is required">
   </app-field>
@@ -26,6 +28,7 @@
     label="Biography"
     type="textarea"
     [control]="form().get('bio')!"
+    [isSubmitted]="isSubmitted()"
     [rows]="4"
     placeholder="Enter biography"
     errorMessage="Biography must not exceed 2000 characters">
@@ -41,6 +44,7 @@
       type="text"
       [control]="form().get('company')!"
       placeholder="Enter company name"
+      [isSubmitted]="isSubmitted()"
       errorMessage="Company name must not exceed 100 characters">
     </app-field>
 
@@ -48,6 +52,7 @@
       name="location"
       label="Location"
       type="text"
+      [isSubmitted]="isSubmitted()"
       [control]="form().get('location')!"
       placeholder="Enter location"
       errorMessage="Location must not exceed 100 characters">
@@ -58,6 +63,7 @@
     name="picture"
     label="Picture URL"
     type="url"
+    [isSubmitted]="isSubmitted()"
     [control]="form().get('picture')!"
     placeholder="https://example.com/photo.jpg"
     errorMessage="Please enter a valid URL">
@@ -69,6 +75,7 @@
     type="textarea"
     [control]="form().get('references')!"
     [rows]="3"
+    [isSubmitted]="isSubmitted()"
     placeholder="Previous talks, achievements, etc."
     errorMessage="References must not exceed 2000 characters">
     <div paragraphSuffix class="text-xs text-gray-500 mt-1">

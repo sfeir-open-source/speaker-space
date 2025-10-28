@@ -2,8 +2,7 @@
   <div>
     <label
       for="start-date"
-      class="mt-5 block text-start text-md"
-      [class.required]="required()">
+      class="mt-5 block text-start text-md required">
       Start Date
     </label>
 
@@ -13,11 +12,21 @@
       formControlName="startDate"
       [min]="eventStartDateForInput()"
       [max]="eventEndDateForInput()"
-      class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6" />
+      [attr.aria-required]="true"
+      [attr.aria-invalid]="hasStartDateError()"
+      class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-gray-600 sm:text-sm/6"
+      [class.border-red-300]="hasStartDateError()"
+      [class.outline-red-500]="hasStartDateError()" />
 
     @if (eventDateRange()) {
       <p class="mt-1 text-xs text-gray-500">
         Event dates: {{ eventDateRange() }}
+      </p>
+    }
+
+    @if (hasStartDateError()) {
+      <p class="mt-1 text-sm text-red-600" role="alert">
+        Start date is required
       </p>
     }
   </div>
@@ -27,6 +36,8 @@
     label="Start Time"
     type="time"
     [control]="form().get('startTime')!"
-    errorMessage="Please select a valid time">
+    [required]="true"
+    [isSubmitted]="isSubmitted()"
+    errorMessage="Start time is required">
   </app-field>
 </fieldset>

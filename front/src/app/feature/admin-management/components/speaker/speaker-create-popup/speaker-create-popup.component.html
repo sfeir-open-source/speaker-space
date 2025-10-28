@@ -10,6 +10,7 @@
     <app-speaker-form-fields
       [form]="speakerForm"
       [socialLinks]="socialLinks()"
+      [isSubmitted]="isSubmitted()"
       (socialLinksChange)="onSocialLinksChange($event)">
     </app-speaker-form-fields>
 

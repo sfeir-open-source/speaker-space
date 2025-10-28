@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, input, output, effect } from '@angular/core';
+import {Component, OnInit, inject, input, output, effect, signal} from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {Category, Format, SessionImportData, Speaker} from '../../../type/session/session';
 import { ModalPopupCreateComponent } from '../../modal/modal-popup-create.component';
@@ -35,6 +35,8 @@ export class SessionCreatePopupComponent implements OnInit {
 
   protected readonly state = inject(SessionCreateStateService);
 
+  readonly isSubmitted = signal<boolean>(false);
+
   constructor() {
     effect(() => {
       const emptySession = this.state.matchingEmptySession();
@@ -55,6 +57,8 @@ export class SessionCreatePopupComponent implements OnInit {
   }
 
   onSubmit(): void {
+    this.isSubmitted.set(true);
+
     this.state.submit((response: SessionImportData) => {
       this.sessionCreated.emit();
       this.onClose();

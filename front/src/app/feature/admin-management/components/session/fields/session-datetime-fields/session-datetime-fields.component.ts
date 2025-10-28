@@ -18,6 +18,7 @@ export class SessionDatetimeFieldsComponent {
   eventStartDate = input<Date | undefined>();
   eventEndDate = input<Date | undefined>();
   required = input(true, { transform: booleanAttribute });
+  isSubmitted = input<boolean>(false);
 
   eventDateRange = computed(() => {
     const start = this.eventStartDate();
@@ -46,5 +47,10 @@ export class SessionDatetimeFieldsComponent {
   eventEndDateForInput = computed(() => {
     const end = this.eventEndDate();
     return end ? end.toISOString().split('T')[0] : '';
+  });
+
+  hasStartDateError = computed(() => {
+    const control = this.form().get('startDate');
+    return control && control.invalid && (control.touched || control.dirty || this.isSubmitted());
   });
 }

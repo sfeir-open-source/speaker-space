@@ -1,9 +1,16 @@
 <fieldset class="grid grid-cols-1 md:grid-cols-2 gap-4">
   <div>
-    <legend class="block text-start text-md mb-2">Formats</legend>
+    <legend class="block text-start text-md mb-2" [class.required]="required()">
+      Formats
+    </legend>
 
     @if (hasFormats()) {
-      <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
+      <div
+        class="space-y-2 max-h-32 overflow-y-auto border rounded-md p-3"
+        [class.border-gray-200]="!hasFormatsError()"
+        [class.border-red-300]="hasFormatsError()"
+        [attr.aria-required]="required()"
+        [attr.aria-invalid]="hasFormatsError()">
         @for (format of availableFormats(); track format.id) {
           <label class="flex items-center space-x-2 cursor-pointer">
             <input
@@ -16,16 +23,32 @@
           </label>
         }
       </div>
+
+      @if (hasFormatsError()) {
+        <p class="mt-1 text-sm text-red-600 flex items-center" role="alert">
+          <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          At least one format is required
+        </p>
+      }
     } @else {
       <p class="text-sm text-gray-500 italic">No formats available</p>
     }
   </div>
 
   <div>
-    <legend class="block text-start text-md mb-2">Categories</legend>
+    <legend class="block text-start text-md mb-2" [class.required]="required()">
+      Categories
+    </legend>
 
     @if (hasCategories()) {
-      <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-md p-3">
+      <div
+        class="space-y-2 max-h-32 overflow-y-auto border rounded-md p-3"
+        [class.border-gray-200]="!hasCategoriesError()"
+        [class.border-red-300]="hasCategoriesError()"
+        [attr.aria-required]="required()"
+        [attr.aria-invalid]="hasCategoriesError()">
         @for (category of availableCategories(); track category.id) {
           <label class="flex items-center space-x-2 cursor-pointer">
             <input
@@ -38,6 +61,15 @@
           </label>
         }
       </div>
+
+      @if (hasCategoriesError()) {
+        <p class="mt-1 text-sm text-red-600 flex items-center" role="alert">
+          <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          At least one category is required
+        </p>
+      }
     } @else {
       <p class="text-sm text-gray-500 italic">No categories available</p>
     }

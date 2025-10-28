@@ -78,33 +78,54 @@ export class SessionCreateStateService {
     this.sessionForm = this.fb.group({
       title: ['', [
         Validators.required,
-        Validators.minLength(3),
+        Validators.minLength(2),
         Validators.maxLength(200)
       ]],
-      abstractText: ['', [Validators.maxLength(2000)]],
-      references: ['', [Validators.maxLength(1000)]],
-      level: [''],
-      track: ['', [Validators.maxLength(50)]],
+      abstractText: ['', [
+        Validators.required,
+        Validators.minLength(10),
+        Validators.maxLength(2000)
+      ]],
+      references: ['', [
+        Validators.maxLength(1000)
+      ]],
+
+      level: ['', [Validators.required]],
+      track: ['', [
+        Validators.required,
+        Validators.maxLength(50)
+      ]],
+
       startDate: ['', [
         Validators.required,
         this.eventDateRangeValidator.bind(this)
       ]],
-      startTime: ['']
+      startTime: ['', [Validators.required]]
     });
 
     this.sessionForm.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => console.log('Form changed'));
+      .subscribe(() => this.errorMessage.set(null));
 
     this.sessionForm.statusChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(status => console.log('Form status:', status));
+      .subscribe(status => {
+        if (status === 'INVALID') {
+          console.warn('Form is invalid');
+        }
+      });
   }
 
   submit(onSuccess: (response: SessionImportData) => void): void {
     if (!this.sessionForm.valid) {
       this.sessionForm.markAllAsTouched();
-      this.logFormErrors();
+      return;
+    }
+
+    const arrayValidationErrors = this.validateRequiredArrays();
+    if (arrayValidationErrors) {
+      const errorMessages = Object.values(arrayValidationErrors).join(', ');
+      this.errorMessage.set(errorMessages);
       return;
     }
 
@@ -223,13 +244,25 @@ export class SessionCreateStateService {
     }
   }
 
-  private logFormErrors(): void {
-    console.log('Form errors:', this.sessionForm.errors);
-    Object.keys(this.sessionForm.controls).forEach(key => {
-      const control = this.sessionForm.get(key);
-      if (control?.invalid) {
-        console.error(`Field "${key}" errors:`, control.errors);
-      }
-    });
+  private validateRequiredArrays(): ValidationErrors | null {
+    const errors: ValidationErrors = {};
+
+    if (this.selectedSpeakers().length === 0) {
+      errors['speakersRequired'] = 'At least one speaker is required';
+    }
+
+    if (this.selectedFormats().length === 0) {
+      errors['formatsRequired'] = 'At least one format is required';
+    }
+
+    if (this.selectedCategories().length === 0) {
+      errors['categoriesRequired'] = 'At least one category is required';
+    }
+
+    if (this.selectedLanguages().length === 0) {
+      errors['languagesRequired'] = 'At least one language is required';
+    }
+
+    return Object.keys(errors).length > 0 ? errors : null;
   }
 }

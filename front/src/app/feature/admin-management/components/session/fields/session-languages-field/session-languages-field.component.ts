@@ -1,4 +1,4 @@
-import {Component, signal} from '@angular/core';
+import {booleanAttribute, Component, computed, input, output} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 
 @Component({
@@ -11,22 +11,30 @@ import {FormsModule} from '@angular/forms';
   styleUrl: './session-create-popup.component.scss'
 })
 export class SessionLanguagesFieldComponent {
-  selectedLanguages = signal<string[]>([]);
+  selectedLanguages = input<string[]>([]);
+  isSubmitted = input<boolean>(false);
+  required = input(true, { transform: booleanAttribute });
+
+  languagesChange = output<string[]>();
 
   commonLanguages = [
     { code: 'en', name: 'English' },
     { code: 'fr', name: 'Français' }
   ];
 
+  hasError = computed(() => {
+    return this.required() &&
+      this.isSubmitted() &&
+      this.selectedLanguages().length === 0;
+  });
+
   onLanguageChange(languageCode: string, event: Event): void {
     const target = event.target as HTMLInputElement;
 
-    if (target.checked) {
-      this.selectedLanguages.update(languages => [...languages, languageCode]);
-    } else {
-      this.selectedLanguages.update(languages =>
-        languages.filter(code => code !== languageCode)
-      );
-    }
+    const updatedLanguages = target.checked
+      ? [...this.selectedLanguages(), languageCode]
+      : this.selectedLanguages().filter(code => code !== languageCode);
+
+    this.languagesChange.emit(updatedLanguages);
   }
 }

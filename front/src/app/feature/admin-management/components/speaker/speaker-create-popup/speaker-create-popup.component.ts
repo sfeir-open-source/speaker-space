@@ -4,8 +4,7 @@ import {
   input,
   OnInit,
   output,
-  signal,
-  DestroyRef
+  signal
 } from '@angular/core';
 import {
   FormBuilder,
@@ -46,7 +45,6 @@ export class SpeakerCreatePopupComponent implements OnInit {
   popupClosed = output<void>();
 
   private readonly fb = inject(FormBuilder);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly speakerService = inject(SpeakerService);
   private readonly formSubmission = inject(FormSubmissionService<SpeakerCreateRequest, SpeakerImportData>);
   private readonly validationService = inject(SpeakerValidationService);
@@ -54,6 +52,7 @@ export class SpeakerCreatePopupComponent implements OnInit {
   private readonly errorHandler = inject(SpeakerErrorHandlerService);
 
   speakerForm!: FormGroup;
+  readonly isSubmitted = signal<boolean>(false);
   isSubmitting = signal(false);
   errorMessage = signal<string | null>(null);
   socialLinks = signal<string[]>([]);
@@ -80,6 +79,7 @@ export class SpeakerCreatePopupComponent implements OnInit {
       location: ['', [Validators.maxLength(100)]],
       picture: ['', [
         Validators.maxLength(500),
+        Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?'),
         this.validationService.urlValidator
       ]],
       references: ['', [Validators.maxLength(2000)]]
@@ -87,6 +87,8 @@ export class SpeakerCreatePopupComponent implements OnInit {
   }
 
   onSubmit(): void {
+    this.isSubmitted.set(true);
+
     this.formSubmission.submit({
       form: this.speakerForm,
       isSubmitting: this.isSubmitting,

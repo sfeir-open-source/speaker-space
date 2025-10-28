@@ -1,15 +1,34 @@
-<article class ="mt-5">
-  <label class="block text-start text-md mb-2">Languages</label>
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-1 mb-3">
+<article class="mt-5">
+  <label class="block text-start text-md mb-2" [class.required]="required()">
+    Languages
+  </label>
+
+  <div
+    class="grid grid-cols-1 md:grid-cols-4 gap-1 mb-3 p-3 border rounded-md"
+    [class.border-gray-200]="!hasError()"
+    [class.border-red-300]="hasError()"
+    [attr.aria-required]="required()"
+    [attr.aria-invalid]="hasError()">
     @for (lang of commonLanguages; track lang.code) {
-      <label class="flex items-center space-x-2 cursor-pointer block text-start text-md mb-2">
+      <label class="flex items-center space-x-2 cursor-pointer">
         <input
           type="checkbox"
           [value]="lang.code"
+          [checked]="selectedLanguages().includes(lang.code)"
           (change)="onLanguageChange(lang.code, $event)"
           class="rounded border-gray-300 text-blue-600">
-        <span>{{ lang.name }}</span>
+        <span class="text-sm">{{ lang.name }}</span>
       </label>
     }
   </div>
+
+  @if (hasError()) {
+    <p class="mt-1 text-sm text-red-600 flex items-center" role="alert">
+      <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+      </svg>
+      At least one language is required
+    </p>
+  }
 </article>
+

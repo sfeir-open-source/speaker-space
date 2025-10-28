@@ -3,16 +3,19 @@
   label="Title"
   type="text"
   [control]="form().get('title')!"
+  [isSubmitted]="isSubmitted()"
   [required]="true"
   placeholder="Enter session title"
-  errorMessage="Title is required (3-200 characters)"/>
+  errorMessage="Title is required (2-200 characters)"/>
 
 <app-field
   name="abstractText"
   label="Abstract"
   type="textarea"
+  [isSubmitted]="isSubmitted()"
   [control]="form().get('abstractText')!"
   [rows]="4"
+  [required]="true"
   placeholder="Enter session abstract"
   errorMessage="Abstract must not exceed 2000 characters">
   <div paragraphSuffix class="text-xs text-gray-500 mt-1">
@@ -24,6 +27,7 @@
   name="references"
   label="References"
   type="textarea"
+  [isSubmitted]="isSubmitted()"
   [control]="form().get('references')!"
   [rows]="3"
   placeholder="Enter references, links, or additional resources"
@@ -38,6 +42,8 @@
     name="level"
     label="Level"
     type="select"
+    [required]="true"
+    [isSubmitted]="isSubmitted()"
     [control]="form().get('level')!"
     [options]="levelOptions"
     placeholder="Select level..."/>
@@ -45,6 +51,8 @@
   <app-field
     name="track"
     label="Track"
+    [isSubmitted]="isSubmitted()"
+    [required]="true"
     [type]="availableTracks().length > 0 ? 'select' : 'text'"
     [control]="form().get('track')!"
     [options]="trackOptions()"
@@ -53,27 +61,39 @@
 
   <app-session-duration-field
     [selectedDuration]="selectedDuration()"
+    [isSubmitted]="isSubmitted()"
+    [required]="true"
     (durationChange)="onDurationChange($event)">
   </app-session-duration-field>
 </fieldset>
 
 <app-session-datetime-fields
   [form]="form()"
+  [isSubmitted]="isSubmitted()"
+  [required]="true"
   [eventStartDate]="eventStartDate()"
   [eventEndDate]="eventEndDate()"/>
 
 <app-session-speakers-field
   [selectedSpeakers]="selectedSpeakers()"
+  [isSubmitted]="isSubmitted()"
+  [required]="true"
   [availableSpeakers]="availableSpeakers()"
   [isLoading]="isLoadingSpeakers()"
   (speakersChange)="onSpeakersChange($event)"/>
 
 <app-session-categories-formats-field
   [availableFormats]="availableFormats()"
+  [isSubmitted]="isSubmitted()"
   [availableCategories]="availableCategories()"
   [selectedFormats]="selectedFormats()"
   [selectedCategories]="selectedCategories()"
+  [required]="true"
   (formatsChange)="onFormatsChange($event)"
   (categoriesChange)="onCategoriesChange($event)"/>
 
-<app-session-languages-field/>
+<app-session-languages-field
+  [selectedLanguages]="selectedLanguages()"
+  [isSubmitted]="isSubmitted()"
+  [required]="true"
+  (languagesChange)="onLanguagesChange($event)"/>

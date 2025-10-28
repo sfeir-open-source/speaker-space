@@ -38,6 +38,7 @@ export class SessionFormFieldsComponent {
   selectedFormats = input<string[]>([]);
   selectedCategories = input<string[]>([]);
   selectedLanguages = input<string[]>([]);
+  isSubmitted = input<boolean>(false);
 
   durationChange = output<number>();
   speakersChange = output<Speaker[]>();
@@ -72,5 +73,9 @@ export class SessionFormFieldsComponent {
 
   onCategoriesChange(categories: string[]): void {
     this.categoriesChange.emit(categories);
+  }
+
+  onLanguagesChange(languages: string[]): void {
+    this.languagesChange.emit(languages);
   }
 }

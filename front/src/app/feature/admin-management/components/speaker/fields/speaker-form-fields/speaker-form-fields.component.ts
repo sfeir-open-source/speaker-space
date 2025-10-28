@@ -1,4 +1,4 @@
-import {Component, EventEmitter, input, Input, output, Output} from '@angular/core';
+import {Component, input, output } from '@angular/core';
 import {FormGroup} from '@angular/forms';
 import {SocialLinksFieldComponent} from '../social-links-field/social-links-field.component';
 import {FieldComponent} from '../../../../../../shared/input/field.component';
@@ -17,6 +17,7 @@ import {FieldComponent} from '../../../../../../shared/input/field.component';
 export class SpeakerFormFieldsComponent {
   form = input.required<FormGroup>();
   socialLinks = input<string[]>([]);
+  isSubmitted = input<boolean>(false);
 
   socialLinksChange = output<string[]>();
 

@@ -1,4 +1,4 @@
-import {Component, computed, EventEmitter, input, Input, output, Output} from '@angular/core';
+import {booleanAttribute, Component, computed, input, output} from '@angular/core';
 import {Category, Format} from '../../../../type/session/session';
 
 @Component({
@@ -14,12 +14,28 @@ export class SessionCategoriesFormatsFieldComponent {
   availableCategories = input<Category[]>([]);
   selectedFormats = input<string[]>([]);
   selectedCategories = input<string[]>([]);
+  isSubmitted = input<boolean>(false);
+  required = input(true, { transform: booleanAttribute });
 
   formatsChange = output<string[]>();
   categoriesChange = output<string[]>();
 
   hasFormats = computed(() => this.availableFormats().length > 0);
   hasCategories = computed(() => this.availableCategories().length > 0);
+
+  hasFormatsError = computed(() => {
+    return this.required() &&
+      this.isSubmitted() &&
+      this.selectedFormats().length === 0 &&
+      this.hasFormats();
+  });
+
+  hasCategoriesError = computed(() => {
+    return this.required() &&
+      this.isSubmitted() &&
+      this.selectedCategories().length === 0 &&
+      this.hasCategories();
+  });
 
   onFormatChange(formatId: string, event: Event): void {
     const isChecked = (event.target as HTMLInputElement).checked;

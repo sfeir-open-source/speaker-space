@@ -1,4 +1,14 @@
-import { Component, computed, effect, ElementRef, input, output, signal, viewChild } from '@angular/core';
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  input,
+  output,
+  signal,
+  viewChild
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Speaker } from '../../../../type/session/session';
 
@@ -16,6 +26,8 @@ export class SessionSpeakersFieldComponent {
   selectedSpeakers = input<Speaker[]>([]);
   availableSpeakers = input<Speaker[]>([]);
   isLoading = input<boolean>(false);
+  isSubmitted = input<boolean>(false);
+  required = input(true, { transform: booleanAttribute });
 
   speakersChange = output<Speaker[]>();
 
@@ -45,7 +57,11 @@ export class SessionSpeakersFieldComponent {
     );
   });
 
-  hasSpeakers = computed(() => this.availableSpeakers().length > 0);
+  hasError = computed(() => {
+    return this.required() &&
+      this.isSubmitted() &&
+      this.selectedSpeakers().length === 0;
+  });
 
   searchPlaceholder = computed(() =>
     this.selectedSpeakers().length === 0
