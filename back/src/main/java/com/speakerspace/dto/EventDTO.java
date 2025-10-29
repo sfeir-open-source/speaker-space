@@ -3,22 +3,22 @@ package com.speakerspace.dto;
 import lombok.Builder;
 
 @Builder
-public record EventDTO (
+public record EventDTO(
         String idEvent,
         String eventName,
         String description,
         String endDate,
         String url,
         String startDate,
-        Boolean isOnline,
+        Boolean online,
         String location,
-        Boolean isPrivate,
+        Boolean privateEvent,
         String webLinkUrl,
-        Boolean isFinish,
+        Boolean finished,
         String userCreateId,
         String conferenceHallUrl,
         String teamId,
         String timeZone,
         String logoBase64,
         String type
-){}
+) {}

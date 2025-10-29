@@ -74,7 +74,7 @@ export class EventDangerActionsService {
 
     const archiveData: Partial<EventDTO> = {
       idEvent: eventId,
-      isFinish: true
+      finished: true
     };
 
     this.eventService.updateEvent(archiveData)

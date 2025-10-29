@@ -58,7 +58,7 @@ export class EventSettingsService {
     this.teamUrl.set(event.teamUrl || '');
     this.teamId.set(event.teamId || '');
     this.currentUserRole.set('Owner');
-    this.visibility.set(event.isPrivate === true ? 'private' : 'public');
+    this.visibility.set(event.privateEvent === true ? 'private' : 'public');
 
     this.eventGeneralData.set({
       idEvent: this.eventId(),
@@ -66,7 +66,7 @@ export class EventSettingsService {
       url: event.url,
       conferenceHallUrl: event.conferenceHallUrl,
       timeZone: event.timeZone || 'Europe/Paris',
-      isPrivate: event.isPrivate === true,
+      privateEvent: event.privateEvent === true,
       type: event.type,
     });
 
@@ -74,7 +74,7 @@ export class EventSettingsService {
       idEvent: this.eventId(),
       startDate: event.startDate,
       endDate: event.endDate,
-      isOnline: event.isOnline,
+      online: event.online,
       location: event.location,
       description: event.description,
       webLinkUrl: event.webLinkUrl

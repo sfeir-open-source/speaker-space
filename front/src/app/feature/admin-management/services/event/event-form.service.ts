@@ -104,7 +104,7 @@ export class EventFormService {
         EventValidators.endDateAfterStart('startDate')
       ]],
 
-      isOnline: [false],
+      online: [false],
       venueLocation: [''],
       description: [''],
       webLinkUrl: ['', [
@@ -121,11 +121,11 @@ export class EventFormService {
         }
       });
 
-    form.get('isOnline')?.valueChanges
+    form.get('online')?.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(isOnline => {
+      .subscribe(online => {
         const venueLocationControl = form.get('venueLocation');
-        if (!isOnline) {
+        if (!online) {
           venueLocationControl?.setValidators([Validators.required]);
         } else {
           venueLocationControl?.clearValidators();
@@ -143,7 +143,7 @@ export class EventFormService {
     if (data.endDate) {
       form.get('endDate')?.setValue(this.formatDateForInput(data.endDate));
     }
-    form.get('isOnline')?.setValue(data.isOnline === true);
+    form.get('online')?.setValue(data.online === true);
     if (data.webLinkUrl) {
       form.get('webLinkUrl')?.setValue(data.webLinkUrl);
     }
@@ -177,8 +177,8 @@ export class EventFormService {
       data.description = formValue.description;
     }
 
-    if (formValue.isOnline !== initialData?.isOnline) {
-      data.isOnline = formValue.isOnline;
+    if (formValue.online !== initialData?.online) {
+      data.online = formValue.online;
     }
 
     if (formValue.webLinkUrl !== initialData?.webLinkUrl) {
@@ -196,7 +196,7 @@ export class EventFormService {
       endDate: this.formatDateForBackend(formValues.endDate),
       location: formValues.venueLocation?.trim() || null,
       description: formValues.description?.trim() || null,
-      isOnline: formValues.isOnline ?? false,
+      online: formValues.online ?? false,
       webLinkUrl: formValues.webLinkUrl?.trim() || null
     };
 

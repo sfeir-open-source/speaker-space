@@ -35,7 +35,7 @@ export class IsLoginHomePageComponent {
 
     events.forEach(event => {
       const status = this.eventStatusService.getEventStatus(event);
-      if (status.isFinished) {
+      if (status.finished) {
         passedCount++;
       } else {
         currentCount++;
@@ -142,7 +142,7 @@ export class IsLoginHomePageComponent {
         publicUrl: event.url ?? '',
         logoBase64: event.logoBase64,
         daysRemaining: status.daysRemaining,
-        isFinished: status.isFinished,
+        finished: status.finished,
         userRole
       };
     });

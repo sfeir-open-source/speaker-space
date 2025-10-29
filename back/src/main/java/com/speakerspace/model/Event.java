@@ -16,16 +16,17 @@ public class Event {
     @NotBlank(message = "ID is required")
     @EqualsAndHashCode.Include
     private String idEvent;
+
     private String eventName;
     private String description;
     private Timestamp startDate;
     private Timestamp endDate;
-    private Boolean isOnline;
+    private Boolean online;
     private String url;
     private String location;
-    private Boolean isPrivate;
+    private Boolean privateEvent;
     private String webLinkUrl;
-    private Boolean isFinish;
+    private Boolean finished;
     private String userCreateId;
     private String conferenceHallUrl;
     private String teamId;
@@ -34,22 +35,32 @@ public class Event {
     private String type;
 
     public Event() {
-        this.isOnline = false;
-        this.isPrivate = true;
-        this.isFinish = false;
+        this.online = false;
+        this.privateEvent = true;
+        this.finished = false;
     }
 
-    public Boolean getIsOnline() {
-        return isOnline != null ? isOnline : false;
+    public Boolean getOnline() {
+        return online != null ? online : false;
     }
 
-    public void setIsOnline(Boolean isOnline) {
-        this.isOnline = isOnline != null ? isOnline : false;
+    public void setOnline(Boolean online) {
+        this.online = online != null ? online : false;
     }
 
-    public Boolean isPrivate() { return isPrivate; }
-    public void setPrivate(Boolean isPrivate) { this.isPrivate = isPrivate; }
+    public Boolean getPrivateEvent() {
+        return privateEvent != null ? privateEvent : true;
+    }
 
-    public Boolean isFinish() { return isFinish; }
-    public void setFinish(Boolean isFinish) { this.isFinish = isFinish; }
+    public void setPrivateEvent(Boolean privateEvent) {
+        this.privateEvent = privateEvent != null ? privateEvent : true;
+    }
+
+    public Boolean getFinished() {
+        return finished != null ? finished : false;
+    }
+
+    public void setFinished(Boolean finished) {
+        this.finished = finished != null ? finished : false;
+    }
 }

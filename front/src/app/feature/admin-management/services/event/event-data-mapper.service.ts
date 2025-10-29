@@ -46,8 +46,8 @@ export class EventDataMapperService {
     });
 
     const currentIsPrivate = formValue['visibility'] === 'private';
-    if (currentIsPrivate !== initialData?.isPrivate) {
-      data.isPrivate = currentIsPrivate;
+    if (currentIsPrivate !== initialData?.privateEvent) {
+      data.privateEvent = currentIsPrivate;
     }
 
     return data;
@@ -60,7 +60,7 @@ export class EventDataMapperService {
         : `${environment.baseUrl}/event/${data.url}`
       : '';
 
-    const visibility = data.isPrivate ? 'private' : 'public';
+    const visibility = data.privateEvent ? 'private' : 'public';
 
     return {
       eventName: data.eventName || '',
@@ -79,7 +79,7 @@ export class EventDataMapperService {
       conferenceHallUrl: formValue['urlConferenceHall'] as string,
       timeZone: formValue['timeZone'] as string,
       teamId: (formValue['teamId'] as string) || teamId,
-      isPrivate: true,
+      privateEvent: true,
       type: formValue['type'] as string
     };
   }

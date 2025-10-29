@@ -5,12 +5,12 @@ export type EventDTO = {
   description?: string;
   startDate?: string;
   endDate?: string;
-  isOnline?: boolean;
+  online?: boolean;
   url?: string;
   location?: string;
-  isPrivate?: boolean;
+  privateEvent?: boolean;
   webLinkUrl?: string;
-  isFinish?: boolean;
+  finished?: boolean;
   userCreateId?: string;
   conferenceHallUrl?: string;
   teamId: string | null;

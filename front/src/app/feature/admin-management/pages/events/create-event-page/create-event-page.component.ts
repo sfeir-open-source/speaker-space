@@ -53,9 +53,9 @@ export class CreateEventPageComponent implements OnInit {
   onGeneralFormSubmitted(eventData: EventDTO): void {
     const sanitizedEventData: EventDTO = {
       ...eventData,
-      isOnline: eventData.isOnline ?? false,
-      isPrivate: eventData.isPrivate ?? true,
-      isFinish: eventData.isFinish ?? false,
+      online: eventData.online ?? false,
+      privateEvent: eventData.privateEvent ?? true,
+      finished: eventData.finished ?? false,
       timeZone: eventData.timeZone ?? 'Europe/Paris',
       teamUrl: eventData.teamUrl ?? ''
     };
@@ -85,7 +85,7 @@ export class CreateEventPageComponent implements OnInit {
       endDate: formData.endDate,
       location: formData.location,
       description: formData.description,
-      isOnline: formData.isOnline,
+      online: formData.online,
       webLinkUrl: formData.webLinkUrl,
     });
 
@@ -120,7 +120,7 @@ export class CreateEventPageComponent implements OnInit {
       eventName: response.eventName,
       timeZone: response.timeZone,
       webLinkUrl: response.webLinkUrl,
-      isPrivate: response.isPrivate ?? true,
+      privateEvent: response.privateEvent ?? true,
       type: response.type,
     });
 

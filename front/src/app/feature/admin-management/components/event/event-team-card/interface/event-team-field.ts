@@ -9,6 +9,6 @@ export type EventTeamField = {
   statusClass?: string | null;
   publicUrl?: string | null;
   daysRemaining?: number;
-  isFinished?: boolean;
+  finished?: boolean;
   userRole?: 'admin' | 'speaker';
 }

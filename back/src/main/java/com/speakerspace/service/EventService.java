@@ -56,11 +56,11 @@ public class EventService {
                 .endDate(eventDTO.endDate())
                 .url(eventDTO.url())
                 .startDate(eventDTO.startDate())
-                .isOnline(Optional.ofNullable(eventDTO.isOnline()).orElse(false))
+                .online(Optional.ofNullable(eventDTO.online()).orElse(false))
                 .location(eventDTO.location())
-                .isPrivate(Optional.ofNullable(eventDTO.isPrivate()).orElse(true))
+                .privateEvent(Optional.ofNullable(eventDTO.privateEvent()).orElse(true))
                 .webLinkUrl(eventDTO.webLinkUrl())
-                .isFinish(Optional.ofNullable(eventDTO.isFinish()).orElse(false))
+                .finished(Optional.ofNullable(eventDTO.finished()).orElse(false))
                 .userCreateId(currentUserId)
                 .conferenceHallUrl(eventDTO.conferenceHallUrl())
                 .teamId(eventDTO.teamId())
@@ -188,8 +188,8 @@ public class EventService {
         Optional.ofNullable(updates.location()).ifPresent(existing::setLocation);
         Optional.ofNullable(updates.webLinkUrl()).ifPresent(existing::setWebLinkUrl);
         Optional.ofNullable(updates.conferenceHallUrl()).ifPresent(existing::setConferenceHallUrl);
-        Optional.ofNullable(updates.isOnline()).ifPresent(existing::setIsOnline);
-        Optional.ofNullable(updates.isPrivate()).ifPresent(existing::setPrivate);
+        Optional.ofNullable(updates.online()).ifPresent(existing::setOnline);
+        Optional.ofNullable(updates.privateEvent()).ifPresent(existing::setPrivateEvent);
         Optional.ofNullable(updates.timeZone()).ifPresent(existing::setTimeZone);
         Optional.ofNullable(updates.type()).ifPresent(existing::setType);
 
@@ -224,7 +224,7 @@ public class EventService {
                     event.getEndDate().getSeconds(),
                     event.getEndDate().getNanos()
             );
-            event.setFinish(endInstant.isBefore(Instant.now()));
+            event.setFinished(endInstant.isBefore(Instant.now()));
         }
     }
 
@@ -299,11 +299,11 @@ public class EventService {
                     .description(currentEvent.description())
                     .startDate(newStartDate)
                     .endDate(newEndDate)
-                    .isOnline(currentEvent.isOnline())
+                    .online(currentEvent.online())
                     .location(currentEvent.location())
-                    .isPrivate(currentEvent.isPrivate())
+                    .privateEvent(currentEvent.privateEvent())
                     .webLinkUrl(currentEvent.webLinkUrl())
-                    .isFinish(currentEvent.isFinish())
+                    .finished(currentEvent.finished())
                     .url(currentEvent.url())
                     .userCreateId(currentEvent.userCreateId())
                     .conferenceHallUrl(currentEvent.conferenceHallUrl())

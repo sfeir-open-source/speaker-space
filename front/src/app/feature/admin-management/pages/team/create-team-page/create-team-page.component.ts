@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import {Component, inject, OnInit, signal} from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -28,7 +28,7 @@ export class CreateTeamPageComponent implements OnInit {
 
   readonly form: FormGroup;
 
-  isSubmitted = false;
+  readonly isSubmitted = signal<boolean>(false);
 
   readonly formFields: readonly FormField[] = [
     {
@@ -37,6 +37,7 @@ export class CreateTeamPageComponent implements OnInit {
       placeholder: 'Enter your team name',
       type: 'text',
       required: true,
+      errorMessage: 'Team name is required (2-50 characters)'
     },
     {
       name: 'url',
@@ -73,7 +74,7 @@ export class CreateTeamPageComponent implements OnInit {
   }
 
   onSubmit(): void {
-    this.isSubmitted = true;
+    this.isSubmitted.set(true);
 
     if (this.form.invalid) {
       return;

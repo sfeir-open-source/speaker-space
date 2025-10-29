@@ -9,7 +9,7 @@ import {
 import { Event } from '../../type/event/event';
 
 export interface EventStatus {
-  isFinished: boolean;
+  finished: boolean;
   statusText: 'Open' | 'Closed';
   statusClass: string;
   daysRemaining?: number;
@@ -21,9 +21,9 @@ export interface EventStatus {
 export class EventStatusService {
 
   getEventStatus(event: Event): EventStatus {
-    if (event.isFinish === true) {
+    if (event.finished === true) {
       return {
-        isFinished: true,
+        finished: true,
         statusText: 'Closed',
         statusClass: 'bg-orange-500'
       };
@@ -31,7 +31,7 @@ export class EventStatusService {
 
     if (!event.endDate) {
       return {
-        isFinished: false,
+        finished: false,
         statusText: 'Open',
         statusClass: 'bg-green-500'
       };
@@ -40,7 +40,7 @@ export class EventStatusService {
     const endDate = this.parseEventDate(event.endDate);
     if (!endDate) {
       return {
-        isFinished: false,
+        finished: false,
         statusText: 'Open',
         statusClass: 'bg-green-500'
       };
@@ -49,17 +49,17 @@ export class EventStatusService {
     const today = startOfDay(new Date());
     const eventEndDay = startOfDay(endDate);
 
-    const isFinished = isBefore(eventEndDay, today);
+    const finished = isBefore(eventEndDay, today);
 
     let daysRemaining: number | undefined;
-    if (!isFinished) {
+    if (!finished) {
       daysRemaining = differenceInDays(eventEndDay, today) + 1;
     }
 
     return {
-      isFinished,
-      statusText: isFinished ? 'Closed' : 'Open',
-      statusClass: isFinished ? 'bg-orange-500' : 'bg-green-500',
+      finished,
+      statusText: finished ? 'Closed' : 'Open',
+      statusClass: finished ? 'bg-orange-500' : 'bg-green-500',
       daysRemaining
     };
   }
@@ -67,7 +67,7 @@ export class EventStatusService {
   filterEventsByStatus(events: Event[], showArchived: boolean): Event[] {
     return events.filter(event => {
       const status = this.getEventStatus(event);
-      return showArchived ? status.isFinished : !status.isFinished;
+      return showArchived ? status.finished : !status.finished;
     });
   }
 

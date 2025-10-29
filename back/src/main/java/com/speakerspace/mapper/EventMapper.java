@@ -32,11 +32,11 @@ public class EventMapper {
                 .endDate(Optional.ofNullable(event.getEndDate())
                         .map(timestamp -> timestamp.toDate().toInstant().toString())
                         .orElse(null))
-                .isOnline(Optional.ofNullable(event.getIsOnline()).orElse(false))
+                .online(Optional.ofNullable(event.getOnline()).orElse(false))
                 .location(event.getLocation())
-                .isPrivate(event.isPrivate())
+                .privateEvent(event.getPrivateEvent())
                 .webLinkUrl(event.getWebLinkUrl())
-                .isFinish(event.isFinish())
+                .finished(event.getFinished())
                 .url(event.getUrl())
                 .userCreateId(event.getUserCreateId())
                 .conferenceHallUrl(event.getConferenceHallUrl())
@@ -63,11 +63,11 @@ public class EventMapper {
                 .filter(date -> !date.trim().isEmpty())
                 .ifPresent(date -> event.setEndDate(parseStringToTimestamp(date)));
 
-        event.setIsOnline(Optional.ofNullable(eventDTO.isOnline()).orElse(false));
+        event.setOnline(Optional.ofNullable(eventDTO.online()).orElse(false));
         event.setLocation(eventDTO.location());
-        event.setPrivate(Optional.ofNullable(eventDTO.isPrivate()).orElse(true));
+        event.setPrivateEvent(Optional.ofNullable(eventDTO.privateEvent()).orElse(true));
         event.setWebLinkUrl(eventDTO.webLinkUrl());
-        event.setFinish(Optional.ofNullable(eventDTO.isFinish()).orElse(false));
+        event.setFinished(Optional.ofNullable(eventDTO.finished()).orElse(false));
         event.setUrl(eventDTO.url());
         event.setUserCreateId(eventDTO.userCreateId());
         event.setConferenceHallUrl(eventDTO.conferenceHallUrl());
@@ -92,11 +92,11 @@ public class EventMapper {
                 .endDate(eventDTO.endDate())
                 .url(eventDTO.url())
                 .startDate(eventDTO.startDate())
-                .isOnline(eventDTO.isOnline())
+                .online(eventDTO.online())
                 .location(eventDTO.location())
-                .isPrivate(eventDTO.isPrivate())
+                .privateEvent(eventDTO.privateEvent())
                 .webLinkUrl(eventDTO.webLinkUrl())
-                .isFinish(eventDTO.isFinish())
+                .finished(eventDTO.finished())
                 .userCreateId(authHelper.getUserId(authentication))
                 .conferenceHallUrl(eventDTO.conferenceHallUrl())
                 .teamId(eventDTO.teamId())
@@ -119,11 +119,11 @@ public class EventMapper {
                 .endDate(updated.endDate())
                 .url(updated.url())
                 .startDate(updated.startDate())
-                .isOnline(updated.isOnline())
+                .online(updated.online())
                 .location(updated.location())
-                .isPrivate(updated.isPrivate())
+                .privateEvent(updated.privateEvent())
                 .webLinkUrl(updated.webLinkUrl())
-                .isFinish(updated.isFinish())
+                .finished(updated.finished())
                 .userCreateId(existing.userCreateId())
                 .conferenceHallUrl(updated.conferenceHallUrl())
                 .teamId(updated.teamId())
