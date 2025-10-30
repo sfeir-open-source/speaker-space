@@ -16,7 +16,7 @@ export class UserStateService {
   company = computed(() => this.user()?.company || '');
   location = computed(() => this.user()?.location || '');
   phoneNumber = computed(() => this.user()?.phoneNumber || '');
-  socialLink = computed(() => this.user()?.socialLink || '');
+  socialLinks = computed(() => this.user()?.socialLinks || []);
   bio = computed(() => this.user()?.bio || '');
 
   eventIds = computed(() => this.user()?.eventIds || []);
@@ -25,32 +25,32 @@ export class UserStateService {
   loadFromStorage(): void {
     const userData: Partial<User> = {};
 
-    const stringKeys: Record<string, keyof Pick<User, 'name' | 'photoURL' | 'email' | 'company' | 'location' | 'phoneNumber' | 'socialLink' | 'bio'>> = {
+    const stringKeys: Record<string, keyof Pick<User, 'name' | 'photoURL' | 'email' | 'company' | 'location' | 'phoneNumber' | 'bio'>> = {
       'userName': 'name',
       'userPhotoURL': 'photoURL',
       'userEmail': 'email',
       'userCompany': 'company',
       'userLocation': 'location',
       'userPhoneNumber': 'phoneNumber',
-      'userSocialLink': 'socialLink',
       'userBio': 'bio',
     };
 
-    const arrayKeys: Record<string, keyof Pick<User, 'speakerIds' | 'eventIds' | 'sessionIds'>> = {
+    const arrayKeys: Record<string, keyof Pick<User, 'speakerIds' | 'eventIds' | 'sessionIds' | 'socialLinks'>> = {
       'userSpeakerIds': 'speakerIds',
       'userEventIds': 'eventIds',
-      'userSessionIds': 'sessionIds'
+      'userSessionIds': 'sessionIds',
+      'userSocialLinks': 'socialLinks'
     };
 
     Object.entries(stringKeys).forEach(([storageKey, userKey]) => {
-      const value : string | null = localStorage.getItem(storageKey);
+      const value = localStorage.getItem(storageKey);
       if (value) {
         (userData as any)[userKey] = value;
       }
     });
 
     Object.entries(arrayKeys).forEach(([storageKey, userKey]) => {
-      const value : string | null = localStorage.getItem(storageKey);
+      const value = localStorage.getItem(storageKey);
       if (value) {
         try {
           const parsedValue = JSON.parse(value);
@@ -69,7 +69,7 @@ export class UserStateService {
   }
 
   saveToStorage(): void {
-    const user : User |null = this.user();
+    const user = this.user();
     if (!user) return;
 
     const storageMapping = {
@@ -79,8 +79,8 @@ export class UserStateService {
       company: 'userCompany',
       location: 'userLocation',
       phoneNumber: 'userPhoneNumber',
-      socialLink: 'userSocialLink',
-      userBio: 'userBio',
+      bio: 'userBio',
+      socialLinks: 'userSocialLinks',
       speakerIds: 'userSpeakerIds',
       eventIds: 'userEventIds',
       sessionIds: 'userSessionIds'
@@ -92,7 +92,7 @@ export class UserStateService {
         if (Array.isArray(value)) {
           localStorage.setItem(storageKey, JSON.stringify(value));
         } else {
-          localStorage.setItem(storageKey, (value));
+          localStorage.setItem(storageKey, value);
         }
       }
     });
@@ -113,9 +113,10 @@ export class UserStateService {
   }
 
   private clearStorage(): void {
-    const keysToRemove : string[] = [
+    const keysToRemove = [
       'userName', 'userPhotoURL', 'userEmail', 'userCompany',
-      'userLocation', 'userPhoneNumber', 'userSocialLink', 'userBio',
+      'userLocation', 'userPhoneNumber', 'userBio',
+      'userSocialLinks',
       'userSpeakerIds', 'userEventIds', 'userSessionIds'
     ];
 

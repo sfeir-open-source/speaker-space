@@ -1,5 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import {AbstractControl, FormBuilder, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
+import {
+  AbstractControl,
+  FormArray,
+  FormBuilder, FormControl,
+  FormGroup,
+  ValidationErrors,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import {UserStateService} from '../../../core/services/user-services/user-state.service';
@@ -40,8 +48,22 @@ export class ProfileService {
       avatarPictureURL: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
       phoneNumber: ['', [this.conditionalValidator(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'))]],
       bio: [''],
-      socialLink: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
-    });
+      socialLinks: this.fb.array([
+        this.createSocialLinkControl(),
+        this.createSocialLinkControl(),
+        this.createSocialLinkControl(),
+        this.createSocialLinkControl(),
+        this.createSocialLinkControl(),
+      ])    });
+  }
+
+  private createSocialLinkControl(): FormControl {
+    const urlPattern = '(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?';
+    return this.fb.control('', [this.conditionalValidator(Validators.pattern(urlPattern))]);
+  }
+
+  getSocialLinksArray(): FormArray {
+    return this.profileForm.get('socialLinks') as FormArray;
   }
 
   private conditionalValidator(validator: ValidatorFn): ValidatorFn {
@@ -61,9 +83,18 @@ export class ProfileService {
       company: this.userState.company(),
       location: this.userState.location(),
       phoneNumber: this.userState.phoneNumber(),
-      socialLink: this.userState.socialLink(),
       bio: this.userState.bio()
     });
+
+    const socialLinks = this.userState.socialLinks();
+    if (socialLinks && socialLinks.length > 0) {
+      const socialLinksArray = this.getSocialLinksArray();
+      socialLinks.forEach((link, index) => {
+        if (index < socialLinksArray.length) {
+          socialLinksArray.at(index).setValue(link);
+        }
+      });
+    }
 
     this.profileForm.get('avatarPictureURL')?.valueChanges.subscribe(url => {
       if (url) {
@@ -78,7 +109,7 @@ export class ProfileService {
 
   private async fetchUserData(uid: string): Promise<void> {
     try {
-      const userData: User = await firstValueFrom(
+      const userData = await firstValueFrom(
         this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
       );
 
@@ -86,15 +117,22 @@ export class ProfileService {
         this.userState.updateUser(userData);
 
         this.profileForm.patchValue({
-          displayName: userData.name || '',
+          name: userData.name || '',
           emailAddress: userData.email || '',
           avatarPictureURL: userData.photoURL || '',
           company: userData.company || '',
           location: userData.location || '',
           phoneNumber: userData.phoneNumber || '',
-          socialLink: userData.socialLink || '',
           bio: userData.bio || ''
         });
+        if (userData.socialLinks && userData.socialLinks.length > 0) {
+          const socialLinksArray = this.getSocialLinksArray();
+          userData.socialLinks.forEach((link, index) => {
+            if (index < socialLinksArray.length) {
+              socialLinksArray.at(index).setValue(link);
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -107,7 +145,7 @@ export class ProfileService {
     try {
       await this.authService.getIdToken(true);
 
-      const response: User = await firstValueFrom(
+      const response = await firstValueFrom(
         this.http.put<User>(`${environment.apiUrl}/auth/profile`, partialData, {
           withCredentials: true
         })
@@ -119,7 +157,7 @@ export class ProfileService {
         return true;
       }
       return false;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving partial profile:', error);
       return false;
     }

@@ -54,7 +54,7 @@ export class AuthBackendService {
       location: userData.location || '',
       phoneNumber: userData.phoneNumber || '',
       bio: userData.bio || '',
-      socialLink: userData.socialLink || ''
+      socialLinks: userData.socialLinks,
     };
   }
 

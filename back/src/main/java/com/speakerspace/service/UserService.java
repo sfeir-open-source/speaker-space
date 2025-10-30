@@ -279,18 +279,34 @@ public class UserService {
         updatedUser.setUid(existingUser.getUid());
         updatedUser.setEmail(existingUser.getEmail());
 
-        Map<Function<User, String>, BiConsumer<User, String>> fieldMap = new HashMap<>();
-        fieldMap.put(User::getName, User::setName);
-        fieldMap.put(User::getPhotoURL, User::setPhotoURL);
-        fieldMap.put(User::getCompany, User::setCompany);
-        fieldMap.put(User::getLocation, User::setLocation);
-        fieldMap.put(User::getPhoneNumber, User::setPhoneNumber);
-        fieldMap.put(User::getBio, User::setBio);
+        Map<Function<User, String>, BiConsumer<User, String>> stringFieldMap = new HashMap<>();
+        stringFieldMap.put(User::getName, User::setName);
+        stringFieldMap.put(User::getPhotoURL, User::setPhotoURL);
+        stringFieldMap.put(User::getCompany, User::setCompany);
+        stringFieldMap.put(User::getLocation, User::setLocation);
+        stringFieldMap.put(User::getPhoneNumber, User::setPhoneNumber);
+        stringFieldMap.put(User::getBio, User::setBio);
 
-        fieldMap.forEach((getter, setter) -> {
+        stringFieldMap.forEach((getter, setter) -> {
             String partialValue = getter.apply(partialUser);
             String existingValue = getter.apply(existingUser);
             setter.accept(updatedUser, partialValue != null ? partialValue : existingValue);
+        });
+
+        Map<Function<User, List<String>>, BiConsumer<User, List<String>>> listFieldMap = new HashMap<>();
+        listFieldMap.put(User::getSocialLinks, User::setSocialLinks);
+        listFieldMap.put(User::getSpeakerIds, User::setSpeakerIds);
+        listFieldMap.put(User::getEventIds, User::setEventIds);
+        listFieldMap.put(User::getSessionIds, User::setSessionIds);
+
+        listFieldMap.forEach((getter, setter) -> {
+            List<String> partialValue = getter.apply(partialUser);
+            List<String> existingValue = getter.apply(existingUser);
+            if (partialValue != null && !partialValue.isEmpty()) {
+                setter.accept(updatedUser, new ArrayList<>(partialValue));
+            } else if (existingValue != null) {
+                setter.accept(updatedUser, new ArrayList<>(existingValue));
+            }
         });
 
         return updatedUser;

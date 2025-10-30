@@ -1,5 +1,5 @@
 import {Component, ElementRef, inject, OnInit, AfterViewInit, signal, OnDestroy, DestroyRef} from '@angular/core';
-import { ReactiveFormsModule} from '@angular/forms';
+import {FormArray, ReactiveFormsModule} from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { ProfileSidebarComponent } from './components/profile-sidebar/profile-sidebar.component';
@@ -34,11 +34,11 @@ import {ButtonComponent} from '../../shared/button/button.component';
   styleUrl: './profile.component.scss'
 })
 export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
-  private profileService :ProfileService = inject(ProfileService);
-  private elementRef : ElementRef= inject(ElementRef);
-  private snackBar : MatSnackBar = inject(MatSnackBar);
-  private userState : UserStateService = inject(UserStateService);
-  private destroy$ : Subject<void> = new Subject<void>();
+  private profileService = inject(ProfileService);
+  private elementRef = inject(ElementRef);
+  private snackBar = inject(MatSnackBar);
+  private userState = inject(UserStateService);
+  private destroy$ = new Subject<void>();
   private readonly _destroyRef = inject(DestroyRef);
 
   activeSection = signal('personal-info');
@@ -75,7 +75,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   setupSectionObserver() {
-    const sections : string[] = ['personal-info', 'bio', 'social-networks'];
+    const sections = ['personal-info', 'bio', 'social-networks'];
     const options = {
       root: null,
       rootMargin: '0px 0px -50% 0px',
@@ -91,7 +91,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     }, options);
 
     sections.forEach(id => {
-      const element : any = this.elementRef.nativeElement.querySelector(`#${id}`);
+      const element = this.elementRef.nativeElement.querySelector(`#${id}`);
       if (element) observer.observe(element);
     });
   }
@@ -102,8 +102,8 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     this.saveStatus.set('saving');
 
     try {
-      const validFields : Partial<User> = this.extractValidFields();
-      const success : boolean = await this.profileService.savePartialProfile(validFields);
+      const validFields = this.extractValidFields();
+      const success = await this.profileService.savePartialProfile(validFields);
 
       if (success) {
         this.saveStatus.set('saved');
@@ -123,18 +123,31 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private extractValidFields(): Partial<User> {
-    const user : User | null = this.userState.user();
+    const user = this.userState.user();
     const result: Partial<User> = { uid: user?.uid, email: user?.email };
 
     Object.keys(this.profileForm.controls).forEach(key => {
       const control = this.profileForm.get(key);
-      if (control && control.valid && control.value !== null) {
+
+      if (key === 'socialLinks') {
+        const socialLinksArray = control as FormArray;
+        const validLinks = socialLinksArray.controls
+          .map(ctrl => ctrl.value)
+          .filter((link: string) => link && link.trim() !== '');
+
+        if (validLinks.length > 0) {
+          result.socialLinks = validLinks;
+        }
+        return;
+      }
+
+      if (control && control.valid && control.value !== null && control.value !== '') {
         const fieldMapping: Record<string, string> = {
           'avatarPictureURL': 'photoURL',
           'emailAddress': 'email'
         };
 
-        const userField : string = fieldMapping[key] || key;
+        const userField = fieldMapping[key] || key;
         result[userField as keyof User] = control.value;
       }
     });

@@ -5,25 +5,28 @@
   </p>
 
   <h2 class="mt-2 text-xl font-medium">Social links</h2>
-  @for(field of socialLinkFields; track field.name) {
+
+  @for(field of socialLinkFields; track field.index) {
     <app-field
       [label]="field.label"
       [placeholder]="field.placeholder"
-      [type]="field.type"
-      [control]="getFormControl(field.name)"
-      [required]="field.required || false"
+      [type]="'text'"
+      [control]="getSocialLinkControl(field.index)"
+      [required]="false"
       [iconPath]="field.iconPath || ''"
-      [name]="field.name">
+      [name]="'socialLink_' + field.index">
     </app-field>
   }
 
   <h2 class="mt-4 text-xl font-medium">Other Links</h2>
   <div class="mt-2">
     <app-field
-      [type]="otherLinkField.type"
-      [control]="getFormControl(otherLinkField.name)"
+      [label]="otherLinkField.label"
+      [placeholder]="otherLinkField.placeholder"
+      [type]="'text'"
+      [control]="getSocialLinkControl(otherLinkField.index)"
       [icon]="otherLinkField.icon || ''"
-      [name]="otherLinkField.name">
+      [name]="'socialLink_' + otherLinkField.index">
     </app-field>
   </div>
 </article>
