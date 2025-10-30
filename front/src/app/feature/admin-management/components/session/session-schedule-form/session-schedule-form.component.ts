@@ -1,4 +1,4 @@
-import {Component, HostListener, inject, input, output} from '@angular/core';
+import {Component, computed, HostListener, inject, input, output} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {ButtonComponent} from '../../../../../shared/button/button.component';
 import {SessionScheduleFormService} from '../../../services/sessions/session-schedule-form.service';
@@ -19,9 +19,41 @@ import {IconName} from '../../../../../shared/icon-alert/service/icon.service';
 export class SessionScheduleFormComponent {
   readonly formService = inject(SessionScheduleFormService);
 
+  readonly eventStartDate = input<Date | undefined>();
+  readonly eventEndDate = input<Date | undefined>();
   readonly availableTracks = input.required<string[]>();
+
   readonly save = output<void>();
   readonly cancel = output<void>();
+
+  protected readonly eventStartDateForInput = computed(() => {
+    const start = this.eventStartDate();
+    return start ? start.toISOString().split('T')[0] : '';
+  });
+
+  protected readonly eventEndDateForInput = computed(() => {
+    const end = this.eventEndDate();
+    return end ? end.toISOString().split('T')[0] : '';
+  });
+
+  protected readonly eventDateRange = computed(() => {
+    const start = this.eventStartDate();
+    const end = this.eventEndDate();
+
+    if (!start || !end) return '';
+
+    const startStr = start.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+    const endStr = end.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    return `${startStr} - ${endStr}`;
+  });
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {

@@ -100,6 +100,8 @@
             @if (scheduleFormService.isEditing()) {
               <app-session-schedule-form
                 [availableTracks]="availableTracks()"
+                [eventStartDate]="eventStartDate()"
+                [eventEndDate]="eventEndDate()"
                 (save)="onSaveSchedule()"
                 (cancel)="onCancelScheduleEdit()">
               </app-session-schedule-form>

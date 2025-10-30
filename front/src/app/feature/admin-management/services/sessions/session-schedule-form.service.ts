@@ -3,8 +3,8 @@ import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors }
 import { SessionService } from './session.service';
 import { finalize } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {SessionImportData} from '../../type/session/session';
-import {DurationOption, ScheduleFormValues, SessionScheduleUpdate} from '../../type/session/schedule-json-data';
+import { SessionImportData } from '../../type/session/session';
+import { DurationOption, ScheduleFormValues, SessionScheduleUpdate } from '../../type/session/schedule-json-data';
 
 @Injectable()
 export class SessionScheduleFormService {
@@ -20,7 +20,9 @@ export class SessionScheduleFormService {
 
   readonly durations: readonly DurationOption[] = this.generateDurations();
 
-  readonly form: FormGroup = this.createForm();
+  private eventStartDate?: Date;
+  private eventEndDate?: Date;
+  form!: FormGroup;
 
   private generateDurations(): readonly DurationOption[] {
     return [20, 30, 40, 45, 50, 60, 75, 90, 105, 110, 120, 130].map(val => {
@@ -36,15 +38,47 @@ export class SessionScheduleFormService {
     });
   }
 
-  private createForm(): FormGroup {
+  private createForm(eventStartDate?: Date, eventEndDate?: Date): FormGroup {
+    this.eventStartDate = eventStartDate;
+    this.eventEndDate = eventEndDate;
+
     return this.fb.group({
-      startDate: ['', Validators.required],
+      startDate: ['', [
+        Validators.required,
+        this.eventDateRangeValidator.bind(this)
+      ]],
       startTime: ['', Validators.required],
       duration: [60, [Validators.required, Validators.min(15)]],
       track: ['', [Validators.required, Validators.maxLength(50)]]
     }, {
       validators: [this.scheduleValidator.bind(this)]
     });
+  }
+
+  private eventDateRangeValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value || !this.eventStartDate || !this.eventEndDate) {
+      return null;
+    }
+
+    const selectedDate = new Date(control.value);
+    const eventStart = new Date(this.eventStartDate);
+    const eventEnd = new Date(this.eventEndDate);
+
+    eventStart.setHours(0, 0, 0, 0);
+    eventEnd.setHours(23, 59, 59, 999);
+    selectedDate.setHours(12, 0, 0, 0);
+
+    if (selectedDate < eventStart || selectedDate > eventEnd) {
+      return {
+        eventDateOutOfRange: {
+          selectedDate: selectedDate.toISOString().split('T')[0],
+          eventStart: eventStart.toISOString().split('T')[0],
+          eventEnd: eventEnd.toISOString().split('T')[0]
+        }
+      };
+    }
+
+    return null;
   }
 
   private scheduleValidator(control: AbstractControl): ValidationErrors | null {
@@ -79,7 +113,9 @@ export class SessionScheduleFormService {
     this.form.patchValue(formValues);
   }
 
-  startEditing(session: SessionImportData): void {
+  startEditing(session: SessionImportData, eventStartDate?: Date, eventEndDate?: Date): void {
+    this.form = this.createForm(eventStartDate, eventEndDate);
+
     this.isEditing.set(true);
     this.error.set(null);
     this.populateForm(session);
@@ -89,7 +125,9 @@ export class SessionScheduleFormService {
     this.isEditing.set(false);
     this.error.set(null);
     this.showDurationDropdown.set(false);
-    this.form.reset();
+    if (this.form) {
+      this.form.reset();
+    }
   }
 
   selectDuration(duration: number): void {
@@ -103,7 +141,20 @@ export class SessionScheduleFormService {
     sessionId: string,
     onSuccess: (session: SessionImportData) => void
   ): void {
-    if (this.form.invalid || this.isUpdating()) return;
+    if (this.form.invalid || this.isUpdating()) {
+      this.form.markAllAsTouched();
+
+      const startDateControl = this.form.get('startDate');
+      if (startDateControl?.hasError('eventDateOutOfRange')) {
+        const error = startDateControl.getError('eventDateOutOfRange');
+        this.error.set(
+          `Start date must be between ${error.eventStart} and ${error.eventEnd}`
+        );
+      } else {
+        this.error.set('Please fill in all required fields correctly');
+      }
+      return;
+    }
 
     const formValues = this.form.value;
     const startDate = this.combineDateAndTime(formValues.startDate, formValues.startTime);

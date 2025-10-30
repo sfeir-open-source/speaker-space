@@ -111,7 +111,11 @@ export class SessionDetailPageComponent implements OnInit {
 
     const sessionData = this.session();
     if (sessionData) {
-      this.scheduleFormService.startEditing(sessionData);
+      this.scheduleFormService.startEditing(
+        sessionData,
+        this.eventStartDate(),
+        this.eventEndDate()
+      );
     }
   }
 
