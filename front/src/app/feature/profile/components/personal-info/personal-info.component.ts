@@ -21,10 +21,10 @@ export class PersonalInfoComponent {
   userPhotoURL: Signal<string>  = this.userState.photoURL;
 
   formFields: FormField[] = [
-    { name: 'displayName', label: 'Full name', type: 'text' },
+    { name: 'name', label: 'Full name', type: 'text' },
     { name: 'emailAddress', label: 'Email address', type: 'email' },
     { name: 'company', label: 'Company', type: 'text' },
-    { name: 'city', label: 'City', type: 'text' }
+    { name: 'location', label: 'City', type: 'text' }
   ];
 
   additionalFields: FormField[] = [

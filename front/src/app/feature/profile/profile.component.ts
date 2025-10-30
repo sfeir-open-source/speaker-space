@@ -75,7 +75,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   setupSectionObserver() {
-    const sections : string[] = ['personal-info', 'biography', 'social-networks'];
+    const sections : string[] = ['personal-info', 'bio', 'social-networks'];
     const options = {
       root: null,
       rootMargin: '0px 0px -50% 0px',

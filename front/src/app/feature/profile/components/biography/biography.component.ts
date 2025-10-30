@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import {FormControl} from '@angular/forms';
 import {FieldComponent} from '../../../../shared/input/field.component';
-import {FormField} from '../../../../shared/input/interface/form-field';
 import {ProfileService} from '../../services/profile.service';
 
 @Component({
