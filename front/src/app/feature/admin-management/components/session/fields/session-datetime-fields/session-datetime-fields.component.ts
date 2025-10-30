@@ -1,13 +1,16 @@
 import {booleanAttribute, Component, computed, input, Input} from '@angular/core';
 import {FormGroup, FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {FieldComponent} from '../../../../../../shared/input/field.component';
+import {IconAlertComponent} from '../../../../../../shared/icon-alert/icon-alert.component';
+import {IconName} from '../../../../../../shared/icon-alert/service/icon.service';
 
 @Component({
   selector: 'app-session-datetime-fields',
   imports: [
     FormsModule,
     ReactiveFormsModule,
-    FieldComponent
+    FieldComponent,
+    IconAlertComponent
   ],
   templateUrl: './session-datetime-fields.component.html',
   standalone: true,
@@ -19,6 +22,8 @@ export class SessionDatetimeFieldsComponent {
   eventEndDate = input<Date | undefined>();
   required = input(true, { transform: booleanAttribute });
   isSubmitted = input<boolean>(false);
+
+  protected readonly IconName = IconName;
 
   eventDateRange = computed(() => {
     const start = this.eventStartDate();

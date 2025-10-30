@@ -2,12 +2,15 @@ import {Component, HostListener, inject, input, output} from '@angular/core';
 import {ReactiveFormsModule} from '@angular/forms';
 import {ButtonComponent} from '../../../../../shared/button/button.component';
 import {SessionScheduleFormService} from '../../../services/sessions/session-schedule-form.service';
+import {IconAlertComponent} from '../../../../../shared/icon-alert/icon-alert.component';
+import {IconName} from '../../../../../shared/icon-alert/service/icon.service';
 
 @Component({
   selector: 'app-session-schedule-form',
   imports: [
     ReactiveFormsModule,
-    ButtonComponent
+    ButtonComponent,
+    IconAlertComponent
   ],
   templateUrl: './session-schedule-form.component.html',
   standalone: true,
@@ -31,4 +34,6 @@ export class SessionScheduleFormComponent {
   onSubmit(): void {
     this.save.emit();
   }
+
+  protected readonly IconName = IconName;
 }

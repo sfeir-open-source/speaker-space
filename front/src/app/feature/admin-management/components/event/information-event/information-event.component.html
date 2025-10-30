@@ -61,8 +61,12 @@
       [placeholder]="additionalFields[1].placeholder"
       [type]="additionalFields[1].type"
       [control]="getFormControl(additionalFields[1].name)"
+      [required]="additionalFields[1].required ?? false"
       [isSubmitted]="isSubmitted()"
-      [name]="additionalFields[1].name">
+      [skipAutoValidators]="true"
+      [name]="additionalFields[1].name"
+      [attr.aria-required]="additionalFields[1].required"
+      [attr.aria-invalid]="getFormControl(additionalFields[1].name).invalid && isSubmitted()">
     </app-field>
 
     <div class="input-markdown-container">

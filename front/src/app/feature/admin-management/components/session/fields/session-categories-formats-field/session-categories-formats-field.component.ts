@@ -1,9 +1,13 @@
 import {booleanAttribute, Component, computed, input, output} from '@angular/core';
 import {Category, Format} from '../../../../type/session/session';
+import {IconAlertComponent} from '../../../../../../shared/icon-alert/icon-alert.component';
+import {IconName} from '../../../../../../shared/icon-alert/service/icon.service';
 
 @Component({
   selector: 'app-session-categories-formats-field',
-  imports: [],
+  imports: [
+    IconAlertComponent
+  ],
   templateUrl: './session-categories-formats-field.component.html',
   standalone: true,
   styleUrl: './session-categories-formats-field.component.scss'
@@ -16,6 +20,8 @@ export class SessionCategoriesFormatsFieldComponent {
   selectedCategories = input<string[]>([]);
   isSubmitted = input<boolean>(false);
   required = input(true, { transform: booleanAttribute });
+
+  protected readonly IconName = IconName;
 
   formatsChange = output<string[]>();
   categoriesChange = output<string[]>();

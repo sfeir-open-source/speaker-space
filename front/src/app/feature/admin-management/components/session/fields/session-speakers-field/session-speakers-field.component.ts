@@ -11,10 +11,12 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Speaker } from '../../../../type/session/session';
+import {IconAlertComponent} from '../../../../../../shared/icon-alert/icon-alert.component';
+import {IconName} from '../../../../../../shared/icon-alert/service/icon.service';
 
 @Component({
   selector: 'app-session-speakers-field',
-  imports: [FormsModule],
+  imports: [FormsModule, IconAlertComponent],
   templateUrl: './session-speakers-field.component.html',
   styleUrl: './session-speakers-field.component.scss',
   standalone: true,
@@ -29,6 +31,7 @@ export class SessionSpeakersFieldComponent {
   isSubmitted = input<boolean>(false);
   required = input(true, { transform: booleanAttribute });
 
+  protected readonly IconName = IconName;
   speakersChange = output<Speaker[]>();
 
   searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');

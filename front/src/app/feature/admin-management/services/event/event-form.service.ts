@@ -105,7 +105,7 @@ export class EventFormService {
       ]],
 
       online: [false],
-      venueLocation: [''],
+      venueLocation: ['', [Validators.required]],
       description: [''],
       webLinkUrl: ['', [
         EventValidators.validUrl()

@@ -41,7 +41,7 @@ export class SessionScheduleFormService {
       startDate: ['', Validators.required],
       startTime: ['', Validators.required],
       duration: [60, [Validators.required, Validators.min(15)]],
-      track: ['', [Validators.maxLength(50)]]
+      track: ['', [Validators.required, Validators.maxLength(50)]]
     }, {
       validators: [this.scheduleValidator.bind(this)]
     });

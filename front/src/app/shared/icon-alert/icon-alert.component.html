@@ -1,0 +1,11 @@
+@if (iconData(); as icon) {
+  <svg xmlns="http://www.w3.org/2000/svg"
+       [attr.width]="size()"
+       [attr.height]="size()"
+       [attr.viewBox]="icon.viewBox"
+       fill="currentColor"
+       [ngClass]="class()"
+       aria-hidden="true">
+    <path [attr.d]="icon.path" />
+  </svg>
+}

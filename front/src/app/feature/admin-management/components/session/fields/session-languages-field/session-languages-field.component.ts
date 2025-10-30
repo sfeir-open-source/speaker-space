@@ -1,10 +1,13 @@
-import {booleanAttribute, Component, computed, input, output} from '@angular/core';
+import {booleanAttribute, Component, computed, input, output, signal} from '@angular/core';
 import {FormsModule} from '@angular/forms';
+import {IconAlertComponent} from '../../../../../../shared/icon-alert/icon-alert.component';
+import {IconName} from '../../../../../../shared/icon-alert/service/icon.service';
 
 @Component({
   selector: 'app-session-languages-field',
   imports: [
-    FormsModule
+    FormsModule,
+    IconAlertComponent
   ],
   templateUrl: './session-languages-field.component.html',
   standalone: true,
@@ -14,6 +17,7 @@ export class SessionLanguagesFieldComponent {
   selectedLanguages = input<string[]>([]);
   isSubmitted = input<boolean>(false);
   required = input(true, { transform: booleanAttribute });
+  protected readonly IconName = IconName;
 
   languagesChange = output<string[]>();
 

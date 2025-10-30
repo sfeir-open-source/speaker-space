@@ -25,7 +25,10 @@
     }
 
     @if (hasStartDateError()) {
-      <p class="mt-1 text-sm text-red-600" role="alert">
+      <p class="text-sm text-red-600 flex items-center" role="alert">
+        <app-icon-alert
+          [name]="IconName.ERROR"
+          class="mr-1" />
         Start date is required
       </p>
     }
