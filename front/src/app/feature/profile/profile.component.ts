@@ -99,6 +99,23 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   async saveProfile() {
     if (this.saveStatus() === 'saving') return;
 
+    const nameControl = this.profileForm.get('name');
+    const emailControl = this.profileForm.get('emailAddress');
+
+    if (!nameControl?.value || nameControl.value.trim() === '') {
+      this.saveStatus.set('error');
+      this.showErrorMessage('Full name is required');
+      nameControl?.markAsTouched();
+      return;
+    }
+
+    if (!emailControl?.value || emailControl.invalid) {
+      this.saveStatus.set('error');
+      this.showErrorMessage('A valid email address is required');
+      emailControl?.markAsTouched();
+      return;
+    }
+
     this.saveStatus.set('saving');
 
     try {
@@ -114,11 +131,11 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         }, 3000);
       } else {
         this.saveStatus.set('error');
-        this.showErrorMessage('Erreur lors de la sauvegarde.');
+        this.showErrorMessage('Error saving profile.');
       }
     } catch (error) {
       this.saveStatus.set('error');
-      this.showErrorMessage('Une erreur est survenue lors de la sauvegarde.');
+      this.showErrorMessage('An error occurred while saving.');
     }
   }
 

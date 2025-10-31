@@ -64,14 +64,15 @@ export class ProfileService {
 
   private createForm(): FormGroup {
     const urlPattern = '(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?';
+    const phonePattern = '^\\+?[0-9]{1,4}?[-.\\s]?\\(?[0-9]{1,3}?\\)?[-.\\s]?[0-9]{1,4}[-.\\s]?[0-9]{1,4}[-.\\s]?[0-9]{1,9}$';
 
     return this.fb.group({
-      name: ['', [Validators.minLength(2)]],
+      name: ['', [Validators.required, Validators.minLength(2)]],
       emailAddress: ['', [Validators.required, Validators.email]],
       company: ['', [this.conditionalValidator(Validators.minLength(2))]],
       location: ['', [this.conditionalValidator(Validators.minLength(2))]],
       avatarPictureURL: ['', [this.conditionalValidator(Validators.pattern(urlPattern))]],
-      phoneNumber: ['', [this.conditionalValidator(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'))]],
+      phoneNumber: ['', [this.conditionalValidator(Validators.pattern(phonePattern))]],
       bio: [''],
       socialLinks: this.fb.array([
         this.createSocialLinkControl(),
