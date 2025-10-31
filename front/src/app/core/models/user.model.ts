@@ -16,8 +16,15 @@ export type User = {
 
 export type SocialLinkField = {
   index: number;
-  label?: string;
-  placeholder?: string;
+  label: string;
+  placeholder: string;
   iconPath?: string;
   icon?: string;
+  platformKey: SocialPlatformKey;
+}
+
+export type SocialPlatformKey = 'github' | 'twitter' | 'bluesky' | 'linkedin' | 'other';
+
+export type SocialLinkMapping = {
+  [key in SocialPlatformKey]?: string;
 }

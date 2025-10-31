@@ -13,7 +13,8 @@ import { firstValueFrom } from 'rxjs';
 import {UserStateService} from '../../../core/services/user-services/user-state.service';
 import {AuthService} from '../../../core/login/services/auth.service';
 import {environment} from '../../../../environments/environment.development';
-import {User} from '../../../core/models/user.model';
+import {SocialPlatformKey, User} from '../../../core/models/user.model';
+import {SocialLinkMapperService} from './social-link-mapper.service';
 
 @Injectable({
   providedIn: 'root'
@@ -23,6 +24,7 @@ export class ProfileService {
   private http : HttpClient = inject(HttpClient);
   private userState : UserStateService = inject(UserStateService);
   private authService : AuthService = inject(AuthService);
+  private socialLinkMapper = inject(SocialLinkMapperService);
 
   private profileForm: FormGroup;
 
@@ -33,6 +35,29 @@ export class ProfileService {
     this.authService.user$.subscribe(user => {
       if (user) {
         this.fetchUserData(user.uid);
+      }
+    });
+  }
+
+  private initializeForm(): void {
+    this.profileForm.patchValue({
+      name: this.userState.name(),
+      emailAddress: this.userState.email(),
+      avatarPictureURL: this.userState.photoURL(),
+      company: this.userState.company(),
+      location: this.userState.location(),
+      phoneNumber: this.userState.phoneNumber(),
+      bio: this.userState.bio()
+    });
+
+    const socialLinks = this.userState.socialLinks();
+    if (socialLinks && socialLinks.length > 0) {
+      this.applySocialLinksMapping(socialLinks);
+    }
+
+    this.profileForm.get('avatarPictureURL')?.valueChanges.subscribe(url => {
+      if (url) {
+        this.userState.updateUser({ photoURL: url });
       }
     });
   }
@@ -75,34 +100,6 @@ export class ProfileService {
     };
   }
 
-  private initializeForm(): void {
-    this.profileForm.patchValue({
-      name: this.userState.name(),
-      emailAddress: this.userState.email(),
-      avatarPictureURL: this.userState.photoURL(),
-      company: this.userState.company(),
-      location: this.userState.location(),
-      phoneNumber: this.userState.phoneNumber(),
-      bio: this.userState.bio()
-    });
-
-    const socialLinks = this.userState.socialLinks();
-    if (socialLinks && socialLinks.length > 0) {
-      const socialLinksArray = this.getSocialLinksArray();
-      socialLinks.forEach((link, index) => {
-        if (index < socialLinksArray.length) {
-          socialLinksArray.at(index).setValue(link);
-        }
-      });
-    }
-
-    this.profileForm.get('avatarPictureURL')?.valueChanges.subscribe(url => {
-      if (url) {
-        this.userState.updateUser({ photoURL: url });
-      }
-    });
-  }
-
   getForm(): FormGroup {
     return this.profileForm;
   }
@@ -124,14 +121,10 @@ export class ProfileService {
           location: userData.location || '',
           phoneNumber: userData.phoneNumber || '',
           bio: userData.bio || ''
-        });
+        }, { emitEvent: false });
+
         if (userData.socialLinks && userData.socialLinks.length > 0) {
-          const socialLinksArray = this.getSocialLinksArray();
-          userData.socialLinks.forEach((link, index) => {
-            if (index < socialLinksArray.length) {
-              socialLinksArray.at(index).setValue(link);
-            }
-          });
+          this.applySocialLinksMapping(userData.socialLinks);
         }
       }
     } catch (error) {
@@ -161,5 +154,19 @@ export class ProfileService {
       console.error('Error saving partial profile:', error);
       return false;
     }
+  }
+
+  private applySocialLinksMapping(urls: string[]): void {
+    const mapping = this.socialLinkMapper.mapUrlsToPlatforms(urls);
+    const socialLinksArray = this.getSocialLinksArray();
+
+    const platformOrder: SocialPlatformKey[] = ['github', 'twitter', 'bluesky', 'linkedin', 'other'];
+
+    platformOrder.forEach((platform, index) => {
+      if (index < socialLinksArray.length) {
+        const url = mapping[platform] || '';
+        socialLinksArray.at(index).setValue(url, { emitEvent: false });
+      }
+    });
   }
 }
