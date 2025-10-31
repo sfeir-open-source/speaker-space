@@ -17,6 +17,7 @@ public class Session {
     @NotBlank(message = "ID is required")
     @EqualsAndHashCode.Include
     private String id;
+    private String idConferenceHall;
     private Date start;
     private Date end;
     private String track;
@@ -30,7 +31,7 @@ public class Session {
     private List<Category> categories;
     private List<String> tags;
     private List<String> languages;
-    private List<String> speakerIds;
+    private List<Speaker> speakers;
     private Reviews reviews;
     private String eventId;
     private Date createdAt;

@@ -1,7 +1,10 @@
+import {Observable} from 'rxjs';
+
 export type SessionImportData = {
   id?: string;
+  idConferenceHall?: string;
   title: string;
-  abstractText: string;
+  abstract: string;
   deliberationStatus: string;
   confirmationStatus: string;
   level: string;
@@ -31,6 +34,12 @@ export type ImportResult = {
   errors: string[];
 }
 
+export type ImportCallbacks = {
+  onValidateData: (data: any) => void;
+  onProcessData: (data: any) => Observable<ImportResult>;
+  onImportComplete?: (result: ImportResult) => void;
+}
+
 export type Format = {
   id: string;
   name: string;
@@ -45,6 +54,7 @@ export type Category = {
 
 export type Speaker = {
   id: string;
+  idConferenceHall?: string;
   name: string;
   bio: string;
   company: string;

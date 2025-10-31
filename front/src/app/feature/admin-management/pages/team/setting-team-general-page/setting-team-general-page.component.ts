@@ -1,65 +1,46 @@
-import { Component, OnInit, inject, signal, computed, effect, DestroyRef } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, FormsModule, Validators } from '@angular/forms';
+import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FieldComponent } from '../../../../../shared/input/field.component';
 import { NavbarTeamPageComponent } from '../../../components/team/navbar-team-page/navbar-team-page.component';
 import { SidebarTeamComponent } from '../../../components/team/sidebar-team/sidebar-team.component';
-import { FormField } from '../../../../../shared/input/interface/form-field';
-import { TeamService } from '../../../services/team/team.service';
-import { TeamMemberService } from '../../../services/team/team-member.service';
-import { AuthService } from '../../../../../core/login/services/auth.service';
-import { TeamMember } from '../../../type/team/team-member';
 import { DangerZoneComponent } from '../../../components/danger-zone/danger-zone.component';
 import { DeleteConfirmationPopupComponent } from '../../../components/delete-confirmation-popup/delete-confirmation-popup.component';
 import { DeleteConfirmationConfig } from '../../../type/components/delete-confirmation';
 import { DangerZoneConfig } from '../../../type/components/danger-zone';
+import {TeamGeneralFormComponent} from '../../../components/team/team-general-form/team-general-form.component';
+import {TeamFormData, TeamFormService} from '../../../services/team/team-form.service';
+import {TeamManagementService} from '../../../services/team/team-management.service';
+import {TeamData} from '../../../type/team/team-data';
 
 @Component({
   selector: 'app-setting-team-general-page',
   standalone: true,
   imports: [
-    FieldComponent,
     NavbarTeamPageComponent,
     FormsModule,
     SidebarTeamComponent,
     DangerZoneComponent,
-    DeleteConfirmationPopupComponent
+    DeleteConfirmationPopupComponent,
+    TeamGeneralFormComponent
   ],
   templateUrl: './setting-team-general-page.component.html',
   styleUrl: './setting-team-general-page.component.scss'
 })
+
 export class SettingTeamGeneralPageComponent implements OnInit {
   readonly activeSection = signal<string>('settings-general');
   readonly teamUrl = signal<string>('');
   readonly teamId = signal<string>('');
   readonly teamName = signal<string>('');
-  readonly isLoading = signal<boolean>(true);
-  readonly error = signal<string | null>(null);
   readonly isDeleting = signal<boolean>(false);
   readonly showDeleteConfirmation = signal<boolean>(false);
   readonly currentUserRole = signal<string>('');
 
-  teamForm: FormGroup;
-
-  readonly formFields: FormField[] = [
-    {
-      name: 'teamName',
-      label: 'Team name',
-      placeholder: '',
-      type: 'text',
-      required: true,
-    },
-    {
-      name: 'teamURL',
-      label: 'Team URL',
-      placeholder: '',
-      type: 'text',
-      required: false,
-      disabled: true,
-    }
-  ];
+  readonly teamFormData = computed<TeamFormData>(() => ({
+    teamName: this.teamName(),
+    teamURL: this.teamUrl()
+  }));
 
   readonly dangerZoneConfig = computed<DangerZoneConfig>(() => ({
     title: 'Danger zone',
@@ -82,37 +63,14 @@ export class SettingTeamGeneralPageComponent implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly teamService = inject(TeamService);
-  private readonly teamMemberService = inject(TeamMemberService);
-  private readonly fb = inject(FormBuilder);
-  private readonly authService = inject(AuthService);
+  readonly teamManagementService = inject(TeamManagementService);
+  private readonly teamFormService = inject(TeamFormService);
   private readonly destroyRef = inject(DestroyRef);
-
-  constructor() {
-    this.teamForm = this.initializeForm();
-
-    effect(() => {
-      this.updateFormControlsBasedOnRole();
-    });
-
-    effect(() => {
-      this.setupNameChangeListener();
-    });
-  }
 
   ngOnInit(): void {
     this.activeSection.set('settings-general');
-    this.isLoading.set(true);
     this.checkForEmailModal();
     this.subscribeToRouteParams();
-    this.subscribeToUserChanges();
-  }
-
-  private initializeForm(): FormGroup {
-    return this.fb.group({
-      teamName: [{ value: '', disabled: false }, Validators.required],
-      teamURL: { value: '', disabled: true }
-    });
   }
 
   private checkForEmailModal(): void {
@@ -135,182 +93,103 @@ export class SettingTeamGeneralPageComponent implements OnInit {
         this.teamId.set(teamIdParam);
 
         if (teamIdParam) {
-          this.loadTeamData();
+          this.loadTeamData(teamIdParam);
+          this.loadUserRole(teamIdParam);
         } else {
-          this.error.set('Team ID is missing');
-          this.isLoading.set(false);
+          this.teamManagementService.setError('Team ID is missing');
         }
       });
   }
 
-  private subscribeToUserChanges(): void {
-    this.authService.user$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(user => {
-        if (user && this.teamId()) {
-          this.loadUserRole(user.uid);
-        }
-      });
-  }
-
-  private loadTeamData(): void {
-    this.teamService.getTeamByUrl(this.teamId())
-      .pipe(
-        finalize(() => this.isLoading.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe({
-        next: (team) => this.handleTeamDataLoaded(team),
-        error: (err) => this.handleTeamDataError(err)
-      });
-  }
-
-  private updateFormControlsBasedOnRole(): void {
-    const nameControl = this.teamForm.get('teamName');
-    if (!nameControl) return;
-
-    if (this.currentUserRole() !== 'Owner') {
-      nameControl.disable();
-    } else {
-      nameControl.enable();
-    }
-  }
-
-  private loadUserRole(userId: string): void {
-    this.teamMemberService.getTeamMembers(this.teamId())
+  private loadTeamData(teamId: string): void {
+    this.teamManagementService.loadTeamData(teamId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (members: TeamMember[]) => {
-          const currentMember = members.find(m => m.userId === userId);
-          if (currentMember) {
-            this.currentUserRole.set(currentMember.role);
-          }
+        next: (team: TeamData) => {
+          this.teamId.set(team.id);
+          this.teamName.set(team.name);
+          this.teamUrl.set(team.url);
+          this.teamManagementService.clearError();
         },
-        error: (err) => {
-          console.error('Error loading team members:', err);
+        error: () => {
+          this.teamManagementService.setError('Failed to load team details. Please try again.');
         }
       });
   }
 
-  private handleTeamDataLoaded(team: any): void {
-    this.teamId.set(team.id || '');
-    this.teamName.set(team.name);
-
-    this.teamForm.patchValue({
-      teamName: team.name,
-      teamURL: team.id
-    });
-
-    this.error.set(null);
+  private loadUserRole(teamId: string): void {
+    this.teamManagementService.getCurrentUserRole(teamId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (role: string) => {
+          this.currentUserRole.set(role);
+        },
+        error: () => {
+          console.error('Error loading user role');
+        }
+      });
   }
 
-  private formatUrlFromName(name: string): string {
-    return name.trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/-+/g, '-');
-  }
-
-  private handleTeamDataError(err: any): void {
-    this.error.set('Failed to load team details. Please try again.');
-  }
-
-  private setupNameChangeListener(): void {
-    const nameControl = this.teamForm.get('teamName');
-    if (nameControl) {
-      nameControl.valueChanges
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(value => {
-          if (value) {
-            const urlSuffix = this.formatUrlFromName(value);
-            this.teamForm.get('teamId')?.setValue(urlSuffix);
-          }
-        });
-    }
-  }
-
-  onSubmit(): void {
-    if (this.teamForm.invalid || !this.teamId()) {
-      this.error.set('Team ID is missing or form is invalid');
+  onFormSubmitted(formData: TeamFormData): void {
+    if (!this.teamId()) {
+      this.teamManagementService.setError('Team ID is missing');
       return;
     }
 
-    const formValues = this.teamForm.getRawValue();
-    const updatedTeam = {
-      name: formValues.teamName,
-      url: formValues.teamURL
+    const updateData = {
+      name: formData.teamName,
+      url: formData.teamURL
     };
 
-    this.isLoading.set(true);
-
-    this.teamService.updateTeam(this.teamId(), updatedTeam)
-      .pipe(
-        finalize(() => this.isLoading.set(false)),
-        takeUntilDestroyed(this.destroyRef)
-      )
+    this.teamManagementService.updateTeam(this.teamId(), updateData)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (team) => this.handleTeamUpdated(team),
-        error: (err) => this.handleTeamUpdateError(err)
+        next: (team: TeamData) => {
+          this.teamName.set(team.name);
+          this.teamUrl.set(team.url);
+          this.teamManagementService.clearError();
+        },
+        error: () => {
+          this.teamManagementService.setError('Failed to update team. Please try again.');
+        }
       });
   }
 
-  private handleTeamUpdated(team: any): void {
-    this.teamName.set(team.name);
-    this.teamUrl.set(team.url || '');
+  onFormError(error: string): void {
+    this.teamManagementService.setError(error);
   }
 
-  private handleTeamUpdateError(err: any): void {
-    this.error.set('Failed to update team. Please try again.');
-  }
-
-  confirmDeleteTeam(): void {
+  onDangerZoneDelete(): void {
     this.showDeleteConfirmation.set(true);
   }
 
-  cancelDeleteTeam(): void {
-    this.showDeleteConfirmation.set(false);
-  }
-
-  deleteTeam(): void {
+  onDeleteConfirmed(): void {
     if (!this.teamId()) {
-      this.error.set('Team ID is missing');
+      this.teamManagementService.setError('Team ID is missing');
       return;
     }
 
     this.isDeleting.set(true);
 
-    this.teamService.deleteTeam(this.teamId())
-      .pipe(
-        finalize(() => {
-          this.isDeleting.set(false);
-          this.showDeleteConfirmation.set(false);
-        }),
-        takeUntilDestroyed(this.destroyRef)
-      )
+    this.teamManagementService.deleteTeam(this.teamId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.router.navigate(['/']);
         },
-        error: (err) => {
-          this.error.set('Failed to delete team. Please try again.');
+        error: () => {
+          this.teamManagementService.setError('Failed to delete team. Please try again.');
+          this.isDeleting.set(false);
+          this.showDeleteConfirmation.set(false);
+        },
+        complete: () => {
+          this.isDeleting.set(false);
+          this.showDeleteConfirmation.set(false);
         }
       });
   }
 
-  getFormControl(name: string): FormControl {
-    return this.teamForm.get(name) as FormControl;
-  }
-
-  onDangerZoneDelete(): void {
-    this.confirmDeleteTeam();
-  }
-
-  onDeleteConfirmed(): void {
-    this.deleteTeam();
-  }
-
   onDeleteCancelled(): void {
-    this.cancelDeleteTeam();
+    this.showDeleteConfirmation.set(false);
   }
 }

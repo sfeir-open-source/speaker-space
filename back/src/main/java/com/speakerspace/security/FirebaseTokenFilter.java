@@ -8,8 +8,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,10 +24,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class FirebaseTokenFilter extends OncePerRequestFilter {
-
-    private static final Logger logger = LoggerFactory.getLogger(FirebaseTokenFilter.class);
 
     @Autowired
     private FirebaseAuth firebaseAuth;
@@ -64,16 +62,16 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             token = authorizationHeader.substring(7);
-            logger.debug("Token found in Authorization header");
+            log.debug("Token found in Authorization header");
         } else {
             token = cookieService.getAuthTokenFromCookies(request);
             if (token != null) {
-                logger.debug("Token found in cookies");
+                log.debug("Token found in cookies");
             }
         }
 
         if (token == null || token.trim().isEmpty()) {
-            logger.warn("No authentication token found for path: {}", path);
+            log.warn("No authentication token found for path: {}", path);
             sendUnauthorizedResponse(response, "Authentication required");
             return;
         }
@@ -83,7 +81,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             String email = decodedToken.getEmail();
             String uid = decodedToken.getUid();
 
-            logger.debug("Token verified successfully for user: {} ({})", email, uid);
+            log.debug("Token verified successfully for user: {} ({})", email, uid);
 
             List<GrantedAuthority> authorities = new ArrayList<>();
             authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
@@ -102,16 +100,16 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            logger.debug("Authentication set for user: {} ({})", uid, email);
+            log.debug("Authentication set for user: {} ({})", uid, email);
 
             filterChain.doFilter(request, response);
 
         } catch (FirebaseAuthException e) {
-            logger.error("Firebase token verification failed: {}", e.getMessage());
+            log.error("Firebase token verification failed: {}", e.getMessage());
             SecurityContextHolder.clearContext();
             sendUnauthorizedResponse(response, "Invalid token: " + e.getErrorCode());
         } catch (Exception e) {
-            logger.error("Unexpected error during token verification: {}", e.getMessage(), e);
+            log.error("Unexpected error during token verification: {}", e.getMessage(), e);
             SecurityContextHolder.clearContext();
             sendUnauthorizedResponse(response, "Authentication error");
         }

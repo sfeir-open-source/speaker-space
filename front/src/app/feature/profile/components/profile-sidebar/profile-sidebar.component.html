@@ -1,23 +1,28 @@
-<aside class="hidden lg:block bg-white p-4 ml-3 mt-4 shadow-md rounded-md sticky top-4 self-start max-h-screen overflow-y-auto">
-  <app-button-with-icon
+<aside class="hidden lg:block bg-white p-4 w-70 ml-3 mt-4 shadow-md rounded-md sticky top-4 self-start max-h-screen overflow-y-auto">
+  <app-button
     materialIcon="person"
     route="#personal-info"
-    [customClass]="isActive('#personal-info') ? 'bg-gray-100' : ''"
+    [customClass]="getSidebarButtonClasses('#personal-info')"
+    [ariaLabel]="'Navigate to personal information section'"
     (itemClick)="navigateTo($event)">
     Personnal informations
-  </app-button-with-icon>
-  <app-button-with-icon
+  </app-button>
+
+  <app-button
     materialIcon="description"
     route="#biography"
-    [customClass]="isActive('#biography') ? 'bg-gray-100' : ''"
+    [customClass]="getSidebarButtonClasses('#biography')"
+    [ariaLabel]="'Navigate to biography section'"
     (itemClick)="navigateTo($event)">
     Biography
-  </app-button-with-icon>
-  <app-button-with-icon
+  </app-button>
+
+  <app-button
     materialIcon="link"
     route="#social-networks"
-    [customClass]="isActive('#social-networks') ? 'bg-gray-100' : ''"
+    [customClass]="getSidebarButtonClasses('#social-networks')"
+    [ariaLabel]="'Navigate to social networks section'"
     (itemClick)="navigateTo($event)">
     Social networks & more
-  </app-button-with-icon>
+  </app-button>
 </aside>

@@ -1,51 +1,75 @@
-import {Component} from '@angular/core';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
+import { Component, Signal, input, output, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
+import { ImportCallbacks, ImportResult } from '../../../type/session/session';
+import { FileImportService } from '../../../services/sessions/field-import.service';
+import { EventService } from '../../../services/event/event.service';
+import { EventDataService } from '../../../services/event/event-data.service';
 import {
-  ScheduleJsonData, ScheduleSessionData,
-  SessionScheduleImportDataDTO,
+  ScheduleJsonData,
+  ScheduleSessionData,
+  SessionScheduleImportDataDTO
 } from '../../../type/session/schedule-json-data';
-import {BaseImportComponent} from '../../base-import/base-import.component';
-import {ImportResult} from '../../../type/session/session';
-import {EventDTO} from '../../../type/event/eventDTO';
-import {EventService} from '../../../services/event/event.service';
-import {EventDataService} from '../../../services/event/event-data.service';
+import { EventDTO } from '../../../type/event/eventDTO';
+import { ButtonComponent } from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-session-schedule-import',
-  imports: [
-    ButtonGreyComponent
-  ],
   templateUrl: './session-schedule-import.component.html',
-  styleUrl: './session-schedule-import.component.scss'
+  standalone: true,
+  imports: [ButtonComponent],
+  providers: [FileImportService]
 })
-export class SessionScheduleImportComponent extends BaseImportComponent {
+export class SessionScheduleImportComponent {
+  private readonly eventService = inject(EventService);
+  private readonly eventDataService = inject(EventDataService);
+  private readonly fileImportService = inject(FileImportService);
 
-  constructor(
-    eventService: EventService,
-    private eventDataService: EventDataService
-  ) {
-    super(eventService);
+  readonly eventId = input.required<string>();
+  readonly importCompleted = output<ImportResult>();
+
+  readonly selectedFile: Signal<File | null> = this.fileImportService.selectedFile;
+  readonly isImporting: Signal<boolean> = this.fileImportService.isImporting;
+  readonly importResult: Signal<ImportResult | null> = this.fileImportService.importResult;
+  readonly fileError: Signal<string | null> = this.fileImportService.fileError;
+
+  constructor() {
+    this.fileImportService.importCompleted$.pipe(
+      takeUntilDestroyed()
+    ).subscribe(result => this.importCompleted.emit(result));
+  }
+
+  onFileSelected(event: Event): void {
+    this.fileImportService.handleFileSelection(event);
   }
 
   importSessions(): void {
-    this.processFile((jsonContent: string) => {
-      const scheduleData: ScheduleJsonData = JSON.parse(jsonContent);
-      this.validateData(scheduleData);
+    const callbacks: ImportCallbacks = {
+      onValidateData: (data) => this.validateData(data),
+      onProcessData: (data) => this.processScheduleData(data),
+      onImportComplete: () => this.refreshEventData()
+    };
 
-      const transformedSessions: SessionScheduleImportDataDTO[] = this.transformScheduleToSessionData(scheduleData);
-
-      this.eventService.importSessionsSchedule(this.eventId, transformedSessions)
-        .subscribe({
-          next: (result: ImportResult) => {
-            this.handleImportResult(result);
-            this.refreshEventData();
-          },
-          error: () => this.handleError('Failed to import schedule sessions. Please try again.')
-        });
-    });
+    this.fileImportService.processImport(callbacks);
   }
 
-  validateData(data: ScheduleJsonData): void {
+  formatFileSize(bytes: number): string {
+    return this.fileImportService.formatFileSize(bytes);
+  }
+
+  getResultClass(): string {
+    return this.fileImportService.getResultClasses();
+  }
+
+  getResultIcon(): string {
+    return this.fileImportService.getResultIcon();
+  }
+
+  getIconClass(): string {
+    return this.fileImportService.getIconClasses();
+  }
+
+  private validateData(data: ScheduleJsonData): void {
     if (!data.sessions || !Array.isArray(data.sessions)) {
       throw new Error('JSON must contain a sessions array.');
     }
@@ -70,6 +94,11 @@ export class SessionScheduleImportComponent extends BaseImportComponent {
     if (errors.length > 0) {
       throw new Error(errors.join('\n'));
     }
+  }
+
+  private processScheduleData(scheduleData: ScheduleJsonData): Observable<ImportResult> {
+    const transformedSessions = this.transformScheduleToSessionData(scheduleData);
+    return this.eventService.importSessionsSchedule(this.eventId(), transformedSessions);
   }
 
   private transformScheduleToSessionData(scheduleData: ScheduleJsonData): SessionScheduleImportDataDTO[] {
@@ -101,7 +130,7 @@ export class SessionScheduleImportComponent extends BaseImportComponent {
             socialLinks: speaker.socialLinks || []
           })) || []
         } : undefined,
-        eventId: this.eventId
+        eventId: this.eventId()
       };
     });
   }
@@ -133,8 +162,11 @@ export class SessionScheduleImportComponent extends BaseImportComponent {
   }
 
   private refreshEventData(): void {
-    if (this.eventId) {
-      this.eventService.getEventById(this.eventId).subscribe({
+    const currentEventId = this.eventId();
+    if (currentEventId) {
+      this.eventService.getEventById(currentEventId).pipe(
+        takeUntilDestroyed()
+      ).subscribe({
         next: (event: EventDTO) => {
           this.eventDataService.loadEvent(event);
         },

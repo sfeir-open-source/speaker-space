@@ -1,58 +1,37 @@
-import { Injectable } from '@angular/core';
-import {HttpClient} from '@angular/common/http';
-import {Observable, of, switchMap, take, throwError} from 'rxjs';
-import {catchError} from 'rxjs/operators';
-import {AuthService} from '../../../../core/login/services/auth.service';
-import {environment} from '../../../../../environments/environment.development';
-import {TeamMember} from '../../type/team/team-member';
+import { Injectable, signal, ElementRef } from '@angular/core';
+import { FormSubmitData } from '../../type/team/form-submit-data';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InvitationService {
-  constructor(
-    private http: HttpClient,
-    private authService: AuthService
-  ) {}
+  readonly formSubmitData = signal<FormSubmitData | undefined>(undefined);
 
-  checkPendingInvitations(): Observable<TeamMember[]> {
-    return this.authService.user$.pipe(
-      take(1),
-      switchMap(user => {
-        if (!user || !user.email) {
-          return of([]);
-        }
+  sendInvitation(email: string, teamName: string, teamId: string, inviterName: string, formElement?: ElementRef<HTMLFormElement>): void {
+    const baseUrl = window.location.origin;
+    const invitationLink = `${baseUrl}/login`;
 
-        return this.http.get<TeamMember[]>(
-          `${environment.apiUrl}/invitations/pending?email=${encodeURIComponent(user.email.toLowerCase())}`,
-          { withCredentials: true }
-        ).pipe(
-          catchError(error => {
-            console.error('Error checking pending invitations:', error);
-            return of([]);
-          })
-        );
-      })
-    );
-  }
+    const message = `
+    Hello,
 
-  acceptInvitation(invitationId: string): Observable<TeamMember> {
-    return this.authService.user$.pipe(
-      take(1),
-      switchMap(user => {
-        if (!user) {
-          return throwError(() => new Error('User not authenticated'));
-        }
+    You have been invited by ${inviterName} to join the team "${teamName}".
 
-        return this.http.post<TeamMember>(
-          `${environment.apiUrl}/invitations/${invitationId}/accept`,
-          { userId: user.uid },
-          { withCredentials: true }
-        );
-      }),
-      catchError(error => {
-        return throwError(() => error);
-      })
-    );
+    Click on this link to connect with your email: "${invitationLink}".
+
+    Best regards,`;
+
+    this.formSubmitData.set({
+      email,
+      subject: `Invitation to join "${teamName}" team on Speaker Space by ${inviterName}`,
+      message,
+      inviterName,
+      teamName,
+      invitationLink,
+      autoresponse: ''
+    });
+
+    setTimeout(() => {
+      formElement?.nativeElement?.submit();
+    }, 100);
   }
 }

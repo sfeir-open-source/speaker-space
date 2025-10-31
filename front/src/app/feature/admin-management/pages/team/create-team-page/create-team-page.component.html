@@ -20,9 +20,11 @@
         }
 
         <div class="flex justify-end p-4">
-          <app-button-green-actions [type]="'submit'">
+          <app-button
+            [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-1.5 px-3 rounded-md transition-colors'"
+            [type]="'submit'">
             Create Team
-          </app-button-green-actions>
+          </app-button>
         </div>
       </form>
     </article>

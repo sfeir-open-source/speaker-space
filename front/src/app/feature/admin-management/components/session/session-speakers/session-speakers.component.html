@@ -1,0 +1,23 @@
+<section class="flex items-start sm:items-center justify-between p-4 gap-4 flex-col sm:flex-row">
+  <div class="flex items-center flex-wrap gap-2 min-w-0 flex-1">
+    @for (speaker of speakers(); track speaker.name) {
+      <button
+        type="button"
+        (click)="speakerClick.emit(speaker.id)"
+        class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-2 py-1 bg-white shadow-sm cursor-pointer hover:bg-gray-50 transition-colors duration-200"
+        [attr.aria-label]="'View speaker details for ' + speaker.name">
+
+        <img
+          [src]="speaker.picture || 'assets/img/profil-picture.svg'"
+          class="h-10 w-10 rounded-full object-cover border-2 border-gray-100"
+          [alt]="'Photo de ' + speaker.name"
+          referrerpolicy="no-referrer"
+          (error)="imageError.emit($event)">
+
+        <h4 class="font-medium text-gray-900 text-sm truncate">
+          {{ speaker.name }}
+        </h4>
+      </button>
+    }
+  </div>
+</section>

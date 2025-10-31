@@ -17,8 +17,8 @@
       <article class="flex flex-wrap items-center gap-4 mt-4 md:mt-0">
         <nav class="flex gap-1 rounded-md bg-grey shadow-sm py-1 px-1"
              aria-label="Event filters">
-          <button
-            class="flex items-center rounded-md py-0.5 px-6 sm:px-12 text-sm cursor-pointer transition-all"
+          <app-button
+            [customClass]="'flex items-center rounded-md py-0.5 px-6 sm:px-12 text-sm cursor-pointer transition-all'"
             [class.bg-white]="activeTab() === 'Archived'"
             [class.text-gray-800]="true"
             [class.shadow-sm]="activeTab() === 'Archived'"
@@ -26,10 +26,10 @@
             [attr.aria-selected]="activeTab() === 'Archived'"
             type="button">
             Archived
-          </button>
+          </app-button>
 
-          <button
-            class="flex items-center rounded-md py-0.5 px-6 sm:px-12 text-sm cursor-pointer transition-all"
+          <app-button
+            [customClass]="'flex items-center rounded-md py-0.5 px-6 sm:px-12 text-sm cursor-pointer transition-all'"
             [class.bg-white]="activeTab() === 'Active'"
             [class.text-gray-800]="true"
             [class.shadow-sm]="activeTab() === 'Active'"
@@ -37,17 +37,16 @@
             [attr.aria-selected]="activeTab() === 'Active'"
             type="button">
             Active
-          </button>
+          </app-button>
         </nav>
 
-        <app-button-grey
+        <app-button
           type="submit"
           [buttonHandler]="addEvent.bind(this)"
           materialIcon="add"
-          customTextClass="text-gray-600 hover:text-gray-600"
-          class="rounded-md text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm">
+          [customClass]="'text-gray-600 hover:text-gray-600 rounded-md text-sm inline-flex items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm'">
           New Event
-        </app-button-grey>
+        </app-button>
       </article>
     </div>
   </section>

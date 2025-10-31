@@ -14,6 +14,7 @@ import {User} from '../../core/models/user.model';
 import {SaveIndicatorComponent} from '../../core/save-indicator/save-indicator.component';
 import {SaveStatus} from '../../core/types/save-status.types';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {ButtonComponent} from '../../shared/button/button.component';
 
 @Component({
   selector: 'app-profile',
@@ -26,7 +27,8 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
     SocialNetworksComponent,
     NavbarProfileComponent,
     CommonModule,
-    SaveIndicatorComponent
+    SaveIndicatorComponent,
+    ButtonComponent
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'

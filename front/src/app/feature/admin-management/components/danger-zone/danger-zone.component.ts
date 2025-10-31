@@ -1,11 +1,13 @@
 import { Component, input, output, computed } from '@angular/core';
 import { DangerZoneAction, DangerZoneConfig } from '../../type/components/danger-zone';
 import { NgClass } from '@angular/common';
+import {ButtonComponent} from '../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-danger-zone',
   imports: [
-    NgClass
+    NgClass,
+    ButtonComponent
   ],
   templateUrl: './danger-zone.component.html',
   styleUrl: './danger-zone.component.scss'
@@ -66,7 +68,7 @@ export class DangerZoneComponent {
   }
 
   getButtonClass(): string {
-    const baseClasses = 'px-4 py-1 rounded-md font-medium flex-shrink-0 border cursor-pointer flex items-center transition-colors duration-200';
+    const baseClasses = 'px-6 py-2 rounded-md font-medium flex-shrink-0 border cursor-pointer flex items-center transition-colors duration-200';
     return `${baseClasses} bg-white hover:bg-red-50 text-red-600 border-red-300 hover:border-red-400`;
   }
 

@@ -1,5 +1,5 @@
 <app-navbar-team-page
-  [teamUrl]="teamUrl()"
+  [teamUrl]="''"
   [teamId]="teamId()"
   [teamName]="teamName()"
   [userRole]="currentUserRole()">
@@ -25,87 +25,57 @@
       }
 
       @if (!isLoading() && !error()) {
-        <form class="w-full mx-auto" (ngSubmit)="onSubmit($event)">
-          <article class="w-full items-center bg-white shadow-md rounded-lg pb-4">
-            <section class="p-4">
-              <h1 class="text-xl font-medium">Members</h1>
-              @if (currentUserRole() === 'Owner') {
-                <p class="mt-2 text-sm text-gray-600">
-                  Invite, remove or change role of team members.
-                </p>
-              }
-            </section>
-
+        <article class="w-full items-center bg-white shadow-md rounded-lg pb-4">
+          <section class="p-4">
+            <h1 class="text-xl font-medium">Members</h1>
             @if (currentUserRole() === 'Owner') {
-              <section class="px-4 pb-4">
-                <div class="flex items-center justify-between">
-                  <app-auto-complete
-                    class="flex-1 mr-4"
-                    [control]="searchControl"
-                    [results]="searchResults()"
-                    [isLoading]="isSearching()"
-                    [placeholder]="'Find member by email'"
-                    [icon]="'search'"
-                    [itemTemplate]="userItemTemplate"
-                    (itemSelected)="selectUser($event)"
-                    (inputChanged)="onSearchInputChanged($event)">
-                  </app-auto-complete>
-
-                  <app-button-green-actions
-                    materialIcon="person_add"
-                    class="text-xs sm:text-sm lg:text-base"
-                    (click)="addMember()">
-                    <span class="hidden lg:inline">
-                      @if (isAddingMember()) {
-                        Adding...
-                      } @else {
-                        Invite member
-                      }
-                    </span>
-                  </app-button-green-actions>
-                </div>
-              </section>
+              <p class="mt-2 text-sm text-gray-600">
+                Invite, remove or change role of team members.
+              </p>
             }
+          </section>
 
-            <ng-template #userItemTemplate let-user>
-              <div class="flex items-center">
-                <img
-                  [src]="user.photoURL || 'assets/images/profile-placeholder.svg'"
-                  [alt]="'Avatar of ' + (user.displayName || 'Unknown user')"
-                  class="w-8 h-8 rounded-full mr-3"
-                />
-                <div>
-                  <div class="font-medium">{{ user.displayName || 'Unknown user' }}</div>
-                  <div class="text-sm text-gray-500">{{ user.email }}</div>
-                </div>
-              </div>
-            </ng-template>
+          @if (currentUserRole() === 'Owner') {
+            <app-add-member
+              [teamId]="teamId()"
+              [teamName]="teamName()"
+              [currentTeamMembers]="teamMembers()"
+              [currentUserRole]="currentUserRole()"
+              (memberAdded)="onMemberAdded($event)"
+              (invitationSent)="onInvitationSent($event)"
+              (errorOccurred)="onError($event)">
+            </app-add-member>
+          }
 
-            @if (currentTeamMembers().length === 0) {
-              <div class="p-4 text-center text-gray-500">
-                No members found in this team.
-              </div>
-            } @else {
-              @for (member of currentTeamMembers(); track member.userId) {
-                <app-members-card
-                  [member]="member"
-                  [currentUserRole]="currentUserRole()"
-                  [isCreator]="isCreator()"
-                  [currentUserId]="currentUserId()"
-                  (onRemove)="deleteMember($event)"
-                  (onRoleChange)="updateMemberRole($event)">
-                </app-members-card>
-              }
+          @if (teamMembers().length === 0) {
+            <div class="p-4 text-center text-gray-500">
+              No members found in this team.
+            </div>
+          } @else {
+            @for (member of teamMembers(); track member.userId) {
+              <app-members-card
+                [member]="member"
+                [currentUserRole]="currentUserRole()"
+                [isCreator]="isCreator()"
+                [currentUserId]="currentUserId()"
+                (onRemove)="deleteMember($event)"
+                (onRoleChange)="updateMemberRole($event)">
+              </app-members-card>
             }
-          </article>
-        </form>
+          }
+        </article>
       }
-      <form #formSubmit style="display: none;" action="https://formsubmit.co/3eb6459368d1cee500ae4d789742466b" method="POST" target="_blank">
+
+      <form #formSubmit
+            style="display: none;"
+            action="https://formsubmit.co/3eb6459368d1cee500ae4d789742466b"
+            method="POST"
+            target="_blank">
         <input type="hidden" name="_format" value="html">
         <input type="hidden" name="_template" value="basic">
-        <input type="hidden" name="_cc" [value]="formSubmitDataInternal()?.email">
-        <input type="hidden" name="_subject" [value]="formSubmitDataInternal()?.subject">
-        <input type="hidden" name="message" [value]="formSubmitDataInternal()?.message">
+        <input type="hidden" name="_cc" [value]="invitationService.formSubmitData()?.email">
+        <input type="hidden" name="_subject" [value]="invitationService.formSubmitData()?.subject">
+        <input type="hidden" name="message" [value]="invitationService.formSubmitData()?.message">
         <input type="hidden" name="_captcha" value="false">
       </form>
     </section>

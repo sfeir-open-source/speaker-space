@@ -8,7 +8,9 @@ import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import { CalendarDayData, CalendarSession, CalendarSessionData } from '../../../type/calendar/calendar';
-import { BaseListService, ListState } from '../../../components/services/base-list.service';
+import { BaseListService } from '../../../components/services/base-list.service';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
+import {ListState} from '../../../components/type/liste-state';
 
 @Component({
   selector: 'app-calendar-event-page',
@@ -16,7 +18,8 @@ import { BaseListService, ListState } from '../../../components/services/base-li
   imports: [
     NavbarEventPageComponent,
     NgClass,
-    AsyncPipe
+    AsyncPipe,
+    ButtonComponent
   ],
   providers: [BaseListService],
   styleUrls: ['./calendar-event-page.component.css']
