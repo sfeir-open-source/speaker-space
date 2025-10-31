@@ -119,13 +119,12 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        response.addHeader("Access-Control-Allow-Origin", "*");
-        response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        response.addHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
 
-        String jsonResponse = String.format("{\"error\":\"%s\",\"status\":401,\"timestamp\":\"%s\"}",
+        String jsonResponse = String.format(
+                "{\"error\":\"%s\",\"status\":401,\"timestamp\":\"%s\"}",
                 message,
-                java.time.Instant.now().toString());
+                java.time.Instant.now().toString()
+        );
 
         response.getWriter().write(jsonResponse);
         response.getWriter().flush();

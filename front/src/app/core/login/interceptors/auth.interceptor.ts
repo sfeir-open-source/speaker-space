@@ -1,20 +1,19 @@
-import { inject, Injectable } from '@angular/core';
+import { inject } from '@angular/core';
 import {
-  HttpRequest,
-  HttpHandler,
-  HttpEvent,
-  HttpInterceptor,
   HttpInterceptorFn
 } from '@angular/common/http';
-import { Observable, from, switchMap } from 'rxjs';
+import { from, switchMap, throwError} from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import {catchError} from 'rxjs/operators';
 
 export const authInterceptorFn: HttpInterceptorFn = (req, next) => {
-  if (req.url.includes('/auth/login') || req.url.includes('/auth/logout')) {
-    return next(req);
+  if (req.url.includes('/auth/login') ||
+    req.url.includes('/auth/logout') ||
+    req.url.includes('/public/')) {
+    return next(req.clone({ withCredentials: true }));
   }
 
-  const authService: AuthService = inject(AuthService);
+  const authService = inject(AuthService);
 
   return from(authService.getIdToken(false)).pipe(
     switchMap(token => {
@@ -29,6 +28,24 @@ export const authInterceptorFn: HttpInterceptorFn = (req, next) => {
       }
 
       return next(authReq);
+    }),
+    catchError(error => {
+      if (error.status === 401) {
+        return from(authService.getIdToken(true)).pipe(
+          switchMap(newToken => {
+            if (newToken) {
+              const retryReq = req.clone({
+                withCredentials: true,
+                headers: req.headers.set('Authorization', `Bearer ${newToken}`)
+              });
+              return next(retryReq);
+            }
+            throw error;
+          }),
+          catchError(() => throwError(() => error))
+        );
+      }
+      return throwError(() => error);
     })
   );
 };

@@ -17,7 +17,7 @@ import {Router} from '@angular/router';
 })
 export class AuthService {
   private readonly auth = inject(Auth);
-  private router = inject(Router);
+  private readonly router = inject(Router);
   private readonly userState = inject(UserStateService);
   private readonly authProviders = inject(AuthProvidersService);
   private readonly authBackend = inject(AuthBackendService);
@@ -25,7 +25,6 @@ export class AuthService {
   private readonly errorHandler = inject(AuthErrorHandlerService);
 
   private readonly userSubject$ = new BehaviorSubject<FirebaseUser | null>(null);
-
   readonly user$ = this.userSubject$.asObservable();
 
   constructor() {
@@ -47,15 +46,15 @@ export class AuthService {
     this.emailLinkHandler.checkEmailLink();
   }
 
-  async loginWithGoogle() {
+  async loginWithGoogle(): Promise<FirebaseUser | null> {
     return this.authProviders.loginWithGoogle();
   }
 
-  async loginWithGitHub() {
+  async loginWithGitHub(): Promise<FirebaseUser | null> {
     return this.authProviders.loginWithGitHub();
   }
 
-  async loginWithEmail(email: string) {
+  async loginWithEmail(email: string): Promise<boolean | null> {
     return this.emailLinkHandler.sendEmailLink(email);
   }
 
@@ -75,17 +74,22 @@ export class AuthService {
     return this.errorHandler.openDialog(component, config);
   }
 
-  async logout() {
-    await signOut(this.auth);
-    await this.authBackend.logout();
-    this.userState.clearUser();
-    this.userSubject$.next(null);
+  async logout(): Promise<void> {
+    try {
+      await signOut(this.auth);
+      await this.authBackend.logout();
 
-    window.history.replaceState({}, document.title, '/');
-    this.router.navigate(['/']);
+      this.userState.clearUser();
+      this.userSubject$.next(null);
+
+      window.history.replaceState({}, document.title, '/');
+      await this.router.navigate(['/']);
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   }
 
-  async getIdToken(forceRefresh = true): Promise<string | null> {
+  async getIdToken(forceRefresh = false): Promise<string | null> {
     return this.authBackend.getIdToken(forceRefresh);
   }
 
@@ -96,7 +100,10 @@ export class AuthService {
   getToken(): Observable<string | null> {
     return this.user$.pipe(
       switchMap(user => user ? from(user.getIdToken()) : of(null)),
-      catchError(() => of(null))
+      catchError(error => {
+        console.error('Error getting token:', error);
+        return of(null);
+      })
     );
   }
 

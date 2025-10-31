@@ -17,9 +17,6 @@ import {take} from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
-@Injectable({
-  providedIn: 'root'
-})
 export class EmailLinkHandlerService {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
@@ -29,17 +26,11 @@ export class EmailLinkHandlerService {
 
   async sendEmailLink(email: string): Promise<boolean | null> {
     const actionCodeSettings = {
-      url: `${window.location.origin}/?email=${encodeURIComponent(email.toLowerCase())}`,
+      url: `${window.location.origin}/login?email=${encodeURIComponent(email.toLowerCase())}`,
       handleCodeInApp: true,
     };
 
     try {
-      const methods = await fetchSignInMethodsForEmail(this.auth, email);
-      if (methods.length > 0 && !methods.includes('emailLink')) {
-        this.errorHandler.showAuthErrorDialog(email);
-        return null;
-      }
-
       await sendSignInLinkToEmail(this.auth, email, actionCodeSettings);
       sessionStorage.setItem('emailForSignIn', email.toLowerCase());
 
@@ -49,7 +40,9 @@ export class EmailLinkHandlerService {
       );
 
       return true;
-    } catch {
+    } catch (error: any) {
+      console.error('Error sending email link:', error);
+
       this.errorHandler.showSuccessDialog(
         'Error',
         'Failed to send sign-in link. Please try again.'
@@ -71,12 +64,23 @@ export class EmailLinkHandlerService {
 
       if (result.user) {
         await this.authBackend.processUserLogin(result.user);
-        this.router.navigate(['/']);
+
+        window.history.replaceState({}, document.title, '/');
+
+        await this.router.navigate(['/']);
       }
 
       return result.user;
-    } catch (error) {
-      this.errorHandler.showAuthErrorDialog(email);
+    } catch (error: any) {
+      console.error('Email sign-in error:', error);
+
+      if (error.code === 'auth/invalid-action-code') {
+        this.errorHandler.showSuccessDialog(
+          'Link Expired',
+          'This sign-in link has expired. Please request a new one.'
+        );
+      }
+
       return null;
     }
   }
@@ -86,7 +90,9 @@ export class EmailLinkHandlerService {
   }
 
   checkEmailLink(): void {
-    if (!this.isSignInWithEmailLink(window.location.href)) return;
+    if (!this.isSignInWithEmailLink(window.location.href)) {
+      return;
+    }
 
     const storedEmail = sessionStorage.getItem('emailForSignIn');
 
@@ -96,8 +102,15 @@ export class EmailLinkHandlerService {
       this.route.queryParams.pipe(
         take(1)
       ).subscribe(params => {
-        if (params['email']) {
-          this.processEmailSignIn(params['email']);
+        const emailParam = params['email'];
+
+        if (emailParam) {
+          this.processEmailSignIn(emailParam);
+        } else {
+          const userEmail = window.prompt('Please enter your email for confirmation');
+          if (userEmail) {
+            this.processEmailSignIn(userEmail);
+          }
         }
       });
     }
@@ -112,11 +125,19 @@ export class EmailLinkHandlerService {
 
       if (result.user) {
         await this.authBackend.processUserLogin(result.user);
-        this.router.navigate(['/']);
+
+        window.history.replaceState({}, document.title, '/');
+
+        await this.router.navigate(['/']);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Email sign-in error:', error);
-      this.errorHandler.showAuthErrorDialog(email);
+      if (error.code === 'auth/invalid-action-code') {
+        this.errorHandler.showSuccessDialog(
+          'Link Expired',
+          'This sign-in link has expired. Please request a new one.'
+        );
+      }
     }
   }
 }

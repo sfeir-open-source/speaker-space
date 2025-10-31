@@ -17,6 +17,21 @@ export class AuthBackendService {
   private readonly auth = inject(Auth);
   private readonly userState = inject(UserStateService);
 
+  async processUserLogin(user: FirebaseUser): Promise<void> {
+    try {
+      const token = await user.getIdToken(true);
+
+      await this.sendTokenToBackend(token);
+      await this.processInvitations(user);
+      await this.saveUserToBackend(this.createUserPayload(user));
+      await this.syncUserData(user);
+
+    } catch (error) {
+      console.error('Error during user login process:', error);
+      throw error;
+    }
+  }
+
   async syncUserData(firebaseUser: FirebaseUser): Promise<void> {
     try {
       const userData = await this.fetchUserData(firebaseUser.uid);
@@ -31,19 +46,6 @@ export class AuthBackendService {
     }
   }
 
-  async processUserLogin(user: FirebaseUser): Promise<void> {
-    const token = await user.getIdToken();
-
-    await Promise.all([
-      this.sendTokenToBackend(token),
-      this.processInvitations(user),
-      this.saveUserToBackend(this.createUserPayload(user))
-    ]);
-
-    this.userState.updateUser(this.createUserPayload(user));
-    this.userState.saveToStorage();
-  }
-
   private mergeUserData(firebaseUser: FirebaseUser, userData: User): User {
     return {
       uid: firebaseUser.uid,
@@ -54,27 +56,34 @@ export class AuthBackendService {
       location: userData.location || '',
       phoneNumber: userData.phoneNumber || '',
       bio: userData.bio || '',
-      socialLinks: userData.socialLinks,
+      socialLinks: userData.socialLinks || [],
     };
   }
 
   private createUserPayload(user: FirebaseUser): Partial<User> {
     return {
       uid: user.uid,
-      email: user.email,
-      name: user.displayName,
-      photoURL: user.photoURL
+      email: user.email || undefined,
+      name: user.displayName || undefined,
+      photoURL: user.photoURL || undefined
     };
   }
 
-  async getIdToken(forceRefresh = true): Promise<string | null> {
+  async getIdToken(forceRefresh = false): Promise<string | null> {
     try {
-      if (!this.auth.currentUser) return null;
+      if (!this.auth.currentUser) {
+        return null;
+      }
 
       const token = await this.auth.currentUser.getIdToken(forceRefresh);
-      await this.sendTokenToBackend(token);
+
+      if (forceRefresh) {
+        await this.sendTokenToBackend(token);
+      }
+
       return token;
-    } catch {
+    } catch (error) {
+      console.error('Error getting ID token:', error);
       return null;
     }
   }
@@ -82,7 +91,9 @@ export class AuthBackendService {
   async logout(): Promise<void> {
     try {
       await firstValueFrom(
-        this.http.post(`${environment.apiUrl}/auth/logout`, {}, { withCredentials: true })
+        this.http.post(`${environment.apiUrl}/auth/logout`, {}, {
+          withCredentials: true
+        })
       );
     } catch (error) {
       console.error('Backend logout error:', error);
@@ -92,29 +103,46 @@ export class AuthBackendService {
   private async fetchUserData(uid: string): Promise<User | null> {
     try {
       return await firstValueFrom(
-        this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, { withCredentials: true })
+        this.http.get<User>(`${environment.apiUrl}/auth/user/${uid}`, {
+          withCredentials: true
+        })
       );
-    } catch {
+    } catch (error) {
+      console.error('Error fetching user data:', error);
       return null;
     }
   }
 
   private async sendTokenToBackend(token: string): Promise<void> {
     await firstValueFrom(
-      this.http.post(`${environment.apiUrl}/auth/login`, { idToken: token }, { withCredentials: true })
+      this.http.post(`${environment.apiUrl}/auth/login`,
+        { idToken: token },
+        { withCredentials: true }
+      )
     );
   }
 
   private async saveUserToBackend(user: Partial<User>): Promise<void> {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+      return;
+    }
 
-    await firstValueFrom(
-      this.http.post(`${environment.apiUrl}/auth`, user, { withCredentials: true })
-    );
+    try {
+      await firstValueFrom(
+        this.http.post(`${environment.apiUrl}/auth`, user, {
+          withCredentials: true
+        })
+      );
+    } catch (error) {
+      console.error('Error saving user to backend:', error);
+      throw error;
+    }
   }
 
   async processInvitations(user: FirebaseUser): Promise<void> {
-    if (!user?.email) return;
+    if (!user?.email) {
+      return;
+    }
 
     try {
       await firstValueFrom(

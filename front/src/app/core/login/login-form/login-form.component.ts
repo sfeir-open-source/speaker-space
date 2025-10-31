@@ -1,6 +1,6 @@
-import { Component, signal, effect, inject, OnInit } from '@angular/core';
+import {Component, signal, effect, inject, OnInit, DestroyRef} from '@angular/core';
 import { FormsModule } from "@angular/forms";
-import { ActivatedRoute } from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthErrorDialogComponent } from '../../../shared/auth-error-dialog/auth-error-dialog.component';
 import { ButtonLoginComponent } from '../components/button-login/button-login.component';
@@ -20,14 +20,17 @@ import { EmailModalComponent } from '../components/email-modal/email-modal.compo
 export class LoginFormComponent implements OnInit {
   email = signal<string>('');
   isEmailModalOpen = signal<boolean>(false);
+  isProcessingEmailLink = signal<boolean>(false);
 
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   constructor() {
     effect(() => {
       if (this.authService.isSignInWithEmailLink(window.location.href)) {
-        this.handleEmailSignIn();
+        this.isProcessingEmailLink.set(true);
       }
     });
   }
@@ -39,7 +42,7 @@ export class LoginFormComponent implements OnInit {
     }
 
     this.route.queryParams
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
         const showEmailModal = params['showEmailModal'];
         const emailParam = params['email'];
@@ -47,6 +50,10 @@ export class LoginFormComponent implements OnInit {
         if (showEmailModal === 'true' && emailParam) {
           this.email.set(emailParam);
           this.openEmailModal();
+        }
+
+        if (emailParam && this.authService.isSignInWithEmailLink(window.location.href)) {
+          this.handleEmailSignIn(emailParam);
         }
       });
   }
@@ -60,7 +67,7 @@ export class LoginFormComponent implements OnInit {
   }
 
   mailLinkLogin(email: string): void {
-    if (!email) {
+    if (!email || !this.isValidEmail(email)) {
       this.authService.openDialog(AuthErrorDialogComponent, {
         width: '400px',
         data: {
@@ -74,26 +81,34 @@ export class LoginFormComponent implements OnInit {
     this.authService.loginWithEmail(email);
   }
 
-  private handleEmailSignIn(): void {
-    let email = sessionStorage.getItem('emailForSignIn');
+  private async handleEmailSignIn(emailFromUrl?: string): Promise<void> {
+    this.isProcessingEmailLink.set(true);
 
-    if (!email) {
-      this.route.queryParams
-        .pipe(takeUntilDestroyed())
-        .subscribe(params => {
-          email = params['email'];
+    try {
+      let email = sessionStorage.getItem('emailForSignIn');
 
-          if (!email) {
-            email = window.prompt('Please enter your email for confirmation');
-            if (!email) return;
-          }
+      if (!email && emailFromUrl) {
+        email = emailFromUrl;
+      }
 
-          if (email) {
-            this.authService.confirmSignIn(email, window.location.href);
-          }
-        });
-    } else if (email) {
-      this.authService.confirmSignIn(email, window.location.href);
+      if (!email) {
+        email = window.prompt('Please enter your email for confirmation');
+        if (!email) {
+          this.isProcessingEmailLink.set(false);
+          return;
+        }
+      }
+
+      const user = await this.authService.confirmSignIn(email, window.location.href);
+
+      if (user) {
+        window.history.replaceState({}, document.title, '/');
+        await this.router.navigate(['/']);
+      }
+    } catch (error) {
+      console.error('Error handling email sign-in:', error);
+    } finally {
+      this.isProcessingEmailLink.set(false);
     }
   }
 
@@ -108,5 +123,10 @@ export class LoginFormComponent implements OnInit {
   onEmailSubmit(submittedEmail: string): void {
     this.mailLinkLogin(submittedEmail);
     this.closeEmailModal();
+  }
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,7}$/;
+    return emailRegex.test(email);
   }
 }
