@@ -2,8 +2,10 @@ package com.speakerspace.mapper;
 
 import com.speakerspace.dto.TeamDTO;
 import com.speakerspace.dto.TeamMemberDTO;
+import com.speakerspace.dto.UserDTO;
 import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
+import com.speakerspace.service.UserService;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -13,6 +15,12 @@ import java.util.stream.Collectors;
 
 @Component
 public class TeamMapper {
+
+    private final UserService userService;
+
+    public TeamMapper(UserService userService) {
+        this.userService = userService;
+    }
 
     public TeamDTO convertToDTO(Team team) {
         if (team == null) return null;
@@ -56,11 +64,27 @@ public class TeamMapper {
     }
 
     private TeamMemberDTO convertMemberToDTO(TeamMember member) {
-        if (member == null) return null;
+        if ("invited".equals(member.getStatus())) {
+            return TeamMemberDTO.builder()
+                    .userId(member.getUserId())
+                    .role(member.getRole())
+                    .email(member.getEmail())
+                    .name(member.getDisplayName())
+                    .photoURL(member.getPhotoURL())
+                    .status(member.getStatus())
+                    .build();
+        }
+
+        UserDTO userDTO = userService.getUserByUid(member.getUserId());
 
         return TeamMemberDTO.builder()
                 .userId(member.getUserId())
                 .role(member.getRole())
+                .email(member.getEmail() != null ? member.getEmail() :
+                        (userDTO != null ? userDTO.email() : null))
+                .name(userDTO != null ? userDTO.name() : member.getDisplayName())
+                .photoURL(userDTO != null ? userDTO.photoURL() : member.getPhotoURL())
+                .status(member.getStatus())
                 .build();
     }
 

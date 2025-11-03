@@ -39,7 +39,9 @@ export class MembersCardComponent {
   );
 
   canChangeThisRole = computed(() =>
-    this.canManageRoles() && !this.isCurrentUser()
+    this.canManageRoles() &&
+    !this.isCurrentUser() &&
+    this.member()?.status !== 'invited'
   );
 
   canRemoveThisMember = computed(() =>
@@ -49,6 +51,15 @@ export class MembersCardComponent {
   showRoleModal: boolean = false;
   showDeleteModal: boolean = false;
   isDeleting: boolean = false;
+
+  getMemberDisplayName(): string {
+    const member = this.member();
+
+    if (member.status === 'invited') {
+      return member.email ||'Invited user'; }
+
+    return member.name || member.email || 'User';
+  }
 
   openChangeRoleModal() {
     if (this.canChangeThisRole() && this.member().userId !== this.currentUserId()) {
@@ -74,13 +85,11 @@ export class MembersCardComponent {
   }
 
   closeDeleteModal() {
-    this.showDeleteModal = false;
-    this.isDeleting = false;
+    this.showDeleteModal = false; this.isDeleting = false;
   }
 
   confirmDelete() {
-    this.isDeleting = true;
-    this.onRemove.emit(this.member());
+    this.isDeleting = true; this.onRemove.emit(this.member());
   }
 
   getDefaultAvatar(): string {

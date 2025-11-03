@@ -21,7 +21,7 @@ export class DeletePopupComponent {
 
   memberName = computed(() => {
     const currentMember = this.member();
-    return currentMember?.displayName || currentMember?.email || 'this member';
+    return currentMember?.name || currentMember?.email || 'this member';
   });
 
   onCancel(event: MouseEvent): void {

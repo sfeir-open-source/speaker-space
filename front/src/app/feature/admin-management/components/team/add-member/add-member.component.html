@@ -27,11 +27,11 @@
   <div class="flex items-center">
     <img
       [src]="user.photoURL || 'assets/images/profile-placeholder.svg'"
-      [alt]="'Avatar of ' + (user.displayName || 'Unknown user')"
+      [alt]="'Avatar of ' + (user.name || 'Unknown user')"
       class="w-8 h-8 rounded-full mr-3"
     />
     <div>
-      <div class="font-medium">{{ user.displayName || 'Unknown user' }}</div>
+      <div class="font-medium">{{ user.name || 'Unknown user' }}</div>
       <div class="text-sm text-gray-500">{{ user.email }}</div>
     </div>
   </div>

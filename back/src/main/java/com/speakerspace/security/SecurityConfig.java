@@ -25,8 +25,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers( "/auth/login", "/auth/logout" ).permitAll()
-                        .requestMatchers("/public/invitations/**", "/auth/profile", "/auth/**", "/team-members/**" ).authenticated()
+                        .requestMatchers( "/auth/login", "/auth/logout", "/public/invitations/**" ).permitAll()
+                        .requestMatchers( "/auth/profile", "/auth/**", "/team-members/**" ).authenticated()
                         .requestMatchers("/team/**", "/event/**", "/session/**", "/emails/**").authenticated()
                         .anyRequest().authenticated()
                 )

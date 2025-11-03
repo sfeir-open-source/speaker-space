@@ -104,24 +104,98 @@ public class UserService {
 
     public void processUserLogin(String email, String uid) {
         if (email == null || uid == null) {
+            log.warn("Email or UID is null, skipping invitation processing");
             return;
         }
 
-        email = email.toLowerCase();
-        List<Team> teamsWithInvitation = teamRepository.findTeamsByInvitedEmail(email);
+        String normalizedEmail = email.toLowerCase();
 
+        Optional<User> userOpt = Optional.empty();
+        int maxRetries = 5;
+
+        for (int i = 0; i < maxRetries; i++) {
+            userOpt = userRepository.findUserByIdOptional(uid);
+
+            if (userOpt.isPresent()) {
+                log.info("User found in database: {} (attempt {}/{})", uid, i + 1, maxRetries);
+                break;
+            }
+
+            if (i < maxRetries - 1) {
+                try {
+                    Thread.sleep(300 * (i + 1));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error("Thread interrupted during retry", e);
+                    return;
+                }
+            }
+        }
+
+        if (userOpt.isEmpty()) {
+            log.error("User {} not found in database after {} retries, skipping invitation processing",
+                    uid, maxRetries);
+            return;
+        }
+
+        User user = userOpt.get();
+
+        List<Team> teamsWithInvitation = teamRepository.findTeamsByInvitedEmail(normalizedEmail);
+
+        if (teamsWithInvitation.isEmpty()) {
+            log.info("No pending invitations found for email {}", normalizedEmail);
+            return;
+        }
+
+        int processedCount = 0;
         for (Team team : teamsWithInvitation) {
-            String temporaryUserId = team.getTemporaryUserIdByEmail(email);
-            if (temporaryUserId != null) {
-                team.updateMemberId(temporaryUserId, uid);
+            String temporaryUserId = team.getTemporaryUserIdByEmail(normalizedEmail);
 
-                team.getMembers().stream()
-                        .filter(member -> member.getUserId().equals(uid))
-                        .findFirst()
-                        .ifPresent(member -> member.setStatus("active"));
+            if (temporaryUserId == null) {
+                log.warn("No temporary user ID found for email {} in team {}",
+                        normalizedEmail, team.getId());
+                continue;
+            }
 
-                team.removeInvitedEmail(email);
-                teamRepository.saveTeam(team);
+            team.updateMemberId(temporaryUserId, uid);
+
+            boolean memberUpdated = team.getMembers().stream()
+                    .filter(member -> member.getUserId().equals(uid))
+                    .findFirst()
+                    .map(member -> {
+                        member.setEmail(normalizedEmail);
+                        member.setStatus("active");
+
+                        if (user.getName() != null && !user.getName().isEmpty()) {
+                            member.setDisplayName(user.getName());
+                        }
+
+                        if (user.getPhotoURL() != null && !user.getPhotoURL().isEmpty()) {
+                            member.setPhotoURL(user.getPhotoURL());
+                        }
+
+                        return true;
+                    })
+                    .orElse(false);
+
+            if (!memberUpdated) {
+                log.warn("Failed to update member {} in team {}", uid, team.getId());
+                continue;
+            }
+
+            team.removeInvitedEmail(normalizedEmail);
+
+            try {
+                Team savedTeam = teamRepository.saveTeam(team);
+                log.info("Team {} saved successfully. Member count: {}, Active members: {}",
+                        savedTeam.getId(),
+                        savedTeam.getMembers().size(),
+                        savedTeam.getMembers().stream()
+                                .filter(m -> "active".equals(m.getStatus()))
+                                .count());
+                processedCount++;
+            } catch (Exception e) {
+                log.error("Failed to save team {}: {}", team.getId(), e.getMessage(), e);
             }
         }
     }

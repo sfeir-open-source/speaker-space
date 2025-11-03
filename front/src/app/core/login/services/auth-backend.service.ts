@@ -1,13 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import {
-  Auth,
-  User as FirebaseUser,
-} from '@angular/fire/auth';
-import {HttpClient} from '@angular/common/http';
-import {UserStateService} from '../../services/user-services/user-state.service';
+import { HttpClient } from '@angular/common/http';
+import { Auth, User as FirebaseUser } from '@angular/fire/auth';
+import { firstValueFrom } from 'rxjs';
 import {User} from '../../models/user.model';
-import {firstValueFrom} from 'rxjs';
 import {environment} from '../../../../environments/environment.development';
+import {UserStateService} from '../../services/user-services/user-state.service';
 
 @Injectable({
   providedIn: 'root'
@@ -22,8 +19,12 @@ export class AuthBackendService {
       const token = await user.getIdToken(true);
 
       await this.sendTokenToBackend(token);
-      await this.processInvitations(user);
       await this.saveUserToBackend(this.createUserPayload(user));
+
+      if (user.email) {
+        await this.processInvitations(user.email, user.uid);
+      }
+
       await this.syncUserData(user);
 
     } catch (error) {
@@ -108,7 +109,7 @@ export class AuthBackendService {
         })
       );
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching user data (non-blocking):', error);
       return null;
     }
   }
@@ -116,8 +117,8 @@ export class AuthBackendService {
   private async sendTokenToBackend(token: string): Promise<void> {
     await firstValueFrom(
       this.http.post(`${environment.apiUrl}/auth/login`,
-        { idToken: token },
-        { withCredentials: true }
+        {idToken: token},
+        {withCredentials: true}
       )
     );
   }
@@ -139,20 +140,45 @@ export class AuthBackendService {
     }
   }
 
-  async processInvitations(user: FirebaseUser): Promise<void> {
-    if (!user?.email) {
+  async processInvitations(email: string, uid: string): Promise<void> {
+    if (!email || !uid) {
+      console.warn('Missing email or uid for invitation processing');
       return;
     }
 
-    try {
-      await firstValueFrom(
-        this.http.post(`${environment.apiUrl}/public/invitations/process`, {
-          email: user.email.toLowerCase(),
-          uid: user.uid
-        })
-      );
-    } catch (error) {
-      console.error('Error processing invitations:', error);
+    const maxRetries = 3;
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      try {
+        const response = await firstValueFrom(
+          this.http.post<{ success: boolean; message: string }>(
+            `${environment.apiUrl}/public/invitations/process`,
+            {
+              email: email.toLowerCase(),
+              uid: uid
+            }
+          )
+        );
+
+        if (response.success) {
+          return;
+        } else {
+          console.warn('Invitation processing returned false:', response.message);
+          return;
+        }
+
+      } catch (error) {
+        attempt++;
+
+        if (attempt >= maxRetries) {
+          console.error('Error processing invitations after retries:', error);
+          return;
+        }
+
+        const delay = 500 * Math.pow(2, attempt - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
     }
   }
 

@@ -7,7 +7,7 @@
       (click)="$event.stopPropagation()"
       class="bg-white rounded-lg shadow p-10 w-full max-w-md lg:max-w-[500px] m-2 max-h-[600px] transition-transform scale-100">
       <article class="flex justify-between pb-4">
-        <h3 class="text-lg font-medium">Change the role of {{ member().displayName || 'this member' }} ?</h3>
+        <h3 class="text-lg font-medium">Change the role of {{ member().name || 'this member' }} ?</h3>
         <button type="button" (click)="close()"
                 class="text-gray-400 hover:text-gray-600 cursor-pointer">
           ✕
@@ -54,7 +54,7 @@
           [type]="'submit'"
           (click)="confirmChange()"
           [customClass]="'px-3 py-2 flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm px-3 rounded-md transition-colors'">
-          Change {{ member().displayName }}'s role
+          Change {{ member().name }}'s role
         </app-button>
       </article>
     </section>

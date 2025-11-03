@@ -6,6 +6,7 @@ import com.speakerspace.model.Team;
 import com.speakerspace.model.TeamMember;
 import com.speakerspace.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
@@ -15,6 +16,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TeamMemberService {
 
     private final TeamRepository teamRepository;
@@ -176,6 +178,8 @@ public class TeamMemberService {
             TeamMember invitedMember = new TeamMember(temporaryUserId, "Member");
             invitedMember.setEmail(email);
             invitedMember.setStatus("invited");
+            invitedMember.setDisplayName(null);
+            invitedMember.setPhotoURL(null);
 
             team.addMemberWithRole(temporaryUserId, "Member");
 
@@ -185,6 +189,8 @@ public class TeamMemberService {
                     .ifPresent(member -> {
                         member.setEmail(email);
                         member.setStatus("invited");
+                        member.setDisplayName(null);
+                        member.setPhotoURL(null);
                     });
 
             team.addInvitedEmail(email, temporaryUserId);
@@ -195,6 +201,8 @@ public class TeamMemberService {
                     .role("Member")
                     .email(email)
                     .status("invited")
+                    .name(null)
+                    .photoURL(null)
                     .build();
         }
     }

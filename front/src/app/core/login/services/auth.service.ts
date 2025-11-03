@@ -3,14 +3,14 @@ import {
   Auth, onAuthStateChanged, signOut,
   User as FirebaseUser,
 } from '@angular/fire/auth';
-import {AuthBackendService} from './auth-backend.service';
-import {UserStateService} from '../../services/user-services/user-state.service';
-import {AuthProvidersService} from './auth-providers.service';
-import {EmailLinkHandlerService} from './email-link-handler.service';
-import {BehaviorSubject, from, Observable, of, switchMap, take} from 'rxjs';
-import {AuthErrorHandlerService} from './auth-error-handler';
-import {catchError} from 'rxjs/operators';
-import {Router} from '@angular/router';
+import { AuthBackendService } from './auth-backend.service';
+import { UserStateService } from '../../services/user-services/user-state.service';
+import { AuthProvidersService } from './auth-providers.service';
+import { EmailLinkHandlerService } from './email-link-handler.service';
+import { BehaviorSubject, from, Observable, of, switchMap, take } from 'rxjs';
+import { AuthErrorHandlerService } from './auth-error-handler';
+import { catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 @Injectable({
   providedIn: 'root'
@@ -67,7 +67,11 @@ export class AuthService {
   }
 
   async processInvitations(user: FirebaseUser): Promise<void> {
-    return this.authBackend.processInvitations(user);
+    if (!user.email) {
+      return;
+    }
+
+    return this.authBackend.processInvitations(user.email, user.uid);
   }
 
   openDialog(component: any, config: any) {

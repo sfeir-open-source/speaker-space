@@ -73,7 +73,7 @@ export class AddMemberComponent {
     const newMember: TeamMember = {
       userId: selectedUser.userId,
       email: selectedUser.email,
-      displayName: selectedUser.displayName || '',
+      name: selectedUser.name || '',
       photoURL: selectedUser.photoURL || '',
       role: 'Member'
     };

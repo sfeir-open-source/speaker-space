@@ -6,8 +6,8 @@ export type TeamMember = {
   userId: string;
   role: string;
   email: string;
-  displayName?: string;
-  photoURL?: string;
+  name?: string | null;
+  photoURL?: string | null;
   status?: 'active' | 'invited';
   isCreator?: boolean;
 }

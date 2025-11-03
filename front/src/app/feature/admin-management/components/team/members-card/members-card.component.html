@@ -2,27 +2,35 @@
   <div class="p-3 flex items-center justify-center overflow-hidden rounded-full">
     <img class="w-15 aspect-square object-cover rounded-full"
          [src]="member().photoURL || getDefaultAvatar()"
-         [alt]="member().displayName || 'Team member'" referrerpolicy="no-referrer">
+         [alt]="getMemberDisplayName()"
+         referrerpolicy="no-referrer">
   </div>
+
   <section class="flex items-center justify-between p-3 leading-normal w-full">
     <article class="flex flex-col justify-center">
       <h1 class="text-md font-medium text-gray-900">
-        {{ member().displayName || 'User' }}
+        {{ getMemberDisplayName() }}
         @if (member().status === 'invited') {
-          <span class="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">Invited</span>
+          <span class="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+            Pending invitation
+          </span>
         }
       </h1>
       <p class="text-sm text-gray-500">
+        {{ member().email }}
+      </p>
+      <p class="text-xs text-gray-400 mt-0.5">
         {{ member().role }}
       </p>
     </article>
+
     <article class="flex flex-col sm:flex-row items-center justify-between">
       @if (canManageRoles()) {
         <app-button
           (click)="openChangeRoleModal()"
           type="button"
-          [disabled]="member().userId === currentUserId()"
-          [class.opacity-50]="member().userId === currentUserId()"
+          [disabled]="member().userId === currentUserId() || member().status === 'invited'"
+          [class.opacity-50]="member().userId === currentUserId() || member().status === 'invited'"
           [customClass]="'bg-white text-sm mr-0 sm:mr-1 hover:bg-gray-100 mb-1 sm:mb-0 text-gray-600 px-4 py-1 rounded-md font-medium flex-shrink-0 border border-gray-400 cursor-pointer flex items-center'">
           Change role
         </app-button>

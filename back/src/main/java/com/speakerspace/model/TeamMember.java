@@ -26,5 +26,7 @@ public class TeamMember {
     public TeamMember(String userId, String role) {
         this.userId = userId;
         this.role = role;
+        this.status = "active";
+        this.isCreator = false;
     }
 }
