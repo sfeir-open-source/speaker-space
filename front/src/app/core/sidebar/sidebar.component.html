@@ -3,22 +3,31 @@
   [class.opacity-0]="!userDataService.isSidebarOpen()"
   [class.opacity-100]="userDataService.isSidebarOpen()"
   [class.pointer-events-none]="!userDataService.isSidebarOpen()"
-  (click)="closeSidebar()">
+  (click)="closeSidebar()"
+  role="presentation"
+  aria-hidden="true">
 </section>
 
-<main
+<aside
   class="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out rounded-l-xl"
   [ngClass]="userDataService.isSidebarOpen() ? 'translate-x-0' : 'translate-x-full'"
-  (click)="$event.stopPropagation()">
+  (click)="$event.stopPropagation()"
+  role="navigation"
+  aria-label="Main sidebar navigation"
+  [attr.aria-hidden]="!userDataService.isSidebarOpen()">
 
   <header class="p-4 flex justify-between items-center">
     <article class="flex items-center gap-3">
-      <img [src]="userDataService.userPhotoURL() || 'assets/img/profil-picture.svg'"
-           alt="profile"
-           class="w-12 h-12 rounded-full border-none" referrerpolicy="no-referrer">
+      <img
+        [src]="userDataService.userPhotoURL() || 'assets/img/profil-picture.svg'"
+        [alt]="'Profile picture of ' + userDataService.name()"
+        class="w-12 h-12 rounded-full border-none"
+        referrerpolicy="no-referrer">
       <section>
         <p class="text-sm font-medium">{{ userDataService.name() }}</p>
-        <p class="text-xs text-gray-500">{{ userDataService.userName() ? userDataService.userEmail() : '' }}</p>
+        @if (userDataService.userName()) {
+          <p class="text-xs text-gray-500">{{ userDataService.userEmail() }}</p>
+        }
       </section>
     </article>
 
@@ -31,8 +40,8 @@
     </app-button>
   </header>
 
-  <nav>
-    <article class="p-4">
+  <nav aria-label="Sidebar menu">
+    <section class="p-4">
       <app-button
         materialIcon="notifications"
         route="/notifications"
@@ -43,12 +52,12 @@
         (itemClick)="navigateTo($event)">
         Notifications
       </app-button>
-    </article>
+    </section>
 
-    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary" role="separator">
 
-    <article class="p-4">
-      <p class="font-medium text-lg mb-2">Speaker</p>
+    <section class="p-4" aria-labelledby="speaker-section">
+      <h2 id="speaker-section" class="font-medium text-lg mb-2">Speaker</h2>
 
       <app-button
         materialIcon="book_2"
@@ -67,48 +76,49 @@
         (itemClick)="navigateTo($event)">
         Travel Information
       </app-button>
-    </article>
+    </section>
 
-    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary" role="separator">
 
-    <article class="p-4">
-      <p class="font-medium text-lg mb-2">Organizer</p>
+    <section class="p-4" aria-labelledby="organizer-section">
+      <h2 id="organizer-section" class="font-medium text-lg mb-2">Organizer</h2>
 
-      @if(isLoadingTeams()) {
-        <div class="flex justify-center py-2">
-          <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+      @if (isLoadingTeams()) {
+        <div class="flex justify-center py-4" role="status" aria-live="polite">
+          <span class="sr-only">Loading teams...</span>
+          <span class="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" aria-hidden="true"></span>
         </div>
       } @else {
-        @if(hasTeams()) {
-          <div class="space-y-1">
-            @for(team of teams(); track team.id ?? $index) {
-              <app-button
-                materialIcon="group"
-                [route]="'/team/' + (team.id)"
-                [customClass]="getSidebarButtonClasses()"
-                [ariaLabel]="'View team ' + team.name"
-                (itemClick)="navigateToTeam(team.id)">
-                {{ team.name }}
-              </app-button>
+        @if (hasTeams()) {
+          <ul class="space-y-1" role="list" aria-label="Your teams">
+            @for (team of teams(); track team.id) {
+              <li>
+                <app-button
+                  materialIcon="group"
+                  [route]="'/team/' + team.id"
+                  [customClass]="getSidebarButtonClasses()"
+                  [ariaLabel]="'View team ' + team.name"
+                  (itemClick)="navigateToTeam(team.id)">
+                  {{ team.name }}
+                </app-button>
+              </li>
             }
-          </div>
+          </ul>
         } @else {
-          <p class="text-sm text-gray-500 italic mb-2">No teams yet</p>
+          <p class="text-sm text-gray-500 italic mb-2" role="status">
+            No teams yet
+          </p>
         }
       }
 
       <app-button
         materialIcon="add_box"
-        [customClass]="getSidebarButtonClasses('font-medium')"
-        [buttonHandler]="createNewTeam.bind(this)"
-        [ariaLabel]="'Create new team'">
-        New team
-      </app-button>
-    </article>
+        [customClass]="getSidebarButtonClasses('font-medium mt-2')"
+        [buttonHandler]="createNewTeam.bind(this)"[ariaLabel]="'Create new team'"> New team </app-button> </section>
 
-    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
+    <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary" role="separator">
 
-    <article class="p-4">
+    <section class="p-4">
       <app-button
         materialIcon="logout"
         [customClass]="getSidebarButtonClasses('font-medium')"
@@ -116,6 +126,6 @@
         [ariaLabel]="'Logout'">
         Log out
       </app-button>
-    </article>
+    </section>
   </nav>
-</main>
+</aside>
