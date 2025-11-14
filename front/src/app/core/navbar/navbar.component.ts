@@ -6,6 +6,7 @@ import { AuthService } from '../login/services/auth.service';
 import { UserDataService } from '../services/user-services/user-data.service';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
+import {UserStateService} from '../services/user-services/user-state.service';
 
 @Component({
   selector: 'app-navbar',
@@ -17,6 +18,7 @@ import { map } from 'rxjs/operators';
 export class NavbarComponent {
   private readonly authService = inject(AuthService);
   private readonly userDataService = inject(UserDataService);
+  private readonly userState = inject(UserStateService);
   private readonly router = inject(Router);
 
   readonly isHomePage = toSignal(
@@ -34,8 +36,11 @@ export class NavbarComponent {
   );
 
   readonly isLogin = computed(() => !!this.userSignal());
-  readonly userName = computed(() => this.userSignal()?.displayName ?? null);
-  readonly userPhotoURL = computed(() => this.userSignal()?.photoURL ?? null);
+  readonly userName = computed(() => this.userState.name() || this.userSignal()?.displayName || null);
+  readonly userPhotoURL = computed(() => {
+    const statePhotoURL = this.userState.photoURL();
+    return statePhotoURL || this.userSignal()?.photoURL || '';
+  });
   readonly userEmail = computed(() => this.userSignal()?.email ?? null);
 
   haveNotification = true;
@@ -52,7 +57,10 @@ export class NavbarComponent {
 
   handlePictureError(event: Event): void {
     const target = event.target as HTMLImageElement;
-    target.src = 'assets/img/profil-picture.svg';
+    const defaultAvatar = 'assets/img/profil-picture.svg';
+    if (target.src !== defaultAvatar) {
+      target.src = defaultAvatar;
+    }
   }
 
   openSidebar(): void {

@@ -18,15 +18,23 @@
 
   <header class="p-4 flex justify-between items-center">
     <article class="flex items-center gap-3">
-      <img
-        [src]="userDataService.userPhotoURL() || 'assets/img/profil-picture.svg'"
-        [alt]="'Profile picture of ' + userDataService.name()"
-        class="w-12 h-12 rounded-full border-none"
-        referrerpolicy="no-referrer">
+      @if(currentUserPhotoURL()) {
+        <img
+          [src]="currentUserPhotoURL()"
+          [alt]="'Profile picture of ' + (currentUserName() || 'User')"
+          class="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+          referrerpolicy="no-referrer"
+          loading="lazy">
+      } @else {
+        <img
+          src="assets/img/profil-picture.svg"
+          [alt]="'Default profile picture of ' + (currentUserName() || 'User')"
+          class="w-12 h-12 rounded-full border-2 border-gray-200">
+      }
       <section>
-        <p class="text-sm font-medium">{{ userDataService.name() }}</p>
-        @if (userDataService.userName()) {
-          <p class="text-xs text-gray-500">{{ userDataService.userEmail() }}</p>
+        <p class="text-sm font-medium">{{ currentUserName() || 'User' }}</p>
+        @if (currentUserName()) {
+          <p class="text-xs text-gray-500">{{ currentUserEmail() }}</p>
         }
       </section>
     </article>
@@ -114,7 +122,11 @@
       <app-button
         materialIcon="add_box"
         [customClass]="getSidebarButtonClasses('font-medium mt-2')"
-        [buttonHandler]="createNewTeam.bind(this)"[ariaLabel]="'Create new team'"> New team </app-button> </section>
+        [buttonHandler]="createNewTeam.bind(this)"
+        [ariaLabel]="'Create new team'">
+        New team
+      </app-button>
+    </section>
 
     <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary" role="separator">
 

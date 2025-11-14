@@ -1,12 +1,13 @@
 <article class="mt-5 w-full items-center bg-white shadow-md rounded-lg p-4 pb-16 mb-8">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+  <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <h1 class="text-2xl font-medium">Personal information</h1>
     <p class="mt-1 sm:mt-0 text-xs text-gray-600">
       Please note that if the data is modified, it is automatically saved!
     </p>
-  </div>
+  </header>
+
   <p class="mt-2 text-sm text-gray-600">
-    Informations used to contact you and complete your profile (all those informations where import from Conference Hall)
+    Informations used to contact you and complete your profile (all those informations were imported from Conference Hall)
   </p>
 
   @for(field of formFields; track field.name) {
@@ -23,31 +24,37 @@
     </app-field>
   }
 
-  <div class="mt-5 flex items-center">
-    <div class="flex-grow">
-      <app-field
-        [label]="additionalFields[0].label"
-        [paragraph]="additionalFields[0].paragraph"
-        [type]="additionalFields[0].type"
-        [control]="getFormControl(additionalFields[0].name)"
-        [errorMessage]="additionalFields[0].errorMessage || ''"
-        [name]="additionalFields[0].name"
-        (blur)="getFormControl(additionalFields[0].name).markAsTouched()">
-      </app-field>
-    </div>
-    <div class="ml-4 flex flex-col items-center">
-      <img [src]="userPhotoURL()"
-           alt="Profile Picture"
-           class="w-20 h-20 rounded-md border-3 border-white shadow-md object-cover"
-           (error)="handlePictureError($event)" referrerpolicy="no-referrer" >
-    </div>
-  </div>
-
-  <hr class="mt-6 rounded-lg w-[100%] mx-auto border-gray-200 px-4">
-  <p class="mt-5 text-gray-500 text-sm">Additional information (not filled by Conference Hall)</p>
-
-  <div class="mt-3">
+  <section class="mt-5 flex items-center gap-4">
     <app-field
+      class="flex-grow"
+      [label]="additionalFields[0].label"
+      [paragraph]="additionalFields[0].paragraph"
+      [type]="additionalFields[0].type"
+      [control]="getFormControl(additionalFields[0].name)"
+      [errorMessage]="additionalFields[0].errorMessage || ''"
+      [name]="additionalFields[0].name"
+      (blur)="getFormControl(additionalFields[0].name).markAsTouched()">
+    </app-field>
+
+    <figure class="flex flex-col items-center">
+      <img
+        [src]="userPhotoURL() || 'assets/img/profil-picture.svg'"
+        [alt]="(userState.name() || 'User') + ' profile picture'"
+        class="w-20 h-20 rounded-md border-3 border-white shadow-md object-cover"
+        (error)="handlePictureError($event)"
+        referrerpolicy="no-referrer"
+        loading="lazy">
+      <figcaption class="sr-only">Current profile picture</figcaption>
+    </figure>
+  </section>
+
+  <hr class="mt-6 rounded-lg w-full border-gray-200" aria-hidden="true">
+
+  <section class="mt-5">
+    <h2 class="text-gray-500 text-sm font-medium">Additional information (not filled by Conference Hall)</h2>
+
+    <app-field
+      class="mt-3"
       [label]="additionalFields[1].label"
       [paragraph]="additionalFields[1].paragraph"
       [type]="additionalFields[1].type"
@@ -57,5 +64,5 @@
       (blur)="getFormControl(additionalFields[1].name).markAsTouched()">
       <span labelSuffix class="font-normal text-gray-500 text-xs"> (not coming from Conference Hall)</span>
     </app-field>
-  </div>
+  </section>
 </article>

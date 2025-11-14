@@ -26,11 +26,18 @@
               (click)="openSidebar()"
               aria-label="Open user menu"
               aria-haspopup="true">
-        <img [src]="userPhotoURL() || 'assets/img/profil-picture.svg'"
-             class="h-15 w-15 rounded-full"
-             [alt]="userName() ? 'profile picture to ' + userName() : 'profile picture by default'"
-             (error)="handlePictureError($event)"
-             referrerpolicy="no-referrer">
+        @if(userPhotoURL()) {
+          <img [src]="userPhotoURL()"
+               class="h-15 w-15 rounded-full object-cover"
+               [alt]="userName() ? 'profile picture of ' + userName() : 'profile picture'"
+               (error)="handlePictureError($event)"
+               referrerpolicy="no-referrer"
+               loading="lazy">
+        } @else {
+          <img src="assets/img/profil-picture.svg"
+               class="h-15 w-15 rounded-full"
+               [alt]="userName() ? 'default profile picture of ' + userName() : 'default profile picture'">
+        }
         @if(haveNotification){
           <span class="absolute bottom-0 right-0 w-3 h-3 bg-primaryColor border-none rounded-full"
                 role="status"

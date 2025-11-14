@@ -29,7 +29,7 @@ export class FieldValidationService {
     if (config.name === 'phoneNumber') {
       validators.push(Validators.pattern('^(\\+?[0-9\\s.-]{6,})?$'));
     } else if (config.name === 'avatarPictureURL' || config.name.toLowerCase().includes('link')) {
-      validators.push(Validators.pattern('(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?'));
+      validators.push( Validators.pattern('^https?://[\\w\\-]+(\\.[\\w\\-]+)+[/#?]?.*$') );
     }
 
     return validators;

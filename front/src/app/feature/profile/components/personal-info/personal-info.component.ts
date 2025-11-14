@@ -1,4 +1,4 @@
-import {Component, inject, Signal} from '@angular/core';
+import {Component, inject, effect} from '@angular/core';
 import { FormControl } from '@angular/forms';
 import {FieldComponent} from '../../../../shared/input/field.component';
 import {FormField} from '../../../../shared/input/interface/form-field';
@@ -15,12 +15,21 @@ import {UserStateService} from '../../../../core/services/user-services/user-sta
   styleUrls: ['./personal-info.component.scss']
 })
 export class PersonalInfoComponent {
-  private profileService: ProfileService = inject(ProfileService);
-  private userState: UserStateService = inject(UserStateService);
+  private readonly profileService = inject(ProfileService);
+  protected readonly userState = inject(UserStateService);
 
-  userPhotoURL: Signal<string>  = this.userState.photoURL;
+  readonly userPhotoURL = this.userState.photoURL;
 
-  formFields: FormField[] = [
+  private readonly DEFAULT_AVATAR = 'assets/img/profil-picture.svg';
+
+  constructor() {
+    effect(() => {
+      const photoURL = this.userPhotoURL();
+      console.log('Photo URL changed:', photoURL);
+    });
+  }
+
+  readonly formFields: FormField[] = [
     {
       name: 'name',
       label: 'Full name',
@@ -51,7 +60,7 @@ export class PersonalInfoComponent {
     }
   ];
 
-  additionalFields: FormField[] = [
+  readonly additionalFields: FormField[] = [
     {
       name: 'avatarPictureURL',
       label: 'Avatar picture URL',
@@ -74,6 +83,8 @@ export class PersonalInfoComponent {
 
   handlePictureError(event: Event): void {
     const target = event.target as HTMLImageElement;
-    target.src = 'assets/img/profil-picture.svg';
+    if (target.src !== this.DEFAULT_AVATAR) {
+      target.src = this.DEFAULT_AVATAR;
+    }
   }
 }

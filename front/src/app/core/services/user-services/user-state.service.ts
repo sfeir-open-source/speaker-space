@@ -88,6 +88,11 @@ export class UserStateService {
 
     Object.entries(storageMapping).forEach(([userKey, storageKey]) => {
       const value = (user as any)[userKey];
+      if (userKey === 'photoURL' && (!value || value.trim() === '')) {
+        localStorage.removeItem(storageKey);
+        return;
+      }
+
       if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
           localStorage.setItem(storageKey, JSON.stringify(value));
@@ -100,10 +105,16 @@ export class UserStateService {
 
   updateUser(userData: Partial<User>): void {
     const currentUser = this.user();
+
+    if ('photoURL' in userData && (!userData.photoURL || userData.photoURL.trim() === '')) {
+      userData.photoURL = '';
+    }
+
     const updatedUser = { ...currentUser, ...userData } as User;
 
     this.user.set(updatedUser);
     this.userSubject.next(updatedUser);
+    this.saveToStorage();
   }
 
   clearUser(): void {

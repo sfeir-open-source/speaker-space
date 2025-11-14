@@ -56,10 +56,31 @@ export class ProfileService {
     }
 
     this.profileForm.get('avatarPictureURL')?.valueChanges.subscribe(url => {
-      if (url) {
-        this.userState.updateUser({ photoURL: url });
+      const trimmedUrl = url?.trim();
+
+      if (!trimmedUrl) {
+        this.userState.updateUser({ photoURL: '' });
+        this.savePartialProfile({ uid: this.userState.user()?.uid, photoURL: '' });
+        return;
+      }
+
+      if (this.isValidImageUrl(trimmedUrl)) {
+        this.userState.updateUser({ photoURL: trimmedUrl });
+        this.savePartialProfile({
+          uid: this.userState.user()?.uid,
+          photoURL: trimmedUrl
+        });
       }
     });
+  }
+
+  private isValidImageUrl(url: string): boolean {
+    try {
+      const urlObj = new URL(url);
+      return ['http:', 'https:'].includes(urlObj.protocol);
+    } catch {
+      return false;
+    }
   }
 
   private createForm(): FormGroup {

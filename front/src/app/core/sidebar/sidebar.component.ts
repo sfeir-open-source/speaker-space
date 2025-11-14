@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { TeamService } from '../../feature/admin-management/services/team/team.service';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {Team} from '../../feature/admin-management/type/team/team';
+import {UserStateService} from '../services/user-services/user-state.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -22,12 +23,17 @@ export class SidebarComponent implements OnInit {
   private readonly teamService = inject(TeamService);
   private readonly destroyRef = inject(DestroyRef);
   readonly userDataService = inject(UserDataService);
+  private readonly userState = inject(UserStateService);
 
   private readonly _hasUnreadNotifications = signal<boolean>(true);
   private readonly _notificationCount = signal<number>(1);
 
   readonly hasUnreadNotifications = this._hasUnreadNotifications.asReadonly();
   readonly notificationCount = this._notificationCount.asReadonly();
+
+  readonly currentUserName = computed(() => this.userState.name());
+  readonly currentUserEmail = computed(() => this.userState.email());
+  readonly currentUserPhotoURL = computed(() => this.userState.photoURL());
 
   readonly currentRoute = toSignal(
     this.router.events.pipe(
