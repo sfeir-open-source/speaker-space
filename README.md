@@ -64,6 +64,14 @@ Download Firebase JSON Key:
 - Click on “Generate new private key”.
 - Place the file in : **src/main/resources/firebase-service.json**
 
+## Google Cloud SDK Configuration
+
+- Download the Google Cloud SDK from **https://cloud.google.com/sdk/docs/install?hl=fr** and follow the instructions.
+- Open the Google Cloud SDK Shell and run: **gcloud init**
+- Select the **Speaker-Space** project.
+- Do you want to configure a default region and compute zone? (Y/N)? Choose **europe-west9-a** (Paris).
+- In the Google Cloud SDK Shell execut **gcloud auth application-default login** sign in with a Google account, **Important:** Authorize all permissions when prompted in the browser.
+- Verification : execut **gcloud config list** and **dir %APPDATA%\gcloud\application_default_credentials.json**
 
 ## Frontend Configuration
 
