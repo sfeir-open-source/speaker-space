@@ -18,6 +18,7 @@ export class ButtonComponent {
   readonly notificationCount = input<number>(1);
   readonly customClass = input<string>('');
   readonly materialIconClass = input<string>('text-base');
+  readonly ariaSelected = input<boolean | null>(null);
 
   readonly itemClick = output<string>();
 
