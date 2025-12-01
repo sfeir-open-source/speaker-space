@@ -6,14 +6,13 @@ import { AsyncPipe } from '@angular/common';
 
 import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ButtonGreyComponent } from '../../../../../shared/button-grey/button-grey.component';
 import { Category, Format, SessionImportData, Speaker } from '../../../type/session/session';
 import { SessionFilters } from '../../../type/session/session-filters';
-import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
 import { SessionFilterPopupComponent } from '../../../components/session/session-filter-popup/session-filter-popup.component';
 import { BaseListService, ListState } from '../../../components/services/base-list.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-session-list-page',
@@ -22,10 +21,9 @@ import { EventDataService } from '../../../services/event/event-data.service';
     NavbarEventPageComponent,
     FormsModule,
     ReactiveFormsModule,
-    ButtonGreyComponent,
-    ButtonGreenActionsComponent,
     SessionFilterPopupComponent,
-    AsyncPipe
+    AsyncPipe,
+    ButtonComponent
   ],
   providers: [BaseListService],
   templateUrl: './session-list-page.component.html',

@@ -17,7 +17,6 @@ import { map } from 'rxjs/operators';
 import { SidebarTeamComponent } from '../../../components/team/sidebar-team/sidebar-team.component';
 import { MembersCardComponent } from '../../../components/team/members-card/members-card.component';
 import { AutocompleteComponent } from '../../../components/auto-complete/auto-complete.component';
-import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
 import { NavbarTeamPageComponent } from '../../../components/team/navbar-team-page/navbar-team-page.component';
 import { TeamMember } from '../../../type/team/team-member';
 import { FormSubmitData } from '../../../type/team/form-submit-data';
@@ -27,6 +26,7 @@ import { AuthService } from '../../../../../core/login/services/auth.service';
 import { UserRoleService } from '../../../services/team/user-role.service';
 import { FormField } from '../../../../../shared/input/interface/form-field';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-setting-team-members-page',
@@ -36,10 +36,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
     FormsModule,
     ReactiveFormsModule,
     MembersCardComponent,
-    ButtonGreenActionsComponent,
     AutocompleteComponent,
     NavbarTeamPageComponent,
     SidebarTeamComponent,
+    ButtonComponent,
   ],
   templateUrl: './setting-team-members-page.component.html',
   styleUrl: './setting-team-members-page.component.scss'

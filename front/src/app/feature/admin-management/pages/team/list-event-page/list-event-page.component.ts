@@ -9,16 +9,16 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {finalize} from 'rxjs';
 import {EventStatusService} from '../../../services/event/event-status.service';
 import {EventTeamCardComponent} from '../../../components/event/event-team-card/event-team-card.component';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {NavbarTeamPageComponent} from '../../../components/team/navbar-team-page/navbar-team-page.component';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-list-event-page',
   templateUrl: './list-event-page.component.html',
   imports: [
     EventTeamCardComponent,
-    ButtonGreyComponent,
-    NavbarTeamPageComponent
+    NavbarTeamPageComponent,
+    ButtonComponent
   ],
   styleUrls: ['./list-event-page.component.css']
 })

@@ -1,12 +1,12 @@
 import {Component} from '@angular/core';
 import {SessionImportData} from '../../../type/session/session';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {BaseImportComponent} from '../../base-import/base-import.component';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-session-review-import',
   imports: [
-    ButtonGreyComponent
+    ButtonComponent
   ],
   templateUrl: './session-review-import.component.html',
   styleUrl: './session-review-import.component.scss'

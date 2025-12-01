@@ -1,10 +1,13 @@
 import { Component, computed, input, output } from '@angular/core';
 import { TeamMember } from '../../../../../type/team/team-member';
+import {ButtonComponent} from '../../../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-delete-popup',
   standalone: true,
-  imports: [],
+  imports: [
+    ButtonComponent
+  ],
   templateUrl: './delete-popup.component.html',
   styleUrl: './delete-popup.component.scss'
 })

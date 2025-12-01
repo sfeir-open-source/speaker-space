@@ -5,32 +5,30 @@
          (error)="handlePictureError($event)" referrerpolicy="no-referrer" >
   </div>
   <section class="flex items-center gap-4 sm:gap-12 lg:gap-20 lg:ml-[12%]">
-    <app-button-with-icon
+    <app-button
       materialIcon="book_2"
       route="/"
-      class="text-xs sm:text-sm lg:text-base"
       (itemClick)="navigateTo('/')">
       <span class="hidden lg:inline">My Talks</span>
       <span class="lg:hidden">Talks</span>
-    </app-button-with-icon>
+    </app-button>
 
-    <app-button-with-icon
+    <app-button
       materialIcon="luggage"
       route="/"
-      class="text-xs sm:text-sm lg:text-base"
       (itemClick)="navigateTo('/')">
       <span class="hidden lg:inline">Travel informations</span>
       <span class="lg:hidden">Travel</span>
-    </app-button-with-icon>
+    </app-button>
 
-    <app-button-green-actions
+    <app-button
       [type]="'submit'"
       route="/profile"
       (itemClick)="navigateTo('/profile')"
       materialIcon="person"
-      class="text-xs sm:text-sm lg:text-base">
+      [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-1.5 px-3 rounded-md transition-colors'">
       <span class="hidden lg:inline">Speaker informations</span>
       <span class="lg:hidden">Speaker</span>
-    </app-button-green-actions>
+    </app-button>
   </section>
 </main>

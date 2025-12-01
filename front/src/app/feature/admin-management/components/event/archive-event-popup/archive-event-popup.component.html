@@ -42,23 +42,23 @@
       </div>
 
       <footer class="flex justify-end space-x-3">
-        <button
+        <app-button
           type="button"
           (click)="onCancel($event)"
           [disabled]="isArchiving()"
-          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+          [customClass]="'px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500'"
           [class.opacity-50]="isArchiving()"
           [class.cursor-not-allowed]="isArchiving()">
           Cancel
-        </button>
+        </app-button>
 
-        <button
+        <app-button
           type="button"
           (click)="confirm.emit()"
           [disabled]="isArchiving()"
-          class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center">
+          [customClass]="'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center'">
           Archive event
-        </button>
+        </app-button>
       </footer>
     </div>
   </div>

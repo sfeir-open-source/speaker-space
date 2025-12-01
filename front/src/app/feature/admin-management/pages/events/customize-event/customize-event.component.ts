@@ -6,6 +6,7 @@ import { EventService } from '../../../services/event/event.service';
 import { EventDataService } from '../../../services/event/event-data.service';
 import { NavbarEventPageComponent } from '../../../components/event/navbar-event-page/navbar-event-page.component';
 import { SidebarEventComponent } from '../../../components/event/sidebar-event/sidebar-event.component';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 type UserRole = 'Owner' | 'Admin' | 'Member';
 type ActiveSection = 'event-customize';
@@ -18,6 +19,7 @@ type ActiveSection = 'event-customize';
     NavbarEventPageComponent,
     SidebarEventComponent,
     ReactiveFormsModule,
+    ButtonComponent,
   ],
   templateUrl: './customize-event.component.html',
   styleUrl: './customize-event.component.scss'

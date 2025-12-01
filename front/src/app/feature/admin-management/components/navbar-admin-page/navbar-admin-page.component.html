@@ -1,15 +1,15 @@
 <main class="relative bg-white h-[50px] w-full px-4 lg:px-8 flex justify-around items-center shadow-sm">
   <section class="flex items-center gap-4">
     @for (button of visibleLeftButtons(); track button.id) {
-      <app-button-grey
+      <app-button
         [materialIcon]="button.materialIcon"
         [buttonHandler]="getButtonHandler(button)"
         [route]="button.route || ''"
         [isActivePage]="isButtonActive(button)"
-        [ngClass]="button.cssClass"
-      >
+        [customClass]="'text-base'"
+        [ngClass]="button.cssClass">
         {{ button.label }}
-      </app-button-grey>
+      </app-button>
     }
   </section>
 
@@ -20,13 +20,13 @@
   }
 
   @if (rightButtonConfig()) {
-    <button
+    <app-button
       [ngClass]="rightButtonCssClass()"
       (click)="onRightButtonClick()"
       [attr.aria-label]="rightButtonConfig()!.label"
     >
       <span>{{ rightButtonConfig()!.label }}</span>
       <span class="material-icons text-lg ml-2">{{ rightButtonConfig()!.icon }}</span>
-    </button>
+    </app-button>
   }
 </main>

@@ -6,23 +6,26 @@
 
     <nav class="flex gap-1 rounded-md bg-action px-1 py-1 md:static absolute top-0 left-1/2 transform -translate-x-1/2 md:ml-auto md:-mr-25"
          aria-label="Event filters">
-      <button
-        class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
-        [ngClass]="activeTab() === 'currents' ? 'bg-white text-primaryColor shadow-sm' : 'text-secondary'"
-        (click)="setActiveTab('currents')"
-        [attr.aria-selected]="activeTab() === 'currents'"
-        [disabled]="isLoading()">
-        Currents
-      </button>
 
-      <button
-        class="flex items-center rounded-md py-0.5 px-12 text-sm cursor-pointer transition-all"
-        [ngClass]="activeTab() === 'passed' ? 'bg-white text-primaryColor shadow-sm' : 'text-secondary'"
-        (click)="setActiveTab('passed')"
-        [attr.aria-selected]="activeTab() === 'passed'"
-        [disabled]="isLoading()">
+      <app-button
+        type="button"
+        [customClass]="getCurrentsTabClasses()"
+        [buttonHandler]="getCurrentsTabHandler()"
+        [disabled]="isLoading()"
+        [ariaLabel]="'Show current events'"
+        [attr.aria-selected]="activeTab() === 'currents'">
+        Currents
+      </app-button>
+
+      <app-button
+        type="button"
+        [customClass]="getPassedTabClasses()"
+        [buttonHandler]="getPassedTabHandler()"
+        [disabled]="isLoading()"
+        [ariaLabel]="'Show past events'"
+        [attr.aria-selected]="activeTab() === 'passed'">
         Passed
-      </button>
+      </app-button>
     </nav>
   </header>
 </section>

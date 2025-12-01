@@ -45,12 +45,12 @@
 
             @if (currentUserRole() === 'Owner') {
               <footer class="flex justify-end mt-4 p-4">
-                <button
+                <app-button
                   type="submit"
-                  class="bg-action hover:bg-action-hover text-white px-4 py-2 rounded-md cursor-pointer transition-colors"
+                  [customClass]="'flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm py-2 px-3 rounded-md transition-colors'"
                   [disabled]="teamForm.invalid">
                   Save
-                </button>
+                </app-button>
               </footer>
             }
           </article>

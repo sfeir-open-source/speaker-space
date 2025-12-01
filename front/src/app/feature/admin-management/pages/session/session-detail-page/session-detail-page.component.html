@@ -16,14 +16,13 @@
                 class="text-lg font-medium text-gray-900 flex-1 mr-4">
               {{ sessionData.title }}
             </h2>
-            <app-button-grey
+            <app-button
               type="button"
               [materialIcon]="'edit_square'"
-              customTextClass="text-gray-600 hover:text-gray-600"
-              class="flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm"
+              [customClass]="'text-gray-600 hover:text-gray-600 flex-shrink-0 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 cursor-pointer shadow-sm'"
               (click)="onEditSession()">
               Edit
-            </app-button-grey>
+            </app-button>
           </div>
 
           <div class="p-6 space-y-6 border-b border-gray-200">
@@ -156,9 +155,9 @@
                         required />
 
                       <div class="relative w-1/2">
-                        <button
+                        <app-button
                           type="button"
-                          class="w-full inline-flex justify-between items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-100 text-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          [customClass]="'w-full inline-flex justify-between items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-100 text-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500'"
                           (click)="showDurationDropdown.set(!showDurationDropdown())"
                           [attr.aria-expanded]="showDurationDropdown()"
                           aria-haspopup="listbox">
@@ -166,19 +165,19 @@
                           <svg class="w-4 h-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path d="M5 8l5 5 5-5H5z"/>
                           </svg>
-                        </button>
+                        </app-button>
 
                         @if (showDurationDropdown()) {
                           <ul class="absolute z-10 bg-white border rounded-md shadow-md w-full max-h-60 overflow-y-auto" role="listbox">
                             @for (duration of durations; track duration.value) {
                               <li role="option">
-                                <button
+                                <app-button
                                   type="button"
                                   (click)="onDurationSelect(duration.value)"
-                                  class="w-full text-left px-4 py-2 hover:bg-gray-100 text-sm focus:outline-none focus:bg-gray-100"
+                                  [customClass]="'w-full text-left px-4 py-2 hover:bg-gray-100 text-sm focus:outline-none focus:bg-gray-100'"
                                   [class.bg-blue-50]="selectedDuration() === duration.value">
                                   {{ duration.label }}
-                                </button>
+                                </app-button>
                               </li>
                             }
                           </ul>
@@ -210,24 +209,23 @@
                 </div>
 
                 <div class="flex justify-end gap-2 pt-4">
-                  <app-button-grey
+                  <app-button
                     type="button"
                     (click)="onCancelScheduleEdit()"
-                    customTextClass="text-gray-600 hover:text-gray-600"
-                    class="rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 shadow-sm">
+                    [customClass]="'py-2 px-3 text-gray-600 hover:text-gray-600 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 shadow-sm'">
                     Cancel
-                  </app-button-grey>
+                  </app-button>
 
-                  <app-button-green-actions
+                  <app-button
                     type="submit"
                     [materialIcon]="'check'"
-                    class="disabled:opacity-50 disabled:cursor-not-allowed">
+                    [customClass]="'disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm  rounded-md transition-colors'">
                     @if (isUpdatingSchedule()) {
                       <span>Saving...</span>
                     } @else {
                       <span>Save</span>
                     }
-                  </app-button-green-actions>
+                  </app-button>
                 </div>
               </form>
             }

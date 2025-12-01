@@ -1,28 +1,29 @@
-import { Component, output, input, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {Component, computed, input, output} from '@angular/core';
 
 @Component({
-  selector: 'app-button-grey',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './button-grey.component.html',
-  styleUrl: './button-grey.component.scss'
+  selector: 'app-button',
+  imports: [],
+  templateUrl: './button.component.html',
+  styleUrl: './button.component.scss'
 })
-export class ButtonGreyComponent {
+export class ButtonComponent {
   readonly type = input<'button' | 'submit' | 'reset'>('button');
   readonly route = input<string>('');
   readonly materialIcon = input<string>('');
   readonly buttonHandler = input<(() => void) | null>(null);
   readonly isActivePage = input<boolean>(false);
-  readonly customTextClass = input<string>('');
   readonly disabled = input<boolean>(false);
   readonly ariaLabel = input<string | null>(null);
+  readonly hasNotification = input<boolean>(false);
+  readonly notificationCount = input<number>(1);
+  readonly customClass = input<string>('');
+  readonly materialIconClass = input<string>('text-base');
 
   readonly itemClick = output<string>();
 
   readonly buttonClasses = computed(() => {
     const baseClasses = 'rounded-md py-1 px-2 text-sm inline-flex items-center gap-2 transition-colors';
-    const customClass = this.customTextClass();
+    const customClass = this.customClass();
 
     const stateClasses = this.isActivePage()
       ? 'bg-grey hover:bg-grey-hover cursor-pointer text-gray-700 shadow-sm'
@@ -34,6 +35,15 @@ export class ButtonGreyComponent {
 
     return `${baseClasses} ${customClass} ${stateClasses} ${disabledClasses}`.trim();
   });
+
+  readonly notificationAriaLabel = computed(() => {
+    const count = this.notificationCount();
+    return count > 1
+      ? `You have ${count} notifications`
+      : 'You have notifications';
+  });
+
+
 
   navigate(): void {
     if (this.disabled()) {

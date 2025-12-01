@@ -15,11 +15,11 @@
             [innerHTML]="action.description"
             [id]="action.id + '-description'">
           </p>
-          <button
+          <app-button
             type="button"
             [disabled]="isDeleting()"
             (click)="action.action()"
-            [ngClass]="getButtonClass()"
+            [customClass]="getButtonClass()"
             [attr.aria-label]="action.buttonText + ' for ' + config().entityName"
             [attr.aria-describedby]="action.id + '-description'">
 
@@ -28,12 +28,12 @@
               [ngClass]="getIconColor()">
               {{ action.buttonIcon }}
             </span>
-            <span>{{ action.buttonText }}</span>
+            <span class="text-base">{{ action.buttonText }}</span>
 
             @if (isDeleting()) {
               <div class="ml-2 animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-current"></div>
             }
-          </button>
+          </app-button>
         </div>
       </section>
 

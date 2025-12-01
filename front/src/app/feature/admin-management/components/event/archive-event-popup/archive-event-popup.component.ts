@@ -1,8 +1,11 @@
 import { Component, input, output } from '@angular/core';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-archive-event-popup',
-  imports: [],
+  imports: [
+    ButtonComponent
+  ],
   templateUrl: './archive-event-popup.component.html',
   styleUrl: './archive-event-popup.component.scss'
 })

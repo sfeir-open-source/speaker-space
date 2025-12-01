@@ -1,13 +1,15 @@
 import { Component, input, output, effect } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { TeamMember } from '../../../../../type/team/team-member';
+import {ButtonComponent} from '../../../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-role-popup',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    FormsModule
+    FormsModule,
+    ButtonComponent
   ],
   templateUrl: './role-popup.component.html',
   styleUrl: './role-popup.component.scss'

@@ -1,5 +1,4 @@
 import {Component} from '@angular/core';
-import {ButtonGreyComponent} from '../../../../../shared/button-grey/button-grey.component';
 import {
   ScheduleJsonData, ScheduleSessionData,
   SessionScheduleImportDataDTO,
@@ -9,11 +8,12 @@ import {ImportResult} from '../../../type/session/session';
 import {EventDTO} from '../../../type/event/eventDTO';
 import {EventService} from '../../../services/event/event.service';
 import {EventDataService} from '../../../services/event/event-data.service';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-session-schedule-import',
   imports: [
-    ButtonGreyComponent
+    ButtonComponent
   ],
   templateUrl: './session-schedule-import.component.html',
   styleUrl: './session-schedule-import.component.scss'

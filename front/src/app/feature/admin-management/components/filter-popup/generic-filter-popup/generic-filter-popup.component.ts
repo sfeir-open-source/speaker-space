@@ -5,20 +5,17 @@ import {
   OnInit,
   computed,
   effect,
-  inject,
   input,
   output,
   signal
 } from '@angular/core';
 import { DropdownConfig, FilterConfig, FilterOption } from '../../../type/components/filter.type';
-import { ButtonGreyComponent } from '../../../../../shared/button-grey/button-grey.component';
-import { ButtonGreenActionsComponent } from '../../../../../shared/button-green-actions/button-green-actions.component';
+import {ButtonComponent} from '../../../../../shared/button/button.component';
 
 @Component({
   selector: 'app-generic-filter-popup',
   imports: [
-    ButtonGreyComponent,
-    ButtonGreenActionsComponent
+    ButtonComponent
   ],
   templateUrl: './generic-filter-popup.component.html',
   styleUrl: './generic-filter-popup.component.scss'
@@ -232,6 +229,29 @@ export class GenericFilterPopupComponent implements OnInit, OnDestroy {
     this._workingFilters.set({});
     this._openDropdowns.set(new Set());
     this.filtersReset.emit();
+  }
+
+  getButtonClickHandler(buttonId: string, value: boolean | null): () => void {
+    return () => this.onButtonChange(buttonId, value);
+  }
+
+  getDropdownToggleHandler(dropdownId: string): () => void {
+    return () => this.toggleDropdown(dropdownId);
+  }
+
+  getResetHandler(): () => void {
+    return () => this.onReset();
+  }
+
+  getApplyHandler(): () => void {
+    return () => this.onApply();
+  }
+
+  getDropdownButtonClasses(dropdownId: string): string {
+    const baseClasses = 'w-full bg-white border border-gray-300 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 justify-between';
+    const activeClasses = this.isDropdownOpen(dropdownId) ? 'border-blue-500' : '';
+
+    return `${baseClasses} ${activeClasses}`.trim();
   }
 
   onClose(): void {

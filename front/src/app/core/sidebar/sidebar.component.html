@@ -15,27 +15,34 @@
     <article class="flex items-center gap-3">
       <img [src]="userDataService.userPhotoURL() || 'assets/img/profil-picture.svg'"
            alt="profile"
-           class="w-12 h-12 rounded-full border-none" referrerpolicy="no-referrer" >
+           class="w-12 h-12 rounded-full border-none" referrerpolicy="no-referrer">
       <section>
         <p class="text-sm font-medium">{{ userDataService.displayName() }}</p>
         <p class="text-xs text-gray-500">{{ userDataService.userName() ? userDataService.userEmail() : '' }}</p>
       </section>
     </article>
-    <button (click)="closeSidebar()" class="text-gray-500 hover:text-gray-800" aria-label="Close sidebar">
+
+    <app-button
+      type="button"
+      [customClass]="'text-gray-500 hover:text-gray-800 p-1'"
+      [buttonHandler]="getCloseSidebarHandler()"
+      [ariaLabel]="'Close sidebar'">
       ✖
-    </button>
+    </app-button>
   </header>
 
   <nav>
     <article class="p-4">
-      <app-button-with-icon
+      <app-button
         materialIcon="notifications"
         route="/notifications"
+        [customClass]="getSidebarButtonClasses()"
         [hasNotification]="hasUnreadNotifications()"
         [notificationCount]="notificationCount()"
+        [ariaLabel]="'View notifications'"
         (itemClick)="navigateTo($event)">
         Notifications
-      </app-button-with-icon>
+      </app-button>
     </article>
 
     <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
@@ -43,19 +50,23 @@
     <article class="p-4">
       <p class="font-medium text-lg mb-2">Speaker</p>
 
-      <app-button-with-icon
+      <app-button
         materialIcon="book_2"
         route="/"
+        [customClass]="getSidebarButtonClasses()"
+        [ariaLabel]="'View my talks'"
         (itemClick)="navigateTo($event)">
         My Talks
-      </app-button-with-icon>
+      </app-button>
 
-      <app-button-with-icon
+      <app-button
         materialIcon="luggage"
         route="/travel"
+        [customClass]="getSidebarButtonClasses()"
+        [ariaLabel]="'View travel information'"
         (itemClick)="navigateTo($event)">
         Travel Information
-      </app-button-with-icon>
+      </app-button>
     </article>
 
     <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
@@ -71,12 +82,14 @@
         @if(hasTeams()) {
           <div class="space-y-1">
             @for(team of teams(); track team.id ?? $index) {
-              <app-button-with-icon
+              <app-button
                 materialIcon="group"
                 [route]="'/team/' + (team.id)"
+                [customClass]="getSidebarButtonClasses()"
+                [ariaLabel]="'View team ' + team.name"
                 (itemClick)="navigateToTeam(team.id)">
                 {{ team.name }}
-              </app-button-with-icon>
+              </app-button>
             }
           </div>
         } @else {
@@ -84,23 +97,25 @@
         }
       }
 
-      <app-button-with-icon
-        class="font-medium"
+      <app-button
         materialIcon="add_box"
-        [buttonHandler]="createNewTeam.bind(this)">
+        [customClass]="getSidebarButtonClasses('font-medium')"
+        [buttonHandler]="createNewTeam.bind(this)"
+        [ariaLabel]="'Create new team'">
         New team
-      </app-button-with-icon>
+      </app-button>
     </article>
 
     <hr class="my-2 rounded-lg w-[80%] mx-auto border-secondary px-4">
 
     <article class="p-4">
-      <app-button-with-icon
-        class="font-medium"
+      <app-button
         materialIcon="logout"
-        [buttonHandler]="logout.bind(this)">
+        [customClass]="getSidebarButtonClasses('font-medium')"
+        [buttonHandler]="logout.bind(this)"
+        [ariaLabel]="'Logout'">
         Log out
-      </app-button-with-icon>
+      </app-button>
     </article>
   </nav>
 </main>
