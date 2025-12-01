@@ -98,7 +98,7 @@ export class IsLoginHomePageComponent {
 
     return `${baseClasses} ${activeClasses}`.trim();
   }
-
+  
   getCurrentsTabHandler(): () => void {
     return () => this.setActiveTab('currents');
   }
