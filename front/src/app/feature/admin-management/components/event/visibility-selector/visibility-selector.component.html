@@ -1,0 +1,64 @@
+<section class="mt-5">
+  <label class="block text-start text-md font-medium text-gray-700 mb-3">
+    Visibility
+  </label>
+
+  <fieldset class="mt-3 bg-gray-50 rounded-lg">
+    <legend class="sr-only">Event visibility options</legend>
+
+    <div class="bg-white rounded-lg overflow-hidden shadow-sm ring-1 ring-gray-200">
+      @for (option of visibilityOptions; track option.value) {
+        <label
+          class="relative p-4 flex cursor-pointer transition-all duration-200 ease-in-out group"
+          [class.bg-blue-50]="control().value === option.value"
+          [class.bg-white]="control().value !== option.value"
+          [class.hover:bg-gray-50]="control().value !== option.value">
+
+          <div class="flex items-center h-5">
+            <input
+              [id]="'visibility-' + option.value"
+              type="radio"
+              [formControl]="control()"
+              [value]="option.value"
+              [attr.aria-describedby]="'visibility-' + option.value + '-description'"
+              class="sr-only" />
+
+            <div
+              class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200"
+              [class.border-blue-500]="control().value === option.value"
+              [class.bg-blue-500]="control().value === option.value"
+              [class.shadow-sm]="control().value === option.value"
+              [class.border-gray-300]="control().value !== option.value"
+              [class.bg-white]="control().value !== option.value"
+              [class.group-hover:border-blue-300]="control().value !== option.value">
+
+              <div
+                class="w-2 h-2 rounded-full bg-white transition-all duration-200"
+                [class.opacity-100]="control().value === option.value"
+                [class.scale-100]="control().value === option.value"
+                [class.opacity-0]="control().value !== option.value"
+                [class.scale-75]="control().value !== option.value">
+              </div>
+            </div>
+          </div>
+
+          <div class="ml-4 flex-1">
+            <span
+              class="block text-sm font-medium transition-colors duration-200"
+              [class.text-blue-900]="control().value === option.value"
+              [class.text-gray-900]="control().value !== option.value">
+              {{ option.label }}
+            </span>
+            <span
+              [id]="'visibility-' + option.value + '-description'"
+              class="block text-sm transition-colors duration-200"
+              [class.text-blue-700]="control().value === option.value"
+              [class.text-gray-600]="control().value !== option.value">
+              {{ option.description }}
+            </span>
+          </div>
+        </label>
+      }
+    </div>
+  </fieldset>
+</section>

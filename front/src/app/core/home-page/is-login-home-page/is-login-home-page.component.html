@@ -9,21 +9,21 @@
 
       <app-button
         type="button"
-        [customClass]="getCurrentsTabClasses()"
+        [customClass]="currentsTabClasses()"
         [buttonHandler]="getCurrentsTabHandler()"
         [disabled]="isLoading()"
         [ariaLabel]="'Show current events'"
-        [attr.aria-selected]="activeTab() === 'currents'">
+        [ariaSelected]="activeTab() === 'currents'">
         Currents
       </app-button>
 
       <app-button
         type="button"
-        [customClass]="getPassedTabClasses()"
+        [customClass]="passedTabClasses()"
         [buttonHandler]="getPassedTabHandler()"
         [disabled]="isLoading()"
         [ariaLabel]="'Show past events'"
-        [attr.aria-selected]="activeTab() === 'passed'">
+        [ariaSelected]="activeTab() === 'currents'">
         Passed
       </app-button>
     </nav>

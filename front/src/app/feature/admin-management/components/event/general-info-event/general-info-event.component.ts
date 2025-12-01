@@ -1,279 +1,145 @@
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-  DestroyRef
-} from '@angular/core';
+import { Component, computed, effect, inject, input, output, DestroyRef, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { BehaviorSubject, debounceTime } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import moment from 'moment';
-import 'moment-timezone';
-import { BehaviorSubject, debounceTime, Subject } from 'rxjs';
-import 'moment-timezone';
-import {EventDTO} from '../../../type/event/eventDTO';
-import {FieldComponent} from '../../../../../shared/input/field.component';
-import {TimezoneOption} from '../../../type/event/time-zone-option';
-import {Team} from '../../../type/team/team';
-import {TeamService} from '../../../services/team/team.service';
-import {EventDataService} from '../../../services/event/event-data.service';
-import {environment} from '../../../../../../environments/environment.development';
-import {FormField} from '../../../../../shared/input/interface/form-field';
-import {SaveStatus} from '../../../../../core/types/save-status.types';
-import {AutoSaveService} from '../../services/auto-save.service';
-import {EventService} from '../../../services/event/event.service';
-import {MatSnackBar} from '@angular/material/snack-bar';
-import {SaveIndicatorComponent} from '../../../../../core/save-indicator/save-indicator.component';
-import {ButtonComponent} from '../../../../../shared/button/button.component';
+
+import { EventDTO } from '../../../type/event/eventDTO';
+import { Team } from '../../../type/team/team';
+import { SaveStatus } from '../../../../../core/types/save-status.types';
+
+import { TeamService } from '../../../services/team/team.service';
+import { EventService } from '../../../services/event/event.service';
+import { AutoSaveService } from '../../services/auto-save.service';
+import { FormFieldConfig, FormFieldConfigService } from '../../../services/event/event-form-config.service';
+import { EventFormService } from '../../../services/event/event-form.service';
+import { EventDataMapperService } from '../../../services/event/event-data-mapper.service';
+
+import { FieldComponent } from '../../../../../shared/input/field.component';
+import { SaveIndicatorComponent } from '../../../../../core/save-indicator/save-indicator.component';
+import { ButtonComponent } from '../../../../../shared/button/button.component';
+import { VisibilitySelectorComponent } from '../visibility-selector/visibility-selector.component';
+import { TimezoneSelectorComponent } from '../timezone-selector/timezone-selector.component';
+import {FormFieldErrorsComponent} from '../../../../../shared/form-field-errors/form-field-errors.component';
 
 @Component({
   selector: 'app-general-info-event',
   standalone: true,
-  imports: [CommonModule, FieldComponent, ReactiveFormsModule, FormsModule, SaveIndicatorComponent, ButtonComponent],
-  templateUrl: './general-info-event.component.html',
-  styleUrl: './general-info-event.component.scss'
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FieldComponent,
+    SaveIndicatorComponent,
+    ButtonComponent,
+    VisibilitySelectorComponent,
+    TimezoneSelectorComponent,
+    FormFieldErrorsComponent
+  ],
+  providers: [EventFormService],
+  templateUrl: './general-info-event.component.html'
 })
-
 export class GeneralInfoEventComponent {
-   mode = input<'create' | 'edit'>('create');
-   initialData = input<Partial<EventDTO> | null>(null);
-   initialVisibility = input<'private' | 'public'>('private');
+  mode = input<'create' | 'edit'>('create');
+  initialData = input<Partial<EventDTO> | null>(null);
+  initialVisibility = input<'private' | 'public'>('private');
+  formSubmitted = output<EventDTO>();
+  goBack = output<void>();
 
-   formSubmitted = output<EventDTO>();
-   goBack = output<void>();
+  private eventFormService = inject(EventFormService);
+  private autoSaveService = inject(AutoSaveService);
+  private eventService = inject(EventService);
+  private snackBar = inject(MatSnackBar);
+  private teamService = inject(TeamService);
+  private formFieldConfigService = inject(FormFieldConfigService);
+  private eventDataMapper = inject(EventDataMapperService);
+  private destroyRef = inject(DestroyRef);
 
-  private  fb = inject(FormBuilder);
-  private  autoSaveService = inject(AutoSaveService);
-  private  eventService = inject(EventService);
-  private  snackBar = inject(MatSnackBar);
-  private  teamService = inject(TeamService);
-  private  eventDataService = inject(EventDataService);
-  private  route = inject(ActivatedRoute);
-  private  destroyRef = inject(DestroyRef);
-
-  eventUrl: string = '';
-  teamId: string | null = null;
   form!: FormGroup;
-  isSubmitted: boolean = false;
-  dateTimeUtc = moment.utc();
-  dateTimeLocal: moment.Moment | null = null;
-
-  timezoneSelector = new FormControl('Europe/Paris');
-  timezoneOptions: TimezoneOption[] = [];
+  isSubmitted = false;
   teams: Team[] = [];
   saveStatus$ = new BehaviorSubject<SaveStatus>('idle');
+  timezoneControl = new FormControl<string>('Europe/Paris', { nonNullable: true });
 
-   showAutoSaveIndicator = computed(() => this.mode() === 'edit');
-   showGoBackButton = computed(() => this.mode() === 'create');
-   showVisibilitySection = computed(() => this.mode() === 'edit');
-   submitButtonText = computed(() =>
+  protected readonly showAutoSaveIndicator = computed(() => this.mode() === 'edit');
+  protected readonly showGoBackButton = computed(() => this.mode() === 'create');
+  protected readonly showVisibilitySection = computed(() => this.mode() === 'edit');
+  protected readonly submitButtonText = computed(() =>
     this.mode() === 'create' ? 'Continue' : 'Update event'
   );
-   submitButtonIcon = computed(() =>
+  protected readonly submitButtonIcon = computed(() =>
     this.mode() === 'create' ? 'arrow_forward' : 'save'
   );
-
-   visibility = computed(() =>
-    this.form?.get('visibility')?.value || 'private' as 'private' | 'public'
-  );
-
-   formFields = computed((): FormField[] => {
-    const eventTypeOptions = [
-      { value: 'conference', label: 'Conference' },
-      { value: 'meetup', label: 'Meetup' }
-    ];
-
-    if (this.mode() === 'create') {
-      return [
-        {
-          name: 'name',
-          label: 'Name',
-          type: 'text',
-          required: true,
-          placeholder: 'Enter your event name'
-        },
-        {
-          name: 'url',
-          label: 'Event URL',
-          placeholder: 'https://speaker-space.io/event/',
-          type: 'text',
-          required: true,
-          disabled: true,
-        },
-        {
-          name: 'urlConferenceHall',
-          label: 'Conference Hall URL Connection',
-          paragraph: 'Use a conference hall existing URL if you want to synchronize conference Hall data',
-          type: 'text',
-          required: false,
-          placeholder: 'https://conference-hall.io/...'
-        },
-        {
-          name: 'type',
-          label: 'Event type',
-          type: 'select',
-          required: true,
-          options: eventTypeOptions
-        }
-      ];
-    } else {
-      return [
-        {
-          name: 'eventName',
-          label: 'Name',
-          placeholder: 'Enter your event name',
-          type: 'text',
-          required: true,
-        },
-        {
-          name: 'eventURL',
-          label: 'Event URL',
-          placeholder: 'https://speaker-space.io/event/',
-          type: 'text',
-          required: false,
-          disabled: true,
-        },
-        {
-          name: 'urlConferenceHall',
-          label: 'Conference Hall URL Connection',
-          paragraph: 'Use a conference hall existing URL if you want to synchronize conference Hall data',
-          type: 'text',
-          required: false,
-          placeholder: 'https://conference-hall.io/...'
-        },
-        {
-          name: 'type',
-          label: 'Event type',
-          type: 'select',
-          required: true,
-          options: eventTypeOptions
-        }
-      ];
-    }
-  });
+  protected readonly formFields: Signal<FormFieldConfig[]> =
+    this.formFieldConfigService.getFormFields(this.mode);
 
   constructor() {
-    this.prepareTimezoneOptions();
-
     effect(() => {
-      this.initializeForm();
-      this.setupSubscriptions();
-      this.setupFormListeners();
-
-      const currentInitialData = this.initialData();
-      if (currentInitialData && this.mode() === 'edit') {
-        this.loadInitialData(currentInitialData);
-        this.setupAutoSave();
-      }
-
-      this.updateLocalTime(this.timezoneSelector.value || 'Europe/Paris');
+      this.initializeComponent();
     });
   }
 
-  private initializeForm(): void {
-    if (this.mode() === 'edit') {
-      this.form = this.fb.group({
-        eventName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-        eventURL: [{ value: '', disabled: true }],
-        urlConferenceHall: [''],
-        timeZone: [this.timezoneSelector.value, Validators.required],
-        visibility: [this.initialVisibility()],
-        type: ['', [Validators.required]]
-      });
-    } else {
-      this.form = this.fb.group({
-        name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-        url: [{ value: `${environment.baseUrl}/event/`, disabled: true }],
-        urlConferenceHall: [''],
-        teamId: [''],
-        timeZone: [this.timezoneSelector.value, Validators.required],
-        type: ['', [Validators.required]]
-      });
+  private initializeComponent(): void {
+    this.form = this.eventFormService.createForm({
+      mode: this.mode(),
+      initialVisibility: this.initialVisibility(),
+      timezoneValue: this.timezoneControl.value
+    });
+
+    this.setupTeamsSubscription();
+    this.setupTimezoneSync();
+    this.eventFormService.setupUrlGeneration(this.form, this.mode);
+
+    if (this.mode() === 'create') {
+      this.eventFormService.handleRouteParams(this.form);
+    }
+
+    const currentInitialData = this.initialData();
+    if (currentInitialData && this.mode() === 'edit') {
+      this.loadInitialData(currentInitialData);
+      this.setupAutoSave(currentInitialData);
     }
   }
 
-  private setupSubscriptions(): void {
+  private setupTeamsSubscription(): void {
     this.teamService.teams$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((teams: Team[]) => this.teams = teams);
-
-    if (this.mode() === 'create') {
-      this.route.paramMap
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(params => {
-          const param: string | null = params.get('eventUrl') || params.get('teamId');
-
-          if (param) {
-            if (param.includes('team-') || /^[a-zA-Z0-9]{20,}$/.test(param)) {
-              this.teamId = param;
-              this.form.get('teamId')?.setValue(param);
-            } else {
-              this.eventUrl = param;
-            }
-          }
-        });
-
-      this.eventUrl = this.route.snapshot.paramMap.get('eventUrl') || '';
-    }
   }
 
-  private setupFormListeners(): void {
-    if (this.mode() === 'create') {
-      this.form.get('name')?.valueChanges
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((name: string) => {
-          const urlSuffix: string = this.formatUrlFromName(name || '');
-          this.form.get('url')?.setValue(`${environment.baseUrl}/event/` + urlSuffix);
-          this.eventDataService.setEventName(name || '');
-        });
-    } else {
-      this.form.get('eventName')?.valueChanges
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((name: string) => {
-          if (name) {
-            const urlSuffix: string = this.formatUrlFromName(name);
-            this.form.get('eventURL')?.setValue(`${environment.baseUrl}/event/` + urlSuffix);
-          } else {
-            this.form.get('eventURL')?.setValue(`${environment.baseUrl}/event/`);
-          }
-        });
-    }
-
-    this.timezoneSelector.valueChanges
+  private setupTimezoneSync(): void {
+    this.timezoneControl.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((timezone: string | null) => {
-        this.updateLocalTime(timezone || 'Europe/Paris');
+      .subscribe(timezone => {
         this.form.get('timeZone')?.setValue(timezone);
       });
   }
 
-  private setupAutoSave(): void {
-    const currentInitialData = this.initialData();
-    if (this.mode() !== 'edit' || !currentInitialData?.idEvent) {
-      return;
-    }
+  private setupAutoSave(initialData: Partial<EventDTO>): void {
+    if (!initialData.idEvent) return;
 
-    const { saveStatus$, destroy$ } = this.autoSaveService.setupAutoSave<EventDTO>(
+    const { saveStatus$ } = this.autoSaveService.setupAutoSave<EventDTO>(
       this.form,
       (data: Partial<EventDTO>) => this.eventService.updateEvent(data),
       {
-        extractValidFields: () => this.extractValidEventData(),
-        onSaveStart: () => {
-          this.form.markAsPristine();
-        },
+        extractValidFields: () => this.eventDataMapper.extractModifiedFields(
+          this.form.getRawValue(),
+          this.initialData()
+        ),
+        onSaveStart: () => this.form.markAsPristine(),
         onSaveSuccess: (result: EventDTO) => {
           console.log('Event auto-saved successfully:', result);
         },
-        onSaveError: (error: any) => {
+        onSaveError: (error: unknown) => {
           console.error('Auto-save failed:', error);
-          this.snackBar.open('Erreur lors de la sauvegarde automatique', 'Fermer', {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
+          this.snackBar.open(
+            'Erreur lors de la sauvegarde automatique',
+            'Fermer',
+            {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            }
+          );
           this.form.markAsDirty();
         },
         debounceTime: 2000
@@ -282,90 +148,29 @@ export class GeneralInfoEventComponent {
 
     this.saveStatus$ = saveStatus$ as BehaviorSubject<SaveStatus>;
 
-    this.timezoneSelector.valueChanges
+    this.timezoneControl.valueChanges
       .pipe(
         debounceTime(500),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe((timezone: string | null) => {
-        this.updateLocalTime(timezone || 'Europe/Paris');
-        this.form.get('timeZone')?.setValue(timezone);
-
-        if (this.mode() === 'edit' && timezone !== currentInitialData?.timeZone) {
+      .subscribe(timezone => {
+        if (timezone !== initialData.timeZone) {
           this.form.markAsDirty();
         }
       });
   }
 
-  private extractValidEventData(): Partial<EventDTO> {
-    const formValue = this.form.getRawValue();
-    const currentInitialData = this.initialData();
-
-    const data: Partial<EventDTO> = {
-      idEvent: currentInitialData?.idEvent
-    };
-
-    if (formValue.eventName !== undefined && formValue.eventName !== currentInitialData?.eventName) {
-      data.eventName = formValue.eventName;
-    }
-
-    if (formValue.urlConferenceHall !== undefined && formValue.urlConferenceHall !== currentInitialData?.conferenceHallUrl) {
-      data.conferenceHallUrl = formValue.urlConferenceHall;
-    }
-
-    if (formValue.type !== undefined && formValue.type !== currentInitialData?.type) {
-      data.type = formValue.type;
-    }
-
-    if (formValue.timeZone !== undefined && formValue.timeZone !== currentInitialData?.timeZone) {
-      data.timeZone = formValue.timeZone;
-    }
-
-    const currentIsPrivate = formValue.visibility === 'private';
-    const initialIsPrivate = currentInitialData?.isPrivate;
-
-    if (currentIsPrivate !== initialIsPrivate) {
-      data.isPrivate = currentIsPrivate;
-    }
-
-    return data;
-  }
-
   private loadInitialData(data: Partial<EventDTO>): void {
-    if (this.mode() === 'edit') {
-      const fullUrl: string = data.url ?
-        (data.url.startsWith('http') ? data.url : `${environment.baseUrl}/event/${data.url}`)
-        : '';
+    const formData = this.eventDataMapper.prepareInitialFormData(data);
+    this.form.patchValue(formData);
 
-      const visibility = data.isPrivate ? 'private' : 'public';
-
-      this.form.patchValue({
-        eventName: data.eventName || '',
-        eventURL: fullUrl,
-        urlConferenceHall: data.conferenceHallUrl || '',
-        timeZone: data.timeZone || 'Europe/Paris',
-        visibility: visibility,
-        type: data.type,
-      });
-
-      if (data.timeZone) {
-        this.timezoneSelector.setValue(data.timeZone);
-      }
+    if (data.timeZone) {
+      this.timezoneControl.setValue(data.timeZone);
     }
-  }
-
-  private formatUrlFromName(name: string): string {
-    return name.trim()
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/-+/g, '-');
   }
 
   onSubmit(): void {
-    if (this.mode() === 'edit') {
-      return;
-    }
+    if (this.mode() === 'edit') return;
 
     this.isSubmitted = true;
 
@@ -374,18 +179,10 @@ export class GeneralInfoEventComponent {
       return;
     }
 
-    const formValue = this.form.getRawValue();
-    const newEvent: EventDTO = {
-      eventName: formValue.name,
-      url: formValue.url,
-      isOnline: formValue.isOnline,
-      conferenceHallUrl: formValue.urlConferenceHall,
-      timeZone: formValue.timeZone,
-      teamId: formValue.teamId || this.teamId,
-      teamUrl: formValue.teamUrl,
-      isPrivate: true,
-      type: formValue.type,
-    };
+    const newEvent = this.eventDataMapper.formToEventDTO(
+      this.form.getRawValue(),
+      this.eventFormService.teamId
+    );
 
     this.formSubmitted.emit(newEvent);
   }
@@ -394,23 +191,11 @@ export class GeneralInfoEventComponent {
     this.goBack.emit();
   }
 
-  prepareTimezoneOptions(): void {
-    this.timezoneOptions = moment.tz.names().map(tz => ({
-      name: tz,
-      offset: moment.tz(tz).utcOffset()
-    })).sort((a, b) => a.offset - b.offset);
-  }
-
-  updateLocalTime(timezone: string): void {
-    this.dateTimeLocal = this.dateTimeUtc.clone().tz(timezone);
-  }
-
-  formatTimezoneOption(tz: TimezoneOption): string {
-    const offsetFormatted: string = moment.tz(tz.name).format('Z');
-    return `(GMT${offsetFormatted}) ${tz.name}`;
-  }
-
   getFormControl(name: string): FormControl {
     return this.form.get(name) as FormControl;
+  }
+
+  get visibilityControl(): FormControl<'private' | 'public'> {
+    return this.form.get('visibility') as FormControl<'private' | 'public'>;
   }
 }

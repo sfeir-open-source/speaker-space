@@ -23,7 +23,7 @@
             [class.text-gray-800]="true"
             [class.shadow-sm]="activeTab() === 'Archived'"
             (click)="setActiveTab('Archived')"
-            [attr.aria-selected]="activeTab() === 'Archived'"
+            [ariaSelected]="activeTab() === 'Archived'"
             type="button">
             Archived
           </app-button>
@@ -34,7 +34,7 @@
             [class.text-gray-800]="true"
             [class.shadow-sm]="activeTab() === 'Active'"
             (click)="setActiveTab('Active')"
-            [attr.aria-selected]="activeTab() === 'Active'"
+            [ariaSelected]="activeTab() === 'Active'"
             type="button">
             Active
           </app-button>

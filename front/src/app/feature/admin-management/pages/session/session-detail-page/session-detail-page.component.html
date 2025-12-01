@@ -9,13 +9,13 @@
   <div class="px-5 sm:px-5 md:px-5 lg:px-5 xl:px-20 2xl:px-70 w-full">
     <main class="flex justify-center p-4">
       @if (session(); as sessionData) {
-        <div class="relative bg-white rounded-lg shadow-xl max-w-7xl w-full">
+        <article class="relative bg-white rounded-lg shadow-xl max-w-7xl w-full">
 
-          <div class="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 [id]="'modal-title-' + sessionData.id"
+          <header class="flex items-center justify-between p-4 border-b border-gray-200">
+            <h1 [id]="'modal-title-' + sessionData.id"
                 class="text-lg font-medium text-gray-900 flex-1 mr-4">
               {{ sessionData.title }}
-            </h2>
+            </h1>
             <app-button
               type="button"
               [materialIcon]="'edit_square'"
@@ -23,214 +23,89 @@
               (click)="onEditSession()">
               Edit
             </app-button>
-          </div>
+          </header>
 
           <div class="p-6 space-y-6 border-b border-gray-200">
 
-            <section class="flex items-start sm:items-center justify-between p-4 gap-4 flex-col sm:flex-row">
-              <div class="flex items-center flex-wrap gap-2 min-w-0 flex-1">
-                @if (sessionData.speakers && sessionData.speakers.length > 0) {
-                  @for (speaker of sessionData.speakers; track speaker.name) {
-                    <div (click)="openItemDetail(speaker.id)"
-                         class="inline-flex items-center gap-3 border border-gray-300 rounded-full px-2 py-1 bg-white shadow-sm cursor-pointer hover:bg-gray-50 transition-colors duration-200"
-                         role="button"
-                         tabindex="0"
-                         [attr.aria-label]="'View speaker details for ' + speaker.name"
-                         (keydown.enter)="openItemDetail(speaker.id)"
-                         (keydown.space)="openItemDetail(speaker.id)">
-                      <div class="flex-shrink-0">
-                        <img
-                          [src]="speaker.picture || 'assets/img/profil-picture.svg'"
-                          class="h-10 w-10 rounded-full object-cover border-2 border-gray-100"
-                          [alt]="'Photo de ' + speaker.name"
-                          referrerpolicy="no-referrer"
-                          (error)="onImageError($event)">
-                      </div>
+            @if (sessionData.speakers && sessionData.speakers.length > 0) {
+              <app-session-speakers
+                [speakers]="sessionData.speakers"
+                (speakerClick)="onSpeakerClick($event)"
+                (imageError)="onImageError($event)">
+              </app-session-speakers>
+            }
 
-                      <div class="flex-1 min-w-0">
-                        <h4 class="font-medium text-gray-900 text-sm truncate">
-                          {{ speaker.name }}
-                        </h4>
-                      </div>
-                    </div>
-                  }
-                }
-              </div>
-            </section>
-
-            <div class="text-gray-700 p-3 rounded-md">
+            <section class="text-gray-700 p-3 rounded-md">
               @if (sessionData.abstractText) {
                 <p class="whitespace-pre-wrap">{{ sessionData.abstractText }}</p>
               } @else {
                 <p class="text-gray-500 italic">No description available</p>
               }
-            </div>
+            </section>
 
             @if (format() || (sessionData.formats && sessionData.formats.length > 0)) {
-              <div>
-                <h4 class="font-base font-medium text-gray-900 mb-2">Formats</h4>
+              <section>
+                <h2 class="font-base font-medium text-gray-900 mb-2">Formats</h2>
                 <div class="flex flex-wrap gap-2">
                   @if (format(); as formatData) {
-                    <div class="inline-flex items-center text-gray-700 text-sm py-1 px-3 bg-gray-50 rounded-md">
+                    <span class="inline-flex items-center text-gray-700 text-sm py-1 px-3 bg-gray-50 rounded-md">
                       {{ formatData.name }}
-                    </div>
+                    </span>
                   }
                 </div>
-              </div>
+              </section>
             }
 
             @if (category() || (sessionData.categories && sessionData.categories.length > 0)) {
-              <div>
-                <h4 class="font-base font-medium text-gray-900 mb-2">Categories</h4>
+              <section>
+                <h2 class="font-base font-medium text-gray-900 mb-2">Categories</h2>
                 <div class="flex flex-wrap gap-2">
                   @if (category(); as categoryData) {
-                    <div class="inline-flex items-center text-gray-700 text-sm py-1 px-3 bg-gray-50 rounded-md">
+                    <span class="inline-flex items-center text-gray-700 text-sm py-1 px-3 bg-gray-50 rounded-md">
                       {{ categoryData.name }}
-                    </div>
+                    </span>
                   }
                 </div>
-              </div>
+              </section>
             }
 
             <div class="flex flex-wrap gap-3">
               @if (sessionData.level) {
-                <div class="inline-flex items-center bg-blue-50 text-blue-700 border border-blue-200 text-sm px-3 py-1 rounded-lg">
-                  {{ formatLevel(sessionData.level) }}
-                </div>
+                <span class="inline-flex items-center bg-blue-50 text-blue-700 border border-blue-200 text-sm px-3 py-1 rounded-lg">
+                  {{ formatter.formatLevel(sessionData.level) }}
+                </span>
               }
 
               @if (sessionData.languages && sessionData.languages.length > 0) {
                 @for (language of sessionData.languages; track language) {
-                  <div class="inline-flex items-center bg-gray-100 text-gray-700 border border-gray-200 text-sm py-1 px-3 rounded-lg">
-                    {{ formatLanguage(language) }}
-                  </div>
+                  <span class="inline-flex items-center bg-gray-100 text-gray-700 border border-gray-200 text-sm py-1 px-3 rounded-lg">
+                    {{ formatter.formatLanguage(language) }}
+                  </span>
                 }
               }
             </div>
           </div>
 
-          <div class="p-6 border-b border-gray-200">
+          <section class="p-6 border-b border-gray-200">
             <div class="items-center justify-between mb-4">
-              <h4 class="font-base font-medium text-gray-900 mb-4">Schedule</h4>
+              <h2 class="font-base font-medium text-gray-900 mb-4">Schedule</h2>
 
-              @if (!isEditingSchedule() && hasScheduleInfo()) {
-                <p class="text-sm text-gray-700" [innerHTML]="formatCompleteSessionInfo()"></p>
-              } @else if (!isEditingSchedule()) {
+              @if (!scheduleFormService.isEditing() && hasScheduleInfo()) {
+                <p class="text-sm text-gray-700" [innerHTML]="formattedCompleteSessionInfo()"></p>
+              } @else if (!scheduleFormService.isEditing()) {
                 <p class="text-sm text-gray-500 italic">Schedule information not yet available</p>
               }
             </div>
 
-            @if (isEditingSchedule()) {
-              <form [formGroup]="scheduleForm" class="space-y-4" (ngSubmit)="onSaveSchedule()">
-                @if (scheduleError()) {
-                  <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
-                    <p>{{ scheduleError() }}</p>
-                  </div>
-                }
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <div>
-                    <label for="start-date" class="block text-sm font-medium text-gray-700 mb-2">
-                      Start Date <span class="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="start-date"
-                      type="date"
-                      formControlName="startDate"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
-                      [class.border-red-500]="scheduleForm.get('startDate')?.invalid && scheduleForm.get('startDate')?.touched"
-                      required />
-                  </div>
-
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Start Time & Duration <span class="text-red-500">*</span>
-                    </label>
-                    <div class="flex">
-                      <input
-                        type="time"
-                        formControlName="startTime"
-                        class="w-1/2 px-3 py-2 border border-gray-300 rounded-l-md text-sm focus:ring-blue-500 focus:border-blue-500"
-                        [class.border-red-500]="scheduleForm.get('startTime')?.invalid && scheduleForm.get('startTime')?.touched"
-                        required />
-
-                      <div class="relative w-1/2">
-                        <app-button
-                          type="button"
-                          [customClass]="'w-full inline-flex justify-between items-center px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-100 text-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500'"
-                          (click)="showDurationDropdown.set(!showDurationDropdown())"
-                          [attr.aria-expanded]="showDurationDropdown()"
-                          aria-haspopup="listbox">
-                          {{ selectedDuration() }} min
-                          <svg class="w-4 h-4 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path d="M5 8l5 5 5-5H5z"/>
-                          </svg>
-                        </app-button>
-
-                        @if (showDurationDropdown()) {
-                          <ul class="absolute z-10 bg-white border rounded-md shadow-md w-full max-h-60 overflow-y-auto" role="listbox">
-                            @for (duration of durations; track duration.value) {
-                              <li role="option">
-                                <app-button
-                                  type="button"
-                                  (click)="onDurationSelect(duration.value)"
-                                  [customClass]="'w-full text-left px-4 py-2 hover:bg-gray-100 text-sm focus:outline-none focus:bg-gray-100'"
-                                  [class.bg-blue-50]="selectedDuration() === duration.value">
-                                  {{ duration.label }}
-                                </app-button>
-                              </li>
-                            }
-                          </ul>
-                        }
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label for="track" class="block text-sm font-medium text-gray-700 mb-2">Track</label>
-                    @if (availableTracks().length > 0) {
-                      <select
-                        id="track"
-                        formControlName="track"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Select a track...</option>
-                        @for (track of availableTracks(); track track) {
-                          <option [value]="track">{{ track }}</option>
-                        }
-                      </select>
-                    } @else {
-                      <input
-                        type="text"
-                        formControlName="track"
-                        placeholder="Enter track name"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500" />
-                    }
-                  </div>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-4">
-                  <app-button
-                    type="button"
-                    (click)="onCancelScheduleEdit()"
-                    [customClass]="'py-2 px-3 text-gray-600 hover:text-gray-600 rounded-md text-base items-center gap-2 bg-white hover:bg-gray-100 border border-gray-300 shadow-sm'">
-                    Cancel
-                  </app-button>
-
-                  <app-button
-                    type="submit"
-                    [materialIcon]="'check'"
-                    [customClass]="'disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 bg-action hover:bg-action-hover disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer text-white text-sm  rounded-md transition-colors'">
-                    @if (isUpdatingSchedule()) {
-                      <span>Saving...</span>
-                    } @else {
-                      <span>Save</span>
-                    }
-                  </app-button>
-                </div>
-              </form>
+            @if (scheduleFormService.isEditing()) {
+              <app-session-schedule-form
+                [availableTracks]="availableTracks()"
+                (save)="onSaveSchedule()"
+                (cancel)="onCancelScheduleEdit()">
+              </app-session-schedule-form>
             }
-          </div>
-        </div>
+          </section>
+        </article>
       } @else {
         <div class="flex justify-center items-center h-40" role="status" aria-label="Loading session data">
           <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" aria-hidden="true"></div>
